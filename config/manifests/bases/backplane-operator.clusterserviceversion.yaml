@@ -1,0 +1,47 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: '[]'
+    capabilities: Basic Install
+  name: backplane-operator.v0.0.0
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: BackplaneConfig is the Schema for the backplaneconfigs API
+      displayName: Backplane Config
+      kind: BackplaneConfig
+      name: backplaneconfigs.backplane.open-cluster-management.io
+      version: v1alpha1
+  description: Provides the components making up the backplane
+  displayName: Backplane Operator
+  icon:
+  - base64data: ""
+    mediatype: ""
+  install:
+    spec:
+      deployments: null
+    strategy: ""
+  installModes:
+  - supported: false
+    type: OwnNamespace
+  - supported: false
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - backplane
+  links:
+  - name: Backplane Operator
+    url: https://backplane-operator.domain
+  maintainers:
+  - email: acm-contact@redhat.com
+    name: Red Hat
+  maturity: alpha
+  provider:
+    name: Red Hat
+  version: 0.0.0
