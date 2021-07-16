@@ -14,7 +14,15 @@ spec:
     singular: backplaneconfig
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - description: The overall status of the backplaneconfig
+      jsonPath: .status.phase
+      name: Status
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: BackplaneConfig is the Schema for the backplaneconfigs API
@@ -41,6 +49,81 @@ spec:
             type: object
           status:
             description: BackplaneConfigStatus defines the observed state of BackplaneConfig
+            properties:
+              components:
+                additionalProperties:
+                  description: StatusCondition contains condition information.
+                  properties:
+                    lastTransitionTime:
+                      description: LastTransitionTime is the last time the condition
+                        changed from one status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: Message is a human-readable message indicating
+                        details about the last status change.
+                      type: string
+                    reason:
+                      description: Reason is a (brief) reason for the condition's
+                        last status change.
+                      type: string
+                    status:
+                      description: Status is the status of the condition. One of True,
+                        False, Unknown.
+                      type: string
+                    type:
+                      description: Type is the type of the cluster condition.
+                      type: string
+                  required:
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                description: Components contains the different statuses for the BackplaneConfig
+                  components
+                type: object
+              conditions:
+                description: Conditions contains the different condition statuses
+                  for the BackplaneConfig
+                items:
+                  description: Condition contains condition information.
+                  properties:
+                    lastTransitionTime:
+                      description: LastTransitionTime is the last time the condition
+                        changed from one status to another.
+                      format: date-time
+                      type: string
+                    lastUpdateTime:
+                      description: The last time this condition was updated.
+                      format: date-time
+                      type: string
+                    message:
+                      description: Message is a human-readable message indicating
+                        details about the last status change.
+                      type: string
+                    reason:
+                      description: Reason is a (brief) reason for the condition's
+                        last status change.
+                      type: string
+                    status:
+                      description: Status is the status of the condition. One of True,
+                        False, Unknown.
+                      type: string
+                    type:
+                      description: Type is the type of the cluster condition.
+                      type: string
+                  type: object
+                type: array
+              currentVersion:
+                description: CurrentVersion indicates the current version
+                type: string
+              desiredVersion:
+                description: DesiredVersion indicates the desired version
+                type: string
+              phase:
+                description: Represents the running phase of the BackplaneConfig
+                type: string
             type: object
         type: object
     served: true

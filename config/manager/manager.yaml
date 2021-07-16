@@ -2,35 +2,35 @@ apiVersion: v1
 kind: Namespace
 metadata:
   labels:
-    control-plane: controller-manager
+    control-plane: backplane-operator
   name: system
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: controller-manager
+  name: backplane-operator
   namespace: system
   labels:
-    control-plane: controller-manager
+    control-plane: backplane-operator
 spec:
   selector:
     matchLabels:
-      control-plane: controller-manager
+      control-plane: backplane-operator
   replicas: 1
   template:
     metadata:
       labels:
-        control-plane: controller-manager
+        control-plane: backplane-operator
     spec:
       securityContext:
         runAsNonRoot: true
       containers:
       - command:
-        - /manager
+        - /backplane-operator
         args:
         - --leader-elect
         image: controller:latest
-        name: manager
+        name: backplane-operator
         securityContext:
           allowPrivilegeEscalation: false
         livenessProbe:
@@ -48,9 +48,9 @@ spec:
         resources:
           limits:
             cpu: 100m
-            memory: 30Mi
+            memory: 2Gi
           requests:
             cpu: 100m
-            memory: 20Mi
-      serviceAccountName: controller-manager
+            memory: 256Mi
+      serviceAccountName: backplane-operator
       terminationGracePeriodSeconds: 10

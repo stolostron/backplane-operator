@@ -1,4 +1,4 @@
-# Build the manager binary
+# Build the backplane-operator binary
 FROM golang:1.16 as builder
 
 WORKDIR /workspace
@@ -13,15 +13,18 @@ RUN go mod download
 COPY main.go main.go
 COPY api/ api/
 COPY controllers/ controllers/
+COPY pkg/ pkg/
 
+COPY bin/ bin/
 # Build
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o manager main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o backplane-operator main.go
 
-# Use distroless as minimal base image to package the manager binary
-# Refer to https://github.com/GoogleContainerTools/distroless for more details
-FROM gcr.io/distroless/static:nonroot
+# Use ubi minimal base image to package the backplane-operator binary
+FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 WORKDIR /
-COPY --from=builder /workspace/manager .
+
+COPY --from=builder workspace/bin/ bin/
+COPY --from=builder workspace/backplane-operator .
 USER 65532:65532
 
-ENTRYPOINT ["/manager"]
+ENTRYPOINT ["/backplane-operator"]

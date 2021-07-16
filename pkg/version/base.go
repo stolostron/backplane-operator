@@ -14,4 +14,6 @@ var (
 	gitTreeState = "unknown"
 	// Build date in ISO8601 format, output of $(date -u +'%Y-%m-%dT%H:%M:%SZ')
 	buildDate = "unknown"
+
+	version = "1.0.0"
 )

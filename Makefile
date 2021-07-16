@@ -36,7 +36,8 @@ IMAGE_TAG_BASE ?= open-cluster-management.io/backplane-operator
 BUNDLE_IMG ?= $(IMAGE_TAG_BASE)-bundle:v$(VERSION)
 
 # Image URL to use all building/pushing image targets
-IMG ?= controller:latest
+REGISTRY ?= quay.io/open-cluster-management
+IMG ?= $(REGISTRY)/backplane-operator:latest
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
 
@@ -90,7 +91,7 @@ help: ## Display this help.
 ##@ Development
 
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
-	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=backplane-operator-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
@@ -110,12 +111,14 @@ test: manifests generate fmt vet ## Run tests.
 ##@ Build
 
 build: generate fmt vet ## Build manager binary.
-	go build -o bin/manager main.go
+	go build -o bin/backplane-operator main.go
 
 run: manifests generate fmt vet ## Run a controller from your host.
+	curl -o helm3.tar.gz -Ls https://get.helm.sh/helm-v3.6.3-darwin-amd64.tar.gz && tar -xzvf helm3.tar.gz && mv darwin-amd64/helm bin/helm
 	go run ./main.go
 
 docker-build: test ## Build docker image with the manager.
+	curl -o helm3.tar.gz -Ls https://get.helm.sh/helm-v3.6.3-linux-amd64.tar.gz && tar -xzvf helm3.tar.gz && mv linux-amd64/helm bin/helm
 	docker build -t ${IMG} .
 
 docker-push: ## Push docker image with the manager.
@@ -214,3 +217,6 @@ catalog-build: opm ## Build a catalog image.
 .PHONY: catalog-push
 catalog-push: ## Push a catalog image.
 	$(MAKE) docker-push IMG=$(CATALOG_IMG)
+
+
+-include Makefile.dev

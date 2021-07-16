@@ -1,0 +1,16 @@
+- repo_name: "community-operators"
+  github_ref: "https://github.com/operator-framework/community-operators.git"
+  operators:
+    - name: "hive-operator"
+      channel: "ocm-2.3"
+      package-yml: "community-operators/hive-operator/hive.package.yaml"
+      imageMappings:
+        hive: openshift_hive
+- repo_name: registration-operator
+  github_ref: "https://github.com/open-cluster-management/registration-operator.git"
+  branch: "release-2.3"
+  operators:
+    - name: cluster-manager
+      bundlePath: "deploy/cluster-manager/olm-catalog/cluster-manager/manifests/"
+      imageMappings:
+        registration-operator: registration_operator

@@ -14,6 +14,7 @@ type Info struct {
 	GoVersion    string `json:"goVersion"`
 	Compiler     string `json:"compiler"`
 	Platform     string `json:"platform"`
+	Version      string `json:"version"`
 }
 
 // Get returns the overall codebase version. It's for detecting
@@ -29,5 +30,6 @@ func Get() Info {
 		GoVersion:    runtime.Version(),
 		Compiler:     runtime.Compiler,
 		Platform:     fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH),
+		Version:      version,
 	}
 }

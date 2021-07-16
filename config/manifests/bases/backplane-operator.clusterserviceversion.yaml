@@ -11,7 +11,7 @@ spec:
   customresourcedefinitions:
     owned:
     - description: BackplaneConfig is the Schema for the backplaneconfigs API
-      displayName: Backplane Config
+      displayName: BackplaneConfig
       kind: BackplaneConfig
       name: backplaneconfigs.backplane.open-cluster-management.io
       version: v1alpha1

@@ -1,0 +1,6 @@
+
+
+get-bundles:
+	rm -rf bin/charts
+	rm -rf bin/crds
+	python ./hack/generate-bundles/generate-bundles.py --destination bin/

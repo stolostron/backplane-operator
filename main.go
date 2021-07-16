@@ -23,7 +23,6 @@ import (
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
-	"github.com/open-cluster-management/backplane-operator/pkg/version"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -35,6 +34,7 @@ import (
 
 	backplanev1alpha1 "github.com/open-cluster-management/backplane-operator/api/v1alpha1"
 	"github.com/open-cluster-management/backplane-operator/controllers"
+	"github.com/open-cluster-management/backplane-operator/pkg/version"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -56,7 +56,7 @@ func main() {
 	var probeAddr string
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
-	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
+	flag.BoolVar(&enableLeaderElection, "leader-elect", true,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
 	opts := zap.Options{
@@ -70,12 +70,13 @@ func main() {
 	ctrl.Log.WithName("Backplane Operator version").Info(fmt.Sprintf("%#v", version.Get()))
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:                 scheme,
-		MetricsBindAddress:     metricsAddr,
-		Port:                   9443,
-		HealthProbeBindAddress: probeAddr,
-		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "797f9276.open-cluster-management.io",
+		Scheme:                  scheme,
+		MetricsBindAddress:      metricsAddr,
+		Port:                    9443,
+		HealthProbeBindAddress:  probeAddr,
+		LeaderElection:          enableLeaderElection,
+		LeaderElectionID:        "797f9276.open-cluster-management.io",
+		LeaderElectionNamespace: "backplane-operator-system",
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
