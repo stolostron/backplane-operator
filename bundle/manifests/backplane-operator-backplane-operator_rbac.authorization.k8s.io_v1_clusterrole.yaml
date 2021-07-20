@@ -1,0 +1,32 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: backplane-operator-backplane-operator
+rules:
+- apiGroups:
+  - backplane.open-cluster-management.io
+  resources:
+  - backplaneconfigs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - backplane.open-cluster-management.io
+  resources:
+  - backplaneconfigs/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - backplane.open-cluster-management.io
+  resources:
+  - backplaneconfigs/status
+  verbs:
+  - get
+  - patch
+  - update

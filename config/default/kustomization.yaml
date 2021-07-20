@@ -6,7 +6,7 @@ namespace: backplane-operator-system
 # "wordpress" becomes "alices-wordpress".
 # Note that it should also match with the prefix (text before '-') of the namespace
 # field above.
-namePrefix: backplane-operator-
+# namePrefix: backplane-operator-
 
 # Labels to add to all resources and selectors.
 #commonLabels:

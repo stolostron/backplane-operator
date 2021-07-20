@@ -1,0 +1,6 @@
+
+
+.PHONY: subscriptions
+
+subscriptions:
+	oc apply -k hack/subscriptions
