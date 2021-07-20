@@ -28,7 +28,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/open-cluster-management/backplane-operator/api/v1alpha1"
 	backplanev1alpha1 "github.com/open-cluster-management/backplane-operator/api/v1alpha1"
 	"github.com/open-cluster-management/backplane-operator/pkg/foundation"
 	"github.com/open-cluster-management/backplane-operator/pkg/hive"
@@ -121,7 +120,7 @@ func (r *BackplaneConfigReconciler) applyCustomResources(backplaneConfig *backpl
 	return ctrl.Result{}, nil
 }
 
-func (r *BackplaneConfigReconciler) ensureUnstructuredResource(m *v1alpha1.BackplaneConfig, u *unstructured.Unstructured) (ctrl.Result, error) {
+func (r *BackplaneConfigReconciler) ensureUnstructuredResource(m *backplanev1alpha1.BackplaneConfig, u *unstructured.Unstructured) (ctrl.Result, error) {
 	log := log.FromContext(context.Background())
 
 	found := &unstructured.Unstructured{}
