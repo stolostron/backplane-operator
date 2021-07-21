@@ -169,10 +169,19 @@ spec:
           - patch
           - update
         - apiGroups:
+          - hive.openshift.io
+          resources:
+          - hiveconfigs
+          verbs:
+          - create
+          - get
+          - update
+        - apiGroups:
           - operator.open-cluster-management.io
           resources:
           - clustermanagers
           verbs:
+          - create
           - delete
           - get
           - list
