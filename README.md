@@ -8,7 +8,7 @@ Operator for managing installation of Backplane components
 
 - Go v1.16+
 - kubectl 1.19+
-- Operator-sdk v1.9.0+
+- Operator-sdk v1.10.0+
 - Docker
 - Connection to an existing Kubernetes cluster
 
