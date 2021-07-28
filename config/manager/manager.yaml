@@ -8,37 +8,33 @@ metadata:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: backplane-operator
-  namespace: system
   labels:
     control-plane: backplane-operator
+  name: backplane-operator
+  namespace: system
 spec:
+  replicas: 1
   selector:
     matchLabels:
       control-plane: backplane-operator
-  replicas: 1
   template:
     metadata:
       labels:
         control-plane: backplane-operator
     spec:
-      securityContext:
-        runAsNonRoot: true
       containers:
-      - command:
-        - /backplane-operator
-        args:
+      - args:
         - --leader-elect
+        command:
+        - /backplane-operator
         image: controller:latest
-        name: backplane-operator
-        securityContext:
-          allowPrivilegeEscalation: false
         livenessProbe:
           httpGet:
             path: /healthz
             port: 8081
           initialDelaySeconds: 15
           periodSeconds: 20
+        name: backplane-operator
         readinessProbe:
           httpGet:
             path: /readyz
@@ -52,5 +48,9 @@ spec:
           requests:
             cpu: 100m
             memory: 20Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+      securityContext:
+        runAsNonRoot: true
       serviceAccountName: backplane-operator
       terminationGracePeriodSeconds: 10

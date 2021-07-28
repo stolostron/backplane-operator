@@ -19,6 +19,7 @@ limitations under the License.
 package controllers
 
 import (
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -27,15 +28,15 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	backplanev1alpha1 "github.com/open-cluster-management/backplane-operator/api/v1alpha1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
+	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/controller-runtime/pkg/envtest/printer"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-
-	backplanev1alpha1 "github.com/open-cluster-management/backplane-operator/api/v1alpha1"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -76,6 +77,11 @@ var _ = BeforeSuite(func() {
 	err = clientgoscheme.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
+	err = apiregistrationv1.AddToScheme(scheme.Scheme)
+	Expect(err).NotTo(HaveOccurred())
+
+	err = os.Setenv("OPERAND_IMAGE_MULTICLOUD_MANAGER", "quay.io/test/test:test")
+	Expect(err).NotTo(HaveOccurred())
 	//+kubebuilder:scaffold:scheme
 
 	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
@@ -102,6 +108,8 @@ var _ = BeforeSuite(func() {
 
 var _ = AfterSuite(func() {
 	By("tearing down the test environment")
-	err := testEnv.Stop()
+	err := os.Unsetenv("OPERAND_IMAGE_TEST_IMAGE")
+	Expect(err).NotTo(HaveOccurred())
+	err = testEnv.Stop()
 	Expect(err).NotTo(HaveOccurred())
 })

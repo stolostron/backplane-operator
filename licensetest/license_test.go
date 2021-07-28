@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 	"testing"
 )
 
@@ -28,6 +29,9 @@ func TestLicense(t *testing.T) {
 				return filepath.SkipDir
 			}
 			return nil
+		}
+		if strings.Contains(path, "testbin") {
+			return filepath.SkipDir
 		}
 
 		if err != nil {

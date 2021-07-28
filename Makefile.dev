@@ -4,3 +4,8 @@
 
 subscriptions:
 	oc apply -k hack/subscriptions
+
+add-images-local:
+	python3 ./hack/scripts/dev-update-image-references.py --local
+add-images:
+	python3 ./hack/scripts/dev-update-image-references.py

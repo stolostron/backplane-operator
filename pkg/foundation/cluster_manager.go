@@ -38,18 +38,18 @@ func ClusterManager(m *v1alpha1.BackplaneConfig, overrides map[string]string) *u
 	return cm
 }
 
-// ValidateClusterManager returns true if an update is needed to reconcile differences with the current spec. If an update
+// ValidateSpec returns true if an update is needed to reconcile differences with the current spec. If an update
 // is needed it returns the object with the new spec to update with.
-func ValidateClusterManager(found *unstructured.Unstructured, want *unstructured.Unstructured) (*unstructured.Unstructured, bool) {
+func ValidateSpec(found *unstructured.Unstructured, want *unstructured.Unstructured) (*unstructured.Unstructured, bool) {
 	var log = logf.Log.WithValues("Namespace", found.GetNamespace(), "Name", found.GetName(), "Kind", found.GetKind())
 
 	desired, err := yaml.Marshal(want.Object["spec"])
 	if err != nil {
-		log.Error(err, "issue parsing desired cluster manager values")
+		log.Error(err, "issue parsing desired object values")
 	}
 	current, err := yaml.Marshal(found.Object["spec"])
 	if err != nil {
-		log.Error(err, "issue parsing current cluster manager values")
+		log.Error(err, "issue parsing current object values")
 	}
 
 	if res := bytes.Compare(desired, current); res != 0 {

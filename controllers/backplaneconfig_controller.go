@@ -20,12 +20,20 @@ package controllers
 
 import (
 	"context"
+	e "errors"
+	"fmt"
 	"time"
 
+	corev1 "k8s.io/api/core/v1"
+
+	appsv1 "k8s.io/api/apps/v1"
+
+	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -33,12 +41,18 @@ import (
 	backplanev1alpha1 "github.com/open-cluster-management/backplane-operator/api/v1alpha1"
 	"github.com/open-cluster-management/backplane-operator/pkg/foundation"
 	"github.com/open-cluster-management/backplane-operator/pkg/hive"
+	renderer "github.com/open-cluster-management/backplane-operator/pkg/rendering"
+	"github.com/open-cluster-management/backplane-operator/pkg/templates"
+	"github.com/open-cluster-management/backplane-operator/pkg/utils"
+
+	"github.com/openshift/library-go/pkg/operator/resource/resourcemerge"
 )
 
 // BackplaneConfigReconciler reconciles a BackplaneConfig object
 type BackplaneConfigReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
+	Images map[string]string
 }
 
 const (
@@ -91,12 +105,38 @@ func (r *BackplaneConfigReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, nil
 	}
 
-	result, err := r.applyCustomResources(backplaneConfig)
+	// Read image overrides from environmental variables
+	r.Images = utils.GetImageOverrides()
+	if len(r.Images) == 0 {
+		// If imageoverrides are not set from environmental variables, fail
+		return ctrl.Result{RequeueAfter: requeuePeriod}, e.New("no image references exist. images must be defined as environment variables")
+	}
+
+	// Render CRD templates
+	crds, errs := renderer.RenderCRDs()
+	if len(errs) > 0 {
+		for _, err := range errs {
+			log.Info(err.Error())
+		}
+		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+	}
+
+	for _, crd := range crds {
+		result, err := r.ensureUnstructuredResource(backplaneConfig, crd)
+		if err != nil {
+			return result, err
+		}
+	}
+
+	result, err := r.ensureServerFoundation(backplaneConfig)
 	if err != nil {
 		return result, err
 	}
 
-	// your logic here
+	result, err = r.ensureCustomResources(backplaneConfig)
+	if err != nil {
+		return result, err
+	}
 
 	return ctrl.Result{}, nil
 }
@@ -108,12 +148,73 @@ func (r *BackplaneConfigReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func (r *BackplaneConfigReconciler) applyCustomResources(backplaneConfig *backplanev1alpha1.BackplaneConfig) (ctrl.Result, error) {
+func (r *BackplaneConfigReconciler) ensureServerFoundation(backplaneConfig *backplanev1alpha1.BackplaneConfig) (ctrl.Result, error) {
 	_ = log.FromContext(context.Background())
 
-	// TODO: Get proper images
-	imagesDictionary := make(map[string]string)
-	result, err := r.ensureUnstructuredResource(backplaneConfig, foundation.ClusterManager(backplaneConfig, imagesDictionary))
+	templates, err := templates.GetTemplates(backplaneConfig)
+	if err != nil {
+		return ctrl.Result{RequeueAfter: requeuePeriod}, err
+	}
+	for _, template := range templates {
+		result, err := r.ensureUnstructuredResource(backplaneConfig, template)
+		if err != nil {
+			return result, err
+		}
+	}
+
+	result, err := r.ensureDeployment(backplaneConfig, foundation.WebhookDeployment(backplaneConfig, r.Images))
+	if result != (ctrl.Result{}) {
+		return result, err
+	}
+
+	result, err = r.ensureService(backplaneConfig, foundation.WebhookService(backplaneConfig))
+	if result != (ctrl.Result{}) {
+		return result, err
+	}
+
+	//OCM proxy server deployment
+	result, err = r.ensureDeployment(backplaneConfig, foundation.OCMProxyServerDeployment(backplaneConfig, r.Images))
+	if result != (ctrl.Result{}) {
+		return result, err
+	}
+
+	//OCM proxy server service
+	result, err = r.ensureService(backplaneConfig, foundation.OCMProxyServerService(backplaneConfig))
+	if result != (ctrl.Result{}) {
+		return result, err
+	}
+
+	// OCM proxy apiService
+	result, err = r.ensureAPIService(backplaneConfig, foundation.OCMProxyAPIService(backplaneConfig))
+	if result != (ctrl.Result{}) {
+		return result, err
+	}
+
+	// OCM clusterView v1 apiService
+	result, err = r.ensureAPIService(backplaneConfig, foundation.OCMClusterViewV1APIService(backplaneConfig))
+	if result != (ctrl.Result{}) {
+		return result, err
+	}
+
+	// OCM clusterView v1alpha1 apiService
+	result, err = r.ensureAPIService(backplaneConfig, foundation.OCMClusterViewV1alpha1APIService(backplaneConfig))
+	if result != (ctrl.Result{}) {
+		return result, err
+	}
+
+	//OCM controller deployment
+	result, err = r.ensureDeployment(backplaneConfig, foundation.OCMControllerDeployment(backplaneConfig, r.Images))
+	if result != (ctrl.Result{}) {
+		return result, err
+	}
+
+	return ctrl.Result{}, nil
+}
+
+func (r *BackplaneConfigReconciler) ensureCustomResources(backplaneConfig *backplanev1alpha1.BackplaneConfig) (ctrl.Result, error) {
+	_ = log.FromContext(context.Background())
+
+	result, err := r.ensureUnstructuredResource(backplaneConfig, foundation.ClusterManager(backplaneConfig, r.Images))
 	if err != nil {
 		return result, err
 	}
@@ -121,6 +222,175 @@ func (r *BackplaneConfigReconciler) applyCustomResources(backplaneConfig *backpl
 	result, err = r.ensureUnstructuredResource(backplaneConfig, hive.HiveConfig(backplaneConfig))
 	if err != nil {
 		return result, err
+	}
+	return ctrl.Result{}, nil
+}
+
+func (r *BackplaneConfigReconciler) ensureDeployment(bpc *backplanev1alpha1.BackplaneConfig, dep *appsv1.Deployment) (ctrl.Result, error) {
+	log := log.FromContext(context.Background())
+
+	// if utils.ProxyEnvVarsAreSet() {
+	// 	dep = addProxyEnvVarsToDeployment(dep)
+	// }
+
+	// See if deployment already exists and create if it doesn't
+	found := &appsv1.Deployment{}
+	err := r.Client.Get(context.TODO(), types.NamespacedName{
+		Name:      dep.Name,
+		Namespace: bpc.Namespace,
+	}, found)
+	if err != nil && errors.IsNotFound(err) {
+
+		// Create the deployment
+		err = r.Client.Create(context.TODO(), dep)
+		if err != nil {
+			// Deployment failed
+			log.Error(err, "Failed to create new Deployment")
+			return ctrl.Result{RequeueAfter: requeuePeriod}, err
+		}
+
+		// Deployment was successful
+		log.Info("Created a new Deployment")
+		// condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
+		// SetHubCondition(&m.Status, *condition)
+		return ctrl.Result{}, nil
+
+	} else if err != nil {
+		// Error that isn't due to the deployment not existing
+		log.Error(err, "Failed to get Deployment")
+		return ctrl.Result{RequeueAfter: requeuePeriod}, err
+	}
+
+	// Validate object based on name
+	var desired *appsv1.Deployment
+	var needsUpdate bool
+
+	switch found.Name {
+	// case helmrepo.HelmRepoName:
+	// 	desired, needsUpdate = helmrepo.ValidateDeployment(m, r.CacheSpec.ImageOverrides, dep, found)
+	case foundation.OCMControllerName, foundation.OCMProxyServerName, foundation.WebhookName:
+		desired, needsUpdate = foundation.ValidateDeployment(bpc, r.Images, dep, found)
+	default:
+		log.Info("Could not validate deployment; unknown name")
+		return ctrl.Result{}, nil
+	}
+
+	if needsUpdate {
+		err = r.Client.Update(context.TODO(), desired)
+		if err != nil {
+			log.Error(err, "Failed to update Deployment.")
+			return ctrl.Result{}, err
+		}
+		// Spec updated - return
+		return ctrl.Result{}, nil
+	}
+	return ctrl.Result{}, nil
+}
+
+func (r *BackplaneConfigReconciler) ensureService(m *backplanev1alpha1.BackplaneConfig, s *corev1.Service) (ctrl.Result, error) {
+	log := log.FromContext(context.Background())
+
+	found := &corev1.Service{}
+	err := r.Client.Get(context.TODO(), types.NamespacedName{
+		Name:      s.Name,
+		Namespace: m.Namespace,
+	}, found)
+	if err != nil && errors.IsNotFound(err) {
+
+		// Create the service
+		err = r.Client.Create(context.TODO(), s)
+
+		if err != nil {
+			// Creation failed
+			log.Error(err, "Failed to create new Service")
+			return ctrl.Result{}, err
+		}
+
+		// Creation was successful
+		log.Info("Created a new Service")
+		// condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
+		// SetHubCondition(&m.Status, *condition)
+		return ctrl.Result{}, nil
+
+	} else if err != nil {
+		// Error that isn't due to the service not existing
+		log.Error(err, "Failed to get Service")
+		return ctrl.Result{}, err
+	}
+
+	modified := resourcemerge.BoolPtr(false)
+	existingCopy := found.DeepCopy()
+	resourcemerge.EnsureObjectMeta(modified, &existingCopy.ObjectMeta, s.ObjectMeta)
+	selectorSame := equality.Semantic.DeepEqual(existingCopy.Spec.Selector, s.Spec.Selector)
+
+	typeSame := false
+	requiredIsEmpty := len(s.Spec.Type) == 0
+	existingCopyIsCluster := existingCopy.Spec.Type == corev1.ServiceTypeClusterIP
+	if (requiredIsEmpty && existingCopyIsCluster) || equality.Semantic.DeepEqual(existingCopy.Spec.Type, s.Spec.Type) {
+		typeSame = true
+	}
+
+	if selectorSame && typeSame && !*modified {
+		return ctrl.Result{}, nil
+	}
+
+	existingCopy.Spec.Selector = s.Spec.Selector
+	existingCopy.Spec.Type = s.Spec.Type
+	err = r.Client.Update(context.TODO(), existingCopy)
+	if err != nil {
+		log.Error(err, "Failed to update Service")
+		return ctrl.Result{}, err
+	}
+	return ctrl.Result{}, nil
+}
+
+func (r *BackplaneConfigReconciler) ensureAPIService(m *backplanev1alpha1.BackplaneConfig, s *apiregistrationv1.APIService) (ctrl.Result, error) {
+	log := log.FromContext(context.Background())
+
+	found := &apiregistrationv1.APIService{}
+	err := r.Client.Get(context.TODO(), types.NamespacedName{
+		Name: s.Name,
+	}, found)
+	if err != nil && errors.IsNotFound(err) {
+
+		// Create the apiService
+		err = r.Client.Create(context.TODO(), s)
+
+		if err != nil {
+			// Creation failed
+			log.Error(err, "Failed to create new apiService")
+			return ctrl.Result{}, err
+		}
+
+		// Creation was successful
+		log.Info("Created a new apiService")
+		// condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
+		// SetHubCondition(&m.Status, *condition)
+		return ctrl.Result{}, nil
+
+	} else if err != nil {
+		// Error that isn't due to the apiService not existing
+		log.Error(err, "Failed to get apiService")
+		return ctrl.Result{}, err
+	}
+
+	modified := resourcemerge.BoolPtr(false)
+	existingCopy := found.DeepCopy()
+
+	resourcemerge.EnsureObjectMeta(modified, &existingCopy.ObjectMeta, s.ObjectMeta)
+	serviceSame := equality.Semantic.DeepEqual(existingCopy.Spec.Service, s.Spec.Service)
+	prioritySame := existingCopy.Spec.VersionPriority == s.Spec.VersionPriority && existingCopy.Spec.GroupPriorityMinimum == s.Spec.GroupPriorityMinimum
+	insecureSame := existingCopy.Spec.InsecureSkipTLSVerify == s.Spec.InsecureSkipTLSVerify
+
+	if !*modified && serviceSame && prioritySame && insecureSame {
+		return ctrl.Result{}, nil
+	}
+
+	existingCopy.Spec = s.Spec
+	err = r.Client.Update(context.TODO(), existingCopy)
+	if err != nil {
+		log.Error(err, "Failed to update apiService")
+		return ctrl.Result{}, err
 	}
 	return ctrl.Result{}, nil
 }
@@ -145,7 +415,7 @@ func (r *BackplaneConfigReconciler) ensureUnstructuredResource(m *backplanev1alp
 			return ctrl.Result{}, err
 		}
 		// Creation was successful
-		log.Info("Created new resource")
+		log.Info(fmt.Sprintf("Created new resource - kind: %s name: %s", u.GetKind(), u.GetName()))
 		// condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
 		// SetHubCondition(&m.Status, *condition)
 		return ctrl.Result{}, nil
@@ -162,9 +432,9 @@ func (r *BackplaneConfigReconciler) ensureUnstructuredResource(m *backplanev1alp
 
 	switch found.GetKind() {
 	case "ClusterManager":
-		desired, needsUpdate = foundation.ValidateClusterManager(found, u)
+		desired, needsUpdate = foundation.ValidateSpec(found, u)
 	default:
-		log.Info("Could not validate unstrucuted resource with type.", "Type", found.GetKind())
+		log.Info("Could not validate unstructured resource. Skipping update.", "Type", found.GetKind())
 		return ctrl.Result{}, nil
 	}
 
