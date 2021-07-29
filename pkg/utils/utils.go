@@ -6,9 +6,9 @@ import (
 	"encoding/json"
 	"os"
 
+	"github.com/open-cluster-management/backplane-operator/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -90,13 +90,18 @@ func DistributePods(key string, value string) *corev1.Affinity {
 	}
 }
 
-// //GetImagePullPolicy returns either pull policy from CR overrides or default of Always
-// func GetImagePullPolicy(m *v1alpha1.BackplaneConfig) v1.PullPolicy {
-// 	if m.Spec.Overrides == nil || m.Spec.Overrides.ImagePullPolicy == "" {
-// 		return corev1.PullAlways
-// 	}
-// 	return m.Spec.Overrides.ImagePullPolicy
-// }
+func GetReplicaCount() int32 {
+	return 1
+}
+
+//GetImagePullPolicy returns either pull policy from CR overrides or default of Always
+func GetImagePullPolicy(m *v1alpha1.BackplaneConfig) corev1.PullPolicy {
+	// if m.Spec.Overrides == nil || m.Spec.Overrides.ImagePullPolicy == "" {
+	// 	return corev1.PullAlways
+	// }
+	// return m.Spec.Overrides.ImagePullPolicy
+	return corev1.PullAlways
+}
 
 // GetContainerArgs return arguments forfirst container in deployment
 func GetContainerArgs(dep *appsv1.Deployment) []string {
@@ -104,7 +109,7 @@ func GetContainerArgs(dep *appsv1.Deployment) []string {
 }
 
 // GetContainerEnvVars returns environment variables for first container in deployment
-func GetContainerEnvVars(dep *appsv1.Deployment) []v1.EnvVar {
+func GetContainerEnvVars(dep *appsv1.Deployment) []corev1.EnvVar {
 	return dep.Spec.Template.Spec.Containers[0].Env
 }
 

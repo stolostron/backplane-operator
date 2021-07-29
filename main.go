@@ -37,6 +37,7 @@ import (
 
 	backplanev1alpha1 "github.com/open-cluster-management/backplane-operator/api/v1alpha1"
 	"github.com/open-cluster-management/backplane-operator/controllers"
+	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -49,6 +50,9 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(backplanev1alpha1.AddToScheme(scheme))
+
+	utilruntime.Must(apiregistrationv1.AddToScheme(scheme))
+
 	//+kubebuilder:scaffold:scheme
 }
 

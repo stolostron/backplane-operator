@@ -5,9 +5,12 @@
 *.dll
 *.so
 *.dylib
-bin
 testbin/*
 .DS_STORE
+
+bin/pipeline
+bin/controller-gen
+bin/kustomize
 
 # Test binary, build with `go test -c`
 *.test

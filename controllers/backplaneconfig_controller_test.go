@@ -20,16 +20,18 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"time"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/types"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/open-cluster-management/backplane-operator/api/v1alpha1"
+	appsv1 "k8s.io/api/apps/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
+	client "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var _ = Describe("BackplaneConfig controller", func() {
@@ -46,7 +48,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 	)
 
 	Context("When creating BackplaneConfig", func() {
-		It("Should create cluster-manager custom resource", func() {
+		It("Should deploy sub components", func() {
 			By("By creating a new BackplaneConfig")
 			ctx := context.Background()
 			backplaneConfig := &v1alpha1.BackplaneConfig{
@@ -62,28 +64,62 @@ var _ = Describe("BackplaneConfig controller", func() {
 			}
 			Expect(k8sClient.Create(ctx, backplaneConfig)).Should(Succeed())
 
-			backplaneConfigLookupKey := types.NamespacedName{Name: BackplaneConfigName, Namespace: BackplaneConfigNamespace}
-			createdBackplaneConfig := &v1alpha1.BackplaneConfig{}
-			Eventually(func() bool {
-				err := k8sClient.Get(ctx, backplaneConfigLookupKey, createdBackplaneConfig)
-				return err == nil
-			}, timeout, interval).Should(BeTrue())
-
-			clusterManagerLookupKey := types.NamespacedName{Name: "cluster-manager"}
 			clusterManager := &unstructured.Unstructured{}
 			clusterManager.SetGroupVersionKind(schema.GroupVersionKind{Group: "operator.open-cluster-management.io", Version: "v1", Kind: "ClusterManager"})
-			Eventually(func() bool {
-				err := k8sClient.Get(ctx, clusterManagerLookupKey, clusterManager)
-				return err == nil
-			}, timeout, interval).Should(BeTrue())
-
-			hiveConfigLookupKey := types.NamespacedName{Name: "hive"}
 			hiveConfig := &unstructured.Unstructured{}
 			hiveConfig.SetGroupVersionKind(schema.GroupVersionKind{Group: "hive.openshift.io", Version: "v1", Kind: "HiveConfig"})
-			Eventually(func() bool {
-				err := k8sClient.Get(ctx, hiveConfigLookupKey, hiveConfig)
-				return err == nil
-			}, timeout, interval).Should(BeTrue())
+
+			tests := []struct {
+				Name           string
+				NamespacedName types.NamespacedName
+				ResourceType   client.Object
+				Expected       error
+			}{
+				{
+					Name:           "Backplane Config",
+					NamespacedName: types.NamespacedName{Name: BackplaneConfigName, Namespace: BackplaneConfigNamespace},
+					ResourceType:   &v1alpha1.BackplaneConfig{},
+					Expected:       nil,
+				},
+				{
+					Name:           "OCM Webhook",
+					NamespacedName: types.NamespacedName{Name: "ocm-webhook", Namespace: BackplaneConfigNamespace},
+					ResourceType:   &appsv1.Deployment{},
+					Expected:       nil,
+				},
+				{
+					Name:           "OCM Controller",
+					NamespacedName: types.NamespacedName{Name: "ocm-controller", Namespace: BackplaneConfigNamespace},
+					ResourceType:   &appsv1.Deployment{},
+					Expected:       nil,
+				},
+				{
+					Name:           "OCM Proxy Server",
+					NamespacedName: types.NamespacedName{Name: "ocm-proxyserver", Namespace: BackplaneConfigNamespace},
+					ResourceType:   &appsv1.Deployment{},
+					Expected:       nil,
+				},
+				{
+					Name:           "Cluster Manager",
+					NamespacedName: types.NamespacedName{Name: "cluster-manager"},
+					ResourceType:   clusterManager,
+					Expected:       nil,
+				},
+				{
+					Name:           "Hive Config",
+					NamespacedName: types.NamespacedName{Name: "hive"},
+					ResourceType:   hiveConfig,
+					Expected:       nil,
+				},
+			}
+
+			for _, test := range tests {
+				By(fmt.Sprintf("Ensuring %s is created", test.Name))
+				Eventually(func() bool {
+					err := k8sClient.Get(ctx, test.NamespacedName, test.ResourceType)
+					return err == test.Expected
+				}, timeout, interval).Should(BeTrue())
+			}
 		})
 	})
 })

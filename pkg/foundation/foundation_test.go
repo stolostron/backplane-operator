@@ -1,0 +1,129 @@
+// Copyright (c) 2020 Red Hat, Inc.
+// Copyright Contributors to the Open Cluster Management project
+
+package foundation
+
+import (
+	"reflect"
+	"testing"
+
+	v1alpha1 "github.com/open-cluster-management/backplane-operator/api/v1alpha1"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+func TestValidateDeployment(t *testing.T) {
+	bpc := &v1alpha1.BackplaneConfig{
+		ObjectMeta: metav1.ObjectMeta{Namespace: "test"},
+		Spec:       v1alpha1.BackplaneConfigSpec{},
+	}
+	ovr := map[string]string{}
+
+	// 1. Valid bpc
+	dep := OCMControllerDeployment(bpc, ovr)
+
+	// // 2. Modified ImagePullSecret
+	// dep1 := dep.DeepCopy()
+	// dep1.Spec.Template.Spec.ImagePullSecrets = nil
+
+	// 3. Modified image
+	dep2 := dep.DeepCopy()
+	dep2.Spec.Template.Spec.Containers[0].Image = "differentImage"
+
+	// // 4. Modified pullPolicy
+	// dep3 := dep.DeepCopy()
+	// dep3.Spec.Template.Spec.Containers[0].ImagePullPolicy = corev1.PullNever
+
+	// // 5. Modified NodeSelector
+	// dep4 := dep.DeepCopy()
+	// dep4.Spec.Template.Spec.NodeSelector = nil
+
+	// 6. Modified replica count
+	// dep5 := dep.DeepCopy()
+	// dep5.Spec.Replicas = new(int32)
+
+	// 7. Modified Tolerations
+	dep6 := dep.DeepCopy()
+	dep6.Spec.Template.Spec.Tolerations = nil
+
+	// 8. Modified volumes
+	dep7 := dep.DeepCopy()
+	dep7.Spec.Template.Spec.Volumes = []corev1.Volume{
+		{Name: "webhook-cert",
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{SecretName: "abc"},
+			},
+		},
+	}
+	type args struct {
+		m   *v1alpha1.BackplaneConfig
+		dep *appsv1.Deployment
+	}
+	tests := []struct {
+		name  string
+		args  args
+		want  *appsv1.Deployment
+		want1 bool
+	}{
+		{
+			name:  "Valid Deployment",
+			args:  args{bpc, dep},
+			want:  dep,
+			want1: false,
+		},
+		// {
+		// 	name:  "Modified ImagePullSecret",
+		// 	args:  args{bpc, dep1},
+		// 	want:  dep,
+		// 	want1: true,
+		// },
+		{
+			name:  "Modified Image",
+			args:  args{bpc, dep2},
+			want:  dep,
+			want1: true,
+		},
+		// {
+		// 	name:  "Modified PullPolicy",
+		// 	args:  args{bpc, dep3},
+		// 	want:  dep,
+		// 	want1: true,
+		// },
+		// {
+		// 	name:  "Modified NodeSelector",
+		// 	args:  args{bpc, dep4},
+		// 	want:  dep,
+		// 	want1: true,
+		// },
+		// {
+		// 	name:  "Modified number of replicas",
+		// 	args:  args{bpc, dep5},
+		// 	want:  dep,
+		// 	want1: true,
+		// },
+		{
+			name:  "Modified Tolerations",
+			args:  args{bpc, dep6},
+			want:  dep,
+			want1: true,
+		},
+		{
+			name:  "Modified volumes",
+			args:  args{bpc, dep7},
+			want:  dep,
+			want1: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, got1 := ValidateDeployment(tt.args.m, ovr, dep, tt.args.dep)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("ValidateDeployment() got = %v, want %v", got, tt.want)
+			}
+			if got1 != tt.want1 {
+				t.Errorf("ValidateDeployment() got1 = %v, want %v", got1, tt.want1)
+			}
+		})
+	}
+}
