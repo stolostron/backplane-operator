@@ -2,10 +2,13 @@
 
 .PHONY: subscriptions
 
-subscriptions:
+##@ Dev. targets
+
+subscriptions: ## Applies upstream community subscriptions (Hive, Cluster-manager)
 	oc apply -k hack/subscriptions
 
-add-images-local:
-	python3 ./hack/scripts/dev-update-image-references.py --local
-add-images:
+add-images: ## Retrieves latest manifest and injects image definitions directly into the deployment template
 	python3 ./hack/scripts/dev-update-image-references.py
+
+add-images-local:  ## Generates a local image manifest. Source this file to define necessary environment variables to run the operator locally
+	python3 ./hack/scripts/dev-update-image-references.py --local
