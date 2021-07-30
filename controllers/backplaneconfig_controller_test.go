@@ -27,6 +27,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/open-cluster-management/backplane-operator/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -47,6 +48,55 @@ var _ = Describe("BackplaneConfig controller", func() {
 		interval = time.Millisecond * 250
 	)
 
+	clusterManager := &unstructured.Unstructured{}
+	clusterManager.SetGroupVersionKind(schema.GroupVersionKind{Group: "operator.open-cluster-management.io", Version: "v1", Kind: "ClusterManager"})
+	hiveConfig := &unstructured.Unstructured{}
+	hiveConfig.SetGroupVersionKind(schema.GroupVersionKind{Group: "hive.openshift.io", Version: "v1", Kind: "HiveConfig"})
+
+	tests := []struct {
+		Name           string
+		NamespacedName types.NamespacedName
+		ResourceType   client.Object
+		Expected       error
+	}{
+		{
+			Name:           "Backplane Config",
+			NamespacedName: types.NamespacedName{Name: BackplaneConfigName, Namespace: BackplaneConfigNamespace},
+			ResourceType:   &v1alpha1.BackplaneConfig{},
+			Expected:       nil,
+		},
+		{
+			Name:           "OCM Webhook",
+			NamespacedName: types.NamespacedName{Name: "ocm-webhook", Namespace: BackplaneConfigNamespace},
+			ResourceType:   &appsv1.Deployment{},
+			Expected:       nil,
+		},
+		{
+			Name:           "OCM Controller",
+			NamespacedName: types.NamespacedName{Name: "ocm-controller", Namespace: BackplaneConfigNamespace},
+			ResourceType:   &appsv1.Deployment{},
+			Expected:       nil,
+		},
+		{
+			Name:           "OCM Proxy Server",
+			NamespacedName: types.NamespacedName{Name: "ocm-proxyserver", Namespace: BackplaneConfigNamespace},
+			ResourceType:   &appsv1.Deployment{},
+			Expected:       nil,
+		},
+		{
+			Name:           "Cluster Manager",
+			NamespacedName: types.NamespacedName{Name: "cluster-manager"},
+			ResourceType:   clusterManager,
+			Expected:       nil,
+		},
+		{
+			Name:           "Hive Config",
+			NamespacedName: types.NamespacedName{Name: "hive"},
+			ResourceType:   hiveConfig,
+			Expected:       nil,
+		},
+	}
+
 	Context("When creating BackplaneConfig", func() {
 		It("Should deploy sub components", func() {
 			By("By creating a new BackplaneConfig")
@@ -63,55 +113,6 @@ var _ = Describe("BackplaneConfig controller", func() {
 				Spec: v1alpha1.BackplaneConfigSpec{},
 			}
 			Expect(k8sClient.Create(ctx, backplaneConfig)).Should(Succeed())
-
-			clusterManager := &unstructured.Unstructured{}
-			clusterManager.SetGroupVersionKind(schema.GroupVersionKind{Group: "operator.open-cluster-management.io", Version: "v1", Kind: "ClusterManager"})
-			hiveConfig := &unstructured.Unstructured{}
-			hiveConfig.SetGroupVersionKind(schema.GroupVersionKind{Group: "hive.openshift.io", Version: "v1", Kind: "HiveConfig"})
-
-			tests := []struct {
-				Name           string
-				NamespacedName types.NamespacedName
-				ResourceType   client.Object
-				Expected       error
-			}{
-				{
-					Name:           "Backplane Config",
-					NamespacedName: types.NamespacedName{Name: BackplaneConfigName, Namespace: BackplaneConfigNamespace},
-					ResourceType:   &v1alpha1.BackplaneConfig{},
-					Expected:       nil,
-				},
-				{
-					Name:           "OCM Webhook",
-					NamespacedName: types.NamespacedName{Name: "ocm-webhook", Namespace: BackplaneConfigNamespace},
-					ResourceType:   &appsv1.Deployment{},
-					Expected:       nil,
-				},
-				{
-					Name:           "OCM Controller",
-					NamespacedName: types.NamespacedName{Name: "ocm-controller", Namespace: BackplaneConfigNamespace},
-					ResourceType:   &appsv1.Deployment{},
-					Expected:       nil,
-				},
-				{
-					Name:           "OCM Proxy Server",
-					NamespacedName: types.NamespacedName{Name: "ocm-proxyserver", Namespace: BackplaneConfigNamespace},
-					ResourceType:   &appsv1.Deployment{},
-					Expected:       nil,
-				},
-				{
-					Name:           "Cluster Manager",
-					NamespacedName: types.NamespacedName{Name: "cluster-manager"},
-					ResourceType:   clusterManager,
-					Expected:       nil,
-				},
-				{
-					Name:           "Hive Config",
-					NamespacedName: types.NamespacedName{Name: "hive"},
-					ResourceType:   hiveConfig,
-					Expected:       nil,
-				},
-			}
 
 			for _, test := range tests {
 				By(fmt.Sprintf("Ensuring %s is created", test.Name))
@@ -130,6 +131,27 @@ var _ = Describe("BackplaneConfig controller", func() {
 			}, key)
 			Expect(err).To(BeNil())
 			Expect(key.Status.Phase).To(Equal(v1alpha1.BackplaneApplied))
+		})
+
+		It("Should finalize resources when BackplaneConfig is deleted", func() {
+			ctx := context.Background()
+			backplaneConfig := &v1alpha1.BackplaneConfig{}
+			backplaneConfigLookupKey := types.NamespacedName{Name: BackplaneConfigName, Namespace: BackplaneConfigNamespace}
+			err := k8sClient.Get(ctx, backplaneConfigLookupKey, backplaneConfig)
+			Expect(err).To(BeNil())
+			err = k8sClient.Delete(ctx, backplaneConfig, &client.DeleteOptions{})
+			Expect(err).To(BeNil())
+
+			for _, test := range tests {
+				By(fmt.Sprintf("Ensuring %s is removed", test.Name))
+				Eventually(func() bool {
+					err := k8sClient.Get(ctx, test.NamespacedName, test.ResourceType)
+					if err != nil && errors.IsNotFound(err) {
+						return true
+					}
+					return false
+				}, timeout, interval).Should(BeTrue())
+			}
 		})
 	})
 })

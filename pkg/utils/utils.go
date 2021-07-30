@@ -3,15 +3,20 @@
 package utils
 
 import (
+	"bytes"
+	"context"
 	"encoding/json"
 	"os"
 
 	"github.com/open-cluster-management/backplane-operator/api/v1alpha1"
+	"gopkg.in/yaml.v2"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 // ContainsMap returns whether the expected map entries are included in the map
@@ -26,14 +31,14 @@ func ContainsMap(all map[string]string, expected map[string]string) bool {
 	return true
 }
 
-// AddInstallerLabel adds Installer Labels ...
-func AddInstallerLabel(u *unstructured.Unstructured, name string, ns string) {
+// AddBackplaneConfigLabels adds BackplaneConfig Labels ...
+func AddBackplaneConfigLabels(u client.Object, name string, ns string) {
 	labels := make(map[string]string)
 	for key, value := range u.GetLabels() {
 		labels[key] = value
 	}
-	labels["installer.name"] = name
-	labels["installer.namespace"] = ns
+	labels["backplaneconfig.name"] = name
+	labels["backplaneconfig.namespace"] = ns
 
 	u.SetLabels(labels)
 }
@@ -134,4 +139,24 @@ func ProxyEnvVarsAreSet() bool {
 		return true
 	}
 	return false
+}
+
+func ValidateClusterRoleRules(found *unstructured.Unstructured, want *unstructured.Unstructured) (*unstructured.Unstructured, bool) {
+	log := log.FromContext(context.Background())
+	desired, err := yaml.Marshal(want.Object["rules"])
+	if err != nil {
+		log.Error(err, "issue parsing desired object values")
+	}
+	current, err := yaml.Marshal(found.Object["rules"])
+	if err != nil {
+		log.Error(err, "issue parsing current object values")
+	}
+
+	if res := bytes.Compare(desired, current); res != 0 {
+		// Return current object with adjusted spec, preserving metadata
+		log.V(1).Info("ClusterRole doesn't match spec", "Want", want.Object["rules"], "Have", found.Object["rules"])
+		found.Object["rules"] = want.Object["rules"]
+		return found, true
+	}
+	return nil, false
 }

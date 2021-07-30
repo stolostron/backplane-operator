@@ -21,7 +21,7 @@ func HiveConfig(bpc *v1alpha1.BackplaneConfig) *unstructured.Unstructured {
 		},
 	}
 
-	utils.AddInstallerLabel(cm, bpc.GetName(), bpc.GetNamespace())
+	utils.AddBackplaneConfigLabels(cm, bpc.GetName(), bpc.GetNamespace())
 
 	return cm
 }

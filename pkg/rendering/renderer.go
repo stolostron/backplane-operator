@@ -31,12 +31,10 @@ func RenderCRDs() ([]*unstructured.Unstructured, []error) {
 			fmt.Println(err.Error())
 			return err
 		}
-		fmt.Println(path)
 		crd := &unstructured.Unstructured{}
 		if info == nil || info.IsDir() {
 			return nil
 		}
-		fmt.Println()
 		bytesFile, e := ioutil.ReadFile(path)
 		if e != nil {
 			errs = append(errs, fmt.Errorf("%s - error reading file: %v", info.Name(), err.Error()))
