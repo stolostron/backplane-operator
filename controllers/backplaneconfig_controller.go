@@ -29,7 +29,10 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -75,7 +78,7 @@ const (
 //+kubebuilder:rbac:groups=operator.open-cluster-management.io,resources=clustermanagers/status,verbs=update;patch
 
 // Hive RBAC
-//+kubebuilder:rbac:groups="hive.openshift.io",resources=hiveconfigs,verbs=get;create;update
+//+kubebuilder:rbac:groups="hive.openshift.io",resources=hiveconfigs,verbs=get;create;update;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -152,7 +155,7 @@ func (r *BackplaneConfigReconciler) DeploySubcomponents(backplaneConfig *backpla
 		for _, err := range errs {
 			log.Info(err.Error())
 		}
-		return ctrl.Result{RequeueAfter: requeuePeriod}, errs[0]
+		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
 
 	for _, crd := range crds {
@@ -278,6 +281,20 @@ func (r *BackplaneConfigReconciler) finalizeBackplaneConfig(backplaneConfig *bac
 		clusterRoleBindingList := &rbacv1.ClusterRoleBindingList{}
 		clusterRoleList := &rbacv1.ClusterRoleList{}
 		serviceAccountList := &corev1.ServiceAccountList{}
+		clusterManager := &unstructured.Unstructured{}
+		clusterManager.SetGroupVersionKind(
+			schema.GroupVersionKind{
+				Group:   "operator.open-cluster-management.io",
+				Version: "v1",
+				Kind:    "ClusterManager",
+			},
+		)
+		hiveConfig := &unstructured.Unstructured{}
+		hiveConfig.SetGroupVersionKind(schema.GroupVersionKind{
+			Group:   "hive.openshift.io",
+			Version: "v1",
+			Kind:    "HiveConfig",
+		})
 
 		if err := r.Client.List(ctx, apiServiceList, labelSelector); err != nil {
 			return err
@@ -341,6 +358,28 @@ func (r *BackplaneConfigReconciler) finalizeBackplaneConfig(backplaneConfig *bac
 			}
 		}
 
+		err := r.Client.Get(ctx, types.NamespacedName{Name: "cluster-manager"}, clusterManager)
+		if err == nil { // If resource exists, delete
+			log.Info("finalizing cluster-manager custom resource")
+			err := r.Client.Delete(ctx, clusterManager)
+			if err != nil {
+				return err
+			}
+		} else if err != nil && !errors.IsNotFound(err) { // Return error, if error is not not found error
+			return err
+		}
+
+		err = r.Client.Get(ctx, types.NamespacedName{Name: "hive"}, hiveConfig)
+		if err == nil { // If resource exists, delete
+			log.Info("finalizing hiveconfig custom resource")
+			err := r.Client.Delete(ctx, hiveConfig)
+			if err != nil {
+				return err
+			}
+		} else if err != nil && !errors.IsNotFound(err) { // Return error, if error is not not found error
+			return err
+		}
+
 		remainingSubcomponents := len(serviceList.Items) + len(apiServiceList.Items) + len(deploymentList.Items) + len(clusterRoleBindingList.Items) + len(clusterRoleList.Items) + len(serviceAccountList.Items)
 		if remainingSubcomponents > 0 {
 			return fmt.Errorf("%d subcomponents may still exist", remainingSubcomponents)
@@ -351,7 +390,7 @@ func (r *BackplaneConfigReconciler) finalizeBackplaneConfig(backplaneConfig *bac
 		// removed, the object will be deleted.
 		backplaneConfig.SetFinalizers(remove(backplaneConfig.GetFinalizers(), backplaneFinalizer))
 
-		err := r.Client.Update(ctx, backplaneConfig)
+		err = r.Client.Update(ctx, backplaneConfig)
 		if err != nil {
 			return err
 		}

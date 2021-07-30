@@ -236,13 +236,18 @@ func (r *BackplaneConfigReconciler) ensureUnstructuredResource(bpc *backplanev1a
 	switch found.GetKind() {
 	case "ClusterManager":
 		desired, needsUpdate = foundation.ValidateSpec(found, u)
+	case "ClusterRole":
+		desired, needsUpdate = utils.ValidateClusterRoleRules(found, u)
+	case "CustomResourceDefinition", "HiveConfig":
+		// skip update
+		return ctrl.Result{}, nil
 	default:
 		log.Info("Could not validate unstructured resource. Skipping update.", "Type", found.GetKind())
 		return ctrl.Result{}, nil
 	}
 
 	if needsUpdate {
-		log.Info("Updating resource")
+		log.Info(fmt.Sprintf("Updating %s - %s", desired.GetKind(), desired.GetName()))
 		err = r.Client.Update(context.TODO(), desired)
 		if err != nil {
 			log.Error(err, "Failed to update resource.")
