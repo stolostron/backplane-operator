@@ -36,9 +36,17 @@ type BackplaneConfigSpec struct {
 
 // BackplaneConfigStatus defines the observed state of BackplaneConfig
 type BackplaneConfigStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// Latest observed overall state
+	Phase PhaseType `json:"phase,omitempty"`
 }
+
+// PhaseType is a summary of the current state of the Backplane in its lifecycle
+type PhaseType string
+
+const (
+	BackplaneApplying PhaseType = "Applying"
+	BackplaneApplied  PhaseType = "Applied"
+)
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status

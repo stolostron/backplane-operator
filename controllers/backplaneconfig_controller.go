@@ -105,6 +105,9 @@ func (r *BackplaneConfigReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, nil
 	}
 
+	backplaneConfig.Status.Phase = backplanev1alpha1.BackplaneApplying
+	defer r.Client.Status().Update(ctx, backplaneConfig)
+
 	// Read image overrides from environmental variables
 	r.Images = utils.GetImageOverrides()
 	if len(r.Images) == 0 {
@@ -138,6 +141,7 @@ func (r *BackplaneConfigReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return result, err
 	}
 
+	backplaneConfig.Status.Phase = backplanev1alpha1.BackplaneApplied
 	return ctrl.Result{}, nil
 }
 
