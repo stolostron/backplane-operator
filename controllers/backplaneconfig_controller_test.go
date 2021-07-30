@@ -121,5 +121,15 @@ var _ = Describe("BackplaneConfig controller", func() {
 				}, timeout, interval).Should(BeTrue())
 			}
 		})
+
+		It("Should indicate resource have been applied", func() {
+			key := &v1alpha1.BackplaneConfig{}
+			err := k8sClient.Get(context.Background(), types.NamespacedName{
+				Name:      BackplaneConfigName,
+				Namespace: BackplaneConfigNamespace,
+			}, key)
+			Expect(err).To(BeNil())
+			Expect(key.Status.Phase).To(Equal(v1alpha1.BackplaneApplied))
+		})
 	})
 })
