@@ -24,15 +24,12 @@ import (
 	"fmt"
 	"time"
 
-	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 
 	appsv1 "k8s.io/api/apps/v1"
-
-	"k8s.io/apimachinery/pkg/api/equality"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -44,8 +41,6 @@ import (
 	renderer "github.com/open-cluster-management/backplane-operator/pkg/rendering"
 	"github.com/open-cluster-management/backplane-operator/pkg/templates"
 	"github.com/open-cluster-management/backplane-operator/pkg/utils"
-
-	"github.com/openshift/library-go/pkg/operator/resource/resourcemerge"
 )
 
 // BackplaneConfigReconciler reconciles a BackplaneConfig object
@@ -56,7 +51,8 @@ type BackplaneConfigReconciler struct {
 }
 
 const (
-	requeuePeriod = 15 * time.Second
+	requeuePeriod      = 15 * time.Second
+	backplaneFinalizer = "finalizer.backplane.open-cluster-management.io"
 )
 
 //+kubebuilder:rbac:groups=backplane.open-cluster-management.io,resources=backplaneconfigs,verbs=get;list;watch;create;update;patch;delete
@@ -105,6 +101,23 @@ func (r *BackplaneConfigReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, nil
 	}
 
+	// If deletion detected, finalize backplane config
+	if backplaneConfig.GetDeletionTimestamp() != nil {
+		err := r.finalizeBackplaneConfig(backplaneConfig) // returns all errors
+		if err != nil {
+			log.Info(err.Error())
+			return ctrl.Result{RequeueAfter: 5 * time.Second}, nil
+		}
+		return ctrl.Result{}, nil // Object finalized successfully
+	}
+
+	// Add finalizer for this CR
+	if !contains(backplaneConfig.GetFinalizers(), backplaneFinalizer) {
+		if err := r.addFinalizer(backplaneConfig); err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+
 	// Read image overrides from environmental variables
 	r.Images = utils.GetImageOverrides()
 	if len(r.Images) == 0 {
@@ -112,13 +125,32 @@ func (r *BackplaneConfigReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{RequeueAfter: requeuePeriod}, e.New("no image references exist. images must be defined as environment variables")
 	}
 
+	result, err := r.DeploySubcomponents(backplaneConfig)
+	if err != nil {
+		return result, err
+	}
+
+	return ctrl.Result{}, nil
+}
+
+// SetupWithManager sets up the controller with the Manager.
+func (r *BackplaneConfigReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	return ctrl.NewControllerManagedBy(mgr).
+		For(&backplanev1alpha1.BackplaneConfig{}).
+		Complete(r)
+}
+
+// DeploySubcomponents ensures all subcomponents exist
+func (r *BackplaneConfigReconciler) DeploySubcomponents(backplaneConfig *backplanev1alpha1.BackplaneConfig) (ctrl.Result, error) {
+	log := log.FromContext(context.Background())
+
 	// Render CRD templates
 	crds, errs := renderer.RenderCRDs()
 	if len(errs) > 0 {
 		for _, err := range errs {
 			log.Info(err.Error())
 		}
-		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+		return ctrl.Result{RequeueAfter: requeuePeriod}, errs[0]
 	}
 
 	for _, crd := range crds {
@@ -137,19 +169,10 @@ func (r *BackplaneConfigReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	if err != nil {
 		return result, err
 	}
-
 	return ctrl.Result{}, nil
 }
 
-// SetupWithManager sets up the controller with the Manager.
-func (r *BackplaneConfigReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&backplanev1alpha1.BackplaneConfig{}).
-		Complete(r)
-}
-
 func (r *BackplaneConfigReconciler) ensureServerFoundation(backplaneConfig *backplanev1alpha1.BackplaneConfig) (ctrl.Result, error) {
-	_ = log.FromContext(context.Background())
 
 	templates, err := templates.GetTemplates(backplaneConfig)
 	if err != nil {
@@ -212,7 +235,6 @@ func (r *BackplaneConfigReconciler) ensureServerFoundation(backplaneConfig *back
 }
 
 func (r *BackplaneConfigReconciler) ensureCustomResources(backplaneConfig *backplanev1alpha1.BackplaneConfig) (ctrl.Result, error) {
-	_ = log.FromContext(context.Background())
 
 	result, err := r.ensureUnstructuredResource(backplaneConfig, foundation.ClusterManager(backplaneConfig, r.Images))
 	if err != nil {
@@ -226,227 +248,111 @@ func (r *BackplaneConfigReconciler) ensureCustomResources(backplaneConfig *backp
 	return ctrl.Result{}, nil
 }
 
-func (r *BackplaneConfigReconciler) ensureDeployment(bpc *backplanev1alpha1.BackplaneConfig, dep *appsv1.Deployment) (ctrl.Result, error) {
+func (r *BackplaneConfigReconciler) addFinalizer(backplaneConfig *backplanev1alpha1.BackplaneConfig) error {
 	log := log.FromContext(context.Background())
-
-	// if utils.ProxyEnvVarsAreSet() {
-	// 	dep = addProxyEnvVarsToDeployment(dep)
-	// }
-
-	// See if deployment already exists and create if it doesn't
-	found := &appsv1.Deployment{}
-	err := r.Client.Get(context.TODO(), types.NamespacedName{
-		Name:      dep.Name,
-		Namespace: bpc.Namespace,
-	}, found)
-	if err != nil && errors.IsNotFound(err) {
-
-		// Create the deployment
-		err = r.Client.Create(context.TODO(), dep)
-		if err != nil {
-			// Deployment failed
-			log.Error(err, "Failed to create new Deployment")
-			return ctrl.Result{RequeueAfter: requeuePeriod}, err
-		}
-
-		// Deployment was successful
-		log.Info("Created a new Deployment")
-		// condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
-		// SetHubCondition(&m.Status, *condition)
-		return ctrl.Result{}, nil
-
-	} else if err != nil {
-		// Error that isn't due to the deployment not existing
-		log.Error(err, "Failed to get Deployment")
-		return ctrl.Result{RequeueAfter: requeuePeriod}, err
-	}
-
-	// Validate object based on name
-	var desired *appsv1.Deployment
-	var needsUpdate bool
-
-	switch found.Name {
-	// case helmrepo.HelmRepoName:
-	// 	desired, needsUpdate = helmrepo.ValidateDeployment(m, r.CacheSpec.ImageOverrides, dep, found)
-	case foundation.OCMControllerName, foundation.OCMProxyServerName, foundation.WebhookName:
-		desired, needsUpdate = foundation.ValidateDeployment(bpc, r.Images, dep, found)
-	default:
-		log.Info("Could not validate deployment; unknown name")
-		return ctrl.Result{}, nil
-	}
-
-	if needsUpdate {
-		err = r.Client.Update(context.TODO(), desired)
-		if err != nil {
-			log.Error(err, "Failed to update Deployment.")
-			return ctrl.Result{}, err
-		}
-		// Spec updated - return
-		return ctrl.Result{}, nil
-	}
-	return ctrl.Result{}, nil
-}
-
-func (r *BackplaneConfigReconciler) ensureService(m *backplanev1alpha1.BackplaneConfig, s *corev1.Service) (ctrl.Result, error) {
-	log := log.FromContext(context.Background())
-
-	found := &corev1.Service{}
-	err := r.Client.Get(context.TODO(), types.NamespacedName{
-		Name:      s.Name,
-		Namespace: m.Namespace,
-	}, found)
-	if err != nil && errors.IsNotFound(err) {
-
-		// Create the service
-		err = r.Client.Create(context.TODO(), s)
-
-		if err != nil {
-			// Creation failed
-			log.Error(err, "Failed to create new Service")
-			return ctrl.Result{}, err
-		}
-
-		// Creation was successful
-		log.Info("Created a new Service")
-		// condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
-		// SetHubCondition(&m.Status, *condition)
-		return ctrl.Result{}, nil
-
-	} else if err != nil {
-		// Error that isn't due to the service not existing
-		log.Error(err, "Failed to get Service")
-		return ctrl.Result{}, err
-	}
-
-	modified := resourcemerge.BoolPtr(false)
-	existingCopy := found.DeepCopy()
-	resourcemerge.EnsureObjectMeta(modified, &existingCopy.ObjectMeta, s.ObjectMeta)
-	selectorSame := equality.Semantic.DeepEqual(existingCopy.Spec.Selector, s.Spec.Selector)
-
-	typeSame := false
-	requiredIsEmpty := len(s.Spec.Type) == 0
-	existingCopyIsCluster := existingCopy.Spec.Type == corev1.ServiceTypeClusterIP
-	if (requiredIsEmpty && existingCopyIsCluster) || equality.Semantic.DeepEqual(existingCopy.Spec.Type, s.Spec.Type) {
-		typeSame = true
-	}
-
-	if selectorSame && typeSame && !*modified {
-		return ctrl.Result{}, nil
-	}
-
-	existingCopy.Spec.Selector = s.Spec.Selector
-	existingCopy.Spec.Type = s.Spec.Type
-	err = r.Client.Update(context.TODO(), existingCopy)
+	backplaneConfig.SetFinalizers(append(backplaneConfig.GetFinalizers(), backplaneFinalizer))
+	// Update CR
+	err := r.Client.Update(context.TODO(), backplaneConfig)
 	if err != nil {
-		log.Error(err, "Failed to update Service")
-		return ctrl.Result{}, err
+		log.Error(err, "Failed to update BackplaneConfig with finalizer")
+		return err
 	}
-	return ctrl.Result{}, nil
+	return nil
 }
 
-func (r *BackplaneConfigReconciler) ensureAPIService(m *backplanev1alpha1.BackplaneConfig, s *apiregistrationv1.APIService) (ctrl.Result, error) {
-	log := log.FromContext(context.Background())
+func (r *BackplaneConfigReconciler) finalizeBackplaneConfig(backplaneConfig *backplanev1alpha1.BackplaneConfig) error {
+	ctx := context.Background()
+	log := log.FromContext(ctx)
+	if contains(backplaneConfig.GetFinalizers(), backplaneFinalizer) {
+		// Run finalization logic
+		labelSelector := client.MatchingLabels{
+			"backplaneconfig.name": backplaneConfig.Name, "backplaneconfig.namespace": backplaneConfig.Namespace}
 
-	found := &apiregistrationv1.APIService{}
-	err := r.Client.Get(context.TODO(), types.NamespacedName{
-		Name: s.Name,
-	}, found)
-	if err != nil && errors.IsNotFound(err) {
+		apiServiceList := &apiregistrationv1.APIServiceList{}
+		serviceList := &corev1.ServiceList{}
+		deploymentList := &appsv1.DeploymentList{}
+		clusterRoleBindingList := &rbacv1.ClusterRoleBindingList{}
+		clusterRoleList := &rbacv1.ClusterRoleList{}
+		serviceAccountList := &corev1.ServiceAccountList{}
 
-		// Create the apiService
-		err = r.Client.Create(context.TODO(), s)
-
-		if err != nil {
-			// Creation failed
-			log.Error(err, "Failed to create new apiService")
-			return ctrl.Result{}, err
+		if err := r.Client.List(ctx, apiServiceList, labelSelector); err != nil {
+			return err
+		}
+		if err := r.Client.List(ctx, serviceList, labelSelector); err != nil {
+			return err
+		}
+		if err := r.Client.List(ctx, deploymentList, labelSelector); err != nil {
+			return err
+		}
+		if err := r.Client.List(ctx, clusterRoleBindingList, labelSelector); err != nil {
+			return err
+		}
+		if err := r.Client.List(ctx, clusterRoleList, labelSelector); err != nil {
+			return err
+		}
+		if err := r.Client.List(ctx, serviceAccountList, labelSelector); err != nil {
+			return err
 		}
 
-		// Creation was successful
-		log.Info("Created a new apiService")
-		// condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
-		// SetHubCondition(&m.Status, *condition)
-		return ctrl.Result{}, nil
-
-	} else if err != nil {
-		// Error that isn't due to the apiService not existing
-		log.Error(err, "Failed to get apiService")
-		return ctrl.Result{}, err
-	}
-
-	modified := resourcemerge.BoolPtr(false)
-	existingCopy := found.DeepCopy()
-
-	resourcemerge.EnsureObjectMeta(modified, &existingCopy.ObjectMeta, s.ObjectMeta)
-	serviceSame := equality.Semantic.DeepEqual(existingCopy.Spec.Service, s.Spec.Service)
-	prioritySame := existingCopy.Spec.VersionPriority == s.Spec.VersionPriority && existingCopy.Spec.GroupPriorityMinimum == s.Spec.GroupPriorityMinimum
-	insecureSame := existingCopy.Spec.InsecureSkipTLSVerify == s.Spec.InsecureSkipTLSVerify
-
-	if !*modified && serviceSame && prioritySame && insecureSame {
-		return ctrl.Result{}, nil
-	}
-
-	existingCopy.Spec = s.Spec
-	err = r.Client.Update(context.TODO(), existingCopy)
-	if err != nil {
-		log.Error(err, "Failed to update apiService")
-		return ctrl.Result{}, err
-	}
-	return ctrl.Result{}, nil
-}
-
-func (r *BackplaneConfigReconciler) ensureUnstructuredResource(m *backplanev1alpha1.BackplaneConfig, u *unstructured.Unstructured) (ctrl.Result, error) {
-	log := log.FromContext(context.Background())
-
-	found := &unstructured.Unstructured{}
-	found.SetGroupVersionKind(u.GroupVersionKind())
-
-	// Try to get API group instance
-	err := r.Client.Get(context.TODO(), types.NamespacedName{
-		Name:      u.GetName(),
-		Namespace: u.GetNamespace(),
-	}, found)
-	if err != nil && errors.IsNotFound(err) {
-		// Resource doesn't exist so create it
-		err := r.Client.Create(context.TODO(), u)
-		if err != nil {
-			// Creation failed
-			log.Error(err, "Failed to create new instance")
-			return ctrl.Result{}, err
+		for _, apiService := range apiServiceList.Items {
+			log.Info(fmt.Sprintf("finalizing apiservice - %s", apiService.Name))
+			err := r.Client.Delete(ctx, &apiService)
+			if err != nil {
+				return err
+			}
 		}
-		// Creation was successful
-		log.Info(fmt.Sprintf("Created new resource - kind: %s name: %s", u.GetKind(), u.GetName()))
-		// condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
-		// SetHubCondition(&m.Status, *condition)
-		return ctrl.Result{}, nil
+		for _, service := range serviceList.Items {
+			log.Info(fmt.Sprintf("finalizing service - %s/%s", service.Namespace, service.Name))
+			err := r.Client.Delete(ctx, &service)
+			if err != nil {
+				return err
+			}
+		}
+		for _, deployment := range deploymentList.Items {
+			log.Info(fmt.Sprintf("finalizing deployment - %s/%s", deployment.Namespace, deployment.Name))
+			err := r.Client.Delete(ctx, &deployment)
+			if err != nil {
+				return err
+			}
+		}
+		for _, serviceAccount := range serviceAccountList.Items {
+			log.Info(fmt.Sprintf("finalizing clusterrole - %s", serviceAccount.Name))
+			err := r.Client.Delete(ctx, &serviceAccount)
+			if err != nil {
+				return err
+			}
+		}
+		for _, clusterRole := range clusterRoleList.Items {
+			log.Info(fmt.Sprintf("finalizing clusterrole - %s", clusterRole.Name))
+			err := r.Client.Delete(ctx, &clusterRole)
+			if err != nil {
+				return err
+			}
+		}
+		for _, clusterRoleBinding := range clusterRoleBindingList.Items {
+			log.Info(fmt.Sprintf("finalizing clusterrolebinding - %s", clusterRoleBinding.Name))
+			err := r.Client.Delete(ctx, &clusterRoleBinding)
+			if err != nil {
+				return err
+			}
+		}
 
-	} else if err != nil {
-		// Error that isn't due to the resource not existing
-		log.Error(err, "Failed to get resource")
-		return ctrl.Result{}, err
-	}
+		remainingSubcomponents := len(serviceList.Items) + len(apiServiceList.Items) + len(deploymentList.Items) + len(clusterRoleBindingList.Items) + len(clusterRoleList.Items) + len(serviceAccountList.Items)
+		if remainingSubcomponents > 0 {
+			return fmt.Errorf("%d subcomponents may still exist", remainingSubcomponents)
+		}
 
-	// Validate object based on name
-	var desired *unstructured.Unstructured
-	var needsUpdate bool
+		log.Info("all subcomponents have been finalized successfully - removing finalizer")
+		// Remove finalizer. Once all finalizers have been
+		// removed, the object will be deleted.
+		backplaneConfig.SetFinalizers(remove(backplaneConfig.GetFinalizers(), backplaneFinalizer))
 
-	switch found.GetKind() {
-	case "ClusterManager":
-		desired, needsUpdate = foundation.ValidateSpec(found, u)
-	default:
-		log.Info("Could not validate unstructured resource. Skipping update.", "Type", found.GetKind())
-		return ctrl.Result{}, nil
-	}
-
-	if needsUpdate {
-		log.Info("Updating resource")
-		err = r.Client.Update(context.TODO(), desired)
+		err := r.Client.Update(ctx, backplaneConfig)
 		if err != nil {
-			log.Error(err, "Failed to update resource.")
-			return ctrl.Result{}, err
+			return err
 		}
 	}
-	return ctrl.Result{}, nil
+	return nil
 }
 
 func (r *BackplaneConfigReconciler) getBackplaneConfig(req ctrl.Request) (*backplanev1alpha1.BackplaneConfig, error) {

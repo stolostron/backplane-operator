@@ -12,6 +12,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // ContainsMap returns whether the expected map entries are included in the map
@@ -26,14 +27,14 @@ func ContainsMap(all map[string]string, expected map[string]string) bool {
 	return true
 }
 
-// AddInstallerLabel adds Installer Labels ...
-func AddInstallerLabel(u *unstructured.Unstructured, name string, ns string) {
+// AddBackplaneConfigLabels adds BackplaneConfig Labels ...
+func AddBackplaneConfigLabels(u client.Object, name string, ns string) {
 	labels := make(map[string]string)
 	for key, value := range u.GetLabels() {
 		labels[key] = value
 	}
-	labels["installer.name"] = name
-	labels["installer.namespace"] = ns
+	labels["backplaneconfig.name"] = name
+	labels["backplaneconfig.namespace"] = ns
 
 	u.SetLabels(labels)
 }
