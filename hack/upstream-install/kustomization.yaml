@@ -1,0 +1,9 @@
+
+
+namespace: backplane-operator-system
+
+
+resources:
+- catalogsource.yaml
+- operatorgroup.yaml
+- subscription.yaml

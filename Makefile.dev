@@ -12,3 +12,6 @@ add-images: ## Retrieves latest manifest and injects image definitions directly 
 
 add-images-local:  ## Generates a local image manifest. Source this file to define necessary environment variables to run the operator locally
 	python3 ./hack/scripts/dev-update-image-references.py --local
+
+upstream-install: ## Installs the upstream Backplane Operator by deploying a CatalogSource and Subscription
+	bash ./hack/scripts/upstream-install.sh
