@@ -57,9 +57,9 @@ spec:
       securityContext:
         runAsNonRoot: true
       serviceAccountName: backplane-operator
-      volumes:
-        - name: cert
-          secret:
-            defaultMode: 420
-            secretName: backplane-operator-webhook
       terminationGracePeriodSeconds: 10
+      volumes:
+      - name: cert
+        secret:
+          defaultMode: 420
+          secretName: backplane-operator-webhook

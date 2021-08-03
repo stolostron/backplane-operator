@@ -98,9 +98,13 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "BackplaneConfig")
 		os.Exit(1)
 	}
-	if err = (&backplanev1alpha1.BackplaneConfig{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "BackplaneConfig")
-		os.Exit(1)
+
+	// https://book.kubebuilder.io/cronjob-tutorial/running.html#running-webhooks-locally, https://book.kubebuilder.io/multiversion-tutorial/webhooks.html#and-maingo
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		if err = (&backplanev1alpha1.BackplaneConfig{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "BackplaneConfig")
+			os.Exit(1)
+		}
 	}
 	//+kubebuilder:scaffold:builder
 

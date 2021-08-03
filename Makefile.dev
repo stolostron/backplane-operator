@@ -18,4 +18,4 @@ catalog-deploy: ## Deploys backplane operator via subscription
 	oc create ns backplane-operator-system --dry-run=client -o yaml | oc apply -f -
 	oc apply -k hack/catalog
 
-full-catalog-install: manifests generate bundle bundle-build bundle-push catalog-build catalog-push catalog-deploy ## Generates all required files and deploys backplane operator via subscription
+full-catalog-install: generate bundle bundle-build bundle-push catalog-build catalog-push catalog-deploy ## Generates all required files and deploys backplane operator via subscription
