@@ -227,7 +227,7 @@ spec:
       deployments:
       - name: backplane-operator
         spec:
-          replicas: 1
+          replicas: 2
           selector:
             matchLabels:
               control-plane: backplane-operator
@@ -265,10 +265,19 @@ spec:
                     memory: 20Mi
                 securityContext:
                   allowPrivilegeEscalation: false
+                volumeMounts:
+                - mountPath: /tmp/k8s-webhook-server/serving-certs
+                  name: cert
+                  readOnly: true
               securityContext:
                 runAsNonRoot: true
               serviceAccountName: backplane-operator
               terminationGracePeriodSeconds: 10
+              volumes:
+              - name: cert
+                secret:
+                  defaultMode: 420
+                  secretName: backplane-operator-webhook
       permissions:
       - rules:
         - apiGroups:
@@ -305,9 +314,9 @@ spec:
         serviceAccountName: backplane-operator
     strategy: deployment
   installModes:
-  - supported: false
+  - supported: true
     type: OwnNamespace
-  - supported: false
+  - supported: true
     type: SingleNamespace
   - supported: false
     type: MultiNamespace
@@ -325,3 +334,25 @@ spec:
   provider:
     name: Red Hat
   version: 0.0.1
+  webhookdefinitions:
+  - admissionReviewVersions:
+    - v1
+    - v1beta1
+    containerPort: 443
+    deploymentName: backplane-operator
+    failurePolicy: Fail
+    generateName: backplaneconfig.open-cluster-management.io
+    rules:
+    - apiGroups:
+      - backplane.open-cluster-management.io
+      apiVersions:
+      - v1alpha1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - backplaneconfigs
+    sideEffects: None
+    targetPort: 9443
+    type: ValidatingAdmissionWebhook
+    webhookPath: /validate-backplane-open-cluster-management-io-v1alpha1-backplaneconfig

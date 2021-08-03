@@ -10,6 +10,7 @@ VERSION ?= 0.0.1
 # To re-generate a bundle for other specific channels without changing the standard setup, you can:
 # - use the CHANNELS as arg of the bundle target (e.g make bundle CHANNELS=candidate,fast,stable)
 # - use environment variables to overwrite this value (e.g export CHANNELS="candidate,fast,stable")
+CHANNELS = "stable"
 ifneq ($(origin CHANNELS), undefined)
 BUNDLE_CHANNELS := --channels=$(CHANNELS)
 endif
@@ -19,24 +20,25 @@ endif
 # To re-generate a bundle for any other default channel without changing the default setup, you can:
 # - use the DEFAULT_CHANNEL as arg of the bundle target (e.g make bundle DEFAULT_CHANNEL=stable)
 # - use environment variables to overwrite this value (e.g export DEFAULT_CHANNEL="stable")
+DEFAULT_CHANNEL = "stable"
 ifneq ($(origin DEFAULT_CHANNEL), undefined)
 BUNDLE_DEFAULT_CHANNEL := --default-channel=$(DEFAULT_CHANNEL)
 endif
 BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
+REGISTRY ?= quay.io/open-cluster-management
 # IMAGE_TAG_BASE defines the docker.io namespace and part of the image name for remote images.
 # This variable is used to construct full image tags for bundle and catalog images.
 #
 # For example, running 'make bundle-build bundle-push catalog-build catalog-push' will build and push both
 # open-cluster-management.io/backplane-operator-bundle:$VERSION and open-cluster-management.io/backplane-operator-catalog:$VERSION.
-IMAGE_TAG_BASE ?= open-cluster-management.io/backplane-operator
+IMAGE_TAG_BASE ?= $(REGISTRY)/backplane-operator
 
 # BUNDLE_IMG defines the image:tag used for the bundle.
 # You can use it as an arg. (E.g make bundle-build BUNDLE_IMG=<some-registry>/<project-name-bundle>:<tag>)
 BUNDLE_IMG ?= $(IMAGE_TAG_BASE)-bundle:v$(VERSION)
 
 # Image URL to use all building/pushing image targets
-REGISTRY ?= quay.io/open-cluster-management
 IMG ?= $(REGISTRY)/backplane-operator:latest
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
@@ -91,7 +93,7 @@ help: ## Display this help.
 ##@ Development
 
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
-	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=backplane-operator-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=backplane-operator-role paths="./..." output:crd:artifacts:config=config/crd/bases
 
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."

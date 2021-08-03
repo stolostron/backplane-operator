@@ -25,8 +25,9 @@ import (
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
-	"github.com/open-cluster-management/backplane-operator/pkg/version"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
+
+	"github.com/open-cluster-management/backplane-operator/pkg/version"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -35,9 +36,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
+	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
+
 	backplanev1alpha1 "github.com/open-cluster-management/backplane-operator/api/v1alpha1"
 	"github.com/open-cluster-management/backplane-operator/controllers"
-	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -94,6 +96,10 @@ func main() {
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "BackplaneConfig")
+		os.Exit(1)
+	}
+	if err = (&backplanev1alpha1.BackplaneConfig{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "BackplaneConfig")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder
