@@ -4,3 +4,5 @@ resources:
 - hive.yaml
 - cluster-manager.yaml
 - operator-group.yaml
+
+namespace: backplane-operator-system

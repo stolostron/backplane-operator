@@ -5,6 +5,7 @@
 ##@ Dev. targets
 
 subscriptions: ## Applies upstream community subscriptions (Hive, Cluster-manager)
+	oc create ns backplane-operator-system --dry-run=client -o yaml | oc apply -f -
 	oc apply -k hack/subscriptions
 
 add-images: ## Retrieves latest manifest and injects image definitions directly into the deployment template
