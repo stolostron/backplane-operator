@@ -8,6 +8,7 @@ require (
 	github.com/openshift/library-go v0.0.0-20210727125124-5379485020aa
 	gopkg.in/yaml.v2 v2.3.0
 	k8s.io/api v0.21.3
+	k8s.io/apiextensions-apiserver v0.21.1
 	k8s.io/apimachinery v0.21.3
 	k8s.io/client-go v0.21.3
 	k8s.io/kube-aggregator v0.21.3
