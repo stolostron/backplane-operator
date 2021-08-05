@@ -1,5 +1,5 @@
 # Build the backplane-operator binary
-FROM golang:1.16 as builder
+FROM registry.ci.openshift.org/open-cluster-management/builder:go1.16-linux AS builder
 
 WORKDIR /workspace
 # Copy the Go Modules manifests
