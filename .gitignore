@@ -11,6 +11,7 @@ testbin/*
 bin/pipeline
 bin/controller-gen
 bin/kustomize
+bin/backplane-operator
 
 # Test binary, build with `go test -c`
 *.test
@@ -27,3 +28,11 @@ bin/kustomize
 *.swp
 *.swo
 *~
+
+
+#function test results
+test/function_tests/results/*
+
+test/mock-component-image/bin
+test/mock-component-image/scripts/_pycache_
+

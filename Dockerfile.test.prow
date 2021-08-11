@@ -1,0 +1,23 @@
+FROM registry.ci.openshift.org/open-cluster-management/builder:go1.16-linux AS builder
+
+WORKDIR /workspace
+
+COPY api/ api/
+COPY test/function_tests/ test/function_tests/
+COPY go.mod go.mod
+COPY go.sum go.sum
+
+
+
+# FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
+
+ENV KUBECONFIG "/opt/.kube/config"
+
+USER root
+RUN go get github.com/onsi/ginkgo/ginkgo
+# WORKDIR /workspace/test/function_tests/
+
+# COPY /workspace/test/function_tests/run_tests.sh tests/function_tests/run_tests.sh
+RUN ls
+ENTRYPOINT [ "/workspace/test/function_tests/run_tests.sh" ]
+
