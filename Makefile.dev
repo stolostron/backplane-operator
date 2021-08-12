@@ -14,6 +14,9 @@ add-images: ## Retrieves latest manifest and injects image definitions directly 
 add-images-local:  ## Generates a local image manifest. Source this file to define necessary environment variables to run the operator locally
 	python3 ./hack/scripts/dev-update-image-references.py --local
 
+upstream-install: ## Installs the upstream Backplane Operator by deploying a CatalogSource and Subscription
+	bash ./hack/scripts/upstream-install.sh
+
 catalog-deploy: ## Deploys backplane operator via subscription
 	IMG="${IMAGE_TAG_BASE}-catalog:v${VERSION}" yq eval -i '.spec.image = env(IMG)' hack/catalog/catalogsource.yaml
 	oc create ns backplane-operator-system --dry-run=client -o yaml | oc apply -f -

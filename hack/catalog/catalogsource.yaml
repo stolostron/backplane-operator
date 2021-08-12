@@ -9,7 +9,7 @@ spec:
   displayName: Backplane Operator
   publisher: Red Hat
   sourceType: grpc
-  image: "quay.io/open-cluster-management/backplane-operator-catalog:v0.0.1"
+  image: "quay.io/open-cluster-management/cmb-custom-registry:v0.0.1"
   updateStrategy:
     registryPoll:
       interval: 10m
