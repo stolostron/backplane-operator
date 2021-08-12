@@ -5,6 +5,7 @@
 ##@ Dev. targets
 
 subscriptions: ## Applies upstream community subscriptions (Hive, Cluster-manager)
+	oc create ns backplane-operator-system --dry-run=client -o yaml | oc apply -f -
 	oc apply -k hack/subscriptions
 
 add-images: ## Retrieves latest manifest and injects image definitions directly into the deployment template
@@ -15,3 +16,10 @@ add-images-local:  ## Generates a local image manifest. Source this file to defi
 
 upstream-install: ## Installs the upstream Backplane Operator by deploying a CatalogSource and Subscription
 	bash ./hack/scripts/upstream-install.sh
+
+catalog-deploy: ## Deploys backplane operator via subscription
+	IMG="${IMAGE_TAG_BASE}-catalog:v${VERSION}" yq eval -i '.spec.image = env(IMG)' hack/catalog/catalogsource.yaml
+	oc create ns backplane-operator-system --dry-run=client -o yaml | oc apply -f -
+	oc apply -k hack/catalog
+
+full-catalog-install: generate bundle bundle-build bundle-push catalog-build catalog-push catalog-deploy ## Generates all required files and deploys backplane operator via subscription

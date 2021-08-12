@@ -1,7 +1,4 @@
-
-
 namespace: backplane-operator-system
-
 
 resources:
 - catalogsource.yaml

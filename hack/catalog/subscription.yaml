@@ -5,8 +5,8 @@ kind: Subscription
 metadata:
   name: backplane-operator
 spec:
-  channel: stable
+  channel: release-1.0
   installPlanApproval: Automatic
-  name: backplane-operator
-  source: backplane-catalog
+  name: cluster-management-backplane
+  source: backplane-operator-catalog
   sourceNamespace: backplane-operator-system

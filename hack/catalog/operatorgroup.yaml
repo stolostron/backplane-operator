@@ -5,4 +5,6 @@ apiVersion: operators.coreos.com/v1
 kind: OperatorGroup
 metadata:
   name: default
-spec: {}
+spec:
+  targetNamespaces:
+    - "backplane-operator-system"

@@ -19,26 +19,44 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"time"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
-	"github.com/open-cluster-management/backplane-operator/pkg/version"
-	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
+	admissionregistration "k8s.io/api/admissionregistration/v1"
+	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
+	"sigs.k8s.io/yaml"
+
+	"github.com/open-cluster-management/backplane-operator/pkg/version"
+
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
+	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
+
 	backplanev1alpha1 "github.com/open-cluster-management/backplane-operator/api/v1alpha1"
 	"github.com/open-cluster-management/backplane-operator/controllers"
-	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	//+kubebuilder:scaffold:imports
+)
+
+const (
+	crdName = "backplaneconfigs.backplane.open-cluster-management.io"
 )
 
 var (
@@ -52,6 +70,10 @@ func init() {
 	utilruntime.Must(backplanev1alpha1.AddToScheme(scheme))
 
 	utilruntime.Must(apiregistrationv1.AddToScheme(scheme))
+
+	utilruntime.Must(admissionregistration.AddToScheme(scheme))
+
+	utilruntime.Must(apixv1.AddToScheme(scheme))
 
 	//+kubebuilder:scaffold:scheme
 }
@@ -96,6 +118,19 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "BackplaneConfig")
 		os.Exit(1)
 	}
+
+	// https://book.kubebuilder.io/cronjob-tutorial/running.html#running-webhooks-locally, https://book.kubebuilder.io/multiversion-tutorial/webhooks.html#and-maingo
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		if err = ensureWebhooks(mgr); err != nil {
+			setupLog.Error(err, "unable to ensure webhook", "webhook", "BackplaneConfig")
+			os.Exit(1)
+		}
+
+		if err = (&backplanev1alpha1.BackplaneConfig{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "BackplaneConfig")
+			os.Exit(1)
+		}
+	}
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
@@ -112,4 +147,90 @@ func main() {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
+}
+
+func ensureWebhooks(mgr ctrl.Manager) error {
+	ctx := context.Background()
+
+	deploymentNamespace, ok := os.LookupEnv("POD_NAMESPACE")
+	if !ok {
+		setupLog.Info("Failing due to being unable to locate webhook service namespace")
+		os.Exit(1)
+	}
+
+	validatingWebhookPath := "bin/core/validatingwebhook.yaml"
+	bytesFile, err := ioutil.ReadFile(validatingWebhookPath)
+	if err != nil {
+		return err
+	}
+
+	validatingWebhook := &admissionregistration.ValidatingWebhookConfiguration{}
+	if err = yaml.Unmarshal(bytesFile, validatingWebhook); err != nil {
+		return err
+	}
+	// Override all webhook service namespace definitions to be the same as the pod namespace.
+	for i := 0; i < len(validatingWebhook.Webhooks); i++ {
+		validatingWebhook.Webhooks[i].ClientConfig.Service.Namespace = deploymentNamespace
+	}
+
+	// Wait for manager cache to start and create webhook
+	maxAttempts := 10
+	go func() {
+		for i := 0; i < maxAttempts; i++ {
+			setupLog.Info("Ensuring validatingwebhook exists")
+			crdKey := types.NamespacedName{Name: crdName}
+			owner := &apixv1.CustomResourceDefinition{}
+			if err := mgr.GetClient().Get(context.TODO(), crdKey, owner); err != nil {
+				setupLog.Error(err, "Failed to get deployment")
+				time.Sleep(5 * time.Second)
+				continue
+			}
+
+			validatingWebhook.SetOwnerReferences([]metav1.OwnerReference{
+				{
+					APIVersion: owner.APIVersion,
+					Kind:       owner.Kind,
+					Name:       owner.Name,
+					UID:        owner.UID,
+				},
+			})
+
+			existingWebhook := &admissionregistration.ValidatingWebhookConfiguration{}
+			existingWebhook.SetGroupVersionKind(schema.GroupVersionKind{
+				Group:   "admissionregistration.k8s.io",
+				Version: "v1",
+				Kind:    "ValidatingWebhookConfiguration",
+			})
+			err = mgr.GetClient().Get(ctx, types.NamespacedName{Name: validatingWebhook.GetName()}, existingWebhook)
+			if err != nil && errors.IsNotFound(err) {
+				// Webhook not found. Create and return
+				err = mgr.GetClient().Create(ctx, validatingWebhook)
+				if err != nil {
+					setupLog.Error(err, "Error creating validatingwebhookconfiguration")
+					time.Sleep(5 * time.Second)
+					continue
+				}
+				return
+			} else if err != nil {
+				setupLog.Error(err, "Error getting validatingwebhookconfiguration")
+			} else if err == nil {
+				// Webhook already exists. Update and return
+				setupLog.Info("Validatingwebhook already exists. Updating ")
+				existingWebhook.Webhooks = validatingWebhook.Webhooks
+				err = mgr.GetClient().Update(ctx, existingWebhook)
+				if err != nil {
+					setupLog.Error(err, "Error updating validatingwebhookconfiguration")
+					time.Sleep(5 * time.Second)
+					continue
+				}
+				return
+			}
+			time.Sleep(5 * time.Second)
+		}
+
+		setupLog.Info("Unable to ensure validatingwebhook exists in allotted time. Failing.")
+		os.Exit(1)
+	}()
+
+	return nil
 }

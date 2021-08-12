@@ -3,7 +3,7 @@
 
 set -e
 
-_IMAGE_NAME="backplane-operator-bundle"
+_IMAGE_NAME="cmb-custom-registry"
 _WEB_REPO="https://quay.io/repository/open-cluster-management/${_IMAGE_NAME}?tab=tags"
 _REPO="quay.io/open-cluster-management/${_IMAGE_NAME}"
 
@@ -30,4 +30,21 @@ else
     echo "SNAPSHOT_CHOICE is set to ${SNAPSHOT_CHOICE}"
 fi
 
-IMG="${_REPO}:${SNAPSHOT_CHOICE}" yq eval -i '.spec.image = env(IMG)' hack/upstream-install/catalogsource.yaml
+IMG="${_REPO}:${SNAPSHOT_CHOICE}" yq eval -i '.spec.image = env(IMG)' hack/catalog/catalogsource.yaml
+oc create ns backplane-operator-system --dry-run=client -o yaml | oc apply -f -
+oc apply -k hack/catalog/
+
+
+_attempts=0
+until oc apply -k config/samples >/dev/null 2>&1
+do
+  echo "INFO: Waiting for API to become available ..."
+  _attempts=$((_attempts+1))
+  if [ $_attempts -gt 10 ]; then
+    echo "ERROR: cluster manager backplane subscription did not become available in time"
+    exit 1
+  fi
+  sleep 10
+done
+
+echo "backplaneconfig installed succussfully"
