@@ -42,7 +42,6 @@ import (
 	"github.com/open-cluster-management/backplane-operator/pkg/foundation"
 	"github.com/open-cluster-management/backplane-operator/pkg/hive"
 	renderer "github.com/open-cluster-management/backplane-operator/pkg/rendering"
-	"github.com/open-cluster-management/backplane-operator/pkg/templates"
 	"github.com/open-cluster-management/backplane-operator/pkg/utils"
 )
 
@@ -165,26 +164,16 @@ func (r *BackplaneConfigReconciler) DeploySubcomponents(backplaneConfig *backpla
 		}
 	}
 
-	result, err := r.ensureServerFoundation(backplaneConfig)
-	if err != nil {
-		return result, err
+	// Renders all templates from charts
+	templates, errs := renderer.RenderTemplates(backplaneConfig, r.Images)
+	if len(errs) > 0 {
+		for _, err := range errs {
+			log.Info(err.Error())
+		}
+		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
 
-	result, err = r.ensureCustomResources(backplaneConfig)
-	if err != nil {
-		return result, err
-	}
-
-	backplaneConfig.Status.Phase = backplanev1alpha1.BackplaneApplied
-	return ctrl.Result{}, nil
-}
-
-func (r *BackplaneConfigReconciler) ensureServerFoundation(backplaneConfig *backplanev1alpha1.BackplaneConfig) (ctrl.Result, error) {
-
-	templates, err := templates.GetTemplates(backplaneConfig)
-	if err != nil {
-		return ctrl.Result{RequeueAfter: requeuePeriod}, err
-	}
+	// Applies all templates
 	for _, template := range templates {
 		result, err := r.ensureUnstructuredResource(backplaneConfig, template)
 		if err != nil {
@@ -192,52 +181,12 @@ func (r *BackplaneConfigReconciler) ensureServerFoundation(backplaneConfig *back
 		}
 	}
 
-	result, err := r.ensureDeployment(backplaneConfig, foundation.WebhookDeployment(backplaneConfig, r.Images))
-	if result != (ctrl.Result{}) {
+	result, err := r.ensureCustomResources(backplaneConfig)
+	if err != nil {
 		return result, err
 	}
 
-	result, err = r.ensureService(backplaneConfig, foundation.WebhookService(backplaneConfig))
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
-
-	//OCM proxy server deployment
-	result, err = r.ensureDeployment(backplaneConfig, foundation.OCMProxyServerDeployment(backplaneConfig, r.Images))
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
-
-	//OCM proxy server service
-	result, err = r.ensureService(backplaneConfig, foundation.OCMProxyServerService(backplaneConfig))
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
-
-	// OCM proxy apiService
-	result, err = r.ensureAPIService(backplaneConfig, foundation.OCMProxyAPIService(backplaneConfig))
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
-
-	// OCM clusterView v1 apiService
-	result, err = r.ensureAPIService(backplaneConfig, foundation.OCMClusterViewV1APIService(backplaneConfig))
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
-
-	// OCM clusterView v1alpha1 apiService
-	result, err = r.ensureAPIService(backplaneConfig, foundation.OCMClusterViewV1alpha1APIService(backplaneConfig))
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
-
-	//OCM controller deployment
-	result, err = r.ensureDeployment(backplaneConfig, foundation.OCMControllerDeployment(backplaneConfig, r.Images))
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
-
+	backplaneConfig.Status.Phase = backplanev1alpha1.BackplaneApplied
 	return ctrl.Result{}, nil
 }
 

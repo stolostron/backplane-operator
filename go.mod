@@ -7,6 +7,7 @@ require (
 	github.com/onsi/gomega v1.10.2
 	github.com/openshift/library-go v0.0.0-20210727125124-5379485020aa
 	gopkg.in/yaml.v2 v2.3.0
+	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
 	k8s.io/api v0.21.3
 	k8s.io/apiextensions-apiserver v0.21.1
 	k8s.io/apimachinery v0.21.3
