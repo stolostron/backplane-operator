@@ -107,6 +107,7 @@ vet: ## Run go vet against code.
 ENVTEST_ASSETS_DIR=$(shell pwd)/testbin
 test: manifests generate fmt vet ## Run tests.
 	mkdir -p ${ENVTEST_ASSETS_DIR}
+	curl -o helm3.tar.gz -Ls https://get.helm.sh/helm-v3.6.3-darwin-amd64.tar.gz && tar -xzvf helm3.tar.gz && mv darwin-amd64/helm bin/helm
 	test -f ${ENVTEST_ASSETS_DIR}/setup-envtest.sh || curl -sSLo ${ENVTEST_ASSETS_DIR}/setup-envtest.sh https://raw.githubusercontent.com/kubernetes-sigs/controller-runtime/v0.8.3/hack/setup-envtest.sh
 	source ${ENVTEST_ASSETS_DIR}/setup-envtest.sh; fetch_envtest_tools $(ENVTEST_ASSETS_DIR); setup_envtest_env $(ENVTEST_ASSETS_DIR); DIRECTORY_OVERRIDE="../" go test  $(shell go list ./... | grep -E -v "test") -coverprofile cover.out
 
@@ -116,9 +117,11 @@ build: generate fmt vet ## Build manager binary.
 	go build -o bin/backplane-operator main.go
 
 run: manifests generate fmt vet ## Run a controller from your host.
+	curl -o helm3.tar.gz -Ls https://get.helm.sh/helm-v3.6.3-darwin-amd64.tar.gz && tar -xzvf helm3.tar.gz && mv darwin-amd64/helm bin/helm
 	ENABLE_WEBHOOKS=false go run ./main.go 
 
 docker-build: test ## Build docker image with the manager.
+	curl -o helm3.tar.gz -Ls https://get.helm.sh/helm-v3.6.3-linux-amd64.tar.gz && tar -xzvf helm3.tar.gz && mv linux-amd64/helm bin/helm
 	docker build -t ${IMG} .
 
 docker-push: ## Push docker image with the manager.
