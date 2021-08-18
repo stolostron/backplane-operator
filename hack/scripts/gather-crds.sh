@@ -4,7 +4,7 @@
 
 # Clones hub-crds repo and copies foundation crds into the bin/crds directory
 
-crds_dir="bin/crds/foundation" # where to place crds
+crds_dir="pkg/templates/crds/foundation" # where to place crds
 branch=$(cat hack/scripts/targetCRDs.txt) # what branch to checkout
 crds_path="crds/foundation" # where to copy crds from
 

@@ -22,8 +22,8 @@ import (
 )
 
 const (
-	crdsDir   = "bin/crds"
-	chartsDir = "bin/charts"
+	crdsDir   = "pkg/templates/crds"
+	chartsDir = "pkg/templates/charts"
 )
 
 type Values struct {
