@@ -2,20 +2,22 @@
 package renderer
 
 import (
-	"bytes"
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path"
 	"path/filepath"
-	"strings"
 
-	marshal "gopkg.in/yaml.v3"
+	loader "helm.sh/helm/v3/pkg/chart/loader"
+	"helm.sh/helm/v3/pkg/chartutil"
 
+	"github.com/fatih/structs"
 	"github.com/open-cluster-management/backplane-operator/api/v1alpha1"
 	"github.com/open-cluster-management/backplane-operator/pkg/utils"
+	"helm.sh/helm/v3/pkg/engine"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/yaml"
 )
 
@@ -25,22 +27,22 @@ const (
 )
 
 type Values struct {
-	Global    Global    `yaml:"global"`
-	HubConfig HubConfig `yaml:"hubconfig"`
-	Org       string    `yaml:"org"`
+	Global    Global    `yaml:"global" structs:"global"`
+	HubConfig HubConfig `yaml:"hubconfig" structs:"hubconfig"`
+	Org       string    `yaml:"org" structs:"org"`
 }
 
 type Global struct {
-	ImageOverrides map[string]string `yaml:"imageOverrides"`
-	PullPolicy     string            `yaml:"pullPolicy"`
-	PullSecret     string            `yaml:"pullSecret"`
-	Namespace      string            `yaml:"namespace"`
+	ImageOverrides map[string]string `yaml:"imageOverrides" structs:"imageOverrides"`
+	PullPolicy     string            `yaml:"pullPolicy" structs:"pullPolicy"`
+	PullSecret     string            `yaml:"pullSecret" structs:"pullSecret"`
+	Namespace      string            `yaml:"namespace" structs:"namespace"`
 }
 
 type HubConfig struct {
-	NodeSelector map[string]string `yaml:"nodeSelector"`
-	ProxyConfigs map[string]string `yaml:"proxyConfigs"`
-	ReplicaCount int               `yaml:"replicaCount"`
+	NodeSelector map[string]string `yaml:"nodeSelector" structs:"nodeSelector"`
+	ProxyConfigs map[string]string `yaml:"proxyConfigs" structs:"proxyConfigs"`
+	ReplicaCount int               `yaml:"replicaCount" structs:"replicaCount"`
 }
 
 func RenderCRDs() ([]*unstructured.Unstructured, []error) {
@@ -80,15 +82,13 @@ func RenderCRDs() ([]*unstructured.Unstructured, []error) {
 }
 
 func RenderTemplates(backplaneConfig *v1alpha1.BackplaneConfig, images map[string]string) ([]*unstructured.Unstructured, []error) {
-	// log := log.FromContext(context.Background())
+	log := log.FromContext(context.Background())
 	var templates []*unstructured.Unstructured
 	errs := []error{}
 
 	chartDir := chartsDir
-	helmPath := "./bin/helm"
 	if val, ok := os.LookupEnv("DIRECTORY_OVERRIDE"); ok {
 		chartDir = path.Join(val, chartDir)
-		helmPath = "../bin/helm"
 	}
 
 	// Read CRD files
@@ -97,53 +97,32 @@ func RenderTemplates(backplaneConfig *v1alpha1.BackplaneConfig, images map[strin
 		errs = append(errs, err)
 	}
 
+	helmEngine := engine.Engine{
+		Strict:   true,
+		LintMode: false,
+	}
+
 	for _, chart := range charts {
-		templateFiles, err := ioutil.ReadDir(filepath.Join(chartDir, chart.Name(), "templates"))
-		if err != nil {
-			errs = append(errs, err)
-		}
 
-		valuesYamlPath := filepath.Join(chartDir, chart.Name(), "values.yaml")
-
-		buf, err := ioutil.ReadFile(valuesYamlPath)
+		chart, err := loader.Load(filepath.Join(chartDir, chart.Name()))
 		if err != nil {
+			log.Info(fmt.Sprintf("error loading chart: %s", chart.Name()))
 			return nil, append(errs, err)
 		}
 
 		valuesYaml := &Values{}
-		err = yaml.Unmarshal(buf, valuesYaml)
-		if err != nil {
-			return nil, append(errs, err)
-		}
-
 		injectValuesOverrides(valuesYaml, backplaneConfig, images)
 
-		buf, err = marshal.Marshal(valuesYaml)
+		rawTemplates, err := helmEngine.Render(chart, chartutil.Values{"Values": structs.Map(valuesYaml)})
 		if err != nil {
-			return nil, append(errs, err)
-		}
-		err = ioutil.WriteFile(valuesYamlPath, buf, 0777)
-		if err != nil {
+			log.Info(fmt.Sprintf("error rendering chart: %s", chart.Name()))
 			return nil, append(errs, err)
 		}
 
-		for _, templateFile := range templateFiles {
-			if templateFile.IsDir() {
-				continue
-			}
-			command := exec.Command(helmPath, "template", filepath.Join(chartDir, chart.Name()), "--name-template", strings.ToLower(backplaneConfig.Kind), "-s", filepath.Join("templates", templateFile.Name()))
-			// set var to get the output
-			var out bytes.Buffer
-			// set the output to our variable
-			command.Stdout = &out
-			err = command.Run()
-			if err != nil {
-				errs = append(errs, err)
-			}
-
+		for fileName, templateFile := range rawTemplates {
 			unstructured := &unstructured.Unstructured{}
-			if err = yaml.Unmarshal(out.Bytes(), unstructured); err != nil {
-				errs = append(errs, fmt.Errorf("error reading helm templated output"))
+			if err = yaml.Unmarshal([]byte(templateFile), unstructured); err != nil {
+				return nil, append(errs, fmt.Errorf("error converting file %s to unstructured", fileName))
 			}
 
 			utils.AddBackplaneConfigLabels(unstructured, backplaneConfig.Name, backplaneConfig.Namespace)
@@ -164,7 +143,13 @@ func injectValuesOverrides(values *Values, backplaneConfig *v1alpha1.BackplaneCo
 
 	values.Global.ImageOverrides = images
 
+	values.Global.PullPolicy = "Always"
+
 	values.Global.Namespace = backplaneConfig.Namespace
+
+	values.HubConfig.ReplicaCount = 1
+
+	values.Org = "open-cluster-management"
 
 	// TODO: Define all overrides
 }
