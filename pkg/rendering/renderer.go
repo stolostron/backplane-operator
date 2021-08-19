@@ -91,7 +91,6 @@ func RenderTemplates(backplaneConfig *v1alpha1.BackplaneConfig, images map[strin
 		chartDir = path.Join(val, chartDir)
 	}
 
-	// Read CRD files
 	charts, err := ioutil.ReadDir(chartDir)
 	if err != nil {
 		errs = append(errs, err)
