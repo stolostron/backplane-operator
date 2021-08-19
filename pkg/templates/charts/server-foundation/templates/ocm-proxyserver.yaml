@@ -1,0 +1,128 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ocm-proxyserver
+spec:
+  replicas: {{ .Values.hubconfig.replicaCount }}
+  selector:
+    matchLabels:
+      control-plane: ocm-proxyserver
+      ocm-antiaffinity-selector: ocm-proxyserver
+  template:
+    metadata:
+      labels:
+        control-plane: ocm-proxyserver
+        ocm-antiaffinity-selector: ocm-proxyserver
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - ocm-proxyserver
+              topologyKey: topology.kubernetes.io/zone
+            weight: 70
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - ocm-proxyserver
+              topologyKey: kubernetes.io/hostname
+            weight: 35
+      containers:
+      - args:
+        - /proxyserver
+        - --secure-port=6443
+        - --tls-cert-file=/var/run/apiservice/tls.crt
+        - --tls-private-key-file=/var/run/apiservice/tls.key
+        - --agent-cafile=/var/run/klusterlet/ca.crt
+        - --agent-certfile=/var/run/klusterlet/tls.crt
+        - --agent-keyfile=/var/run/klusterlet/tls.key
+        env:
+{{- if .Values.hubconfig.proxyConfigs }}
+        - name: HTTP_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
+        - name: HTTPS_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.HTTPS_PROXY }}
+        - name: NO_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
+{{- end }}
+        image: '{{ .Values.global.imageOverrides.multicloud_manager }}'
+        imagePullPolicy: '{{ .Values.global.pullPolicy }}'
+        name: ocm-proxyserver
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /healthz
+            port: 6443
+            scheme: HTTPS
+          initialDelaySeconds: 2
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /healthz
+            port: 6443
+            scheme: HTTPS
+          initialDelaySeconds: 2
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            memory: 2Gi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /var/run/klusterlet
+          name: klusterlet-certs
+        - mountPath: /var/run/apiservice
+          name: apiservice-certs
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      serviceAccount: ocm-foundation-sa
+      serviceAccountName: ocm-foundation-sa
+      terminationGracePeriodSeconds: 30
+      hostIPC: false
+      hostNetwork: false
+      hostPID: false
+{{- with .Values.hubconfig.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+{{- end }}
+      securityContext:
+        runAsNonRoot: true
+      serviceAccountName: ocm-foundation-sa
+      tolerations:
+      - effect: NoSchedule
+        key: dedicated
+        operator: Exists
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/infra
+        operator: Exists
+      volumes:
+      - name: klusterlet-certs
+        secret:
+          defaultMode: 420
+          secretName: ocm-klusterlet-self-signed-secrets
+      - name: apiservice-certs
+        secret:
+          defaultMode: 420
+          secretName: ocm-proxyserver

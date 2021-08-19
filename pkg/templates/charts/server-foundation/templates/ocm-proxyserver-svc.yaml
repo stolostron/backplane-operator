@@ -1,0 +1,19 @@
+# Copyright (c) 2021 Red Hat, Inc.
+# Copyright Contributors to the Open Cluster Management project
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: ocm-proxyserver
+  labels:
+    app: ocm-proxyserver
+  annotations:
+    service.beta.openshift.io/serving-cert-secret-name: ocm-proxyserver
+spec:
+  ports:
+    - port: 443
+      targetPort: 6443
+      name: secure
+      protocol: TCP
+  selector:
+    app: ocm-proxyserver
