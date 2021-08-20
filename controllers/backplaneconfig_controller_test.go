@@ -90,6 +90,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 		{
 			Name:           "Hive Operator Deployment",
 			NamespacedName: types.NamespacedName{Name: "hive-operator", Namespace: BackplaneOperatorNamespace},
+<<<<<<< HEAD
 			ResourceType:   &appsv1.Deployment{},
 			Expected:       nil,
 		},
@@ -102,6 +103,8 @@ var _ = Describe("BackplaneConfig controller", func() {
 		{
 			Name:           "Hive Operator Deployment",
 			NamespacedName: types.NamespacedName{Name: "hive-operator", Namespace: BackplaneConfigNamespace},
+=======
+>>>>>>>  change backplane config scope and associated code
 			ResourceType:   &appsv1.Deployment{},
 			Expected:       nil,
 		},
