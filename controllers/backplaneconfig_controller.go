@@ -29,6 +29,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -37,19 +38,22 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	backplanev1alpha1 "github.com/open-cluster-management/backplane-operator/api/v1alpha1"
 	"github.com/open-cluster-management/backplane-operator/pkg/foundation"
 	"github.com/open-cluster-management/backplane-operator/pkg/hive"
 	renderer "github.com/open-cluster-management/backplane-operator/pkg/rendering"
+	"github.com/open-cluster-management/backplane-operator/pkg/status"
 	"github.com/open-cluster-management/backplane-operator/pkg/utils"
 )
 
 // BackplaneConfigReconciler reconciles a BackplaneConfig object
 type BackplaneConfigReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
-	Images map[string]string
+	Scheme        *runtime.Scheme
+	Images        map[string]string
+	StatusManager *status.StatusTracker
 }
 
 const (
@@ -88,7 +92,7 @@ const (
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.8.3/pkg/reconcile
-func (r *BackplaneConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *BackplaneConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (retRes ctrl.Result, retErr error) {
 	log := log.FromContext(ctx)
 
 	// Fetch the BackplaneConfig instance
@@ -119,20 +123,33 @@ func (r *BackplaneConfigReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			return ctrl.Result{}, err
 		}
 	}
-	backplaneConfig.Status.Phase = backplanev1alpha1.BackplaneApplying
-	defer r.Client.Status().Update(ctx, backplaneConfig)
+
+	defer func() {
+		log.Info("Updating status")
+		backplaneConfig.Status = r.StatusManager.ReportStatus()
+		err := r.Client.Status().Update(ctx, backplaneConfig)
+		if backplaneConfig.Status.Phase != backplanev1alpha1.BackplanePhaseAvailable {
+			retRes = ctrl.Result{RequeueAfter: 10 * time.Second}
+		}
+		if err != nil {
+			retErr = err
+		}
+	}()
 
 	// Read image overrides from environmental variables
 	r.Images = utils.GetImageOverrides()
 	if len(r.Images) == 0 {
 		// If imageoverrides are not set from environmental variables, fail
+		r.StatusManager.AddCondition(status.NewCondition(backplanev1alpha1.BackplaneProgressing, metav1.ConditionFalse, status.RequirementsNotMetReason, "No image references defined in deployment"))
 		return ctrl.Result{RequeueAfter: requeuePeriod}, e.New("no image references exist. images must be defined as environment variables")
 	}
 
 	result, err := r.DeploySubcomponents(backplaneConfig)
 	if err != nil {
+		r.StatusManager.AddCondition(status.NewCondition(backplanev1alpha1.BackplaneProgressing, metav1.ConditionUnknown, status.DeployFailedReason, err.Error()))
 		return result, err
 	}
+	r.StatusManager.AddCondition(status.NewCondition(backplanev1alpha1.BackplaneProgressing, metav1.ConditionTrue, status.DeploySuccessReason, "All components deployed"))
 
 	return ctrl.Result{}, nil
 }
@@ -141,6 +158,7 @@ func (r *BackplaneConfigReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 func (r *BackplaneConfigReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&backplanev1alpha1.BackplaneConfig{}).
+		WithEventFilter(predicate.Or(predicate.GenerationChangedPredicate{}, predicate.LabelChangedPredicate{}, predicate.AnnotationChangedPredicate{})).
 		Complete(r)
 }
 
@@ -175,6 +193,11 @@ func (r *BackplaneConfigReconciler) DeploySubcomponents(backplaneConfig *backpla
 
 	// Applies all templates
 	for _, template := range templates {
+		if template.GetKind() == "Deployment" {
+			r.StatusManager.AddComponent(status.DeploymentStatus{
+				NamespacedName: types.NamespacedName{Name: template.GetName(), Namespace: template.GetNamespace()},
+			})
+		}
 		result, err := r.ensureUnstructuredResource(backplaneConfig, template)
 		if err != nil {
 			return result, err
@@ -186,7 +209,6 @@ func (r *BackplaneConfigReconciler) DeploySubcomponents(backplaneConfig *backpla
 		return result, err
 	}
 
-	backplaneConfig.Status.Phase = backplanev1alpha1.BackplaneApplied
 	return ctrl.Result{}, nil
 }
 
@@ -196,6 +218,9 @@ func (r *BackplaneConfigReconciler) ensureCustomResources(backplaneConfig *backp
 	if err != nil {
 		return result, err
 	}
+	r.StatusManager.AddComponent(status.ClusterManagerStatus{
+		NamespacedName: types.NamespacedName{Name: "cluster-manager"},
+	})
 
 	result, err = r.ensureUnstructuredResource(backplaneConfig, hive.HiveConfig(backplaneConfig))
 	if err != nil {
@@ -238,8 +263,6 @@ func (r *BackplaneConfigReconciler) finalizeBackplaneConfig(backplaneConfig *bac
 				Kind:    "ClusterManager",
 			},
 		)
-		ocmHubNamespace := &corev1.Namespace{}
-
 		hiveConfig := &unstructured.Unstructured{}
 		hiveConfig.SetGroupVersionKind(schema.GroupVersionKind{
 			Group:   "hive.openshift.io",
@@ -273,36 +296,6 @@ func (r *BackplaneConfigReconciler) finalizeBackplaneConfig(backplaneConfig *bac
 				return err
 			}
 		}
-
-		err := r.Client.Get(ctx, types.NamespacedName{Name: "cluster-manager"}, clusterManager)
-		if err == nil { // If resource exists, delete
-			log.Info("finalizing cluster-manager custom resource")
-			err := r.Client.Delete(ctx, clusterManager)
-			if err != nil {
-				return err
-			}
-		} else if err != nil && !errors.IsNotFound(err) { // Return error, if error is not not found error
-			return err
-		}
-
-		err = r.Client.Get(ctx, types.NamespacedName{Name: "open-cluster-management-hub"}, ocmHubNamespace)
-		if err == nil { // If resource exists, delete
-			return fmt.Errorf("waiting for 'open-cluster-management-hub' namespace to be terminated before proceeding with uninstallation")
-		} else if err != nil && !errors.IsNotFound(err) { // Return error, if error is not not found error
-			return err
-		}
-
-		err = r.Client.Get(ctx, types.NamespacedName{Name: "hive"}, hiveConfig)
-		if err == nil { // If resource exists, delete
-			log.Info("finalizing hiveconfig custom resource")
-			err := r.Client.Delete(ctx, hiveConfig)
-			if err != nil {
-				return err
-			}
-		} else if err != nil && !errors.IsNotFound(err) { // Return error, if error is not not found error
-			return err
-		}
-
 		for _, service := range serviceList.Items {
 			log.Info(fmt.Sprintf("finalizing service - %s/%s", service.Namespace, service.Name))
 			err := r.Client.Delete(ctx, &service)
@@ -337,6 +330,28 @@ func (r *BackplaneConfigReconciler) finalizeBackplaneConfig(backplaneConfig *bac
 			if err != nil {
 				return err
 			}
+		}
+
+		err := r.Client.Get(ctx, types.NamespacedName{Name: "cluster-manager"}, clusterManager)
+		if err == nil { // If resource exists, delete
+			log.Info("finalizing cluster-manager custom resource")
+			err := r.Client.Delete(ctx, clusterManager)
+			if err != nil {
+				return err
+			}
+		} else if err != nil && !errors.IsNotFound(err) { // Return error, if error is not not found error
+			return err
+		}
+
+		err = r.Client.Get(ctx, types.NamespacedName{Name: "hive"}, hiveConfig)
+		if err == nil { // If resource exists, delete
+			log.Info("finalizing hiveconfig custom resource")
+			err := r.Client.Delete(ctx, hiveConfig)
+			if err != nil {
+				return err
+			}
+		} else if err != nil && !errors.IsNotFound(err) { // Return error, if error is not not found error
+			return err
 		}
 
 		remainingSubcomponents := len(serviceList.Items) + len(apiServiceList.Items) + len(deploymentList.Items) + len(clusterRoleBindingList.Items) + len(clusterRoleList.Items) + len(serviceAccountList.Items)

@@ -140,7 +140,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 				Name: BackplaneConfigName,
 			}, key)
 			Expect(err).To(BeNil())
-			Expect(key.Status.Phase).To(Equal(v1alpha1.BackplaneApplied))
+			Expect(key.Status.Phase).To(Equal(v1alpha1.BackplanePhaseProgressing))
 		})
 
 		It("Should finalize resources when BackplaneConfig is deleted", func() {
