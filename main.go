@@ -158,7 +158,7 @@ func ensureWebhooks(mgr ctrl.Manager) error {
 		os.Exit(1)
 	}
 
-	validatingWebhookPath := "bin/core/validatingwebhook.yaml"
+	validatingWebhookPath := "pkg/templates/core/validatingwebhook.yaml"
 	bytesFile, err := ioutil.ReadFile(validatingWebhookPath)
 	if err != nil {
 		return err

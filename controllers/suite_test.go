@@ -81,6 +81,8 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 
 	err = os.Setenv("OPERAND_IMAGE_MULTICLOUD_MANAGER", "quay.io/test/test:test")
+	err = os.Setenv("OPERAND_IMAGE_REGISTRATION_OPERATOR", "quay.io/test/test:test")
+	err = os.Setenv("OPERAND_IMAGE_OPENSHIFT_HIVE", "quay.io/test/test:test")
 	Expect(err).NotTo(HaveOccurred())
 	//+kubebuilder:scaffold:scheme
 
