@@ -42,7 +42,6 @@ import (
 	"github.com/open-cluster-management/backplane-operator/pkg/foundation"
 	"github.com/open-cluster-management/backplane-operator/pkg/hive"
 	renderer "github.com/open-cluster-management/backplane-operator/pkg/rendering"
-	"github.com/open-cluster-management/backplane-operator/pkg/templates"
 	"github.com/open-cluster-management/backplane-operator/pkg/utils"
 )
 
@@ -165,26 +164,16 @@ func (r *BackplaneConfigReconciler) DeploySubcomponents(backplaneConfig *backpla
 		}
 	}
 
-	result, err := r.ensureServerFoundation(backplaneConfig)
-	if err != nil {
-		return result, err
+	// Renders all templates from charts
+	templates, errs := renderer.RenderTemplates(backplaneConfig, r.Images)
+	if len(errs) > 0 {
+		for _, err := range errs {
+			log.Info(err.Error())
+		}
+		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
 
-	result, err = r.ensureCustomResources(backplaneConfig)
-	if err != nil {
-		return result, err
-	}
-
-	backplaneConfig.Status.Phase = backplanev1alpha1.BackplaneApplied
-	return ctrl.Result{}, nil
-}
-
-func (r *BackplaneConfigReconciler) ensureServerFoundation(backplaneConfig *backplanev1alpha1.BackplaneConfig) (ctrl.Result, error) {
-
-	templates, err := templates.GetTemplates(backplaneConfig)
-	if err != nil {
-		return ctrl.Result{RequeueAfter: requeuePeriod}, err
-	}
+	// Applies all templates
 	for _, template := range templates {
 		result, err := r.ensureUnstructuredResource(backplaneConfig, template)
 		if err != nil {
@@ -192,52 +181,12 @@ func (r *BackplaneConfigReconciler) ensureServerFoundation(backplaneConfig *back
 		}
 	}
 
-	result, err := r.ensureDeployment(backplaneConfig, foundation.WebhookDeployment(backplaneConfig, r.Images))
-	if result != (ctrl.Result{}) {
+	result, err := r.ensureCustomResources(backplaneConfig)
+	if err != nil {
 		return result, err
 	}
 
-	result, err = r.ensureService(backplaneConfig, foundation.WebhookService(backplaneConfig))
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
-
-	//OCM proxy server deployment
-	result, err = r.ensureDeployment(backplaneConfig, foundation.OCMProxyServerDeployment(backplaneConfig, r.Images))
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
-
-	//OCM proxy server service
-	result, err = r.ensureService(backplaneConfig, foundation.OCMProxyServerService(backplaneConfig))
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
-
-	// OCM proxy apiService
-	result, err = r.ensureAPIService(backplaneConfig, foundation.OCMProxyAPIService(backplaneConfig))
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
-
-	// OCM clusterView v1 apiService
-	result, err = r.ensureAPIService(backplaneConfig, foundation.OCMClusterViewV1APIService(backplaneConfig))
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
-
-	// OCM clusterView v1alpha1 apiService
-	result, err = r.ensureAPIService(backplaneConfig, foundation.OCMClusterViewV1alpha1APIService(backplaneConfig))
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
-
-	//OCM controller deployment
-	result, err = r.ensureDeployment(backplaneConfig, foundation.OCMControllerDeployment(backplaneConfig, r.Images))
-	if result != (ctrl.Result{}) {
-		return result, err
-	}
-
+	backplaneConfig.Status.Phase = backplanev1alpha1.BackplaneApplied
 	return ctrl.Result{}, nil
 }
 
@@ -273,7 +222,7 @@ func (r *BackplaneConfigReconciler) finalizeBackplaneConfig(backplaneConfig *bac
 	if contains(backplaneConfig.GetFinalizers(), backplaneFinalizer) {
 		// Run finalization logic
 		labelSelector := client.MatchingLabels{
-			"backplaneconfig.name": backplaneConfig.Name, "backplaneconfig.namespace": backplaneConfig.Namespace}
+			"backplaneconfig.name": backplaneConfig.Name}
 
 		apiServiceList := &apiregistrationv1.APIServiceList{}
 		serviceList := &corev1.ServiceList{}
@@ -289,6 +238,8 @@ func (r *BackplaneConfigReconciler) finalizeBackplaneConfig(backplaneConfig *bac
 				Kind:    "ClusterManager",
 			},
 		)
+		ocmHubNamespace := &corev1.Namespace{}
+
 		hiveConfig := &unstructured.Unstructured{}
 		hiveConfig.SetGroupVersionKind(schema.GroupVersionKind{
 			Group:   "hive.openshift.io",
@@ -322,6 +273,36 @@ func (r *BackplaneConfigReconciler) finalizeBackplaneConfig(backplaneConfig *bac
 				return err
 			}
 		}
+
+		err := r.Client.Get(ctx, types.NamespacedName{Name: "cluster-manager"}, clusterManager)
+		if err == nil { // If resource exists, delete
+			log.Info("finalizing cluster-manager custom resource")
+			err := r.Client.Delete(ctx, clusterManager)
+			if err != nil {
+				return err
+			}
+		} else if err != nil && !errors.IsNotFound(err) { // Return error, if error is not not found error
+			return err
+		}
+
+		err = r.Client.Get(ctx, types.NamespacedName{Name: "open-cluster-management-hub"}, ocmHubNamespace)
+		if err == nil { // If resource exists, delete
+			return fmt.Errorf("waiting for 'open-cluster-management-hub' namespace to be terminated before proceeding with uninstallation")
+		} else if err != nil && !errors.IsNotFound(err) { // Return error, if error is not not found error
+			return err
+		}
+
+		err = r.Client.Get(ctx, types.NamespacedName{Name: "hive"}, hiveConfig)
+		if err == nil { // If resource exists, delete
+			log.Info("finalizing hiveconfig custom resource")
+			err := r.Client.Delete(ctx, hiveConfig)
+			if err != nil {
+				return err
+			}
+		} else if err != nil && !errors.IsNotFound(err) { // Return error, if error is not not found error
+			return err
+		}
+
 		for _, service := range serviceList.Items {
 			log.Info(fmt.Sprintf("finalizing service - %s/%s", service.Namespace, service.Name))
 			err := r.Client.Delete(ctx, &service)
@@ -356,28 +337,6 @@ func (r *BackplaneConfigReconciler) finalizeBackplaneConfig(backplaneConfig *bac
 			if err != nil {
 				return err
 			}
-		}
-
-		err := r.Client.Get(ctx, types.NamespacedName{Name: "cluster-manager"}, clusterManager)
-		if err == nil { // If resource exists, delete
-			log.Info("finalizing cluster-manager custom resource")
-			err := r.Client.Delete(ctx, clusterManager)
-			if err != nil {
-				return err
-			}
-		} else if err != nil && !errors.IsNotFound(err) { // Return error, if error is not not found error
-			return err
-		}
-
-		err = r.Client.Get(ctx, types.NamespacedName{Name: "hive"}, hiveConfig)
-		if err == nil { // If resource exists, delete
-			log.Info("finalizing hiveconfig custom resource")
-			err := r.Client.Delete(ctx, hiveConfig)
-			if err != nil {
-				return err
-			}
-		} else if err != nil && !errors.IsNotFound(err) { // Return error, if error is not not found error
-			return err
 		}
 
 		remainingSubcomponents := len(serviceList.Items) + len(apiServiceList.Items) + len(deploymentList.Items) + len(clusterRoleBindingList.Items) + len(clusterRoleList.Items) + len(serviceAccountList.Items)

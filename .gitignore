@@ -13,6 +13,10 @@ bin/controller-gen
 bin/kustomize
 bin/backplane-operator
 
+darwin-amd64/
+linux-amd64/
+env-vars.txt
+helm3.tar.gz
 # Test binary, build with `go test -c`
 *.test
 
@@ -35,4 +39,5 @@ test/function_tests/results/*
 
 test/mock-component-image/bin
 test/mock-component-image/scripts/_pycache_
+hack/bundle-automation/tmp/
 

@@ -26,7 +26,7 @@ spec:
       - args:
         - --leader-elect
         command:
-        - /backplane-operator
+        - /app/backplane-operator
         env:
         - name: POD_NAMESPACE
           valueFrom:

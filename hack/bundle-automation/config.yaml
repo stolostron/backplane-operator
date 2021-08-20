@@ -1,0 +1,19 @@
+
+- repo_name: "community-operators-prod"
+  github_ref: "https://github.com/redhat-openshift-ecosystem/community-operators-prod.git"
+  operators:
+    - name: "hive-operator"
+      channel: "ocm-2.4"
+      package-yml: "operators/hive-operator/hive.package.yaml"
+      imageMappings:
+        hive: openshift_hive
+- repo_name: registration-operator
+  github_ref: "https://github.com/open-cluster-management/registration-operator.git"
+  branch: "backplane-1.0"
+  operators:
+    - name: cluster-manager
+      bundlePath: "deploy/cluster-manager/olm-catalog/cluster-manager/manifests/"
+      imageMappings:
+        registration-operator: registration_operator
+      exclusions:
+        - readOnlyRootFilesystem
