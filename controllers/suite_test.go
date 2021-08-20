@@ -80,6 +80,9 @@ var _ = BeforeSuite(func() {
 	err = apiregistrationv1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
+	err = os.Setenv("POD_NAMESPACE", "default")
+	Expect(err).NotTo(HaveOccurred())
+
 	err = os.Setenv("OPERAND_IMAGE_MULTICLOUD_MANAGER", "quay.io/test/test:test")
 	err = os.Setenv("OPERAND_IMAGE_REGISTRATION_OPERATOR", "quay.io/test/test:test")
 	err = os.Setenv("OPERAND_IMAGE_OPENSHIFT_HIVE", "quay.io/test/test:test")
@@ -111,6 +114,8 @@ var _ = BeforeSuite(func() {
 var _ = AfterSuite(func() {
 	By("tearing down the test environment")
 	err := os.Unsetenv("OPERAND_IMAGE_TEST_IMAGE")
+	Expect(err).NotTo(HaveOccurred())
+	err = os.Unsetenv("POD_NAMESPACE")
 	Expect(err).NotTo(HaveOccurred())
 	err = testEnv.Stop()
 	Expect(err).NotTo(HaveOccurred())

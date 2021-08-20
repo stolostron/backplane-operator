@@ -31,7 +31,6 @@ const (
 var (
 	ctx                = context.Background()
 	globalsInitialized = false
-	backplaneNamespace = ""
 	baseURL            = ""
 
 	k8sClient client.Client
@@ -40,11 +39,9 @@ var (
 )
 
 func initializeGlobals() {
-	backplaneNamespace = *BackplaneNamespace
 	// baseURL = *BaseURL
 	backplaneConfig = types.NamespacedName{
-		Name:      BackplaneConfigName,
-		Namespace: backplaneNamespace,
+		Name: BackplaneConfigName,
 	}
 }
 
@@ -70,8 +67,7 @@ var _ = Describe("This is a test", func() {
 				Eventually(func() bool {
 					key := &backplane.BackplaneConfig{}
 					k8sClient.Get(context.Background(), types.NamespacedName{
-						Name:      BackplaneConfigName,
-						Namespace: backplaneNamespace,
+						Name: BackplaneConfigName,
 					}, key)
 					return key.Status.Phase == backplane.BackplaneApplied
 				}, timeout, interval).Should(BeTrue())
@@ -84,8 +80,7 @@ var _ = Describe("This is a test", func() {
 func defaultBackplaneConfig() *backplane.BackplaneConfig {
 	return &backplane.BackplaneConfig{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      BackplaneConfigName,
-			Namespace: backplaneNamespace,
+			Name: BackplaneConfigName,
 		},
 		Spec: backplane.BackplaneConfigSpec{
 			Foo: "bar",
