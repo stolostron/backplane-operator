@@ -372,7 +372,6 @@ def updateDeployments(helmChart, exclusions):
         deploy['spec']['template']['metadata']['labels']['ocm-antiaffinity-selector'] = deploy['metadata']['name']
         deploy['spec']['template']['spec']['nodeSelector'] = ""
 
-        print(exclusions)
         containers = deploy['spec']['template']['spec']['containers']
         for container in containers:
             if 'securityContext' not in container: 

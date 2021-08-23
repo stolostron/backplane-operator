@@ -1,0 +1,10 @@
+global:
+  imageOverrides:
+    openshift_hive: quay.io/openshift-hive/hive:v1.1.14
+  pullPolicy: Always
+  pullSecret: null
+hubconfig:
+  nodeSelector: null
+  proxyConfigs: {}
+  replicaCount: 1
+org: open-cluster-management
