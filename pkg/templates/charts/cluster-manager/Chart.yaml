@@ -1,0 +1,6 @@
+apiVersion: v2
+appVersion: 1.16.0
+description: Manages the installation and upgrade of the ClusterManager.
+name: cluster-manager
+type: application
+version: 2.3.0

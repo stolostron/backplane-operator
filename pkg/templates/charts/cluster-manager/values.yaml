@@ -1,0 +1,10 @@
+global:
+  imageOverrides:
+    registration_operator: quay.io/open-cluster-management/registration-operator:latest
+  pullPolicy: Always
+  pullSecret: null
+hubconfig:
+  nodeSelector: null
+  proxyConfigs: {}
+  replicaCount: 1
+org: open-cluster-management

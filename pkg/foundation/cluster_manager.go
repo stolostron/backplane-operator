@@ -12,7 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/yaml"
 )
 
@@ -41,7 +41,7 @@ func ClusterManager(m *v1alpha1.BackplaneConfig, overrides map[string]string) *u
 // ValidateSpec returns true if an update is needed to reconcile differences with the current spec. If an update
 // is needed it returns the object with the new spec to update with.
 func ValidateSpec(found *unstructured.Unstructured, want *unstructured.Unstructured) (*unstructured.Unstructured, bool) {
-	var log = logf.Log.WithValues("Namespace", found.GetNamespace(), "Name", found.GetName(), "Kind", found.GetKind())
+	log := log.FromContext(context.Background())
 
 	desired, err := yaml.Marshal(want.Object["spec"])
 	if err != nil {

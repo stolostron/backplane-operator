@@ -18,7 +18,8 @@ import (
 
 // ensureUnstructuredResource ensures that the unstructured resource is applied in the cluster properly
 func (r *BackplaneConfigReconciler) ensureUnstructuredResource(bpc *backplanev1alpha1.BackplaneConfig, u *unstructured.Unstructured) (ctrl.Result, error) {
-	log := log.FromContext(context.Background())
+	ctx := context.Background()
+	log := log.FromContext(ctx)
 
 	found := &unstructured.Unstructured{}
 	found.SetGroupVersionKind(u.GroupVersionKind())
@@ -26,13 +27,13 @@ func (r *BackplaneConfigReconciler) ensureUnstructuredResource(bpc *backplanev1a
 	utils.AddBackplaneConfigLabels(u, bpc.Name, bpc.Namespace)
 
 	// Try to get API group instance
-	err := r.Client.Get(context.TODO(), types.NamespacedName{
+	err := r.Client.Get(ctx, types.NamespacedName{
 		Name:      u.GetName(),
 		Namespace: u.GetNamespace(),
 	}, found)
 	if err != nil && errors.IsNotFound(err) {
 		// Resource doesn't exist so create it
-		err := r.Client.Create(context.TODO(), u)
+		err := r.Client.Create(ctx, u)
 		if err != nil {
 			// Creation failed
 			log.Error(err, "Failed to create new instance")
@@ -69,7 +70,7 @@ func (r *BackplaneConfigReconciler) ensureUnstructuredResource(bpc *backplanev1a
 
 	if needsUpdate {
 		log.Info(fmt.Sprintf("Updating %s - %s", desired.GetKind(), desired.GetName()))
-		err = r.Client.Update(context.TODO(), desired)
+		err = r.Client.Update(ctx, desired)
 		if err != nil {
 			log.Error(err, "Failed to update resource.")
 			return ctrl.Result{}, err

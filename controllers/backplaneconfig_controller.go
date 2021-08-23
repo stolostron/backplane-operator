@@ -238,6 +238,8 @@ func (r *BackplaneConfigReconciler) finalizeBackplaneConfig(backplaneConfig *bac
 				Kind:    "ClusterManager",
 			},
 		)
+		ocmHubNamespace := &corev1.Namespace{}
+
 		hiveConfig := &unstructured.Unstructured{}
 		hiveConfig.SetGroupVersionKind(schema.GroupVersionKind{
 			Group:   "hive.openshift.io",
@@ -271,6 +273,36 @@ func (r *BackplaneConfigReconciler) finalizeBackplaneConfig(backplaneConfig *bac
 				return err
 			}
 		}
+
+		err := r.Client.Get(ctx, types.NamespacedName{Name: "cluster-manager"}, clusterManager)
+		if err == nil { // If resource exists, delete
+			log.Info("finalizing cluster-manager custom resource")
+			err := r.Client.Delete(ctx, clusterManager)
+			if err != nil {
+				return err
+			}
+		} else if err != nil && !errors.IsNotFound(err) { // Return error, if error is not not found error
+			return err
+		}
+
+		err = r.Client.Get(ctx, types.NamespacedName{Name: "open-cluster-management-hub"}, ocmHubNamespace)
+		if err == nil { // If resource exists, delete
+			return fmt.Errorf("waiting for 'open-cluster-management-hub' namespace to be terminated before proceeding with uninstallation")
+		} else if err != nil && !errors.IsNotFound(err) { // Return error, if error is not not found error
+			return err
+		}
+
+		err = r.Client.Get(ctx, types.NamespacedName{Name: "hive"}, hiveConfig)
+		if err == nil { // If resource exists, delete
+			log.Info("finalizing hiveconfig custom resource")
+			err := r.Client.Delete(ctx, hiveConfig)
+			if err != nil {
+				return err
+			}
+		} else if err != nil && !errors.IsNotFound(err) { // Return error, if error is not not found error
+			return err
+		}
+
 		for _, service := range serviceList.Items {
 			log.Info(fmt.Sprintf("finalizing service - %s/%s", service.Namespace, service.Name))
 			err := r.Client.Delete(ctx, &service)
@@ -305,28 +337,6 @@ func (r *BackplaneConfigReconciler) finalizeBackplaneConfig(backplaneConfig *bac
 			if err != nil {
 				return err
 			}
-		}
-
-		err := r.Client.Get(ctx, types.NamespacedName{Name: "cluster-manager"}, clusterManager)
-		if err == nil { // If resource exists, delete
-			log.Info("finalizing cluster-manager custom resource")
-			err := r.Client.Delete(ctx, clusterManager)
-			if err != nil {
-				return err
-			}
-		} else if err != nil && !errors.IsNotFound(err) { // Return error, if error is not not found error
-			return err
-		}
-
-		err = r.Client.Get(ctx, types.NamespacedName{Name: "hive"}, hiveConfig)
-		if err == nil { // If resource exists, delete
-			log.Info("finalizing hiveconfig custom resource")
-			err := r.Client.Delete(ctx, hiveConfig)
-			if err != nil {
-				return err
-			}
-		} else if err != nil && !errors.IsNotFound(err) { // Return error, if error is not not found error
-			return err
 		}
 
 		remainingSubcomponents := len(serviceList.Items) + len(apiServiceList.Items) + len(deploymentList.Items) + len(clusterRoleBindingList.Items) + len(clusterRoleList.Items) + len(serviceAccountList.Items)
