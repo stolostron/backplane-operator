@@ -9,7 +9,7 @@
         hive: openshift_hive
 - repo_name: registration-operator
   github_ref: "https://github.com/open-cluster-management/registration-operator.git"
-  branch: "release-2.4"
+  branch: "backplane-1.0"
   operators:
     - name: cluster-manager
       bundlePath: "deploy/cluster-manager/olm-catalog/cluster-manager/manifests/"
