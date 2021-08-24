@@ -87,6 +87,7 @@ func RenderTemplates(backplaneConfig *v1alpha1.BackplaneConfig, images map[strin
 	errs := []error{}
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 =======
 	backplaneOperatorNamespace := ""
@@ -94,16 +95,25 @@ func RenderTemplates(backplaneConfig *v1alpha1.BackplaneConfig, images map[strin
 =======
 	backplaneOperatorNamespace := ""
 >>>>>>>  change backplane config scope and associated code
+=======
+
+	backplaneOperatorNamespace := ""
+
+>>>>>>> 48f427659e30047f3ced68aa83247af41177a152
 	chartDir := chartsDir
 	if val, ok := os.LookupEnv("DIRECTORY_OVERRIDE"); ok {
 		chartDir = path.Join(val, chartDir)
 	}
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 =======
 =======
 >>>>>>>  change backplane config scope and associated code
+=======
+
+>>>>>>> 48f427659e30047f3ced68aa83247af41177a152
 	if val, ok := os.LookupEnv("POD_NAMESPACE"); ok {
 		backplaneOperatorNamespace = val
 	} else {
@@ -111,9 +121,13 @@ func RenderTemplates(backplaneConfig *v1alpha1.BackplaneConfig, images map[strin
 		return nil, append(errs, fmt.Errorf("error retrieving namespace"))
 	}
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>>  change backplane config scope and associated code
 =======
 >>>>>>>  change backplane config scope and associated code
+=======
+
+>>>>>>> 48f427659e30047f3ced68aa83247af41177a152
 	charts, err := ioutil.ReadDir(chartDir)
 	if err != nil {
 		errs = append(errs, err)
@@ -135,6 +149,7 @@ func RenderTemplates(backplaneConfig *v1alpha1.BackplaneConfig, images map[strin
 		valuesYaml := &Values{}
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 		injectValuesOverrides(valuesYaml, backplaneConfig, images)
 =======
 		injectValuesOverrides(valuesYaml, backplaneConfig, backplaneOperatorNamespace, images)
@@ -142,6 +157,11 @@ func RenderTemplates(backplaneConfig *v1alpha1.BackplaneConfig, images map[strin
 =======
 		injectValuesOverrides(valuesYaml, backplaneConfig, backplaneOperatorNamespace, images)
 >>>>>>>  change backplane config scope and associated code
+=======
+
+		injectValuesOverrides(valuesYaml, backplaneConfig, backplaneOperatorNamespace, images)
+
+>>>>>>> 48f427659e30047f3ced68aa83247af41177a152
 
 		rawTemplates, err := helmEngine.Render(chart, chartutil.Values{"Values": structs.Map(valuesYaml)})
 		if err != nil {
@@ -157,6 +177,7 @@ func RenderTemplates(backplaneConfig *v1alpha1.BackplaneConfig, images map[strin
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 			utils.AddBackplaneConfigLabels(unstructured, backplaneConfig.Name, backplaneConfig.Namespace)
 =======
 			utils.AddBackplaneConfigLabels(unstructured, backplaneConfig.Name)
@@ -164,10 +185,16 @@ func RenderTemplates(backplaneConfig *v1alpha1.BackplaneConfig, images map[strin
 =======
 			utils.AddBackplaneConfigLabels(unstructured, backplaneConfig.Name)
 >>>>>>>  change backplane config scope and associated code
+=======
+
+			utils.AddBackplaneConfigLabels(unstructured, backplaneConfig.Name)
+
+>>>>>>> 48f427659e30047f3ced68aa83247af41177a152
 
 			// Add namespace to namespaced resources
 			switch unstructured.GetKind() {
 			case "Deployment", "ServiceAccount", "Role", "RoleBinding", "Service":
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 				unstructured.SetNamespace(backplaneConfig.Namespace)
@@ -177,6 +204,11 @@ func RenderTemplates(backplaneConfig *v1alpha1.BackplaneConfig, images map[strin
 =======
 				unstructured.SetNamespace(backplaneOperatorNamespace)
 >>>>>>>  change backplane config scope and associated code
+=======
+
+				unstructured.SetNamespace(backplaneOperatorNamespace)
+
+>>>>>>> 48f427659e30047f3ced68aa83247af41177a152
 			}
 			templates = append(templates, unstructured)
 		}
@@ -187,6 +219,7 @@ func RenderTemplates(backplaneConfig *v1alpha1.BackplaneConfig, images map[strin
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 func injectValuesOverrides(values *Values, backplaneConfig *v1alpha1.BackplaneConfig, images map[string]string) {
 =======
 func injectValuesOverrides(values *Values, backplaneConfig *v1alpha1.BackplaneConfig, backplaneOperatorNamespace string, images map[string]string) {
@@ -194,11 +227,17 @@ func injectValuesOverrides(values *Values, backplaneConfig *v1alpha1.BackplaneCo
 =======
 func injectValuesOverrides(values *Values, backplaneConfig *v1alpha1.BackplaneConfig, backplaneOperatorNamespace string, images map[string]string) {
 >>>>>>>  change backplane config scope and associated code
+=======
+
+func injectValuesOverrides(values *Values, backplaneConfig *v1alpha1.BackplaneConfig, backplaneOperatorNamespace string, images map[string]string) {
+
+>>>>>>> 48f427659e30047f3ced68aa83247af41177a152
 
 	values.Global.ImageOverrides = images
 
 	values.Global.PullPolicy = "Always"
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 	values.Global.Namespace = backplaneConfig.Namespace
@@ -208,6 +247,11 @@ func injectValuesOverrides(values *Values, backplaneConfig *v1alpha1.BackplaneCo
 =======
 	values.Global.Namespace = backplaneOperatorNamespace
 >>>>>>>  change backplane config scope and associated code
+=======
+
+	values.Global.Namespace = backplaneOperatorNamespace
+
+>>>>>>> 48f427659e30047f3ced68aa83247af41177a152
 
 	values.HubConfig.ReplicaCount = 1
 
