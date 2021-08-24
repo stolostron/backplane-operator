@@ -33,7 +33,7 @@ func ClusterManager(m *v1alpha1.BackplaneConfig, overrides map[string]string) *u
 		},
 	}
 
-	utils.AddBackplaneConfigLabels(cm, m.GetName(), m.GetNamespace())
+	utils.AddBackplaneConfigLabels(cm, m.GetName())
 
 	return cm
 }

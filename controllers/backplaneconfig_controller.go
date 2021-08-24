@@ -222,7 +222,7 @@ func (r *BackplaneConfigReconciler) finalizeBackplaneConfig(backplaneConfig *bac
 	if contains(backplaneConfig.GetFinalizers(), backplaneFinalizer) {
 		// Run finalization logic
 		labelSelector := client.MatchingLabels{
-			"backplaneconfig.name": backplaneConfig.Name, "backplaneconfig.namespace": backplaneConfig.Namespace}
+			"backplaneconfig.name": backplaneConfig.Name}
 
 		apiServiceList := &apiregistrationv1.APIServiceList{}
 		serviceList := &corev1.ServiceList{}

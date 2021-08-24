@@ -85,12 +85,17 @@ func RenderTemplates(backplaneConfig *v1alpha1.BackplaneConfig, images map[strin
 	log := log.FromContext(context.Background())
 	var templates []*unstructured.Unstructured
 	errs := []error{}
-
+	backplaneOperatorNamespace := ""
 	chartDir := chartsDir
 	if val, ok := os.LookupEnv("DIRECTORY_OVERRIDE"); ok {
 		chartDir = path.Join(val, chartDir)
 	}
-
+	if val, ok := os.LookupEnv("POD_NAMESPACE"); ok {
+		backplaneOperatorNamespace = val
+	} else {
+		log.Info(fmt.Sprintf("error retrieving namespace"))
+		return nil, append(errs, fmt.Errorf("error retrieving namespace"))
+	}
 	charts, err := ioutil.ReadDir(chartDir)
 	if err != nil {
 		errs = append(errs, err)
@@ -110,7 +115,7 @@ func RenderTemplates(backplaneConfig *v1alpha1.BackplaneConfig, images map[strin
 		}
 
 		valuesYaml := &Values{}
-		injectValuesOverrides(valuesYaml, backplaneConfig, images)
+		injectValuesOverrides(valuesYaml, backplaneConfig, backplaneOperatorNamespace, images)
 
 		rawTemplates, err := helmEngine.Render(chart, chartutil.Values{"Values": structs.Map(valuesYaml)})
 		if err != nil {
@@ -124,12 +129,12 @@ func RenderTemplates(backplaneConfig *v1alpha1.BackplaneConfig, images map[strin
 				return nil, append(errs, fmt.Errorf("error converting file %s to unstructured", fileName))
 			}
 
-			utils.AddBackplaneConfigLabels(unstructured, backplaneConfig.Name, backplaneConfig.Namespace)
+			utils.AddBackplaneConfigLabels(unstructured, backplaneConfig.Name)
 
 			// Add namespace to namespaced resources
 			switch unstructured.GetKind() {
 			case "Deployment", "ServiceAccount", "Role", "RoleBinding", "Service":
-				unstructured.SetNamespace(backplaneConfig.Namespace)
+				unstructured.SetNamespace(backplaneOperatorNamespace)
 			}
 			templates = append(templates, unstructured)
 		}
@@ -138,13 +143,13 @@ func RenderTemplates(backplaneConfig *v1alpha1.BackplaneConfig, images map[strin
 	return templates, errs
 }
 
-func injectValuesOverrides(values *Values, backplaneConfig *v1alpha1.BackplaneConfig, images map[string]string) {
+func injectValuesOverrides(values *Values, backplaneConfig *v1alpha1.BackplaneConfig, backplaneOperatorNamespace string, images map[string]string) {
 
 	values.Global.ImageOverrides = images
 
 	values.Global.PullPolicy = "Always"
 
-	values.Global.Namespace = backplaneConfig.Namespace
+	values.Global.Namespace = backplaneOperatorNamespace
 
 	values.HubConfig.ReplicaCount = 1
 
