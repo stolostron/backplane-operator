@@ -94,6 +94,18 @@ var _ = Describe("BackplaneConfig controller", func() {
 			Expected:       nil,
 		},
 		{
+			Name:           "Cluster Manager Deployment",
+			NamespacedName: types.NamespacedName{Name: "cluster-manager", Namespace: BackplaneConfigNamespace},
+			ResourceType:   &appsv1.Deployment{},
+			Expected:       nil,
+		},
+		{
+			Name:           "Hive Operator Deployment",
+			NamespacedName: types.NamespacedName{Name: "hive-operator", Namespace: BackplaneConfigNamespace},
+			ResourceType:   &appsv1.Deployment{},
+			Expected:       nil,
+		},
+		{
 			Name:           "Cluster Manager",
 			NamespacedName: types.NamespacedName{Name: "cluster-manager"},
 			ResourceType:   clusterManager,
