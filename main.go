@@ -36,6 +36,7 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"sigs.k8s.io/yaml"
 
+	"github.com/open-cluster-management/backplane-operator/pkg/status"
 	"github.com/open-cluster-management/backplane-operator/pkg/version"
 
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -112,8 +113,9 @@ func main() {
 	}
 
 	if err = (&controllers.BackplaneConfigReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+		Client:        mgr.GetClient(),
+		Scheme:        mgr.GetScheme(),
+		StatusManager: &status.StatusTracker{Client: mgr.GetClient()},
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "BackplaneConfig")
 		os.Exit(1)
