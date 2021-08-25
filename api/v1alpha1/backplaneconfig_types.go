@@ -133,6 +133,8 @@ type BackplaneCondition struct {
 //+kubebuilder:resource:scope=Cluster
 
 // BackplaneConfig is the Schema for the backplaneconfigs API
+//+kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.phase",description="The overall state of the Backplane"
+//+kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 type BackplaneConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
