@@ -50,6 +50,7 @@ const (
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:resource:scope=Cluster
 
 // BackplaneConfig is the Schema for the backplaneconfigs API
 type BackplaneConfig struct {

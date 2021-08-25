@@ -32,13 +32,12 @@ func ContainsMap(all map[string]string, expected map[string]string) bool {
 }
 
 // AddBackplaneConfigLabels adds BackplaneConfig Labels ...
-func AddBackplaneConfigLabels(u client.Object, name string, ns string) {
+func AddBackplaneConfigLabels(u client.Object, name string) {
 	labels := make(map[string]string)
 	for key, value := range u.GetLabels() {
 		labels[key] = value
 	}
 	labels["backplaneconfig.name"] = name
-	labels["backplaneconfig.namespace"] = ns
 
 	u.SetLabels(labels)
 }

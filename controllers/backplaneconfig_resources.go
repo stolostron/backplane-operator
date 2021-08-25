@@ -24,7 +24,7 @@ func (r *BackplaneConfigReconciler) ensureUnstructuredResource(bpc *backplanev1a
 	found := &unstructured.Unstructured{}
 	found.SetGroupVersionKind(u.GroupVersionKind())
 
-	utils.AddBackplaneConfigLabels(u, bpc.Name, bpc.Namespace)
+	utils.AddBackplaneConfigLabels(u, bpc.Name)
 
 	// Try to get API group instance
 	err := r.Client.Get(ctx, types.NamespacedName{

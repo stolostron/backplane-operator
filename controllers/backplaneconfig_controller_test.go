@@ -39,9 +39,9 @@ var _ = Describe("BackplaneConfig controller", func() {
 
 	// Define utility constants for object names and testing timeouts/durations and intervals.
 	const (
-		BackplaneConfigName      = "test-backplaneconfig"
-		BackplaneConfigNamespace = "default"
-		JobName                  = "test-job"
+		BackplaneConfigName        = "test-backplaneconfig"
+		BackplaneOperatorNamespace = "default"
+		JobName                    = "test-job"
 
 		timeout  = time.Second * 10
 		duration = time.Second * 10
@@ -61,37 +61,37 @@ var _ = Describe("BackplaneConfig controller", func() {
 	}{
 		{
 			Name:           "Backplane Config",
-			NamespacedName: types.NamespacedName{Name: BackplaneConfigName, Namespace: BackplaneConfigNamespace},
+			NamespacedName: types.NamespacedName{Name: BackplaneConfigName, Namespace: BackplaneOperatorNamespace},
 			ResourceType:   &v1alpha1.BackplaneConfig{},
 			Expected:       nil,
 		},
 		{
 			Name:           "OCM Webhook",
-			NamespacedName: types.NamespacedName{Name: "ocm-webhook", Namespace: BackplaneConfigNamespace},
+			NamespacedName: types.NamespacedName{Name: "ocm-webhook", Namespace: BackplaneOperatorNamespace},
 			ResourceType:   &appsv1.Deployment{},
 			Expected:       nil,
 		},
 		{
 			Name:           "OCM Controller",
-			NamespacedName: types.NamespacedName{Name: "ocm-controller", Namespace: BackplaneConfigNamespace},
+			NamespacedName: types.NamespacedName{Name: "ocm-controller", Namespace: BackplaneOperatorNamespace},
 			ResourceType:   &appsv1.Deployment{},
 			Expected:       nil,
 		},
 		{
 			Name:           "OCM Proxy Server",
-			NamespacedName: types.NamespacedName{Name: "ocm-proxyserver", Namespace: BackplaneConfigNamespace},
+			NamespacedName: types.NamespacedName{Name: "ocm-proxyserver", Namespace: BackplaneOperatorNamespace},
 			ResourceType:   &appsv1.Deployment{},
 			Expected:       nil,
 		},
 		{
 			Name:           "Cluster Manager Deployment",
-			NamespacedName: types.NamespacedName{Name: "cluster-manager", Namespace: BackplaneConfigNamespace},
+			NamespacedName: types.NamespacedName{Name: "cluster-manager", Namespace: BackplaneOperatorNamespace},
 			ResourceType:   &appsv1.Deployment{},
 			Expected:       nil,
 		},
 		{
 			Name:           "Hive Operator Deployment",
-			NamespacedName: types.NamespacedName{Name: "hive-operator", Namespace: BackplaneConfigNamespace},
+			NamespacedName: types.NamespacedName{Name: "hive-operator", Namespace: BackplaneOperatorNamespace},
 			ResourceType:   &appsv1.Deployment{},
 			Expected:       nil,
 		},
@@ -119,8 +119,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 					Kind:       "BackplaneConfig",
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      BackplaneConfigName,
-					Namespace: BackplaneConfigNamespace,
+					Name: BackplaneConfigName,
 				},
 				Spec: v1alpha1.BackplaneConfigSpec{},
 			}
@@ -138,8 +137,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 		It("Should indicate resource have been applied", func() {
 			key := &v1alpha1.BackplaneConfig{}
 			err := k8sClient.Get(context.Background(), types.NamespacedName{
-				Name:      BackplaneConfigName,
-				Namespace: BackplaneConfigNamespace,
+				Name: BackplaneConfigName,
 			}, key)
 			Expect(err).To(BeNil())
 			Expect(key.Status.Phase).To(Equal(v1alpha1.BackplaneApplied))
@@ -148,7 +146,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 		It("Should finalize resources when BackplaneConfig is deleted", func() {
 			ctx := context.Background()
 			backplaneConfig := &v1alpha1.BackplaneConfig{}
-			backplaneConfigLookupKey := types.NamespacedName{Name: BackplaneConfigName, Namespace: BackplaneConfigNamespace}
+			backplaneConfigLookupKey := types.NamespacedName{Name: BackplaneConfigName}
 			err := k8sClient.Get(ctx, backplaneConfigLookupKey, backplaneConfig)
 			Expect(err).To(BeNil())
 			err = k8sClient.Delete(ctx, backplaneConfig, &client.DeleteOptions{})
