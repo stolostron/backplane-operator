@@ -47,7 +47,7 @@ jobs:
         with:
           commit_message: ${{ env.commit_message }}
           commit_options: '--signoff'
-          file_pattern: hack/scripts/currentCRDs.txt
+          file_pattern: hack/scripts/currentCRDs.txt pkg/templates/crds/foundation/*.yaml
           skip_fetch: true
           commit_user_name: GitHub Actions
           commit_user_email: noreply@github.com
