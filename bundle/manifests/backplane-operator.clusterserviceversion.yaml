@@ -178,6 +178,23 @@ spec:
           - get
           - update
         - apiGroups:
+          - imageregistry.open-cluster-management.io
+          resources:
+          - managedclusterimageregistries
+          - managedclusterimageregistries/status
+          verbs:
+          - approve
+          - bind
+          - create
+          - delete
+          - deletecollection
+          - escalate
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
           - operator.open-cluster-management.io
           resources:
           - clustermanagers
