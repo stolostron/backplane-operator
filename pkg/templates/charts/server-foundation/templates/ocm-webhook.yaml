@@ -54,6 +54,7 @@ spec:
         name: ocm-webhook
         ports:
         - containerPort: 8000
+          protocol: TCP
         livenessProbe:
           exec:
             command:
@@ -109,7 +110,6 @@ spec:
 {{- end }}
       volumes:
       - name: webhook-cert
-        volumeSource:
-          secret:
-            defaultMode: 420
-            secretName: ocm-webhook
+        secret:
+          secretName: ocm-webhook
+          defaultMode: 420

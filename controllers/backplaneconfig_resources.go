@@ -9,7 +9,7 @@ import (
 	backplanev1alpha1 "github.com/open-cluster-management/backplane-operator/api/v1alpha1"
 	"github.com/open-cluster-management/backplane-operator/pkg/foundation"
 	"github.com/open-cluster-management/backplane-operator/pkg/utils"
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -31,7 +31,7 @@ func (r *MultiClusterEngineReconciler) ensureUnstructuredResource(bpc *backplane
 		Name:      u.GetName(),
 		Namespace: u.GetNamespace(),
 	}, found)
-	if err != nil && errors.IsNotFound(err) {
+	if err != nil && apierrors.IsNotFound(err) {
 		// Resource doesn't exist so create it
 		err := r.Client.Create(ctx, u)
 		if err != nil {
