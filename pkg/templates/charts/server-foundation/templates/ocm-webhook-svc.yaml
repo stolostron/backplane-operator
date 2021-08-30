@@ -6,7 +6,8 @@ kind: Service
 metadata:
   name: ocm-webhook
   labels:
-    app: ocm-webhook
+    control-plane: ocm-webhook
+    ocm-antiaffinity-selector: ocm-webhook
   annotations:
     service.beta.openshift.io/serving-cert-secret-name: ocm-webhook
 spec:
@@ -14,4 +15,4 @@ spec:
     - port: 443
       targetPort: 8000
   selector:
-    app: ocm-webhook
+    control-plane: ocm-webhook
