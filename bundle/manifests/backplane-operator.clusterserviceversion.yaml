@@ -169,6 +169,20 @@ spec:
           - patch
           - update
         - apiGroups:
+          - cluster.open-cluster-management.io
+          - inventory.open-cluster-management.io
+          - observability.open-cluster-management.io
+          - operator.open-cluster-management.io
+          resources:
+          - baremetalassets
+          - managedclusters
+          - multiclusterhubs
+          - multiclusterobservabilities
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
           - hive.openshift.io
           resources:
           - hiveconfigs

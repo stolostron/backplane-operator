@@ -5,21 +5,22 @@ package backplane_install_test
 
 import (
 	"context"
-	// "fmt"
+	"io/ioutil"
+
+	"github.com/ghodss/yaml"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	// corev1 "k8s.io/api/core/v1"
 	"time"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	backplane "github.com/open-cluster-management/backplane-operator/api/v1alpha1"
 
-	// apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	// "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	// "k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -38,6 +39,65 @@ var (
 	k8sClient client.Client
 
 	backplaneConfig = types.NamespacedName{}
+
+	blockCreationResources = []struct {
+		Name     string
+		GVK      schema.GroupVersionKind
+		Filepath string
+		crdPath  string
+		Expected string
+	}{
+		{
+			Name: "MultiClusterHub",
+			GVK: schema.GroupVersionKind{
+				Group:   "operator.open-cluster-management.io",
+				Version: "v1",
+				Kind:    "MultiClusterHub",
+			},
+			Filepath: "../resources/multiclusterhub.yaml",
+			crdPath:  "../resources/multiclusterhub_crd.yaml",
+			Expected: "Existing MultiClusterHub resources must first be deleted",
+		},
+	}
+	blockDeletionResources = []struct {
+		Name     string
+		GVK      schema.GroupVersionKind
+		Filepath string
+		crdPath  string
+		Expected string
+	}{
+		{
+			Name: "BareMetalAsset",
+			GVK: schema.GroupVersionKind{
+				Group:   "inventory.open-cluster-management.io",
+				Version: "v1alpha1",
+				Kind:    "BareMetalAsset",
+			},
+			Filepath: "../resources/baremetalassets.yaml",
+			Expected: "Existing BareMetalAsset resources must first be deleted",
+		},
+		{
+			Name: "MultiClusterObservability",
+			GVK: schema.GroupVersionKind{
+				Group:   "observability.open-cluster-management.io",
+				Version: "v1beta2",
+				Kind:    "MultiClusterObservability",
+			},
+			crdPath:  "../resources/multiclusterobservabilities_crd.yaml",
+			Filepath: "../resources/multiclusterobservability.yaml",
+			Expected: "Existing MultiClusterObservability resources must first be deleted",
+		},
+		{
+			Name: "ManagedCluster",
+			GVK: schema.GroupVersionKind{
+				Group:   "cluster.open-cluster-management.io",
+				Version: "v1",
+				Kind:    "ManagedClusterList",
+			},
+			Filepath: "../resources/managedcluster.yaml",
+			Expected: "Existing ManagedCluster resources must first be deleted",
+		},
+	}
 )
 
 func initializeGlobals() {
@@ -47,7 +107,7 @@ func initializeGlobals() {
 	}
 }
 
-var _ = Describe("This is a test", func() {
+var _ = Describe("BackplaneConfig Test Suite", func() {
 
 	BeforeEach(func() {
 		if !globalsInitialized {
@@ -96,8 +156,72 @@ var _ = Describe("This is a test", func() {
 				Expect(available.Status).To(Equal(metav1.ConditionTrue))
 			})
 		})
+
+		It("Should ensure validatingwebhook blocks deletion if resouces exist", func() {
+			for _, r := range blockDeletionResources {
+				By("Creating a new "+r.Name, func() {
+
+					if r.crdPath != "" {
+						applyResource(r.crdPath)
+						defer deleteResource(r.crdPath)
+					}
+					applyResource(r.Filepath)
+					defer deleteResource(r.Filepath)
+
+					config := &backplane.BackplaneConfig{}
+					Expect(k8sClient.Get(ctx, backplaneConfig, config)).To(Succeed()) // Get Backplaneconfig
+
+					err := k8sClient.Delete(ctx, config) // Attempt to delete backplaneconfig. Ensure it does not succeed.
+					Expect(err).ShouldNot(BeNil())
+					Expect(err.Error()).Should(ContainSubstring(r.Expected))
+				})
+			}
+		})
+
+		It("Should ensure validatingwebhook blocks creation if resouces exist", func() {
+			for _, r := range blockCreationResources {
+				By("Creating a new "+r.Name, func() {
+
+					if r.crdPath != "" {
+						applyResource(r.crdPath)
+						defer deleteResource(r.crdPath)
+					}
+					applyResource(r.Filepath)
+					defer deleteResource(r.Filepath)
+
+					backplaneConfig := defaultBackplaneConfig()
+					backplaneConfig.Name = "test"
+
+					err := k8sClient.Create(ctx, backplaneConfig)
+					Expect(err).ShouldNot(BeNil())
+					Expect(err.Error()).Should(ContainSubstring(r.Expected))
+				})
+			}
+		})
 	})
 })
+
+func applyResource(resourceFile string) {
+	resourceData, err := ioutil.ReadFile(resourceFile) // Get resource as bytes
+	Expect(err).To(BeNil())
+
+	unstructured := &unstructured.Unstructured{Object: map[string]interface{}{}}
+	err = yaml.Unmarshal(resourceData, &unstructured.Object) // Render resource as unstructured
+	Expect(err).To(BeNil())
+
+	Expect(k8sClient.Create(ctx, unstructured)).Should(Succeed()) // Create resource on cluster
+}
+
+func deleteResource(resourceFile string) {
+	resourceData, err := ioutil.ReadFile(resourceFile) // Get resource as bytes
+	Expect(err).To(BeNil())
+
+	unstructured := &unstructured.Unstructured{Object: map[string]interface{}{}}
+	err = yaml.Unmarshal(resourceData, &unstructured.Object) // Render resource as unstructured
+	Expect(err).To(BeNil())
+
+	Expect(k8sClient.Delete(ctx, unstructured)).Should(Succeed()) // Delete resource on cluster
+}
 
 func defaultBackplaneConfig() *backplane.BackplaneConfig {
 	return &backplane.BackplaneConfig{
