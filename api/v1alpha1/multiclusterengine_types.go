@@ -25,23 +25,23 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// BackplaneConfigSpec defines the desired state of BackplaneConfig
-type BackplaneConfigSpec struct {
+// MultiClusterEngineSpec defines the desired state of MultiClusterEngine
+type MultiClusterEngineSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of BackplaneConfig. Edit backplaneconfig_types.go to remove/update
+	// Foo is an example field of MultiClusterEngine. Edit multiclusterengine_types.go to remove/update
 	Foo string `json:"foo,omitempty"`
 }
 
-// BackplaneConfigStatus defines the observed state of BackplaneConfig
-type BackplaneConfigStatus struct {
+// MultiClusterEngineStatus defines the observed state of MultiClusterEngine
+type MultiClusterEngineStatus struct {
 	// Latest observed overall state
 	Phase PhaseType `json:"phase,omitempty"`
 
 	Components []ComponentCondition `json:"components,omitempty"`
 
-	Conditions []BackplaneCondition `json:"conditions,omitempty"`
+	Conditions []MultiClusterEngineCondition `json:"conditions,omitempty"`
 }
 
 // ComponentCondition contains condition information for tracked components
@@ -78,36 +78,36 @@ type ComponentCondition struct {
 	Message string `json:"message,omitempty"`
 }
 
-// PhaseType is a summary of the current state of the Backplane in its lifecycle
+// PhaseType is a summary of the current state of the MultiClusterEngine in its lifecycle
 type PhaseType string
 
 const (
-	BackplanePhaseProgressing PhaseType = "Progressing"
-	BackplanePhaseAvailable   PhaseType = "Available"
-	BackplanePhaseError       PhaseType = "Error"
+	MultiClusterEnginePhaseProgressing PhaseType = "Progressing"
+	MultiClusterEnginePhaseAvailable   PhaseType = "Available"
+	MultiClusterEnginePhaseError       PhaseType = "Error"
 )
 
-type BackplaneConditionType string
+type MultiClusterEngineConditionType string
 
-// These are valid conditions of the backplane.
+// These are valid conditions of the multiclusterengine.
 const (
 	// Available means the deployment is available, ie. at least the minimum available
 	// replicas required are up and running for at least minReadySeconds.
-	BackplaneAvailable BackplaneConditionType = "Available"
+	MultiClusterEngineAvailable MultiClusterEngineConditionType = "Available"
 	// Progressing means the deployment is progressing. Progress for a deployment is
 	// considered when a new replica set is created or adopted, and when new pods scale
 	// up or old pods scale down. Progress is not estimated for paused deployments or
 	// when progressDeadlineSeconds is not specified.
-	BackplaneProgressing BackplaneConditionType = "Progressing"
+	MultiClusterEngineProgressing MultiClusterEngineConditionType = "Progressing"
 	// Failure is added in a deployment when one of its pods fails to be created
 	// or deleted.
-	BackplaneFailure BackplaneConditionType = "BackplaneFailure"
+	MultiClusterEngineFailure MultiClusterEngineConditionType = "MultiClusterEngineFailure"
 )
 
-type BackplaneCondition struct {
+type MultiClusterEngineCondition struct {
 	// Type is the type of the cluster condition.
 	// +required
-	Type BackplaneConditionType `json:"type,omitempty"`
+	Type MultiClusterEngineConditionType `json:"type,omitempty"`
 
 	// Status is the status of the condition. One of True, False, Unknown.
 	// +required
@@ -130,28 +130,28 @@ type BackplaneCondition struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
-//+kubebuilder:resource:scope=Cluster
+//+kubebuilder:resource:scope=Cluster,shortName=me
 
-// BackplaneConfig is the Schema for the backplaneconfigs API
-//+kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.phase",description="The overall state of the Backplane"
+// MultiClusterEngine is the Schema for the multiclusterengines API
+//+kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.phase",description="The overall state of the MultiClusterEngine"
 //+kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
-type BackplaneConfig struct {
+type MultiClusterEngine struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   BackplaneConfigSpec   `json:"spec,omitempty"`
-	Status BackplaneConfigStatus `json:"status,omitempty"`
+	Spec   MultiClusterEngineSpec   `json:"spec,omitempty"`
+	Status MultiClusterEngineStatus `json:"status,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 
-// BackplaneConfigList contains a list of BackplaneConfig
-type BackplaneConfigList struct {
+// MultiClusterEngineList contains a list of MultiClusterEngine
+type MultiClusterEngineList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []BackplaneConfig `json:"items"`
+	Items           []MultiClusterEngine `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&BackplaneConfig{}, &BackplaneConfigList{})
+	SchemeBuilder.Register(&MultiClusterEngine{}, &MultiClusterEngineList{})
 }

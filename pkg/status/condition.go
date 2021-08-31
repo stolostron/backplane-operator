@@ -21,8 +21,8 @@ const (
 )
 
 // NewCondition creates a new condition.
-func NewCondition(condType bpv1alpha1.BackplaneConditionType, status metav1.ConditionStatus, reason, message string) bpv1alpha1.BackplaneCondition {
-	return bpv1alpha1.BackplaneCondition{
+func NewCondition(condType bpv1alpha1.MultiClusterEngineConditionType, status metav1.ConditionStatus, reason, message string) bpv1alpha1.MultiClusterEngineCondition {
+	return bpv1alpha1.MultiClusterEngineCondition{
 		Type:               condType,
 		Status:             status,
 		LastUpdateTime:     metav1.Now(),
@@ -33,7 +33,7 @@ func NewCondition(condType bpv1alpha1.BackplaneConditionType, status metav1.Cond
 }
 
 // setCondition sets the status condition. It either overwrites the existing one or creates a new one.
-func setCondition(conditions []bpv1alpha1.BackplaneCondition, c bpv1alpha1.BackplaneCondition) []bpv1alpha1.BackplaneCondition {
+func setCondition(conditions []bpv1alpha1.MultiClusterEngineCondition, c bpv1alpha1.MultiClusterEngineCondition) []bpv1alpha1.MultiClusterEngineCondition {
 	currentCond := getCondition(conditions, c.Type)
 	if currentCond != nil && currentCond.Status == c.Status && currentCond.Reason == c.Reason {
 		// Condition already present
@@ -50,7 +50,7 @@ func setCondition(conditions []bpv1alpha1.BackplaneCondition, c bpv1alpha1.Backp
 }
 
 // getCondition returns the condition you're looking for by type
-func getCondition(conditions []bpv1alpha1.BackplaneCondition, condType bpv1alpha1.BackplaneConditionType) *bpv1alpha1.BackplaneCondition {
+func getCondition(conditions []bpv1alpha1.MultiClusterEngineCondition, condType bpv1alpha1.MultiClusterEngineConditionType) *bpv1alpha1.MultiClusterEngineCondition {
 	for i := range conditions {
 		c := conditions[i]
 		if c.Type == condType {
@@ -61,8 +61,8 @@ func getCondition(conditions []bpv1alpha1.BackplaneCondition, condType bpv1alpha
 }
 
 // filterOutCondition returns a new slice of hub conditions without conditions with the provided type.
-func filterOutCondition(conditions []bpv1alpha1.BackplaneCondition, condType bpv1alpha1.BackplaneConditionType) []bpv1alpha1.BackplaneCondition {
-	var newConditions []bpv1alpha1.BackplaneCondition
+func filterOutCondition(conditions []bpv1alpha1.MultiClusterEngineCondition, condType bpv1alpha1.MultiClusterEngineConditionType) []bpv1alpha1.MultiClusterEngineCondition {
+	var newConditions []bpv1alpha1.MultiClusterEngineCondition
 	for _, c := range conditions {
 		if c.Type == condType {
 			continue

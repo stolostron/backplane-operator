@@ -10,7 +10,7 @@ import (
 type StatusTracker struct {
 	Client     client.Client
 	Components []StatusReporter
-	Conditions []bpv1alpha1.BackplaneCondition
+	Conditions []bpv1alpha1.MultiClusterEngineCondition
 }
 
 // Adds a StatusReporter to the list of statuses to watch
@@ -26,21 +26,21 @@ func (sm *StatusTracker) AddComponent(sr StatusReporter) {
 	sm.Components = append(sm.Components, sr)
 }
 
-func (sm *StatusTracker) AddCondition(c bpv1alpha1.BackplaneCondition) {
+func (sm *StatusTracker) AddCondition(c bpv1alpha1.MultiClusterEngineCondition) {
 	sm.Conditions = setCondition(sm.Conditions, c)
 }
 
-func (sm *StatusTracker) ReportStatus() bpv1alpha1.BackplaneConfigStatus {
+func (sm *StatusTracker) ReportStatus() bpv1alpha1.MultiClusterEngineStatus {
 	components := sm.reportComponents()
 	phase := sm.reportPhase(components)
-	if phase == bpv1alpha1.BackplanePhaseAvailable {
-		sm.AddCondition(NewCondition(bpv1alpha1.BackplaneAvailable, metav1.ConditionTrue, ComponentsAvailableReason, ""))
+	if phase == bpv1alpha1.MultiClusterEnginePhaseAvailable {
+		sm.AddCondition(NewCondition(bpv1alpha1.MultiClusterEngineAvailable, metav1.ConditionTrue, ComponentsAvailableReason, ""))
 	} else {
-		sm.AddCondition(NewCondition(bpv1alpha1.BackplaneAvailable, metav1.ConditionFalse, ComponentsUnavailableReason, ""))
+		sm.AddCondition(NewCondition(bpv1alpha1.MultiClusterEngineAvailable, metav1.ConditionFalse, ComponentsUnavailableReason, ""))
 	}
 	conditions := sm.reportConditions()
 
-	return bpv1alpha1.BackplaneConfigStatus{
+	return bpv1alpha1.MultiClusterEngineStatus{
 		Components: components,
 		Conditions: conditions,
 		Phase:      phase,
@@ -55,20 +55,20 @@ func (sm *StatusTracker) reportComponents() []bpv1alpha1.ComponentCondition {
 	return components
 }
 
-func (sm *StatusTracker) reportConditions() []bpv1alpha1.BackplaneCondition {
+func (sm *StatusTracker) reportConditions() []bpv1alpha1.MultiClusterEngineCondition {
 	return sm.Conditions
 }
 
 func (sm *StatusTracker) reportPhase(cc []bpv1alpha1.ComponentCondition) bpv1alpha1.PhaseType {
 	if len(cc) == 0 {
-		return bpv1alpha1.BackplanePhaseError
+		return bpv1alpha1.MultiClusterEnginePhaseError
 	}
 	for _, val := range cc {
 		if !val.Available {
-			return bpv1alpha1.BackplanePhaseProgressing
+			return bpv1alpha1.MultiClusterEnginePhaseProgressing
 		}
 	}
-	return bpv1alpha1.BackplanePhaseAvailable
+	return bpv1alpha1.MultiClusterEnginePhaseAvailable
 }
 
 // StatusReporter is a resource that can report back a status

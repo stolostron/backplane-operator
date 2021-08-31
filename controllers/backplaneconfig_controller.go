@@ -48,8 +48,8 @@ import (
 	"github.com/open-cluster-management/backplane-operator/pkg/utils"
 )
 
-// BackplaneConfigReconciler reconciles a BackplaneConfig object
-type BackplaneConfigReconciler struct {
+// MultiClusterEngineReconciler reconciles a MultiClusterEngine object
+type MultiClusterEngineReconciler struct {
 	client.Client
 	Scheme        *runtime.Scheme
 	Images        map[string]string
@@ -58,12 +58,12 @@ type BackplaneConfigReconciler struct {
 
 const (
 	requeuePeriod      = 15 * time.Second
-	backplaneFinalizer = "finalizer.backplane.open-cluster-management.io"
+	backplaneFinalizer = "finalizer.multicluster.openshift.io"
 )
 
-//+kubebuilder:rbac:groups=backplane.open-cluster-management.io,resources=backplaneconfigs,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=backplane.open-cluster-management.io,resources=backplaneconfigs/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=backplane.open-cluster-management.io,resources=backplaneconfigs/finalizers,verbs=update
+//+kubebuilder:rbac:groups=multicluster.openshift.io,resources=multiclusterengines,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=multicluster.openshift.io,resources=multiclusterengines/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=multicluster.openshift.io,resources=multiclusterengines/finalizers,verbs=update
 //+kubebuilder:rbac:groups=apiextensions.k8s.io;rbac.authorization.k8s.io;"";apps,resources=deployments;serviceaccounts;customresourcedefinitions;clusterrolebindings;clusterroles,verbs=get;create;update;list
 
 // ClusterManager RBAC
@@ -88,13 +88,13 @@ const (
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 // TODO(user): Modify the Reconcile function to compare the state specified by
-// the BackplaneConfig object against the actual cluster state, and then
+// the MultiClusterEngine object against the actual cluster state, and then
 // perform operations to make the cluster state reflect the state specified by
 // the user.
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.8.3/pkg/reconcile
-func (r *BackplaneConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (retRes ctrl.Result, retErr error) {
+func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (retRes ctrl.Result, retErr error) {
 	log := log.FromContext(ctx)
 
 	// Fetch the BackplaneConfig instance
@@ -130,7 +130,7 @@ func (r *BackplaneConfigReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		log.Info("Updating status")
 		backplaneConfig.Status = r.StatusManager.ReportStatus()
 		err := r.Client.Status().Update(ctx, backplaneConfig)
-		if backplaneConfig.Status.Phase != backplanev1alpha1.BackplanePhaseAvailable {
+		if backplaneConfig.Status.Phase != backplanev1alpha1.MultiClusterEnginePhaseAvailable {
 			retRes = ctrl.Result{RequeueAfter: 10 * time.Second}
 		}
 		if err != nil {
@@ -142,30 +142,30 @@ func (r *BackplaneConfigReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	r.Images = utils.GetImageOverrides()
 	if len(r.Images) == 0 {
 		// If imageoverrides are not set from environmental variables, fail
-		r.StatusManager.AddCondition(status.NewCondition(backplanev1alpha1.BackplaneProgressing, metav1.ConditionFalse, status.RequirementsNotMetReason, "No image references defined in deployment"))
+		r.StatusManager.AddCondition(status.NewCondition(backplanev1alpha1.MultiClusterEngineProgressing, metav1.ConditionFalse, status.RequirementsNotMetReason, "No image references defined in deployment"))
 		return ctrl.Result{RequeueAfter: requeuePeriod}, e.New("no image references exist. images must be defined as environment variables")
 	}
 
 	result, err := r.DeploySubcomponents(backplaneConfig)
 	if err != nil {
-		r.StatusManager.AddCondition(status.NewCondition(backplanev1alpha1.BackplaneProgressing, metav1.ConditionUnknown, status.DeployFailedReason, err.Error()))
+		r.StatusManager.AddCondition(status.NewCondition(backplanev1alpha1.MultiClusterEngineProgressing, metav1.ConditionUnknown, status.DeployFailedReason, err.Error()))
 		return result, err
 	}
-	r.StatusManager.AddCondition(status.NewCondition(backplanev1alpha1.BackplaneProgressing, metav1.ConditionTrue, status.DeploySuccessReason, "All components deployed"))
+	r.StatusManager.AddCondition(status.NewCondition(backplanev1alpha1.MultiClusterEngineProgressing, metav1.ConditionTrue, status.DeploySuccessReason, "All components deployed"))
 
 	return ctrl.Result{}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *BackplaneConfigReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *MultiClusterEngineReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&backplanev1alpha1.BackplaneConfig{}).
+		For(&backplanev1alpha1.MultiClusterEngine{}).
 		WithEventFilter(predicate.Or(predicate.GenerationChangedPredicate{}, predicate.LabelChangedPredicate{}, predicate.AnnotationChangedPredicate{})).
 		Complete(r)
 }
 
 // DeploySubcomponents ensures all subcomponents exist
-func (r *BackplaneConfigReconciler) DeploySubcomponents(backplaneConfig *backplanev1alpha1.BackplaneConfig) (ctrl.Result, error) {
+func (r *MultiClusterEngineReconciler) DeploySubcomponents(backplaneConfig *backplanev1alpha1.MultiClusterEngine) (ctrl.Result, error) {
 	log := log.FromContext(context.Background())
 
 	// Render CRD templates
@@ -214,7 +214,7 @@ func (r *BackplaneConfigReconciler) DeploySubcomponents(backplaneConfig *backpla
 	return ctrl.Result{}, nil
 }
 
-func (r *BackplaneConfigReconciler) ensureCustomResources(backplaneConfig *backplanev1alpha1.BackplaneConfig) (ctrl.Result, error) {
+func (r *MultiClusterEngineReconciler) ensureCustomResources(backplaneConfig *backplanev1alpha1.MultiClusterEngine) (ctrl.Result, error) {
 
 	result, err := r.ensureUnstructuredResource(backplaneConfig, foundation.ClusterManager(backplaneConfig, r.Images))
 	if err != nil {
@@ -231,7 +231,7 @@ func (r *BackplaneConfigReconciler) ensureCustomResources(backplaneConfig *backp
 	return ctrl.Result{}, nil
 }
 
-func (r *BackplaneConfigReconciler) addFinalizer(backplaneConfig *backplanev1alpha1.BackplaneConfig) error {
+func (r *MultiClusterEngineReconciler) addFinalizer(backplaneConfig *backplanev1alpha1.MultiClusterEngine) error {
 	log := log.FromContext(context.Background())
 	backplaneConfig.SetFinalizers(append(backplaneConfig.GetFinalizers(), backplaneFinalizer))
 	// Update CR
@@ -243,7 +243,7 @@ func (r *BackplaneConfigReconciler) addFinalizer(backplaneConfig *backplanev1alp
 	return nil
 }
 
-func (r *BackplaneConfigReconciler) finalizeBackplaneConfig(backplaneConfig *backplanev1alpha1.BackplaneConfig) error {
+func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(backplaneConfig *backplanev1alpha1.MultiClusterEngine) error {
 	ctx := context.Background()
 	log := log.FromContext(ctx)
 	if contains(backplaneConfig.GetFinalizers(), backplaneFinalizer) {
@@ -384,9 +384,9 @@ func (r *BackplaneConfigReconciler) finalizeBackplaneConfig(backplaneConfig *bac
 	return nil
 }
 
-func (r *BackplaneConfigReconciler) getBackplaneConfig(req ctrl.Request) (*backplanev1alpha1.BackplaneConfig, error) {
+func (r *MultiClusterEngineReconciler) getBackplaneConfig(req ctrl.Request) (*backplanev1alpha1.MultiClusterEngine, error) {
 	log := log.FromContext(context.Background())
-	backplaneConfig := &backplanev1alpha1.BackplaneConfig{}
+	backplaneConfig := &backplanev1alpha1.MultiClusterEngine{}
 	err := r.Client.Get(context.TODO(), req.NamespacedName, backplaneConfig)
 	if err != nil {
 		if errors.IsNotFound(err) {

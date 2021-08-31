@@ -98,7 +98,7 @@ var _ = BeforeSuite(func() {
 	})
 	Expect(err).ToNot(HaveOccurred())
 
-	err = (&BackplaneConfigReconciler{
+	err = (&MultiClusterEngineReconciler{
 		Client:        k8sManager.GetClient(),
 		Scheme:        k8sManager.GetScheme(),
 		StatusManager: &status.StatusTracker{Client: k8sManager.GetClient()},

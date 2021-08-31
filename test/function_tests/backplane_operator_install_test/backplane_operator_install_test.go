@@ -126,30 +126,30 @@ var _ = Describe("BackplaneConfig Test Suite", func() {
 		It("Should check that all components were installed correctly", func() {
 			By("Ensuring the BackplaneConfig becomes available", func() {
 				Eventually(func() bool {
-					key := &backplane.BackplaneConfig{}
+					key := &backplane.MultiClusterEngine{}
 					k8sClient.Get(context.Background(), types.NamespacedName{
 						Name: BackplaneConfigName,
 					}, key)
-					return key.Status.Phase == backplane.BackplanePhaseAvailable
+					return key.Status.Phase == backplane.MultiClusterEnginePhaseAvailable
 				}, installTimeout, interval).Should(BeTrue())
 
 			})
 		})
 
 		It("Should check for a healthy status", func() {
-			config := &backplane.BackplaneConfig{}
+			config := &backplane.MultiClusterEngine{}
 			Expect(k8sClient.Get(ctx, backplaneConfig, config)).To(Succeed())
 
 			By("Checking the phase", func() {
-				Expect(config.Status.Phase).To(Equal(backplane.BackplanePhaseAvailable))
+				Expect(config.Status.Phase).To(Equal(backplane.MultiClusterEnginePhaseAvailable))
 			})
 			By("Checking the components", func() {
 				Expect(len(config.Status.Components)).Should(BeNumerically(">=", 6), "Expected at least 6 components in status")
 			})
 			By("Checking the conditions", func() {
-				available := backplane.BackplaneCondition{}
+				available := backplane.MultiClusterEngineCondition{}
 				for _, c := range config.Status.Conditions {
-					if c.Type == backplane.BackplaneAvailable {
+					if c.Type == backplane.MultiClusterEngineAvailable {
 						available = c
 					}
 				}
@@ -168,7 +168,7 @@ var _ = Describe("BackplaneConfig Test Suite", func() {
 					applyResource(r.Filepath)
 					defer deleteResource(r.Filepath)
 
-					config := &backplane.BackplaneConfig{}
+					config := &backplane.MultiClusterEngine{}
 					Expect(k8sClient.Get(ctx, backplaneConfig, config)).To(Succeed()) // Get Backplaneconfig
 
 					err := k8sClient.Delete(ctx, config) // Attempt to delete backplaneconfig. Ensure it does not succeed.
@@ -223,15 +223,15 @@ func deleteResource(resourceFile string) {
 	Expect(k8sClient.Delete(ctx, unstructured)).Should(Succeed()) // Delete resource on cluster
 }
 
-func defaultBackplaneConfig() *backplane.BackplaneConfig {
-	return &backplane.BackplaneConfig{
+func defaultBackplaneConfig() *backplane.MultiClusterEngine {
+	return &backplane.MultiClusterEngine{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: BackplaneConfigName,
 		},
-		Spec: backplane.BackplaneConfigSpec{
+		Spec: backplane.MultiClusterEngineSpec{
 			Foo: "bar",
 		},
-		Status: backplane.BackplaneConfigStatus{
+		Status: backplane.MultiClusterEngineStatus{
 			Phase: "",
 		},
 	}

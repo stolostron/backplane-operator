@@ -1,23 +1,23 @@
-
----
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.4.1
   creationTimestamp: null
-  name: backplaneconfigs.backplane.open-cluster-management.io
+  name: multiclusterengines.multicluster.openshift.io
 spec:
-  group: backplane.open-cluster-management.io
+  group: multicluster.openshift.io
   names:
-    kind: BackplaneConfig
-    listKind: BackplaneConfigList
-    plural: backplaneconfigs
-    singular: backplaneconfig
+    kind: MultiClusterEngine
+    listKind: MultiClusterEngineList
+    plural: multiclusterengines
+    shortNames:
+    - me
+    singular: multiclusterengine
   scope: Cluster
   versions:
   - additionalPrinterColumns:
-    - description: The overall state of the Backplane
+    - description: The overall state of the MultiClusterEngine
       jsonPath: .status.phase
       name: Status
       type: string
@@ -27,7 +27,8 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: BackplaneConfig is the Schema for the backplaneconfigs API
+        description: MultiClusterEngine is the Schema for the multiclusterengines
+          API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -42,15 +43,15 @@ spec:
           metadata:
             type: object
           spec:
-            description: BackplaneConfigSpec defines the desired state of BackplaneConfig
+            description: MultiClusterEngineSpec defines the desired state of MultiClusterEngine
             properties:
               foo:
-                description: Foo is an example field of BackplaneConfig. Edit backplaneconfig_types.go
+                description: Foo is an example field of MultiClusterEngine. Edit multiclusterengine_types.go
                   to remove/update
                 type: string
             type: object
           status:
-            description: BackplaneConfigStatus defines the observed state of BackplaneConfig
+            description: MultiClusterEngineStatus defines the observed state of MultiClusterEngine
             properties:
               components:
                 items:

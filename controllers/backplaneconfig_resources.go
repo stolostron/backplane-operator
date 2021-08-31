@@ -17,7 +17,7 @@ import (
 )
 
 // ensureUnstructuredResource ensures that the unstructured resource is applied in the cluster properly
-func (r *BackplaneConfigReconciler) ensureUnstructuredResource(bpc *backplanev1alpha1.BackplaneConfig, u *unstructured.Unstructured) (ctrl.Result, error) {
+func (r *MultiClusterEngineReconciler) ensureUnstructuredResource(bpc *backplanev1alpha1.MultiClusterEngine, u *unstructured.Unstructured) (ctrl.Result, error) {
 	ctx := context.Background()
 	log := log.FromContext(ctx)
 
