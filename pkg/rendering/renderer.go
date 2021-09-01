@@ -81,7 +81,7 @@ func RenderCRDs() ([]*unstructured.Unstructured, []error) {
 	return crds, errs
 }
 
-func RenderTemplates(backplaneConfig *v1alpha1.BackplaneConfig, images map[string]string) ([]*unstructured.Unstructured, []error) {
+func RenderTemplates(backplaneConfig *v1alpha1.MultiClusterEngine, images map[string]string) ([]*unstructured.Unstructured, []error) {
 	log := log.FromContext(context.Background())
 	var templates []*unstructured.Unstructured
 	errs := []error{}
@@ -143,7 +143,7 @@ func RenderTemplates(backplaneConfig *v1alpha1.BackplaneConfig, images map[strin
 	return templates, errs
 }
 
-func injectValuesOverrides(values *Values, backplaneConfig *v1alpha1.BackplaneConfig, backplaneOperatorNamespace string, images map[string]string) {
+func injectValuesOverrides(values *Values, backplaneConfig *v1alpha1.MultiClusterEngine, backplaneOperatorNamespace string, images map[string]string) {
 
 	values.Global.ImageOverrides = images
 

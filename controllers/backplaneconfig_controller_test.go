@@ -62,7 +62,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 		{
 			Name:           "Backplane Config",
 			NamespacedName: types.NamespacedName{Name: BackplaneConfigName, Namespace: BackplaneOperatorNamespace},
-			ResourceType:   &v1alpha1.BackplaneConfig{},
+			ResourceType:   &v1alpha1.MultiClusterEngine{},
 			Expected:       nil,
 		},
 		{
@@ -113,15 +113,15 @@ var _ = Describe("BackplaneConfig controller", func() {
 		It("Should deploy sub components", func() {
 			By("By creating a new BackplaneConfig")
 			ctx := context.Background()
-			backplaneConfig := &v1alpha1.BackplaneConfig{
+			backplaneConfig := &v1alpha1.MultiClusterEngine{
 				TypeMeta: metav1.TypeMeta{
-					APIVersion: "backplane.open-cluster-management.io/v1alpha1",
-					Kind:       "BackplaneConfig",
+					APIVersion: "multiclusterengine.openshift.io/v1alpha1",
+					Kind:       "MultiClusterEngine",
 				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name: BackplaneConfigName,
 				},
-				Spec: v1alpha1.BackplaneConfigSpec{},
+				Spec: v1alpha1.MultiClusterEngineSpec{},
 			}
 			Expect(k8sClient.Create(ctx, backplaneConfig)).Should(Succeed())
 
@@ -136,7 +136,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 
 		It("Should finalize resources when BackplaneConfig is deleted", func() {
 			ctx := context.Background()
-			backplaneConfig := &v1alpha1.BackplaneConfig{}
+			backplaneConfig := &v1alpha1.MultiClusterEngine{}
 			backplaneConfigLookupKey := types.NamespacedName{Name: BackplaneConfigName}
 			err := k8sClient.Get(ctx, backplaneConfigLookupKey, backplaneConfig)
 			Expect(err).To(BeNil())

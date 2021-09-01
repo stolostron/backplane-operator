@@ -10,10 +10,10 @@ spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
-    - description: BackplaneConfig is the Schema for the backplaneconfigs API
-      displayName: Backplane Config
-      kind: BackplaneConfig
-      name: backplaneconfigs.backplane.open-cluster-management.io
+    - description: MultiClusterEngine is the Schema for the multiclusterengines API
+      displayName: Multi Cluster Engine
+      kind: MultiClusterEngine
+      name: multiclusterengines.multicluster.openshift.io
       version: v1alpha1
   description: Provides the components making up the backplane
   displayName: Backplane Operator

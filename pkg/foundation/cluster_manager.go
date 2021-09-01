@@ -16,7 +16,7 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-func ClusterManager(m *v1alpha1.BackplaneConfig, overrides map[string]string) *unstructured.Unstructured {
+func ClusterManager(m *v1alpha1.MultiClusterEngine, overrides map[string]string) *unstructured.Unstructured {
 
 	cm := &unstructured.Unstructured{
 		Object: map[string]interface{}{

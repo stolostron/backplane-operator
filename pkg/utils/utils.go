@@ -99,7 +99,7 @@ func GetReplicaCount() int32 {
 }
 
 //GetImagePullPolicy returns either pull policy from CR overrides or default of Always
-func GetImagePullPolicy(m *v1alpha1.BackplaneConfig) corev1.PullPolicy {
+func GetImagePullPolicy(m *v1alpha1.MultiClusterEngine) corev1.PullPolicy {
 	// if m.Spec.Overrides == nil || m.Spec.Overrides.ImagePullPolicy == "" {
 	// 	return corev1.PullAlways
 	// }

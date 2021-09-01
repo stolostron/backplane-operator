@@ -65,9 +65,9 @@ func defaultTolerations() []corev1.Toleration {
 	}
 }
 
-// ValidateDeployment returns a deep copy of the deployment with the desired spec based on the BackplaneConfig spec.
+// ValidateDeployment returns a deep copy of the deployment with the desired spec based on the MultiClusterEngine spec.
 // Returns true if an update is needed to reconcile differences with the current spec.
-func ValidateDeployment(m *v1alpha1.BackplaneConfig, overrides map[string]string, expected, dep *appsv1.Deployment) (*appsv1.Deployment, bool) {
+func ValidateDeployment(m *v1alpha1.MultiClusterEngine, overrides map[string]string, expected, dep *appsv1.Deployment) (*appsv1.Deployment, bool) {
 	var log = logf.Log.WithValues("Deployment.Namespace", dep.GetNamespace(), "Deployment.Name", dep.GetName())
 	found := dep.DeepCopy()
 

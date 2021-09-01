@@ -86,7 +86,7 @@ var (
 	}
 )
 
-func (r *BackplaneConfig) SetupWebhookWithManager(mgr ctrl.Manager) error {
+func (r *MultiClusterEngine) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	Client = mgr.GetClient()
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
@@ -94,22 +94,19 @@ func (r *BackplaneConfig) SetupWebhookWithManager(mgr ctrl.Manager) error {
 }
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-var _ webhook.Defaulter = &BackplaneConfig{}
+var _ webhook.Defaulter = &MultiClusterEngine{}
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type
-func (r *BackplaneConfig) Default() {
+func (r *MultiClusterEngine) Default() {
 	backplaneconfiglog.Info("default", "name", r.Name)
 
 	// TODO(user): fill in your defaulting logic.
 }
 
-// TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-//+kubebuilder:webhook:path=/validate-backplane-open-cluster-management-io-v1alpha1-backplaneconfig,mutating=false,failurePolicy=fail,sideEffects=None,groups=backplane.open-cluster-management.io,resources=backplaneconfigs,verbs=create;update,versions=v1alpha1,name=vbackplaneconfig.kb.io,admissionReviewVersions={v1,v1beta1}
-
-var _ webhook.Validator = &BackplaneConfig{}
+var _ webhook.Validator = &MultiClusterEngine{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *BackplaneConfig) ValidateCreate() error {
+func (r *MultiClusterEngine) ValidateCreate() error {
 	ctx := context.Background()
 	backplaneconfiglog.Info("validate create", "name", r.Name)
 
@@ -142,7 +139,7 @@ func (r *BackplaneConfig) ValidateCreate() error {
 		}
 	}
 
-	backplaneConfigList := &BackplaneConfigList{}
+	backplaneConfigList := &MultiClusterEngineList{}
 	if err := Client.List(context.TODO(), backplaneConfigList); err != nil {
 		return fmt.Errorf("unable to list BackplaneConfigs: %s", err)
 	}
@@ -154,7 +151,7 @@ func (r *BackplaneConfig) ValidateCreate() error {
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *BackplaneConfig) ValidateUpdate(old runtime.Object) error {
+func (r *MultiClusterEngine) ValidateUpdate(old runtime.Object) error {
 	backplaneconfiglog.Info("validate update", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object update.
@@ -162,7 +159,7 @@ func (r *BackplaneConfig) ValidateUpdate(old runtime.Object) error {
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *BackplaneConfig) ValidateDelete() error {
+func (r *MultiClusterEngine) ValidateDelete() error {
 	// TODO(user): fill in your validation logic upon object deletion.
 	backplaneconfiglog.Info("validate delete", "name", r.Name)
 	ctx := context.Background()

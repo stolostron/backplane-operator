@@ -1,4 +1,4 @@
 ## Append samples you want in your CSV to this file as resources ##
 resources:
-- backplane_v1alpha1_backplaneconfig.yaml
+- multicluster_v1alpha1_multiclusterengine.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples

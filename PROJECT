@@ -8,12 +8,12 @@ projectName: backplane-operator
 repo: github.com/open-cluster-management/backplane-operator
 resources:
 - api:
-    crdVersion: v1
-    namespaced: true
+    crdVersion: v1alpha1
+    namespaced: false
   controller: true
-  domain: open-cluster-management.io
-  group: backplane
-  kind: BackplaneConfig
+  domain: openshift.io
+  group: multicluster
+  kind: MultiClusterEngine
   path: github.com/open-cluster-management/backplane-operator/api/v1alpha1
   version: v1alpha1
   webhooks:

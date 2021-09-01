@@ -8,7 +8,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
-func HiveConfig(bpc *v1alpha1.BackplaneConfig) *unstructured.Unstructured {
+func HiveConfig(bpc *v1alpha1.MultiClusterEngine) *unstructured.Unstructured {
 
 	cm := &unstructured.Unstructured{
 		Object: map[string]interface{}{

@@ -57,7 +57,7 @@ import (
 )
 
 const (
-	crdName = "backplaneconfigs.backplane.open-cluster-management.io"
+	crdName = "multiclusterengines.multicluster.openshift.io"
 )
 
 var (
@@ -112,24 +112,24 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.BackplaneConfigReconciler{
+	if err = (&controllers.MultiClusterEngineReconciler{
 		Client:        mgr.GetClient(),
 		Scheme:        mgr.GetScheme(),
 		StatusManager: &status.StatusTracker{Client: mgr.GetClient()},
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "BackplaneConfig")
+		setupLog.Error(err, "unable to create controller", "controller", "MultiClusterEngine")
 		os.Exit(1)
 	}
 
 	// https://book.kubebuilder.io/cronjob-tutorial/running.html#running-webhooks-locally, https://book.kubebuilder.io/multiversion-tutorial/webhooks.html#and-maingo
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
 		if err = ensureWebhooks(mgr); err != nil {
-			setupLog.Error(err, "unable to ensure webhook", "webhook", "BackplaneConfig")
+			setupLog.Error(err, "unable to ensure webhook", "webhook", "MultiClusterEngine")
 			os.Exit(1)
 		}
 
-		if err = (&backplanev1alpha1.BackplaneConfig{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "BackplaneConfig")
+		if err = (&backplanev1alpha1.MultiClusterEngine{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "MultiClusterEngine")
 			os.Exit(1)
 		}
 	}

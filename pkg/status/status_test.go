@@ -69,7 +69,7 @@ func Test_AddCondition(t *testing.T) {
 	tracker := StatusTracker{}
 
 	t.Run("Add progressing condition", func(t *testing.T) {
-		tracker.AddCondition(NewCondition(bpv1alpha1.BackplaneProgressing, metav1.ConditionTrue, DeploySuccessReason, "All components deployed"))
+		tracker.AddCondition(NewCondition(bpv1alpha1.MultiClusterEngineProgressing, metav1.ConditionTrue, DeploySuccessReason, "All components deployed"))
 		cond := tracker.reportConditions()
 
 		if len(cond) != 1 {
@@ -78,7 +78,7 @@ func Test_AddCondition(t *testing.T) {
 	})
 
 	t.Run("Add available condition", func(t *testing.T) {
-		tracker.AddCondition(NewCondition(bpv1alpha1.BackplaneAvailable, metav1.ConditionTrue, ComponentsAvailableReason, "All components available"))
+		tracker.AddCondition(NewCondition(bpv1alpha1.MultiClusterEngineAvailable, metav1.ConditionTrue, ComponentsAvailableReason, "All components available"))
 		cond := tracker.reportConditions()
 
 		if len(cond) != 2 {
@@ -87,14 +87,14 @@ func Test_AddCondition(t *testing.T) {
 	})
 
 	t.Run("Update available condition", func(t *testing.T) {
-		tracker.AddCondition(NewCondition(bpv1alpha1.BackplaneAvailable, metav1.ConditionFalse, ComponentsUnavailableReason, "Not all components available"))
+		tracker.AddCondition(NewCondition(bpv1alpha1.MultiClusterEngineAvailable, metav1.ConditionFalse, ComponentsUnavailableReason, "Not all components available"))
 		cond := tracker.reportConditions()
 
 		if len(cond) != 2 {
 			t.Errorf("Expected two conditions. Got %v", len(cond))
 		}
 
-		c := getCondition(cond, bpv1alpha1.BackplaneAvailable)
+		c := getCondition(cond, bpv1alpha1.MultiClusterEngineAvailable)
 		if c.Status != metav1.ConditionFalse {
 			t.Errorf("Condition was not updated. Expected %v to equal %v.", c.Status, metav1.ConditionFalse)
 		}
