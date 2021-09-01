@@ -51,6 +51,11 @@ spec:
                 description: Foo is an example field of MultiClusterEngine. Edit multiclusterengine_types.go
                   to remove/update
                 type: string
+              nodeSelector:
+                additionalProperties:
+                  type: string
+                description: Set the nodeselectors
+                type: object
             type: object
           status:
             description: MultiClusterEngineStatus defines the observed state of MultiClusterEngine
