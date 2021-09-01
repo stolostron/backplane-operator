@@ -171,6 +171,25 @@ spec:
         - apiGroups:
           - hive.openshift.io
           resources:
+          - clusterclaims
+          - clusterdeployments
+          - clusterpools
+          - machinepools
+          verbs:
+          - approve
+          - bind
+          - create
+          - delete
+          - deletecollection
+          - escalate
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - hive.openshift.io
+          resources:
           - hiveconfigs
           verbs:
           - create
