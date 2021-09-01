@@ -5,7 +5,6 @@ package backplane_install_test
 
 import (
 	"context"
-	"fmt"
 	"github.com/ghodss/yaml"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -29,6 +28,7 @@ const (
 	BackplaneConfigName        = "backplane"
 	BackplaneOperatorNamespace = "backplane-operator-system"
 	installTimeout             = time.Minute * 5
+	listTimeout                = time.Second * 30
 	duration                   = time.Second * 1
 	interval                   = time.Millisecond * 250
 )
@@ -205,53 +205,23 @@ var _ = Describe("BackplaneConfig Test Suite", func() {
 		})
 		It("Should check that the config spec has propagated", func() {
 
-			tests := []struct {
-				Name           string
-				NamespacedName types.NamespacedName
-				ResourceType   client.Object
-			}{
-				{
-					Name:           "OCM Webhook",
-					NamespacedName: types.NamespacedName{Name: "ocm-webhook", Namespace: BackplaneOperatorNamespace},
-					ResourceType:   &appsv1.Deployment{},
-				},
-				{
-					Name:           "OCM Controller",
-					NamespacedName: types.NamespacedName{Name: "ocm-controller", Namespace: BackplaneOperatorNamespace},
-					ResourceType:   &appsv1.Deployment{},
-				},
-				{
-					Name:           "OCM Proxy Server",
-					NamespacedName: types.NamespacedName{Name: "ocm-proxyserver", Namespace: BackplaneOperatorNamespace},
-					ResourceType:   &appsv1.Deployment{},
-				},
-				{
-					Name:           "Cluster Manager Deployment",
-					NamespacedName: types.NamespacedName{Name: "cluster-manager", Namespace: BackplaneOperatorNamespace},
-					ResourceType:   &appsv1.Deployment{},
-				},
-				{
-					Name:           "Hive Operator Deployment",
-					NamespacedName: types.NamespacedName{Name: "hive-operator", Namespace: BackplaneOperatorNamespace},
-					ResourceType:   &appsv1.Deployment{},
-				},
-			}
-
 			By("Ensuring the spec is correct")
-			for _, test := range tests {
+			deployments := &appsv1.DeploymentList{}
+			Eventually(func() bool {
+				err := k8sClient.List(ctx, deployments,
+					client.InNamespace(BackplaneOperatorNamespace),
+					client.MatchingLabels{
+						"backplaneconfig.name": backplaneConfig.Name,
+					})
+				if err != nil {
+					return false
+				}
+				return len(deployments.Items) != 0
+			}, listTimeout, interval).Should(BeTrue())
 
-				Eventually(func() bool {
-					// component := &unstructured.Unstructured{}
-					err := k8sClient.Get(ctx, test.NamespacedName, test.ResourceType)
-					if err != nil {
-						fmt.Fprintf(GinkgoWriter, "could not get component %s\n", test.Name)
-					}
-
-					componentSelector := test.ResourceType.(*appsv1.Deployment).Spec.Template.Spec.NodeSelector
-
-					return reflect.DeepEqual(componentSelector, backplaneNodeSelector)
-
-				}, installTimeout, interval).Should(BeTrue())
+			for _, deployment := range deployments.Items {
+				componentSelector := deployment.Spec.Template.Spec.NodeSelector
+				Expect(reflect.DeepEqual(componentSelector, backplaneNodeSelector)).To(BeTrue())
 
 			}
 		})
