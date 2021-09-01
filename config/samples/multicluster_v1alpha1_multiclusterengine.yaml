@@ -5,5 +5,3 @@ metadata:
 spec:
   # Add fields here
   foo: bar
-  nodeSelector:
-    beta.kubernetes.io/arch: amd64
