@@ -5,13 +5,7 @@ package backplane_install_test
 
 import (
 	"context"
-<<<<<<< HEAD
-	"io/ioutil"
-
-	"github.com/ghodss/yaml"
-=======
 	"fmt"
->>>>>>> add node selector to spec
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"reflect"
@@ -21,12 +15,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	backplane "github.com/open-cluster-management/backplane-operator/api/v1alpha1"
-<<<<<<< HEAD
-
-=======
 	appsv1 "k8s.io/api/apps/v1"
 	// apierrors "k8s.io/apimachinery/pkg/api/errors"
->>>>>>> add node selector to spec
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -49,7 +39,6 @@ var (
 
 	k8sClient client.Client
 
-<<<<<<< HEAD
 	backplaneConfig = types.NamespacedName{}
 
 	blockCreationResources = []struct {
@@ -110,10 +99,8 @@ var (
 			Expected: "Existing ManagedCluster resources must first be deleted",
 		},
 	}
-=======
-	backplaneConfig       = types.NamespacedName{}
+	
 	backplaneNodeSelector map[string]string
->>>>>>> add node selector to spec
 )
 
 func initializeGlobals() {
@@ -173,7 +160,6 @@ var _ = Describe("BackplaneConfig Test Suite", func() {
 				Expect(available.Status).To(Equal(metav1.ConditionTrue))
 			})
 		})
-<<<<<<< HEAD
 
 		It("Should ensure validatingwebhook blocks deletion if resouces exist", func() {
 			for _, r := range blockDeletionResources {
@@ -214,7 +200,6 @@ var _ = Describe("BackplaneConfig Test Suite", func() {
 					Expect(err).ShouldNot(BeNil())
 					Expect(err.Error()).Should(ContainSubstring(r.Expected))
 				})
-=======
 		It("Should check that the config spec has propagated", func() {
 
 
@@ -268,7 +253,6 @@ var _ = Describe("BackplaneConfig Test Suite", func() {
 					
 				}, installTimeout, interval).Should(BeTrue())
 
->>>>>>> add node selector to spec
 			}
 		})
 	})
@@ -301,14 +285,9 @@ func defaultBackplaneConfig() *backplane.MultiClusterEngine {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: BackplaneConfigName,
 		},
-<<<<<<< HEAD
 		Spec: backplane.MultiClusterEngineSpec{
-			Foo: "bar",
-=======
-		Spec: backplane.BackplaneConfigSpec{
 			Foo:          "bar",
 			NodeSelector: backplaneNodeSelector,
->>>>>>> add node selector to spec
 		},
 		Status: backplane.MultiClusterEngineStatus{
 			Phase: "",
