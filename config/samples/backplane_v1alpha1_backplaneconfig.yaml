@@ -1,0 +1,9 @@
+apiVersion: backplane.open-cluster-management.io/v1alpha1
+kind: BackplaneConfig
+metadata:
+  name: backplaneconfig-sample
+spec:
+  # Add fields here
+  foo: bar
+  nodeSelector:
+    beta.kubernetes.io/arch: amd64

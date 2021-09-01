@@ -5,18 +5,28 @@ package backplane_install_test
 
 import (
 	"context"
+<<<<<<< HEAD
 	"io/ioutil"
 
 	"github.com/ghodss/yaml"
+=======
+	"fmt"
+>>>>>>> add node selector to spec
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"reflect"
 
 	"time"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	backplane "github.com/open-cluster-management/backplane-operator/api/v1alpha1"
+<<<<<<< HEAD
 
+=======
+	appsv1 "k8s.io/api/apps/v1"
+	// apierrors "k8s.io/apimachinery/pkg/api/errors"
+>>>>>>> add node selector to spec
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -25,10 +35,11 @@ import (
 )
 
 const (
-	BackplaneConfigName = "backplane"
-	installTimeout      = time.Minute * 5
-	duration            = time.Second * 1
-	interval            = time.Millisecond * 250
+	BackplaneConfigName        = "backplane"
+	BackplaneOperatorNamespace = "backplane-operator-system"
+	installTimeout             = time.Minute * 5
+	duration                   = time.Second * 1
+	interval                   = time.Millisecond * 250
 )
 
 var (
@@ -38,6 +49,7 @@ var (
 
 	k8sClient client.Client
 
+<<<<<<< HEAD
 	backplaneConfig = types.NamespacedName{}
 
 	blockCreationResources = []struct {
@@ -98,6 +110,10 @@ var (
 			Expected: "Existing ManagedCluster resources must first be deleted",
 		},
 	}
+=======
+	backplaneConfig       = types.NamespacedName{}
+	backplaneNodeSelector map[string]string
+>>>>>>> add node selector to spec
 )
 
 func initializeGlobals() {
@@ -105,6 +121,7 @@ func initializeGlobals() {
 	backplaneConfig = types.NamespacedName{
 		Name: BackplaneConfigName,
 	}
+	backplaneNodeSelector = map[string]string{"beta.kubernetes.io/os": "linux"}
 }
 
 var _ = Describe("BackplaneConfig Test Suite", func() {
@@ -156,6 +173,7 @@ var _ = Describe("BackplaneConfig Test Suite", func() {
 				Expect(available.Status).To(Equal(metav1.ConditionTrue))
 			})
 		})
+<<<<<<< HEAD
 
 		It("Should ensure validatingwebhook blocks deletion if resouces exist", func() {
 			for _, r := range blockDeletionResources {
@@ -196,6 +214,61 @@ var _ = Describe("BackplaneConfig Test Suite", func() {
 					Expect(err).ShouldNot(BeNil())
 					Expect(err.Error()).Should(ContainSubstring(r.Expected))
 				})
+=======
+		It("Should check that the config spec has propagated", func() {
+
+
+			tests := []struct {
+				Name           string
+				NamespacedName types.NamespacedName
+				ResourceType   client.Object
+
+			}{
+				{
+					Name:           "OCM Webhook",
+					NamespacedName: types.NamespacedName{Name: "ocm-webhook", Namespace: BackplaneOperatorNamespace},
+					ResourceType:   &appsv1.Deployment{},
+				},
+				{
+					Name:           "OCM Controller",
+					NamespacedName: types.NamespacedName{Name: "ocm-controller", Namespace: BackplaneOperatorNamespace},
+					ResourceType:   &appsv1.Deployment{},
+				},
+				{
+					Name:           "OCM Proxy Server",
+					NamespacedName: types.NamespacedName{Name: "ocm-proxyserver", Namespace: BackplaneOperatorNamespace},
+					ResourceType:   &appsv1.Deployment{},
+				},
+				{
+					Name:           "Cluster Manager Deployment",
+					NamespacedName: types.NamespacedName{Name: "cluster-manager", Namespace: BackplaneOperatorNamespace},
+					ResourceType:   &appsv1.Deployment{},
+				},
+				{
+					Name:           "Hive Operator Deployment",
+					NamespacedName: types.NamespacedName{Name: "hive-operator", Namespace: BackplaneOperatorNamespace},
+					ResourceType:   &appsv1.Deployment{},
+				},
+			}
+
+			By("Ensuring the spec is correct")
+			for _, test := range tests {
+
+				Eventually(func() bool {
+					// component := &unstructured.Unstructured{}
+					err := k8sClient.Get(ctx, test.NamespacedName, test.ResourceType)
+					if err != nil {
+						fmt.Fprintf(GinkgoWriter, "could not get component %s\n", test.Name)
+					}
+					
+					componentSelector := test.ResourceType.(*appsv1.Deployment).Spec.Template.Spec.NodeSelector
+
+
+					return reflect.DeepEqual(componentSelector, backplaneNodeSelector)
+					
+				}, installTimeout, interval).Should(BeTrue())
+
+>>>>>>> add node selector to spec
 			}
 		})
 	})
@@ -228,8 +301,14 @@ func defaultBackplaneConfig() *backplane.MultiClusterEngine {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: BackplaneConfigName,
 		},
+<<<<<<< HEAD
 		Spec: backplane.MultiClusterEngineSpec{
 			Foo: "bar",
+=======
+		Spec: backplane.BackplaneConfigSpec{
+			Foo:          "bar",
+			NodeSelector: backplaneNodeSelector,
+>>>>>>> add node selector to spec
 		},
 		Status: backplane.MultiClusterEngineStatus{
 			Phase: "",
