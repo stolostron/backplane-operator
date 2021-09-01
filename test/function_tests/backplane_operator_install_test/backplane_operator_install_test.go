@@ -6,10 +6,11 @@ package backplane_install_test
 import (
 	"context"
 	"fmt"
+	"github.com/ghodss/yaml"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"io/ioutil"
 	"reflect"
-
 	"time"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -99,7 +100,7 @@ var (
 			Expected: "Existing ManagedCluster resources must first be deleted",
 		},
 	}
-	
+
 	backplaneNodeSelector map[string]string
 )
 
@@ -200,14 +201,14 @@ var _ = Describe("BackplaneConfig Test Suite", func() {
 					Expect(err).ShouldNot(BeNil())
 					Expect(err.Error()).Should(ContainSubstring(r.Expected))
 				})
+			}
+		})
 		It("Should check that the config spec has propagated", func() {
-
 
 			tests := []struct {
 				Name           string
 				NamespacedName types.NamespacedName
 				ResourceType   client.Object
-
 			}{
 				{
 					Name:           "OCM Webhook",
@@ -245,12 +246,11 @@ var _ = Describe("BackplaneConfig Test Suite", func() {
 					if err != nil {
 						fmt.Fprintf(GinkgoWriter, "could not get component %s\n", test.Name)
 					}
-					
+
 					componentSelector := test.ResourceType.(*appsv1.Deployment).Spec.Template.Spec.NodeSelector
 
-
 					return reflect.DeepEqual(componentSelector, backplaneNodeSelector)
-					
+
 				}, installTimeout, interval).Should(BeTrue())
 
 			}
