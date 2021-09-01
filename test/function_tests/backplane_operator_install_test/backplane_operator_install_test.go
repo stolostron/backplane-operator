@@ -216,7 +216,7 @@ var _ = Describe("BackplaneConfig Test Suite", func() {
 				if err != nil {
 					return false
 				}
-				return len(deployments.Items) != 0
+				return letn(deployments.Items) != 0
 			}, listTimeout, interval).Should(BeTrue())
 
 			for _, deployment := range deployments.Items {
