@@ -130,11 +130,12 @@ type MultiClusterEngineCondition struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
-//+kubebuilder:resource:scope=Cluster,shortName=me
+//+kubebuilder:resource:scope=Cluster,shortName=mce
 
 // MultiClusterEngine is the Schema for the multiclusterengines API
 //+kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.phase",description="The overall state of the MultiClusterEngine"
 //+kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
+//+operator-sdk:csv:customresourcedefinitions:displayName="MultiCluster Engine"
 type MultiClusterEngine struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

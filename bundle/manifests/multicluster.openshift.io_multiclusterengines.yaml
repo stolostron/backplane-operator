@@ -12,7 +12,7 @@ spec:
     listKind: MultiClusterEngineList
     plural: multiclusterengines
     shortNames:
-    - me
+    - mce
     singular: multiclusterengine
   scope: Cluster
   versions:

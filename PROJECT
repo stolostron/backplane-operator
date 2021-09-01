@@ -4,7 +4,7 @@ layout:
 plugins:
   manifests.sdk.operatorframework.io/v2: {}
   scorecard.sdk.operatorframework.io/v2: {}
-projectName: backplane-operator
+projectName: multicluster-engine
 repo: github.com/open-cluster-management/backplane-operator
 resources:
 - api:

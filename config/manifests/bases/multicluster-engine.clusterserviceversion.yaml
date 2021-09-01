@@ -4,19 +4,19 @@ metadata:
   annotations:
     alm-examples: '[]'
     capabilities: Basic Install
-  name: backplane-operator.v0.0.0
+  name: multicluster-engine.v0.0.0
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
     - description: MultiClusterEngine is the Schema for the multiclusterengines API
-      displayName: Multi Cluster Engine
+      displayName: MultiCluster Engine
       kind: MultiClusterEngine
       name: multiclusterengines.multicluster.openshift.io
       version: v1alpha1
-  description: Provides the components making up the backplane
-  displayName: Backplane Operator
+  description: Provides the components making up the multiclusterengine
+  displayName: MultiCluster Engine
   icon:
   - base64data: ""
     mediatype: ""
@@ -34,14 +34,15 @@ spec:
   - supported: true
     type: AllNamespaces
   keywords:
-  - backplane
+  - multiclusterengine
   links:
-  - name: Backplane Operator
-    url: https://backplane-operator.domain
+  - name: Multicluster Engine
+    url: https://multicluster-engine.domain
   maintainers:
   - email: acm-contact@redhat.com
     name: Red Hat
   maturity: alpha
   provider:
     name: Red Hat
+    url: https://multicluster-engine.domain
   version: 0.0.0
