@@ -5,18 +5,18 @@ package backplane_install_test
 
 import (
 	"context"
-	"io/ioutil"
-
 	"github.com/ghodss/yaml"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
+	"io/ioutil"
+	"reflect"
 	"time"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	backplane "github.com/open-cluster-management/backplane-operator/api/v1alpha1"
-
+	appsv1 "k8s.io/api/apps/v1"
+	// apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -25,10 +25,12 @@ import (
 )
 
 const (
-	BackplaneConfigName = "backplane"
-	installTimeout      = time.Minute * 5
-	duration            = time.Second * 1
-	interval            = time.Millisecond * 250
+	BackplaneConfigName        = "backplane"
+	BackplaneOperatorNamespace = "backplane-operator-system"
+	installTimeout             = time.Minute * 5
+	listTimeout                = time.Second * 30
+	duration                   = time.Second * 1
+	interval                   = time.Millisecond * 250
 )
 
 var (
@@ -98,6 +100,8 @@ var (
 			Expected: "Existing ManagedCluster resources must first be deleted",
 		},
 	}
+
+	backplaneNodeSelector map[string]string
 )
 
 func initializeGlobals() {
@@ -105,6 +109,7 @@ func initializeGlobals() {
 	backplaneConfig = types.NamespacedName{
 		Name: BackplaneConfigName,
 	}
+	backplaneNodeSelector = map[string]string{"beta.kubernetes.io/os": "linux"}
 }
 
 var _ = Describe("BackplaneConfig Test Suite", func() {
@@ -198,6 +203,44 @@ var _ = Describe("BackplaneConfig Test Suite", func() {
 				})
 			}
 		})
+		It("Should check that the config spec has propagated", func() {
+
+			By("Ensuring the spec is correct")
+			nodeSelectorBackplane := &backplane.MultiClusterEngine{}
+
+			err := k8sClient.Get(ctx, client.ObjectKey{Name: BackplaneConfigName}, nodeSelectorBackplane)
+			Expect(err).To(BeNil())
+
+			nodeSelectorBackplane.Spec.NodeSelector = backplaneNodeSelector
+
+			err = k8sClient.Update(ctx, nodeSelectorBackplane)
+			Expect(err).To(BeNil())
+
+			deployments := &appsv1.DeploymentList{}
+			Eventually(func() bool {
+				err := k8sClient.List(ctx, deployments,
+					client.InNamespace(BackplaneOperatorNamespace),
+					client.MatchingLabels{
+						"backplaneconfig.name": backplaneConfig.Name,
+					})
+				if err != nil {
+					return false
+				}
+				if len(deployments.Items) == 0 {
+					return false
+				}
+
+				for _, deployment := range deployments.Items {
+					componentSelector := deployment.Spec.Template.Spec.NodeSelector
+					if !reflect.DeepEqual(componentSelector, backplaneNodeSelector) {
+						return false
+					}
+
+				}
+				return true
+			}, listTimeout, interval).Should(BeTrue())
+
+		})
 	})
 })
 
@@ -230,6 +273,7 @@ func defaultBackplaneConfig() *backplane.MultiClusterEngine {
 		},
 		Spec: backplane.MultiClusterEngineSpec{
 			Foo: "bar",
+			// NodeSelector: backplaneNodeSelector,
 		},
 		Status: backplane.MultiClusterEngineStatus{
 			Phase: "",

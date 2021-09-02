@@ -32,6 +32,9 @@ type MultiClusterEngineSpec struct {
 
 	// Foo is an example field of MultiClusterEngine. Edit multiclusterengine_types.go to remove/update
 	Foo string `json:"foo,omitempty"`
+
+	// Set the nodeselectors
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 }
 
 // MultiClusterEngineStatus defines the observed state of MultiClusterEngine
