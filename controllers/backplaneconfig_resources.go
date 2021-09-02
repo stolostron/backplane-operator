@@ -60,6 +60,9 @@ func (r *MultiClusterEngineReconciler) ensureUnstructuredResource(bpc *backplane
 		desired, needsUpdate = foundation.ValidateSpec(found, u)
 	case "ClusterRole":
 		desired, needsUpdate = utils.ValidateClusterRoleRules(found, u)
+	case "Deployment":
+		desired = u
+		needsUpdate = true
 	case "CustomResourceDefinition", "HiveConfig":
 		// skip update
 		return ctrl.Result{}, nil

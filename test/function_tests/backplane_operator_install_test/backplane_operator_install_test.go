@@ -206,6 +206,16 @@ var _ = Describe("BackplaneConfig Test Suite", func() {
 		It("Should check that the config spec has propagated", func() {
 
 			By("Ensuring the spec is correct")
+			nodeSelectorBackplane := &backplane.MultiClusterEngine{}
+
+			err := k8sClient.Get(ctx, client.ObjectKey{Name: BackplaneConfigName}, nodeSelectorBackplane)
+			Expect(err).To(BeNil())
+
+			nodeSelectorBackplane.Spec.NodeSelector = backplaneNodeSelector
+
+			err = k8sClient.Update(ctx, nodeSelectorBackplane)
+			Expect(err).To(BeNil())
+
 			deployments := &appsv1.DeploymentList{}
 			Eventually(func() bool {
 				err := k8sClient.List(ctx, deployments,
@@ -216,14 +226,20 @@ var _ = Describe("BackplaneConfig Test Suite", func() {
 				if err != nil {
 					return false
 				}
-				return len(deployments.Items) != 0
+				if len(deployments.Items) == 0 {
+					return false
+				}
+
+				for _, deployment := range deployments.Items {
+					componentSelector := deployment.Spec.Template.Spec.NodeSelector
+					if !reflect.DeepEqual(componentSelector, backplaneNodeSelector) {
+						return false
+					}
+
+				}
+				return true
 			}, listTimeout, interval).Should(BeTrue())
 
-			for _, deployment := range deployments.Items {
-				componentSelector := deployment.Spec.Template.Spec.NodeSelector
-				Expect(reflect.DeepEqual(componentSelector, backplaneNodeSelector)).To(BeTrue())
-
-			}
 		})
 	})
 })
@@ -256,8 +272,8 @@ func defaultBackplaneConfig() *backplane.MultiClusterEngine {
 			Name: BackplaneConfigName,
 		},
 		Spec: backplane.MultiClusterEngineSpec{
-			Foo:          "bar",
-			NodeSelector: backplaneNodeSelector,
+			Foo: "bar",
+			// NodeSelector: backplaneNodeSelector,
 		},
 		Status: backplane.MultiClusterEngineStatus{
 			Phase: "",
