@@ -61,7 +61,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 	}{
 		{
 			Name:           "Backplane Config",
-			NamespacedName: types.NamespacedName{Name: BackplaneConfigName, Namespace: BackplaneOperatorNamespace},
+			NamespacedName: types.NamespacedName{Name: BackplaneConfigName},
 			ResourceType:   &v1alpha1.MultiClusterEngine{},
 			Expected:       nil,
 		},
@@ -115,7 +115,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 			ctx := context.Background()
 			backplaneConfig := &v1alpha1.MultiClusterEngine{
 				TypeMeta: metav1.TypeMeta{
-					APIVersion: "multiclusterengine.openshift.io/v1alpha1",
+					APIVersion: "multicluster.openshift.io/v1alpha1",
 					Kind:       "MultiClusterEngine",
 				},
 				ObjectMeta: metav1.ObjectMeta{

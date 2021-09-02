@@ -26,7 +26,9 @@ import (
 	"os"
 	"time"
 
+	renderer "github.com/open-cluster-management/backplane-operator/pkg/rendering"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -39,18 +41,19 @@ import (
 	"github.com/open-cluster-management/backplane-operator/pkg/status"
 	"github.com/open-cluster-management/backplane-operator/pkg/version"
 
+	hiveconfig "github.com/openshift/hive/apis/hive/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
-
+	clustermanager "github.com/open-cluster-management/api/operator/v1"
 	backplanev1alpha1 "github.com/open-cluster-management/backplane-operator/api/v1alpha1"
 	"github.com/open-cluster-management/backplane-operator/controllers"
 	//+kubebuilder:scaffold:imports
@@ -75,6 +78,10 @@ func init() {
 	utilruntime.Must(admissionregistration.AddToScheme(scheme))
 
 	utilruntime.Must(apixv1.AddToScheme(scheme))
+
+	utilruntime.Must(hiveconfig.AddToScheme(scheme))
+
+	utilruntime.Must(clustermanager.AddToScheme(scheme))
 
 	//+kubebuilder:scaffold:scheme
 }
@@ -121,8 +128,25 @@ func main() {
 		os.Exit(1)
 	}
 
-	// https://book.kubebuilder.io/cronjob-tutorial/running.html#running-webhooks-locally, https://book.kubebuilder.io/multiversion-tutorial/webhooks.html#and-maingo
+	// Render CRD templates
+	crds, errs := renderer.RenderCRDs()
+	if len(errs) > 0 {
+		for _, err := range errs {
+			setupLog.Info(err.Error())
+		}
+		os.Exit(1)
+	}
+
+	for _, crd := range crds {
+		err := ensureCRD(mgr, crd)
+		if err != nil {
+			setupLog.Info(err.Error())
+			os.Exit(1)
+		}
+	}
+
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		// https://book.kubebuilder.io/cronjob-tutorial/running.html#running-webhooks-locally, https://book.kubebuilder.io/multiversion-tutorial/webhooks.html#and-maingo
 		if err = ensureWebhooks(mgr); err != nil {
 			setupLog.Error(err, "unable to ensure webhook", "webhook", "MultiClusterEngine")
 			os.Exit(1)
@@ -149,6 +173,47 @@ func main() {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
+}
+
+func ensureCRD(mgr ctrl.Manager, crd *unstructured.Unstructured) error {
+	ctx := context.Background()
+	maxAttempts := 5
+	go func() {
+		for i := 0; i < maxAttempts; i++ {
+			setupLog.Info(fmt.Sprintf("Ensuring '%s' CRD exists", crd.GetName()))
+			existingCRD := &unstructured.Unstructured{}
+			existingCRD.SetGroupVersionKind(crd.GroupVersionKind())
+			err := mgr.GetClient().Get(ctx, types.NamespacedName{Name: crd.GetName()}, existingCRD)
+			if err != nil && errors.IsNotFound(err) {
+				// CRD not found. Create and return
+				err = mgr.GetClient().Create(ctx, crd)
+				if err != nil {
+					setupLog.Error(err, fmt.Sprintf("Error creating '%s' CRD", crd.GetName()))
+					time.Sleep(5 * time.Second)
+					continue
+				}
+				return
+			} else if err != nil {
+				setupLog.Error(err, fmt.Sprintf("Error getting '%s' CRD", crd.GetName()))
+			} else if err == nil {
+				// Webhook already exists. Update and return
+				setupLog.Info(fmt.Sprintf("'%s' CRD already exists. Updating.", crd.GetName()))
+				crd.SetResourceVersion(existingCRD.GetResourceVersion())
+				err = mgr.GetClient().Update(ctx, crd)
+				if err != nil {
+					setupLog.Error(err, fmt.Sprintf("Error updating '%s' CRD", crd.GetName()))
+					time.Sleep(5 * time.Second)
+					continue
+				}
+				return
+			}
+			time.Sleep(5 * time.Second)
+		}
+
+		setupLog.Info(fmt.Sprintf("Unable to ensure '%s' CRD exists in allotted time. Failing.", crd.GetName()))
+		os.Exit(1)
+	}()
+	return nil
 }
 
 func ensureWebhooks(mgr ctrl.Manager) error {

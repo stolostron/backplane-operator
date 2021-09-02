@@ -151,7 +151,9 @@ rules:
   - create
   - delete
   - get
+  - list
   - update
+  - watch
 - apiGroups:
   - imageregistry.open-cluster-management.io
   resources:
