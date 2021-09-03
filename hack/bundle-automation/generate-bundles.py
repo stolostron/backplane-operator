@@ -332,7 +332,7 @@ def injectHelmFlowControl(deployment):
 {{- end }}
 """     
         if line.strip() == "imagePullSecrets:":
-            lines[i] = """{{- with .Values.global.imagePullSecret }}
+            lines[i] = """{{- if .Values.global.imagePullSecret }}
         imagePullSecrets:
         - name : {{ .Values.global.imagePullSecret }}
 {{- end }}
