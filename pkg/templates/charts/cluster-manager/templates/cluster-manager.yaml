@@ -77,7 +77,11 @@ spec:
           runAsNonRoot: true
       hostIPC: false
       hostNetwork: false
-      hostPID: false
+      hostPID: false    
+{{- if .Values.global.pullSecret }}
+      imagePullSecrets:
+      - name: {{ .Values.global.pullSecret }}
+{{- end }}
 {{- with .Values.hubconfig.nodeSelector }}
       nodeSelector:
 {{ toYaml . | indent 8 }}

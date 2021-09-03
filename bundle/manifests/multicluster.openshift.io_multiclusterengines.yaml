@@ -49,6 +49,10 @@ spec:
                 description: Foo is an example field of MultiClusterEngine. Edit multiclusterengine_types.go
                   to remove/update
                 type: string
+              imagePullSecret:
+                description: Override pull secret for accessing MultiClusterEngine
+                  operand and endpoint images
+                type: string
               nodeSelector:
                 additionalProperties:
                   type: string

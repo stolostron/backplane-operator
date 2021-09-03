@@ -102,6 +102,7 @@ var (
 	}
 
 	backplaneNodeSelector map[string]string
+	backplanePullSecret	string
 )
 
 func initializeGlobals() {
@@ -110,6 +111,7 @@ func initializeGlobals() {
 		Name: BackplaneConfigName,
 	}
 	backplaneNodeSelector = map[string]string{"beta.kubernetes.io/os": "linux"}
+	backplanePullSecret = "test"
 }
 
 var _ = Describe("BackplaneConfig Test Suite", func() {
@@ -205,7 +207,7 @@ var _ = Describe("BackplaneConfig Test Suite", func() {
 		})
 		It("Should check that the config spec has propagated", func() {
 
-			By("Ensuring the spec is correct")
+			By("Ensuring the node selectors is correct")
 			nodeSelectorBackplane := &backplane.MultiClusterEngine{}
 
 			err := k8sClient.Get(ctx, client.ObjectKey{Name: BackplaneConfigName}, nodeSelectorBackplane)
@@ -233,6 +235,44 @@ var _ = Describe("BackplaneConfig Test Suite", func() {
 				for _, deployment := range deployments.Items {
 					componentSelector := deployment.Spec.Template.Spec.NodeSelector
 					if !reflect.DeepEqual(componentSelector, backplaneNodeSelector) {
+						return false
+					}
+
+				}
+				return true
+			}, listTimeout, interval).Should(BeTrue())
+
+			By("Ensuring the image pull secret is correct")
+			pullSecretBackplane := &backplane.MultiClusterEngine{}
+
+			err = k8sClient.Get(ctx, client.ObjectKey{Name: BackplaneConfigName}, pullSecretBackplane)
+			Expect(err).To(BeNil())
+
+			pullSecretBackplane.Spec.ImagePullSecret = backplanePullSecret
+
+			err = k8sClient.Update(ctx, pullSecretBackplane)
+			Expect(err).To(BeNil())
+
+			deployments = &appsv1.DeploymentList{}
+			Eventually(func() bool {
+				err := k8sClient.List(ctx, deployments,
+					client.InNamespace(BackplaneOperatorNamespace),
+					client.MatchingLabels{
+						"backplaneconfig.name": backplaneConfig.Name,
+					})
+				if err != nil {
+					return false
+				}
+				if len(deployments.Items) == 0 {
+					return false
+				}
+
+				for _, deployment := range deployments.Items {
+					if len(deployment.Spec.Template.Spec.ImagePullSecrets) == 0 {
+						return false
+					}
+					componentSecret := deployment.Spec.Template.Spec.ImagePullSecrets[0].Name
+					if !reflect.DeepEqual(componentSecret, backplanePullSecret) {
 						return false
 					}
 

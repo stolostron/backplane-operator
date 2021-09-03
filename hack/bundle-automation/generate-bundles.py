@@ -330,7 +330,14 @@ def injectHelmFlowControl(deployment):
       nodeSelector:
 {{ toYaml . | indent 8 }}
 {{- end }}
+"""     
+        if line.strip() == "imagePullSecrets:":
+            lines[i] = """{{- if .Values.global.imagePullSecret }}
+        imagePullSecrets:
+        - name : {{ .Values.global.imagePullSecret }}
+{{- end }}
 """
+
         if line.strip() == "env:" or line.strip() == "env: {}":
             lines[i] = """        env:
 {{- if .Values.hubconfig.proxyConfigs }}
@@ -371,6 +378,7 @@ def updateDeployments(helmChart, exclusions):
         deploy['spec']['template']['spec']['securityContext']['runAsNonRoot'] = True
         deploy['spec']['template']['metadata']['labels']['ocm-antiaffinity-selector'] = deploy['metadata']['name']
         deploy['spec']['template']['spec']['nodeSelector'] = ""
+        deploy['spec']['template']['spec']['imagePullSecrets'] = ""
 
         containers = deploy['spec']['template']['spec']['containers']
         for container in containers:

@@ -35,6 +35,10 @@ type MultiClusterEngineSpec struct {
 
 	// Set the nodeselectors
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+
+	// Override pull secret for accessing MultiClusterEngine operand and endpoint images
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Image Pull Secret",xDescriptors={"urn:alm:descriptor:io.kubernetes:Secret","urn:alm:descriptor:com.tectonic.ui:advanced"}
+	ImagePullSecret string `json:"imagePullSecret,omitempty"`
 }
 
 // MultiClusterEngineStatus defines the observed state of MultiClusterEngine
