@@ -55,6 +55,9 @@ spec:
 {{- end }}
         image: '{{ .Values.global.imageOverrides.multicloud_manager }}'
         imagePullPolicy: '{{ .Values.global.pullPolicy }}'
+{{- if .Values.global.pullSecret }}
+        imagePullSecret: '{{ .Values.global.pullSecret }}'
+{{- end }}
         name: ocm-proxyserver
         livenessProbe:
           failureThreshold: 3

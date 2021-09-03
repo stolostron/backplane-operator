@@ -50,6 +50,9 @@ spec:
 {{- end }}
         image: '{{ .Values.global.imageOverrides.registration_operator }}'
         imagePullPolicy: '{{ .Values.global.pullPolicy }}'
+{{- if .Values.global.pullSecret }}
+        imagePullSecret: '{{ .Values.global.pullSecret }}'
+{{- end }}
         livenessProbe:
           httpGet:
             path: /healthz
