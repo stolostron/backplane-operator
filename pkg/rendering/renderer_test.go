@@ -31,13 +31,15 @@ func TestRender(t *testing.T) {
 	}
 
 	backplaneNodeSelector := map[string]string{"select": "test"}
+	backplaneImagePullSecret := "test"
 	testBackplane := &backplane.MultiClusterEngine{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "testBackplane",
 		},
 		Spec: backplane.MultiClusterEngineSpec{
-			Foo:          "bar",
-			NodeSelector: backplaneNodeSelector,
+			Foo:             "bar",
+			NodeSelector:    backplaneNodeSelector,
+			ImagePullSecret: backplaneImagePullSecret,
 		},
 		Status: backplane.MultiClusterEngineStatus{
 			Phase: "",
@@ -59,10 +61,15 @@ func TestRender(t *testing.T) {
 		if template.GetKind() == "Deployment" {
 			deployment := appsv1.Deployment{}
 			runtime.DefaultUnstructuredConverter.FromUnstructured(template.Object, &deployment)
-			equality := reflect.DeepEqual(deployment.Spec.Template.Spec.NodeSelector, backplaneNodeSelector)
-			if !equality {
+			selectorEquality := reflect.DeepEqual(deployment.Spec.Template.Spec.NodeSelector, backplaneNodeSelector)
+			if !selectorEquality {
 				t.Fatalf("Node Selector did not propagate to the deployments use")
 			}
+			secretEquality := reflect.DeepEqual(deployment.Spec.Template.Spec.ImagePullSecrets[0].Name, backplaneImagePullSecret)
+			if !secretEquality {
+				t.Fatalf("Image Pull Secret did not propagate to the deployments use")
+			}
+
 		}
 	}
 	os.Unsetenv("POD_NAMESPACE")

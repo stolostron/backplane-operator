@@ -151,9 +151,7 @@ func injectValuesOverrides(values *Values, backplaneConfig *v1alpha1.MultiCluste
 
 	values.Global.Namespace = backplaneOperatorNamespace
 
-	// values.Global.PullSecret = backplaneConfig.Spec.ImagePullSecret
-
-	values.Global.PullSecret = "test"
+	values.Global.PullSecret = backplaneConfig.Spec.ImagePullSecret
 
 	values.HubConfig.ReplicaCount = 1
 

@@ -61,9 +61,6 @@ spec:
               fieldPath: metadata.namespace
         image: '{{ .Values.global.imageOverrides.openshift_hive }}'
         imagePullPolicy: '{{ .Values.global.pullPolicy }}'
-{{- if .Values.global.pullSecret }}
-        imagePullSecret: '{{ .Values.global.pullSecret }}'
-{{- end }}
         livenessProbe:
           httpGet:
             path: /healthz
@@ -94,6 +91,10 @@ spec:
       hostIPC: false
       hostNetwork: false
       hostPID: false
+{{- if .Values.global.pullSecret }}
+      imagePullSecrets:
+      - name: {{ .Values.global.pullSecret }}
+{{- end }}
 {{- with .Values.hubconfig.nodeSelector }}
       nodeSelector:
 {{ toYaml . | indent 8 }}
