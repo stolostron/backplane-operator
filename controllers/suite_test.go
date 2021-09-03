@@ -23,16 +23,19 @@ import (
 	"path/filepath"
 	"testing"
 
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	ctrl "sigs.k8s.io/controller-runtime"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	clustermanager "github.com/open-cluster-management/api/operator/v1"
 	backplanev1alpha1 "github.com/open-cluster-management/backplane-operator/api/v1alpha1"
 	"github.com/open-cluster-management/backplane-operator/pkg/status"
+	hiveconfig "github.com/openshift/hive/apis/hive/v1"
+
+	admissionregistration "k8s.io/api/admissionregistration/v1"
+	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/controller-runtime/pkg/envtest/printer"
@@ -63,7 +66,9 @@ var _ = BeforeSuite(func() {
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths: []string{
 			filepath.Join("..", "config", "crd", "bases"),
-			filepath.Join("..", "hack", "unit-test-crds"),
+			filepath.Join("..", "pkg", "templates", "crds", "cluster-manager"),
+			filepath.Join("..", "pkg", "templates", "crds", "hive-operator"),
+			filepath.Join("..", "pkg", "templates", "crds", "foundation"),
 		},
 		ErrorIfCRDPathMissing: true,
 	}
@@ -75,10 +80,22 @@ var _ = BeforeSuite(func() {
 	err = backplanev1alpha1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
-	err = clientgoscheme.AddToScheme(scheme.Scheme)
+	err = scheme.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	err = apiregistrationv1.AddToScheme(scheme.Scheme)
+	Expect(err).NotTo(HaveOccurred())
+
+	err = admissionregistration.AddToScheme(scheme.Scheme)
+	Expect(err).NotTo(HaveOccurred())
+
+	err = apixv1.AddToScheme(scheme.Scheme)
+	Expect(err).NotTo(HaveOccurred())
+
+	err = hiveconfig.AddToScheme(scheme.Scheme)
+	Expect(err).NotTo(HaveOccurred())
+
+	err = clustermanager.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	err = os.Setenv("POD_NAMESPACE", "default")

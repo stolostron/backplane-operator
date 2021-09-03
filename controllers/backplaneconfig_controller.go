@@ -24,8 +24,11 @@ import (
 	"fmt"
 	"time"
 
+	clustermanager "github.com/open-cluster-management/api/operator/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/client-go/util/workqueue"
 
+	hiveconfig "github.com/openshift/hive/apis/hive/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -36,9 +39,14 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	backplanev1alpha1 "github.com/open-cluster-management/backplane-operator/api/v1alpha1"
 	"github.com/open-cluster-management/backplane-operator/pkg/foundation"
@@ -83,7 +91,7 @@ const (
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io;inventory.open-cluster-management.io;observability.open-cluster-management.io;operator.open-cluster-management.io,resources=managedclusters;baremetalassets;multiclusterobservabilities;multiclusterhubs,verbs=get;list;watch
 
 // Hive RBAC
-//+kubebuilder:rbac:groups="hive.openshift.io",resources=hiveconfigs,verbs=get;create;update;delete
+//+kubebuilder:rbac:groups="hive.openshift.io",resources=hiveconfigs,verbs=get;create;update;delete;list;watch
 //+kubebuilder:rbac:groups="hive.openshift.io",resources=clusterdeployments;clusterpools;clusterclaims;machinepools,verbs=approve;bind;create;delete;deletecollection;escalate;get;list;patch;update;watch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
@@ -97,7 +105,6 @@ const (
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.8.3/pkg/reconcile
 func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (retRes ctrl.Result, retErr error) {
 	log := log.FromContext(ctx)
-
 	// Fetch the BackplaneConfig instance
 	backplaneConfig, err := r.getBackplaneConfig(req)
 	if err != nil && !errors.IsNotFound(err) {
@@ -162,28 +169,37 @@ func (r *MultiClusterEngineReconciler) SetupWithManager(mgr ctrl.Manager) error 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&backplanev1alpha1.MultiClusterEngine{}).
 		WithEventFilter(predicate.Or(predicate.GenerationChangedPredicate{}, predicate.LabelChangedPredicate{}, predicate.AnnotationChangedPredicate{})).
+		Watches(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueRequestForOwner{
+			OwnerType: &backplanev1alpha1.MultiClusterEngine{},
+		}).
+		Watches(&source.Kind{Type: &hiveconfig.HiveConfig{}}, &handler.Funcs{
+			DeleteFunc: func(e event.DeleteEvent, q workqueue.RateLimitingInterface) {
+				labels := e.Object.GetLabels()
+				q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
+					Name: labels["backplaneconfig.name"],
+				}})
+			},
+		}, builder.WithPredicates(predicate.LabelChangedPredicate{})).
+		Watches(&source.Kind{Type: &clustermanager.ClusterManager{}}, &handler.Funcs{
+			DeleteFunc: func(e event.DeleteEvent, q workqueue.RateLimitingInterface) {
+				labels := e.Object.GetLabels()
+				q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
+					Name: labels["backplaneconfig.name"],
+				}})
+			},
+			UpdateFunc: func(e event.UpdateEvent, q workqueue.RateLimitingInterface) {
+				labels := e.ObjectOld.GetLabels()
+				q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
+					Name: labels["backplaneconfig.name"],
+				}})
+			},
+		}, builder.WithPredicates(predicate.LabelChangedPredicate{})).
 		Complete(r)
 }
 
 // DeploySubcomponents ensures all subcomponents exist
 func (r *MultiClusterEngineReconciler) DeploySubcomponents(backplaneConfig *backplanev1alpha1.MultiClusterEngine) (ctrl.Result, error) {
 	log := log.FromContext(context.Background())
-
-	// Render CRD templates
-	crds, errs := renderer.RenderCRDs()
-	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
-	}
-
-	for _, crd := range crds {
-		result, err := r.ensureUnstructuredResource(backplaneConfig, crd)
-		if err != nil {
-			return result, err
-		}
-	}
 
 	// Renders all templates from charts
 	templates, errs := renderer.RenderTemplates(backplaneConfig, r.Images)
