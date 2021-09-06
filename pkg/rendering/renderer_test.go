@@ -6,6 +6,7 @@ package renderer
 import (
 	backplane "github.com/open-cluster-management/backplane-operator/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	// "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -32,6 +33,13 @@ func TestRender(t *testing.T) {
 
 	backplaneNodeSelector := map[string]string{"select": "test"}
 	backplaneImagePullSecret := "test"
+	backplaneTolerations := []corev1.Toleration{
+		corev1.Toleration{
+			Key:      "dedicated",
+			Operator: "Exists",
+			Effect:   "NoSchedule",
+		},
+	}
 	testBackplane := &backplane.MultiClusterEngine{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "testBackplane",
@@ -40,6 +48,7 @@ func TestRender(t *testing.T) {
 			Foo:             "bar",
 			NodeSelector:    backplaneNodeSelector,
 			ImagePullSecret: backplaneImagePullSecret,
+			Tolerations:     backplaneTolerations,
 		},
 		Status: backplane.MultiClusterEngineStatus{
 			Phase: "",
@@ -68,6 +77,10 @@ func TestRender(t *testing.T) {
 			secretEquality := reflect.DeepEqual(deployment.Spec.Template.Spec.ImagePullSecrets[0].Name, backplaneImagePullSecret)
 			if !secretEquality {
 				t.Fatalf("Image Pull Secret did not propagate to the deployments use")
+			}
+			tolerationEquality := reflect.DeepEqual(deployment.Spec.Template.Spec.Tolerations, backplaneTolerations)
+			if !tolerationEquality {
+				t.Fatalf("Toleration did not propagate to the deployments use")
 			}
 
 		}

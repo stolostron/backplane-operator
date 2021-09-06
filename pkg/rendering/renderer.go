@@ -16,6 +16,7 @@ import (
 	"github.com/open-cluster-management/backplane-operator/api/v1alpha1"
 	"github.com/open-cluster-management/backplane-operator/pkg/utils"
 	"helm.sh/helm/v3/pkg/engine"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/yaml"
@@ -27,9 +28,10 @@ const (
 )
 
 type Values struct {
-	Global    Global    `yaml:"global" structs:"global"`
-	HubConfig HubConfig `yaml:"hubconfig" structs:"hubconfig"`
-	Org       string    `yaml:"org" structs:"org"`
+	Global      Global              `yaml:"global" structs:"global"`
+	HubConfig   HubConfig           `yaml:"hubconfig" structs:"hubconfig"`
+	Tolerations []corev1.Toleration `yaml:"tolerations" structs:"tolerations"`
+	Org         string              `yaml:"org" structs:"org"`
 }
 
 type Global struct {
@@ -156,6 +158,8 @@ func injectValuesOverrides(values *Values, backplaneConfig *v1alpha1.MultiCluste
 	values.HubConfig.ReplicaCount = 1
 
 	values.HubConfig.NodeSelector = backplaneConfig.Spec.NodeSelector
+
+	values.Tolerations = backplaneConfig.Spec.Tolerations
 
 	values.Org = "open-cluster-management"
 

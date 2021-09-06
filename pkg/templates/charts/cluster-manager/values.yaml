@@ -8,3 +8,4 @@ hubconfig:
   proxyConfigs: {}
   replicaCount: 1
 org: open-cluster-management
+tolerations: []

@@ -19,6 +19,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -39,6 +40,10 @@ type MultiClusterEngineSpec struct {
 	// Override pull secret for accessing MultiClusterEngine operand and endpoint images
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Image Pull Secret",xDescriptors={"urn:alm:descriptor:io.kubernetes:Secret","urn:alm:descriptor:com.tectonic.ui:advanced"}
 	ImagePullSecret string `json:"imagePullSecret,omitempty"`
+
+	// Tolerations causes all components to tolerate any taints.
+	// +optional
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 }
 
 // MultiClusterEngineStatus defines the observed state of MultiClusterEngine

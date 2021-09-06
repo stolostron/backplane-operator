@@ -103,13 +103,16 @@ spec:
         runAsNonRoot: true
       serviceAccountName: hive-operator
       terminationGracePeriodSeconds: 10
+{{- with .Values.tolerations }}
       tolerations:
-      - effect: NoSchedule
-        key: dedicated
-        operator: Exists
-      - effect: NoSchedule
-        key: node-role.kubernetes.io/infra
-        operator: Exists
+      {{- range . }}
+      - {{ if .Key }} key: {{ .Key }} {{- end }}
+        {{ if .Operator }} operator: {{ .Operator }} {{- end }}
+        {{ if .Value }} value: {{ .Value }} {{- end }}
+        {{ if .Effect }} effect: {{ .Effect }} {{- end }}
+        {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
+        {{- end }}
+{{- end }}
       volumes:
       - emptyDir: {}
         name: kubectl-cache

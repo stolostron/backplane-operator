@@ -337,6 +337,19 @@ def injectHelmFlowControl(deployment):
         - name : {{ .Values.global.imagePullSecret }}
 {{- end }}
 """
+        if line.strip() == "tolerations:":
+            lines[i] = """{{- with .Values.tolerations }}
+      tolerations:
+      {{- range . }}
+      - {{ if .Key }} key: {{ .Key }} {{- end }}
+        {{ if .Operator }} operator: {{ .Operator }} {{- end }}
+        {{ if .Value }} value: {{ .Value }} {{- end }}
+        {{ if .Effect }} effect: {{ .Effect }} {{- end }}
+        {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
+        {{- end }}
+{{- end }}
+"""
+
 
         if line.strip() == "env:" or line.strip() == "env: {}":
             lines[i] = """        env:
