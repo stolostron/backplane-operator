@@ -186,12 +186,6 @@ rules:
 - apiGroups:
   - multicluster.openshift.io
   resources:
-  - multiclusterengines/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - multicluster.openshift.io
-  resources:
   - multiclusterengines/status
   verbs:
   - get

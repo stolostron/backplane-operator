@@ -9,14 +9,14 @@ import (
 	"path"
 	"path/filepath"
 
-	loader "helm.sh/helm/v3/pkg/chart/loader"
-	"helm.sh/helm/v3/pkg/chartutil"
-
 	"github.com/fatih/structs"
 	"github.com/open-cluster-management/backplane-operator/api/v1alpha1"
 	"github.com/open-cluster-management/backplane-operator/pkg/utils"
+	loader "helm.sh/helm/v3/pkg/chart/loader"
+	"helm.sh/helm/v3/pkg/chartutil"
 	"helm.sh/helm/v3/pkg/engine"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/yaml"
@@ -133,6 +133,9 @@ func RenderTemplates(backplaneConfig *v1alpha1.MultiClusterEngine, images map[st
 
 			utils.AddBackplaneConfigLabels(unstructured, backplaneConfig.Name)
 
+			unstructured.SetOwnerReferences([]metav1.OwnerReference{
+				*metav1.NewControllerRef(backplaneConfig, backplaneConfig.GetObjectKind().GroupVersionKind()),
+			})
 			// Add namespace to namespaced resources
 			switch unstructured.GetKind() {
 			case "Deployment", "ServiceAccount", "Role", "RoleBinding", "Service":
