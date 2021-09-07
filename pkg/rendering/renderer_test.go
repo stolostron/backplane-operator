@@ -55,6 +55,9 @@ func TestRender(t *testing.T) {
 		},
 	}
 	testImages := map[string]string{"registration_operator": "test", "openshift_hive": "test", "multicloud_manager": "test"}
+	containsHTTP := false
+	containsHTTPS := false
+	containsNO := false
 	os.Setenv("POD_NAMESPACE", "default")
 	os.Setenv("HTTP_PROXY", "test1")
 	os.Setenv("HTTPS_PROXY", "test2")
@@ -85,22 +88,34 @@ func TestRender(t *testing.T) {
 			if !tolerationEquality {
 				t.Fatalf("Toleration did not propagate to the deployments use")
 			}
+
 			for _, proxyVar := range deployment.Spec.Template.Spec.Containers[0].Env {
 				switch proxyVar.Name {
 				case "HTTP_PROXY":
+					containsHTTP = true
 					if proxyVar.Value != "test1" {
 						t.Fatalf("HTTP_PROXY not propagated")
 					}
 				case "HTTPS_PROXY":
+					containsHTTPS = true
 					if proxyVar.Value != "test2" {
 						t.Fatalf("HTTPS_PROXY not propagated")
 					}
 				case "NO_PROXY":
+					containsNO = true
 					if proxyVar.Value != "test3" {
 						t.Fatalf("NO_PROXY not propagated")
 					}
 				}
+
 			}
+
+			if !containsHTTP || !containsHTTPS || !containsNO {
+				t.Fatalf("proxy variables not set")
+			}
+			containsHTTP = false
+			containsHTTPS = false
+			containsNO = false
 		}
 
 	}
