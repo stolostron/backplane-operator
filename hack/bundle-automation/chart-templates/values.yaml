@@ -14,4 +14,4 @@ hubconfig:
   nodeSelector: null
   replicaCount: 1
   proxyConfigs: {}
-tolerations: []
+  tolerations: []

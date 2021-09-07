@@ -28,10 +28,9 @@ const (
 )
 
 type Values struct {
-	Global      Global              `yaml:"global" structs:"global"`
-	HubConfig   HubConfig           `yaml:"hubconfig" structs:"hubconfig"`
-	Tolerations []corev1.Toleration `yaml:"tolerations" structs:"tolerations"`
-	Org         string              `yaml:"org" structs:"org"`
+	Global    Global    `yaml:"global" structs:"global"`
+	HubConfig HubConfig `yaml:"hubconfig" structs:"hubconfig"`
+	Org       string    `yaml:"org" structs:"org"`
 }
 
 type Global struct {
@@ -42,9 +41,10 @@ type Global struct {
 }
 
 type HubConfig struct {
-	NodeSelector map[string]string `yaml:"nodeSelector" structs:"nodeSelector"`
-	ProxyConfigs map[string]string `yaml:"proxyConfigs" structs:"proxyConfigs"`
-	ReplicaCount int               `yaml:"replicaCount" structs:"replicaCount"`
+	NodeSelector map[string]string   `yaml:"nodeSelector" structs:"nodeSelector"`
+	ProxyConfigs map[string]string   `yaml:"proxyConfigs" structs:"proxyConfigs"`
+	ReplicaCount int                 `yaml:"replicaCount" structs:"replicaCount"`
+	Tolerations  []corev1.Toleration `yaml:"tolerations" structs:"tolerations"`
 }
 
 func RenderCRDs() ([]*unstructured.Unstructured, []error) {
@@ -159,9 +159,28 @@ func injectValuesOverrides(values *Values, backplaneConfig *v1alpha1.MultiCluste
 
 	values.HubConfig.NodeSelector = backplaneConfig.Spec.NodeSelector
 
-	values.Tolerations = backplaneConfig.Spec.Tolerations
+	if len(backplaneConfig.Spec.Tolerations) > 0 {
+		values.HubConfig.Tolerations = backplaneConfig.Spec.Tolerations
+	} else {
+		values.HubConfig.Tolerations = defaultTolerations()
+	}
 
 	values.Org = "open-cluster-management"
 
 	// TODO: Define all overrides
+}
+
+func defaultTolerations() []corev1.Toleration {
+	return []corev1.Toleration{
+		{
+			Effect:   "NoSchedule",
+			Key:      "node-role.kubernetes.io/infra",
+			Operator: "Exists",
+		},
+		{
+			Effect:   "NoSchedule",
+			Key:      "dedicated",
+			Operator: "Exists",
+		},
+	}
 }

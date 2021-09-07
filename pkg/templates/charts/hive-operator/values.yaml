@@ -7,5 +7,5 @@ hubconfig:
   nodeSelector: null
   proxyConfigs: {}
   replicaCount: 1
-tolerations: []
+  tolerations: []
 org: open-cluster-management

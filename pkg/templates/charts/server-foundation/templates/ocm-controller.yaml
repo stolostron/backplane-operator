@@ -100,7 +100,7 @@ spec:
 {{- end }}
       securityContext:
         runAsNonRoot: true
-{{- with .Values.tolerations }}
+{{- with .Values.hubconfig.tolerations }}
       tolerations:
       {{- range . }}
       - {{ if .Key }} key: {{ .Key }} {{- end }}

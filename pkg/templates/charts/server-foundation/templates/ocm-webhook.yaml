@@ -97,7 +97,7 @@ spec:
         runAsNonRoot: true
       serviceAccountName: ocm-foundation-sa
       terminationGracePeriodSeconds: 10
-{{- with .Values.tolerations }}
+{{- with .Values.hubconfig.tolerations }}
       tolerations:
       {{- range . }}
       - {{ if .Key }} key: {{ .Key }} {{- end }}

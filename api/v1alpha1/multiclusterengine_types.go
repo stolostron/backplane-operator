@@ -42,7 +42,6 @@ type MultiClusterEngineSpec struct {
 	ImagePullSecret string `json:"imagePullSecret,omitempty"`
 
 	// Tolerations causes all components to tolerate any taints.
-	// +optional
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 }
 

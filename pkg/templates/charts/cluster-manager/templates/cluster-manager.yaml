@@ -89,7 +89,7 @@ spec:
       securityContext:
         runAsNonRoot: true
       serviceAccountName: cluster-manager
-{{- with .Values.tolerations }}
+{{- with .Values.hubconfig.tolerations }}
       tolerations:
       {{- range . }}
       - {{ if .Key }} key: {{ .Key }} {{- end }}

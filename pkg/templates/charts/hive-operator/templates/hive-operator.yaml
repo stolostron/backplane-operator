@@ -103,7 +103,7 @@ spec:
         runAsNonRoot: true
       serviceAccountName: hive-operator
       terminationGracePeriodSeconds: 10
-{{- with .Values.tolerations }}
+{{- with .Values.hubconfig.tolerations }}
       tolerations:
       {{- range . }}
       - {{ if .Key }} key: {{ .Key }} {{- end }}
