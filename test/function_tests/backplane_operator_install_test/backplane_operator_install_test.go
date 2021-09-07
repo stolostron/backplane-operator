@@ -16,6 +16,7 @@ import (
 
 	backplane "github.com/open-cluster-management/backplane-operator/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	// apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -102,7 +103,8 @@ var (
 	}
 
 	backplaneNodeSelector map[string]string
-	backplanePullSecret	string
+	backplanePullSecret   string
+	backplaneTolerations  []corev1.Toleration
 )
 
 func initializeGlobals() {
@@ -112,6 +114,14 @@ func initializeGlobals() {
 	}
 	backplaneNodeSelector = map[string]string{"beta.kubernetes.io/os": "linux"}
 	backplanePullSecret = "test"
+	backplaneTolerations = []corev1.Toleration{
+		corev1.Toleration{
+			Key:      "dedicated",
+			Operator: "Exists",
+			Effect:   "NoSchedule",
+		},
+	}
+
 }
 
 var _ = Describe("BackplaneConfig Test Suite", func() {
@@ -273,6 +283,41 @@ var _ = Describe("BackplaneConfig Test Suite", func() {
 					}
 					componentSecret := deployment.Spec.Template.Spec.ImagePullSecrets[0].Name
 					if !reflect.DeepEqual(componentSecret, backplanePullSecret) {
+						return false
+					}
+
+				}
+				return true
+			}, listTimeout, interval).Should(BeTrue())
+
+			By("Ensuring the tolerations are correct")
+			tolerationBackplane := &backplane.MultiClusterEngine{}
+
+			err = k8sClient.Get(ctx, client.ObjectKey{Name: BackplaneConfigName}, tolerationBackplane)
+			Expect(err).To(BeNil())
+
+			tolerationBackplane.Spec.Tolerations = backplaneTolerations
+
+			err = k8sClient.Update(ctx, tolerationBackplane)
+			Expect(err).To(BeNil())
+
+			deployments = &appsv1.DeploymentList{}
+			Eventually(func() bool {
+				err := k8sClient.List(ctx, deployments,
+					client.InNamespace(BackplaneOperatorNamespace),
+					client.MatchingLabels{
+						"backplaneconfig.name": backplaneConfig.Name,
+					})
+				if err != nil {
+					return false
+				}
+				if len(deployments.Items) == 0 {
+					return false
+				}
+
+				for _, deployment := range deployments.Items {
+					componentTolerations := deployment.Spec.Template.Spec.Tolerations
+					if !reflect.DeepEqual(componentTolerations, backplaneTolerations) {
 						return false
 					}
 

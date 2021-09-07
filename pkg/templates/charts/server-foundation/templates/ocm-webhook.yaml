@@ -97,13 +97,16 @@ spec:
         runAsNonRoot: true
       serviceAccountName: ocm-foundation-sa
       terminationGracePeriodSeconds: 10
+{{- with .Values.hubconfig.tolerations }}
       tolerations:
-      - effect: NoSchedule
-        key: dedicated
-        operator: Exists
-      - effect: NoSchedule
-        key: node-role.kubernetes.io/infra
-        operator: Exists
+      {{- range . }}
+      - {{ if .Key }} key: {{ .Key }} {{- end }}
+        {{ if .Operator }} operator: {{ .Operator }} {{- end }}
+        {{ if .Value }} value: {{ .Value }} {{- end }}
+        {{ if .Effect }} effect: {{ .Effect }} {{- end }}
+        {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
+        {{- end }}
+{{- end }}
       volumes:
       - name: webhook-cert
         volumeSource:
