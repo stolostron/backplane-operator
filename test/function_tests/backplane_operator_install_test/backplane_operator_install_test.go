@@ -273,13 +273,15 @@ var _ = Describe("BackplaneConfig Test Suite", func() {
 			By("Ensuring the node selectors is correct")
 			nodeSelectorBackplane := &backplane.MultiClusterEngine{}
 
-			err := k8sClient.Get(ctx, client.ObjectKey{Name: BackplaneConfigName}, nodeSelectorBackplane)
-			Expect(err).To(BeNil())
+			Eventually(func(g Gomega) {
+				err := k8sClient.Get(ctx, client.ObjectKey{Name: BackplaneConfigName}, nodeSelectorBackplane)
+				g.Expect(err).To(BeNil())
 
-			nodeSelectorBackplane.Spec.NodeSelector = backplaneNodeSelector
+				nodeSelectorBackplane.Spec.NodeSelector = backplaneNodeSelector
 
-			err = k8sClient.Update(ctx, nodeSelectorBackplane)
-			Expect(err).To(BeNil())
+				err = k8sClient.Update(ctx, nodeSelectorBackplane)
+				g.Expect(err).To(BeNil())
+			}, 20*time.Second, interval).Should(Succeed())
 
 			deployments := &appsv1.DeploymentList{}
 			Eventually(func() bool {
@@ -308,13 +310,15 @@ var _ = Describe("BackplaneConfig Test Suite", func() {
 			By("Ensuring the image pull secret is correct")
 			pullSecretBackplane := &backplane.MultiClusterEngine{}
 
-			err = k8sClient.Get(ctx, client.ObjectKey{Name: BackplaneConfigName}, pullSecretBackplane)
-			Expect(err).To(BeNil())
+			Eventually(func(g Gomega) {
+				err := k8sClient.Get(ctx, client.ObjectKey{Name: BackplaneConfigName}, pullSecretBackplane)
+				g.Expect(err).To(BeNil())
 
-			pullSecretBackplane.Spec.ImagePullSecret = backplanePullSecret
+				pullSecretBackplane.Spec.ImagePullSecret = backplanePullSecret
 
-			err = k8sClient.Update(ctx, pullSecretBackplane)
-			Expect(err).To(BeNil())
+				err = k8sClient.Update(ctx, pullSecretBackplane)
+				g.Expect(err).To(BeNil())
+			}, 20*time.Second, interval).Should(Succeed())
 
 			deployments = &appsv1.DeploymentList{}
 			Eventually(func() bool {
@@ -346,13 +350,15 @@ var _ = Describe("BackplaneConfig Test Suite", func() {
 			By("Ensuring the tolerations are correct")
 			tolerationBackplane := &backplane.MultiClusterEngine{}
 
-			err = k8sClient.Get(ctx, client.ObjectKey{Name: BackplaneConfigName}, tolerationBackplane)
-			Expect(err).To(BeNil())
+			Eventually(func(g Gomega) {
+				err := k8sClient.Get(ctx, client.ObjectKey{Name: BackplaneConfigName}, tolerationBackplane)
+				g.Expect(err).To(BeNil())
 
-			tolerationBackplane.Spec.Tolerations = backplaneTolerations
+				tolerationBackplane.Spec.Tolerations = backplaneTolerations
 
-			err = k8sClient.Update(ctx, tolerationBackplane)
-			Expect(err).To(BeNil())
+				err = k8sClient.Update(ctx, tolerationBackplane)
+				g.Expect(err).To(BeNil())
+			}, 20*time.Second, interval).Should(Succeed())
 
 			deployments = &appsv1.DeploymentList{}
 			Eventually(func() bool {
