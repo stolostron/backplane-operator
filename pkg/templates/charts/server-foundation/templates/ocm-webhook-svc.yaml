@@ -14,5 +14,6 @@ spec:
   ports:
     - port: 443
       targetPort: 8000
+      protocol: TCP
   selector:
     control-plane: ocm-webhook
