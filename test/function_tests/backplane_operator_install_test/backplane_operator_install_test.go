@@ -32,6 +32,7 @@ const (
 	BackplaneOperatorNamespace = "backplane-operator-system"
 	installTimeout             = time.Minute * 5
 	listTimeout                = time.Second * 30
+	deleteTimeout              = time.Minute * 3
 	duration                   = time.Second * 1
 	interval                   = time.Millisecond * 250
 )
@@ -383,6 +384,32 @@ var _ = Describe("BackplaneConfig Test Suite", func() {
 				}
 				return true
 			}, listTimeout, interval).Should(BeTrue())
+
+		})
+		It("Should finalize resources when BackplaneConfig is deleted", func() {
+			backplaneConfig := &backplane.MultiClusterEngine{}
+			deployments := &appsv1.DeploymentList{}
+			Eventually(func(g Gomega) {
+				err := k8sClient.Get(ctx, client.ObjectKey{Name: BackplaneConfigName}, backplaneConfig)
+				g.Expect(err).To(BeNil())
+				err = k8sClient.Delete(ctx, backplaneConfig)
+				g.Expect(err).To(BeNil())
+			}, 20*time.Second, interval).Should(Succeed())
+
+			Eventually(func() bool {
+				err := k8sClient.List(ctx, deployments,
+					client.InNamespace(BackplaneOperatorNamespace),
+					client.MatchingLabels{
+						"backplaneconfig.name": backplaneConfig.Name,
+					})
+				if err != nil {
+					return false
+				}
+				if len(deployments.Items) > 0 {
+					return false
+				}
+				return true
+			}, deleteTimeout, interval).Should(BeTrue())
 
 		})
 	})

@@ -27,7 +27,6 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/open-cluster-management/backplane-operator/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -134,25 +133,5 @@ var _ = Describe("BackplaneConfig controller", func() {
 			}
 		})
 
-		It("Should finalize resources when BackplaneConfig is deleted", func() {
-			ctx := context.Background()
-			backplaneConfig := &v1alpha1.MultiClusterEngine{}
-			backplaneConfigLookupKey := types.NamespacedName{Name: BackplaneConfigName}
-			err := k8sClient.Get(ctx, backplaneConfigLookupKey, backplaneConfig)
-			Expect(err).To(BeNil())
-			err = k8sClient.Delete(ctx, backplaneConfig, &client.DeleteOptions{})
-			Expect(err).To(BeNil())
-
-			for _, test := range tests {
-				By(fmt.Sprintf("Ensuring %s is removed", test.Name))
-				Eventually(func() bool {
-					err := k8sClient.Get(ctx, test.NamespacedName, test.ResourceType)
-					if err != nil && errors.IsNotFound(err) {
-						return true
-					}
-					return false
-				}, timeout, interval).Should(BeTrue())
-			}
-		})
 	})
 })

@@ -25,7 +25,6 @@ import (
 	"time"
 
 	clustermanager "github.com/open-cluster-management/api/operator/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/client-go/util/workqueue"
 
 	hiveconfig "github.com/openshift/hive/apis/hive/v1"
@@ -34,11 +33,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -283,127 +279,13 @@ func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(backplaneConfig *
 	log := log.FromContext(ctx)
 	if contains(backplaneConfig.GetFinalizers(), backplaneFinalizer) {
 		// Run finalization logic
-		labelSelector := client.MatchingLabels{
-			"backplaneconfig.name": backplaneConfig.Name}
-
-		apiServiceList := &apiregistrationv1.APIServiceList{}
-		serviceList := &corev1.ServiceList{}
-		deploymentList := &appsv1.DeploymentList{}
-		clusterRoleBindingList := &rbacv1.ClusterRoleBindingList{}
-		clusterRoleList := &rbacv1.ClusterRoleList{}
-		serviceAccountList := &corev1.ServiceAccountList{}
-		clusterManager := &unstructured.Unstructured{}
-		clusterManager.SetGroupVersionKind(
-			schema.GroupVersionKind{
-				Group:   "operator.open-cluster-management.io",
-				Version: "v1",
-				Kind:    "ClusterManager",
-			},
-		)
 		ocmHubNamespace := &corev1.Namespace{}
 
-		hiveConfig := &unstructured.Unstructured{}
-		hiveConfig.SetGroupVersionKind(schema.GroupVersionKind{
-			Group:   "hive.openshift.io",
-			Version: "v1",
-			Kind:    "HiveConfig",
-		})
-
-		if err := r.Client.List(ctx, apiServiceList, labelSelector); err != nil {
-			return err
-		}
-		if err := r.Client.List(ctx, serviceList, labelSelector); err != nil {
-			return err
-		}
-		if err := r.Client.List(ctx, deploymentList, labelSelector); err != nil {
-			return err
-		}
-		if err := r.Client.List(ctx, clusterRoleBindingList, labelSelector); err != nil {
-			return err
-		}
-		if err := r.Client.List(ctx, clusterRoleList, labelSelector); err != nil {
-			return err
-		}
-		if err := r.Client.List(ctx, serviceAccountList, labelSelector); err != nil {
-			return err
-		}
-
-		for _, apiService := range apiServiceList.Items {
-			log.Info(fmt.Sprintf("finalizing apiservice - %s", apiService.Name))
-			err := r.Client.Delete(ctx, &apiService)
-			if err != nil {
-				return err
-			}
-		}
-
-		err := r.Client.Get(ctx, types.NamespacedName{Name: "cluster-manager"}, clusterManager)
-		if err == nil { // If resource exists, delete
-			log.Info("finalizing cluster-manager custom resource")
-			err := r.Client.Delete(ctx, clusterManager)
-			if err != nil {
-				return err
-			}
-		} else if err != nil && !apierrors.IsNotFound(err) { // Return error, if error is not not found error
-			return err
-		}
-
-		err = r.Client.Get(ctx, types.NamespacedName{Name: "open-cluster-management-hub"}, ocmHubNamespace)
+		err := r.Client.Get(ctx, types.NamespacedName{Name: "open-cluster-management-hub"}, ocmHubNamespace)
 		if err == nil { // If resource exists, delete
 			return fmt.Errorf("waiting for 'open-cluster-management-hub' namespace to be terminated before proceeding with uninstallation")
 		} else if err != nil && !apierrors.IsNotFound(err) { // Return error, if error is not not found error
 			return err
-		}
-
-		err = r.Client.Get(ctx, types.NamespacedName{Name: "hive"}, hiveConfig)
-		if err == nil { // If resource exists, delete
-			log.Info("finalizing hiveconfig custom resource")
-			err := r.Client.Delete(ctx, hiveConfig)
-			if err != nil {
-				return err
-			}
-		} else if err != nil && !apierrors.IsNotFound(err) { // Return error, if error is not not found error
-			return err
-		}
-
-		for _, service := range serviceList.Items {
-			log.Info(fmt.Sprintf("finalizing service - %s/%s", service.Namespace, service.Name))
-			err := r.Client.Delete(ctx, &service)
-			if err != nil {
-				return err
-			}
-		}
-		for _, deployment := range deploymentList.Items {
-			log.Info(fmt.Sprintf("finalizing deployment - %s/%s", deployment.Namespace, deployment.Name))
-			err := r.Client.Delete(ctx, &deployment)
-			if err != nil {
-				return err
-			}
-		}
-		for _, serviceAccount := range serviceAccountList.Items {
-			log.Info(fmt.Sprintf("finalizing clusterrole - %s", serviceAccount.Name))
-			err := r.Client.Delete(ctx, &serviceAccount)
-			if err != nil {
-				return err
-			}
-		}
-		for _, clusterRole := range clusterRoleList.Items {
-			log.Info(fmt.Sprintf("finalizing clusterrole - %s", clusterRole.Name))
-			err := r.Client.Delete(ctx, &clusterRole)
-			if err != nil {
-				return err
-			}
-		}
-		for _, clusterRoleBinding := range clusterRoleBindingList.Items {
-			log.Info(fmt.Sprintf("finalizing clusterrolebinding - %s", clusterRoleBinding.Name))
-			err := r.Client.Delete(ctx, &clusterRoleBinding)
-			if err != nil {
-				return err
-			}
-		}
-
-		remainingSubcomponents := len(serviceList.Items) + len(apiServiceList.Items) + len(deploymentList.Items) + len(clusterRoleBindingList.Items) + len(clusterRoleList.Items) + len(serviceAccountList.Items)
-		if remainingSubcomponents > 0 {
-			return fmt.Errorf("%d subcomponents may still exist", remainingSubcomponents)
 		}
 
 		log.Info("all subcomponents have been finalized successfully - removing finalizer")
