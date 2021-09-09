@@ -5,17 +5,20 @@ package backplane_install_test
 
 import (
 	"context"
-	"github.com/ghodss/yaml"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	"io/ioutil"
 	"reflect"
 	"time"
+
+	"github.com/ghodss/yaml"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	backplane "github.com/open-cluster-management/backplane-operator/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+
 	// apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -102,6 +105,8 @@ var (
 	}
 
 	backplaneNodeSelector map[string]string
+	backplanePullSecret   string
+	backplaneTolerations  []corev1.Toleration
 )
 
 func initializeGlobals() {
@@ -110,6 +115,15 @@ func initializeGlobals() {
 		Name: BackplaneConfigName,
 	}
 	backplaneNodeSelector = map[string]string{"beta.kubernetes.io/os": "linux"}
+	backplanePullSecret = "test"
+	backplaneTolerations = []corev1.Toleration{
+		corev1.Toleration{
+			Key:      "dedicated",
+			Operator: "Exists",
+			Effect:   "NoSchedule",
+		},
+	}
+
 }
 
 var _ = Describe("BackplaneConfig Test Suite", func() {
@@ -203,18 +217,71 @@ var _ = Describe("BackplaneConfig Test Suite", func() {
 				})
 			}
 		})
+
+		It("Should ensure the Backplane is self-correcting", func() {
+			By("Checking metadata is maintained but not overwritten", func() {
+				By("Manipulating annotations and backplane labels in the ocm-controller deployment", func() {
+					targetDeploy := &appsv1.Deployment{}
+					Expect(k8sClient.Get(ctx, types.NamespacedName{Name: "ocm-controller", Namespace: BackplaneOperatorNamespace}, targetDeploy)).To(Succeed())
+
+					targetDeploy.SetLabels(map[string]string{})
+					targetDeploy.SetAnnotations(map[string]string{"testannotation": "test"})
+					Expect(k8sClient.Update(ctx, targetDeploy)).Should(Succeed())
+				})
+
+				By("Checking backplane labels are added back and custom annotations are preserved", func() {
+					Eventually(func(g Gomega) {
+						deploy := &appsv1.Deployment{}
+						g.Expect(k8sClient.Get(ctx, types.NamespacedName{Name: "ocm-controller", Namespace: BackplaneOperatorNamespace}, deploy)).To(Succeed())
+
+						l := deploy.GetLabels()
+						g.Expect(l["backplaneconfig.name"]).To(Equal(backplaneConfig.Name), "Missing backplane label")
+
+						a := deploy.GetAnnotations()
+						g.Expect(a["testannotation"]).To(Equal("test"), "Test annotation may have been stripped out of deployment")
+					}, 20*time.Second, interval).Should(Succeed())
+				})
+			})
+
+			By("Checking spec changes are set to their expected values", func() {
+				By("Manipulating the spec in the ocm-controller deployment", func() {
+					targetDeploy := &appsv1.Deployment{}
+					Expect(k8sClient.Get(ctx, types.NamespacedName{Name: "ocm-controller", Namespace: BackplaneOperatorNamespace}, targetDeploy)).To(Succeed())
+
+					targetDeploy.Spec.Template.Spec.ServiceAccountName = "test-sa"
+					targetDeploy.SetAnnotations(map[string]string{"testannotation": "test2"})
+					Expect(k8sClient.Update(ctx, targetDeploy)).Should(Succeed())
+				})
+
+				By("Confirming the spec is reset", func() {
+					Eventually(func(g Gomega) {
+						deploy := &appsv1.Deployment{}
+						g.Expect(k8sClient.Get(ctx, types.NamespacedName{Name: "ocm-controller", Namespace: BackplaneOperatorNamespace}, deploy)).To(Succeed())
+
+						// annotation is used to verify the deployment has been updated
+						a := deploy.GetAnnotations()
+						g.Expect(a["testannotation"]).To(Equal("test2"), "Deployment may not have been updated")
+
+						g.Expect(deploy.Spec.Template.Spec.ServiceAccountName).To(Equal("test-sa"), "Deployment restart policy change was not reverted by operator")
+					}, 20*time.Second, interval).Should(Succeed())
+				})
+			})
+		})
+
 		It("Should check that the config spec has propagated", func() {
 
-			By("Ensuring the spec is correct")
+			By("Ensuring the node selectors is correct")
 			nodeSelectorBackplane := &backplane.MultiClusterEngine{}
 
-			err := k8sClient.Get(ctx, client.ObjectKey{Name: BackplaneConfigName}, nodeSelectorBackplane)
-			Expect(err).To(BeNil())
+			Eventually(func(g Gomega) {
+				err := k8sClient.Get(ctx, client.ObjectKey{Name: BackplaneConfigName}, nodeSelectorBackplane)
+				g.Expect(err).To(BeNil())
 
-			nodeSelectorBackplane.Spec.NodeSelector = backplaneNodeSelector
+				nodeSelectorBackplane.Spec.NodeSelector = backplaneNodeSelector
 
-			err = k8sClient.Update(ctx, nodeSelectorBackplane)
-			Expect(err).To(BeNil())
+				err = k8sClient.Update(ctx, nodeSelectorBackplane)
+				g.Expect(err).To(BeNil())
+			}, 20*time.Second, interval).Should(Succeed())
 
 			deployments := &appsv1.DeploymentList{}
 			Eventually(func() bool {
@@ -233,6 +300,83 @@ var _ = Describe("BackplaneConfig Test Suite", func() {
 				for _, deployment := range deployments.Items {
 					componentSelector := deployment.Spec.Template.Spec.NodeSelector
 					if !reflect.DeepEqual(componentSelector, backplaneNodeSelector) {
+						return false
+					}
+
+				}
+				return true
+			}, listTimeout, interval).Should(BeTrue())
+
+			By("Ensuring the image pull secret is correct")
+			pullSecretBackplane := &backplane.MultiClusterEngine{}
+
+			Eventually(func(g Gomega) {
+				err := k8sClient.Get(ctx, client.ObjectKey{Name: BackplaneConfigName}, pullSecretBackplane)
+				g.Expect(err).To(BeNil())
+
+				pullSecretBackplane.Spec.ImagePullSecret = backplanePullSecret
+
+				err = k8sClient.Update(ctx, pullSecretBackplane)
+				g.Expect(err).To(BeNil())
+			}, 20*time.Second, interval).Should(Succeed())
+
+			deployments = &appsv1.DeploymentList{}
+			Eventually(func() bool {
+				err := k8sClient.List(ctx, deployments,
+					client.InNamespace(BackplaneOperatorNamespace),
+					client.MatchingLabels{
+						"backplaneconfig.name": backplaneConfig.Name,
+					})
+				if err != nil {
+					return false
+				}
+				if len(deployments.Items) == 0 {
+					return false
+				}
+
+				for _, deployment := range deployments.Items {
+					if len(deployment.Spec.Template.Spec.ImagePullSecrets) == 0 {
+						return false
+					}
+					componentSecret := deployment.Spec.Template.Spec.ImagePullSecrets[0].Name
+					if !reflect.DeepEqual(componentSecret, backplanePullSecret) {
+						return false
+					}
+
+				}
+				return true
+			}, listTimeout, interval).Should(BeTrue())
+
+			By("Ensuring the tolerations are correct")
+			tolerationBackplane := &backplane.MultiClusterEngine{}
+
+			Eventually(func(g Gomega) {
+				err := k8sClient.Get(ctx, client.ObjectKey{Name: BackplaneConfigName}, tolerationBackplane)
+				g.Expect(err).To(BeNil())
+
+				tolerationBackplane.Spec.Tolerations = backplaneTolerations
+
+				err = k8sClient.Update(ctx, tolerationBackplane)
+				g.Expect(err).To(BeNil())
+			}, 20*time.Second, interval).Should(Succeed())
+
+			deployments = &appsv1.DeploymentList{}
+			Eventually(func() bool {
+				err := k8sClient.List(ctx, deployments,
+					client.InNamespace(BackplaneOperatorNamespace),
+					client.MatchingLabels{
+						"backplaneconfig.name": backplaneConfig.Name,
+					})
+				if err != nil {
+					return false
+				}
+				if len(deployments.Items) == 0 {
+					return false
+				}
+
+				for _, deployment := range deployments.Items {
+					componentTolerations := deployment.Spec.Template.Spec.Tolerations
+					if !reflect.DeepEqual(componentTolerations, backplaneTolerations) {
 						return false
 					}
 

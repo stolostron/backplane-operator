@@ -14,6 +14,14 @@ spec:
       displayName: MultiCluster Engine
       kind: MultiClusterEngine
       name: multiclusterengines.multicluster.openshift.io
+      specDescriptors:
+      - description: Override pull secret for accessing MultiClusterEngine operand
+          and endpoint images
+        displayName: Image Pull Secret
+        path: imagePullSecret
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes:Secret
+        - urn:alm:descriptor:com.tectonic.ui:advanced
       version: v1alpha1
   description: Provides the components making up the multiclusterengine
   displayName: MultiCluster Engine

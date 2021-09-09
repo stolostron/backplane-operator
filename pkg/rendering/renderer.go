@@ -16,6 +16,7 @@ import (
 	"github.com/open-cluster-management/backplane-operator/api/v1alpha1"
 	"github.com/open-cluster-management/backplane-operator/pkg/utils"
 	"helm.sh/helm/v3/pkg/engine"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/yaml"
@@ -40,9 +41,10 @@ type Global struct {
 }
 
 type HubConfig struct {
-	NodeSelector map[string]string `yaml:"nodeSelector" structs:"nodeSelector"`
-	ProxyConfigs map[string]string `yaml:"proxyConfigs" structs:"proxyConfigs"`
-	ReplicaCount int               `yaml:"replicaCount" structs:"replicaCount"`
+	NodeSelector map[string]string   `yaml:"nodeSelector" structs:"nodeSelector"`
+	ProxyConfigs map[string]string   `yaml:"proxyConfigs" structs:"proxyConfigs"`
+	ReplicaCount int                 `yaml:"replicaCount" structs:"replicaCount"`
+	Tolerations  []corev1.Toleration `yaml:"tolerations" structs:"tolerations"`
 }
 
 func RenderCRDs() ([]*unstructured.Unstructured, []error) {
@@ -151,11 +153,42 @@ func injectValuesOverrides(values *Values, backplaneConfig *v1alpha1.MultiCluste
 
 	values.Global.Namespace = backplaneOperatorNamespace
 
+	values.Global.PullSecret = backplaneConfig.Spec.ImagePullSecret
+
 	values.HubConfig.ReplicaCount = 1
 
 	values.HubConfig.NodeSelector = backplaneConfig.Spec.NodeSelector
 
+	if len(backplaneConfig.Spec.Tolerations) > 0 {
+		values.HubConfig.Tolerations = backplaneConfig.Spec.Tolerations
+	} else {
+		values.HubConfig.Tolerations = defaultTolerations()
+	}
+
 	values.Org = "open-cluster-management"
 
+	if utils.ProxyEnvVarsAreSet() {
+		proxyVar := map[string]string{}
+		proxyVar["HTTP_PROXY"] = os.Getenv("HTTP_PROXY")
+		proxyVar["HTTPS_PROXY"] = os.Getenv("HTTPS_PROXY")
+		proxyVar["NO_PROXY"] = os.Getenv("NO_PROXY")
+		values.HubConfig.ProxyConfigs = proxyVar
+	}
+
 	// TODO: Define all overrides
+}
+
+func defaultTolerations() []corev1.Toleration {
+	return []corev1.Toleration{
+		{
+			Effect:   "NoSchedule",
+			Key:      "node-role.kubernetes.io/infra",
+			Operator: "Exists",
+		},
+		{
+			Effect:   "NoSchedule",
+			Key:      "dedicated",
+			Operator: "Exists",
+		},
+	}
 }

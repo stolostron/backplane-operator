@@ -77,7 +77,11 @@ spec:
           runAsNonRoot: true
       hostIPC: false
       hostNetwork: false
-      hostPID: false
+      hostPID: false    
+{{- if .Values.global.pullSecret }}
+      imagePullSecrets:
+      - name: {{ .Values.global.pullSecret }}
+{{- end }}
 {{- with .Values.hubconfig.nodeSelector }}
       nodeSelector:
 {{ toYaml . | indent 8 }}
@@ -85,10 +89,13 @@ spec:
       securityContext:
         runAsNonRoot: true
       serviceAccountName: cluster-manager
+{{- with .Values.hubconfig.tolerations }}
       tolerations:
-      - effect: NoSchedule
-        key: dedicated
-        operator: Exists
-      - effect: NoSchedule
-        key: node-role.kubernetes.io/infra
-        operator: Exists
+      {{- range . }}
+      - {{ if .Key }} key: {{ .Key }} {{- end }}
+        {{ if .Operator }} operator: {{ .Operator }} {{- end }}
+        {{ if .Value }} value: {{ .Value }} {{- end }}
+        {{ if .Effect }} effect: {{ .Effect }} {{- end }}
+        {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
+        {{- end }}
+{{- end }}

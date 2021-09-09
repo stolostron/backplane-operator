@@ -29,9 +29,10 @@ import (
 	"k8s.io/client-go/util/workqueue"
 
 	hiveconfig "github.com/openshift/hive/apis/hive/v1"
+	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -108,11 +109,11 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 	log := log.FromContext(ctx)
 	// Fetch the BackplaneConfig instance
 	backplaneConfig, err := r.getBackplaneConfig(req)
-	if err != nil && !errors.IsNotFound(err) {
+	if err != nil && !apierrors.IsNotFound(err) {
 		// Unknown error. Requeue
 		log.Info("Failed to fetch backplaneConfig")
 		return ctrl.Result{RequeueAfter: requeuePeriod}, err
-	} else if err != nil && errors.IsNotFound(err) {
+	} else if err != nil && apierrors.IsNotFound(err) {
 		// BackplaneConfig deleted or not found
 		// Return and don't requeue
 		return ctrl.Result{}, nil
@@ -218,10 +219,27 @@ func (r *MultiClusterEngineReconciler) DeploySubcomponents(backplaneConfig *back
 				NamespacedName: types.NamespacedName{Name: template.GetName(), Namespace: template.GetNamespace()},
 			})
 		}
-		result, err := r.ensureUnstructuredResource(backplaneConfig, template)
+
+		// Set owner reference.
+		err := ctrl.SetControllerReference(backplaneConfig, template, r.Scheme)
 		if err != nil {
-			return result, err
+			return ctrl.Result{}, errors.Wrapf(err, "Error setting controller reference on resource %s", template.GetName())
 		}
+
+		if template.GetKind() == "APIService" {
+			result, err := r.ensureUnstructuredResource(backplaneConfig, template)
+			if err != nil {
+				return result, err
+			}
+		} else {
+			// Apply the object data.
+			force := true
+			err = r.Client.Patch(context.TODO(), template, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
+			if err != nil {
+				return ctrl.Result{}, errors.Wrapf(err, "error applying object Name: %s Kind: %s", template.GetName(), template.GetKind())
+			}
+		}
+
 	}
 
 	result, err := r.ensureCustomResources(backplaneConfig)
@@ -326,14 +344,14 @@ func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(backplaneConfig *
 			if err != nil {
 				return err
 			}
-		} else if err != nil && !errors.IsNotFound(err) { // Return error, if error is not not found error
+		} else if err != nil && !apierrors.IsNotFound(err) { // Return error, if error is not not found error
 			return err
 		}
 
 		err = r.Client.Get(ctx, types.NamespacedName{Name: "open-cluster-management-hub"}, ocmHubNamespace)
 		if err == nil { // If resource exists, delete
 			return fmt.Errorf("waiting for 'open-cluster-management-hub' namespace to be terminated before proceeding with uninstallation")
-		} else if err != nil && !errors.IsNotFound(err) { // Return error, if error is not not found error
+		} else if err != nil && !apierrors.IsNotFound(err) { // Return error, if error is not not found error
 			return err
 		}
 
@@ -344,7 +362,7 @@ func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(backplaneConfig *
 			if err != nil {
 				return err
 			}
-		} else if err != nil && !errors.IsNotFound(err) { // Return error, if error is not not found error
+		} else if err != nil && !apierrors.IsNotFound(err) { // Return error, if error is not not found error
 			return err
 		}
 
@@ -407,7 +425,7 @@ func (r *MultiClusterEngineReconciler) getBackplaneConfig(req ctrl.Request) (*ba
 	backplaneConfig := &backplanev1alpha1.MultiClusterEngine{}
 	err := r.Client.Get(context.TODO(), req.NamespacedName, backplaneConfig)
 	if err != nil {
-		if errors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
