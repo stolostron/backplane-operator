@@ -18,6 +18,7 @@ import (
 	backplane "github.com/open-cluster-management/backplane-operator/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
 	// apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -31,6 +32,7 @@ const (
 	BackplaneConfigName        = "backplane"
 	BackplaneOperatorNamespace = "backplane-operator-system"
 	installTimeout             = time.Minute * 5
+	deleteTimeout              = time.Minute * 3
 	listTimeout                = time.Second * 30
 	duration                   = time.Second * 1
 	interval                   = time.Millisecond * 250
@@ -383,6 +385,125 @@ var _ = Describe("BackplaneConfig Test Suite", func() {
 				}
 				return true
 			}, listTimeout, interval).Should(BeTrue())
+
+		})
+
+		It("Should ensure deletion works properly", func() {
+			ctx := context.Background()
+
+			By("Deleting the backplane", func() {
+				err := k8sClient.Delete(ctx, defaultBackplaneConfig())
+				if err != nil {
+					Expect(apierrors.IsNotFound(err)).To(BeTrue())
+				}
+
+				Eventually(func() bool {
+					err := k8sClient.Get(ctx, backplaneConfig, &backplane.MultiClusterEngine{})
+					if err == nil {
+						return false
+					}
+					return apierrors.IsNotFound(err)
+				}, deleteTimeout, interval).Should(BeTrue(), "There was an issue cleaning up the backplane.")
+			})
+
+			labelSelector := client.MatchingLabels{"backplaneconfig.name": backplaneConfig.Name}
+
+			By("Checking for remaining services", func() {
+				Eventually(func(g Gomega) {
+					serviceList := &corev1.ServiceList{}
+					g.Expect(k8sClient.List(ctx, serviceList, labelSelector)).To(Succeed())
+					g.Expect(len(serviceList.Items)).To(BeZero())
+				}, deleteTimeout, interval).Should(Succeed())
+			})
+
+			By("Checking for remaining serviceaccounts", func() {
+				Eventually(func(g Gomega) {
+					serviceAccountList := &corev1.ServiceAccountList{}
+					g.Expect(k8sClient.List(ctx, serviceAccountList, labelSelector)).To(Succeed())
+					g.Expect(len(serviceAccountList.Items)).To(BeZero())
+				}, deleteTimeout, interval).Should(Succeed())
+			})
+
+			By("Checking for remaining deployments", func() {
+				Eventually(func(g Gomega) {
+					deploymentList := &appsv1.DeploymentList{}
+					g.Expect(k8sClient.List(ctx, deploymentList, labelSelector)).To(Succeed())
+					g.Expect(len(deploymentList.Items)).To(BeZero())
+				}, deleteTimeout, interval).Should(Succeed())
+			})
+
+			By("Checking for remaining clusterroles", func() {
+				Eventually(func(g Gomega) {
+					clusterRoleList := &unstructured.UnstructuredList{}
+					clusterRoleList.SetGroupVersionKind(
+						schema.GroupVersionKind{
+							Group:   "rbac.authorization.k8s.io",
+							Version: "v1",
+							Kind:    "ClusterRole",
+						},
+					)
+					g.Expect(k8sClient.List(ctx, clusterRoleList, labelSelector)).To(Succeed())
+					g.Expect(len(clusterRoleList.Items)).To(BeZero())
+				}, deleteTimeout, interval).Should(Succeed())
+			})
+
+			By("Checking for remaining clusterrolebindings", func() {
+				Eventually(func(g Gomega) {
+					clusterRoleBindingList := &unstructured.UnstructuredList{}
+					clusterRoleBindingList.SetGroupVersionKind(
+						schema.GroupVersionKind{
+							Group:   "rbac.authorization.k8s.io",
+							Version: "v1",
+							Kind:    "ClusterRoleBinding",
+						},
+					)
+					g.Expect(k8sClient.List(ctx, clusterRoleBindingList, labelSelector)).To(Succeed())
+					g.Expect(len(clusterRoleBindingList.Items)).To(BeZero())
+				}, deleteTimeout, interval).Should(Succeed())
+			})
+
+			By("Checking for remaining apiservices", func() {
+				Eventually(func(g Gomega) {
+					apiServiceList := &unstructured.UnstructuredList{}
+					apiServiceList.SetGroupVersionKind(
+						schema.GroupVersionKind{
+							Group:   "apiregistration.k8s.io",
+							Version: "v1",
+							Kind:    "APIService",
+						},
+					)
+					g.Expect(k8sClient.List(ctx, apiServiceList, labelSelector)).To(Succeed())
+					g.Expect(len(apiServiceList.Items)).To(BeZero())
+				}, deleteTimeout, interval).Should(Succeed())
+			})
+
+			By("Checking for remaining clustermanager", func() {
+				Eventually(func(g Gomega) {
+					clusterManager := &unstructured.Unstructured{}
+					clusterManager.SetGroupVersionKind(
+						schema.GroupVersionKind{
+							Group:   "operator.open-cluster-management.io",
+							Version: "v1",
+							Kind:    "ClusterManager",
+						},
+					)
+					err := k8sClient.Get(ctx, types.NamespacedName{Name: "cluster-manager"}, clusterManager)
+					g.Expect(apierrors.IsNotFound(err)).To(BeTrue(), "Expected IsNotFound error, got error:", err)
+				}, deleteTimeout, interval).Should(Succeed())
+			})
+
+			By("Checking for remaining hiveconfig", func() {
+				Eventually(func(g Gomega) {
+					hiveConfig := &unstructured.Unstructured{}
+					hiveConfig.SetGroupVersionKind(schema.GroupVersionKind{
+						Group:   "hive.openshift.io",
+						Version: "v1",
+						Kind:    "HiveConfig",
+					})
+					err := k8sClient.Get(ctx, types.NamespacedName{Name: "hive"}, hiveConfig)
+					g.Expect(apierrors.IsNotFound(err)).To(BeTrue(), "Expected IsNotFound error, got error:", err)
+				}, deleteTimeout, interval).Should(Succeed())
+			})
 
 		})
 	})
