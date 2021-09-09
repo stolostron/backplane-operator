@@ -1,6 +1,6 @@
 global:
   imageOverrides:
-    registration_operator: quay.io/open-cluster-management/registration-operator:latest
+    registration_operator: ''
   pullPolicy: Always
   pullSecret: null
 hubconfig:
