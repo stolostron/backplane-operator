@@ -306,7 +306,7 @@ def fixImageReferences(helmChart, imageKeyMapping):
                 logging.critical("No image key mapping provided for imageKey: %s" % image_key)
                 exit(1)
             imageKeys.append(image_key)
-            temp = container['image'] 
+            # temp = container['image'] 
             container['image'] = "{{ .Values.global.imageOverrides." + image_key + " }}"
             container['imagePullPolicy'] = "{{ .Values.global.pullPolicy }}"
         with open(deployment, 'w') as f:
@@ -314,7 +314,7 @@ def fixImageReferences(helmChart, imageKeyMapping):
 
     del  values['global']['imageOverrides']['imageOverride']
     for imageKey in imageKeys:
-        values['global']['imageOverrides'][imageKey] = temp # should be ""
+        values['global']['imageOverrides'][imageKey] = "" # set to temp to debug
     with open(valuesYaml, 'w') as f:
         yaml.dump(values, f)
     logging.info("Image references and pull policy in deployments and values.yaml updated successfully.\n")
@@ -331,14 +331,14 @@ def injectHelmFlowControl(deployment):
 {{ toYaml . | indent 8 }}
 {{- end }}
 """     
-        if line.strip() == "imagePullSecrets:":
-            lines[i] = """{{- if .Values.global.imagePullSecret }}
-        imagePullSecrets:
-        - name : {{ .Values.global.imagePullSecret }}
+        if line.strip() == "imagePullSecrets: \'\'":
+            lines[i] = """{{- if .Values.global.pullSecret }}
+      imagePullSecrets:
+      - name: {{ .Values.global.pullSecret }}
 {{- end }}
 """
-        if line.strip() == "tolerations:":
-            lines[i] = """{{- with .Values.tolerations }}
+        if line.strip() == "tolerations: \'\'":
+            lines[i] = """{{- with .Values.hubconfig.tolerations }}
       tolerations:
       {{- range . }}
       - {{ if .Key }} key: {{ .Key }} {{- end }}
@@ -382,7 +382,7 @@ def updateDeployments(helmChart, exclusions):
         for antiaffinity in affinityList:
             antiaffinity['podAffinityTerm']['labelSelector']['matchExpressions'][0]['values'][0] = deploy['metadata']['name']
         deploy['spec']['template']['spec']['affinity'] = deploySpec['affinity']
-        deploy['spec']['template']['spec']['tolerations'] = deploySpec['tolerations']
+        deploy['spec']['template']['spec']['tolerations'] = ''
         deploy['spec']['template']['spec']['hostNetwork'] = False
         deploy['spec']['template']['spec']['hostPID'] = False
         deploy['spec']['template']['spec']['hostIPC'] = False
@@ -391,7 +391,7 @@ def updateDeployments(helmChart, exclusions):
         deploy['spec']['template']['spec']['securityContext']['runAsNonRoot'] = True
         deploy['spec']['template']['metadata']['labels']['ocm-antiaffinity-selector'] = deploy['metadata']['name']
         deploy['spec']['template']['spec']['nodeSelector'] = ""
-        deploy['spec']['template']['spec']['imagePullSecrets'] = ""
+        deploy['spec']['template']['spec']['imagePullSecrets'] = ''
 
         containers = deploy['spec']['template']['spec']['containers']
         for container in containers:

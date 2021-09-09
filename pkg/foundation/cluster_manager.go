@@ -8,6 +8,7 @@ import (
 
 	v1alpha1 "github.com/open-cluster-management/backplane-operator/api/v1alpha1"
 	"github.com/open-cluster-management/backplane-operator/pkg/utils"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
@@ -17,7 +18,14 @@ import (
 )
 
 func ClusterManager(m *v1alpha1.MultiClusterEngine, overrides map[string]string) *unstructured.Unstructured {
-
+	nodeSelector := map[string]interface{}{}
+	for k, v := range m.Spec.NodeSelector {
+		nodeSelector[k] = v
+	}
+	tolerations := []v1.Toleration{}
+	if len(m.Spec.Tolerations) > 0 {
+		tolerations = m.Spec.Tolerations
+	}
 	cm := &unstructured.Unstructured{
 		Object: map[string]interface{}{
 			"apiVersion": "operator.open-cluster-management.io/v1",
@@ -26,6 +34,10 @@ func ClusterManager(m *v1alpha1.MultiClusterEngine, overrides map[string]string)
 				"name": "cluster-manager",
 			},
 			"spec": map[string]interface{}{
+				"nodePlacement": map[string]interface{}{
+					"nodeSelector": nodeSelector,
+					"tolerations":  tolerations,
+				},
 				"registrationImagePullSpec": RegistrationImage(overrides),
 				"workImagePullSpec":         WorkImage(overrides),
 				"placementImagePullSpec":    PlacementImage(overrides),

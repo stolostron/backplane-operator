@@ -1,6 +1,6 @@
 global:
   imageOverrides:
-    openshift_hive: quay.io/openshift-hive/hive:v1.1.14
+    openshift_hive: ''
   pullPolicy: Always
   pullSecret: null
 hubconfig:
