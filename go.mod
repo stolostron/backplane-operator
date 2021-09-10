@@ -7,22 +7,21 @@ require (
 	github.com/ghodss/yaml v1.0.0
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.16.0
-	github.com/open-cluster-management/api v0.0.0-20210527013639-a6845f2ebcb1
 	github.com/openshift/hive/apis v0.0.0-00010101000000-000000000000
 	github.com/pkg/errors v0.9.1
 	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba // indirect
 	golang.org/x/tools v0.1.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0
 	helm.sh/helm/v3 v3.6.3
-	k8s.io/api v0.21.3
+	k8s.io/api v0.22.1
 	k8s.io/apiextensions-apiserver v0.21.1
 	k8s.io/apimachinery v0.21.3
 	k8s.io/client-go v0.21.3
 	k8s.io/component-base v0.21.1 // indirect
 	k8s.io/kube-aggregator v0.21.3
+	open-cluster-management.io/api v0.0.0-20210908005819-815ac23c7308
 	sigs.k8s.io/controller-runtime v0.8.3
 	sigs.k8s.io/yaml v1.2.0
-
 )
 
 // Pinned to k8s v0.20.0

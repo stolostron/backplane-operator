@@ -5,10 +5,12 @@ package renderer
 
 import (
 	backplane "github.com/open-cluster-management/backplane-operator/api/v1alpha1"
+	"github.com/open-cluster-management/backplane-operator/pkg/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+
 	// "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"os"
 	"reflect"
@@ -34,7 +36,7 @@ func TestRender(t *testing.T) {
 	backplaneNodeSelector := map[string]string{"select": "test"}
 	backplaneImagePullSecret := "test"
 	backplaneTolerations := []corev1.Toleration{
-		corev1.Toleration{
+		{
 			Key:      "dedicated",
 			Operator: "Exists",
 			Effect:   "NoSchedule",
@@ -54,7 +56,6 @@ func TestRender(t *testing.T) {
 			Phase: "",
 		},
 	}
-	testImages := map[string]string{"registration_operator": "test", "openshift_hive": "test", "multicloud_manager": "test"}
 	containsHTTP := false
 	containsHTTPS := false
 	containsNO := false
@@ -62,6 +63,12 @@ func TestRender(t *testing.T) {
 	os.Setenv("HTTP_PROXY", "test1")
 	os.Setenv("HTTPS_PROXY", "test2")
 	os.Setenv("NO_PROXY", "test3")
+
+	testImages := map[string]string{}
+	for _, v := range utils.GetTestImages() {
+		testImages[v] = "quay.io/test/test:Test"
+	}
+
 	templates, errs := RenderTemplates(testBackplane, testImages)
 	if len(errs) > 0 {
 		for _, err := range errs {
@@ -74,8 +81,12 @@ func TestRender(t *testing.T) {
 	}
 	for _, template := range templates {
 		if template.GetKind() == "Deployment" {
-			deployment := appsv1.Deployment{}
-			runtime.DefaultUnstructuredConverter.FromUnstructured(template.Object, &deployment)
+			deployment := &appsv1.Deployment{}
+			err := runtime.DefaultUnstructuredConverter.FromUnstructured(template.Object, deployment)
+			if err != nil {
+				t.Fatalf(err.Error())
+			}
+
 			selectorEquality := reflect.DeepEqual(deployment.Spec.Template.Spec.NodeSelector, backplaneNodeSelector)
 			if !selectorEquality {
 				t.Fatalf("Node Selector did not propagate to the deployments use")

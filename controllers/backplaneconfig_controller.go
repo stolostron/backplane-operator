@@ -24,8 +24,8 @@ import (
 	"fmt"
 	"time"
 
-	clustermanager "github.com/open-cluster-management/api/operator/v1"
 	"k8s.io/client-go/util/workqueue"
+	clustermanager "open-cluster-management.io/api/operator/v1"
 
 	hiveconfig "github.com/openshift/hive/apis/hive/v1"
 	"github.com/pkg/errors"
@@ -84,7 +84,7 @@ const (
 //+kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=create;get;list;update;watch;patch;delete
 //+kubebuilder:rbac:groups=apiregistration.k8s.io,resources=apiservices,verbs=create;get;list;update;watch;patch;delete
 //+kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=validatingwebhookconfigurations;mutatingwebhookconfigurations,verbs=create;get;list;update;watch;patch;delete
-//+kubebuilder:rbac:groups=operator.open-cluster-management.io,resources=clustermanagers,verbs=create;get;list;watch;update;delete
+//+kubebuilder:rbac:groups=operator.open-cluster-management.io,resources=clustermanagers,verbs=create;get;list;watch;update;delete;patch
 //+kubebuilder:rbac:groups=operator.open-cluster-management.io,resources=clustermanagers/status,verbs=update;patch
 //+kubebuilder:rbac:groups=imageregistry.open-cluster-management.io,resources=managedclusterimageregistries;managedclusterimageregistries/status,verbs=approve;bind;create;delete;deletecollection;escalate;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io;inventory.open-cluster-management.io;observability.open-cluster-management.io;operator.open-cluster-management.io,resources=managedclusters;baremetalassets;multiclusterobservabilities;multiclusterhubs,verbs=get;list;watch
@@ -254,11 +254,12 @@ func (r *MultiClusterEngineReconciler) ensureCustomResources(backplaneConfig *ba
 	if err := ctrl.SetControllerReference(backplaneConfig, cmTemplate, r.Scheme); err != nil {
 		return ctrl.Result{}, errors.Wrapf(err, "Error setting controller reference on resource %s", cmTemplate.GetName())
 	}
-
-	result, err := r.ensureUnstructuredResource(backplaneConfig, cmTemplate)
+	force := true
+	err := r.Client.Patch(context.TODO(), cmTemplate, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
 	if err != nil {
-		return result, err
+		return ctrl.Result{}, errors.Wrapf(err, "error applying object Name: %s Kind: %s", cmTemplate.GetName(), cmTemplate.GetKind())
 	}
+
 	r.StatusManager.AddComponent(status.ClusterManagerStatus{
 		NamespacedName: types.NamespacedName{Name: "cluster-manager"},
 	})
@@ -268,7 +269,7 @@ func (r *MultiClusterEngineReconciler) ensureCustomResources(backplaneConfig *ba
 		return ctrl.Result{}, errors.Wrapf(err, "Error setting controller reference on resource %s", hiveTemplate.GetName())
 	}
 
-	result, err = r.ensureUnstructuredResource(backplaneConfig, hiveTemplate)
+	result, err := r.ensureUnstructuredResource(backplaneConfig, hiveTemplate)
 	if err != nil {
 		return result, err
 	}
