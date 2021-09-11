@@ -9,9 +9,9 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/ghodss/yaml"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"sigs.k8s.io/yaml"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
