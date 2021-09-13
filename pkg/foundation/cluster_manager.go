@@ -5,49 +5,50 @@ package foundation
 import (
 	"bytes"
 	"context"
+	"reflect"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	v1alpha1 "github.com/open-cluster-management/backplane-operator/api/v1alpha1"
 	"github.com/open-cluster-management/backplane-operator/pkg/utils"
-	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
+	ocmapiv1 "open-cluster-management.io/api/operator/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/yaml"
 )
 
 func ClusterManager(m *v1alpha1.MultiClusterEngine, overrides map[string]string) *unstructured.Unstructured {
-	nodeSelector := map[string]interface{}{}
-	for k, v := range m.Spec.NodeSelector {
-		nodeSelector[k] = v
-	}
-	tolerations := []v1.Toleration{}
-	if len(m.Spec.Tolerations) > 0 {
-		tolerations = m.Spec.Tolerations
-	}
-	cm := &unstructured.Unstructured{
-		Object: map[string]interface{}{
-			"apiVersion": "operator.open-cluster-management.io/v1",
-			"kind":       "ClusterManager",
-			"metadata": map[string]interface{}{
-				"name": "cluster-manager",
-			},
-			"spec": map[string]interface{}{
-				"nodePlacement": map[string]interface{}{
-					"nodeSelector": nodeSelector,
-					"tolerations":  tolerations,
-				},
-				"registrationImagePullSpec": RegistrationImage(overrides),
-				"workImagePullSpec":         WorkImage(overrides),
-				"placementImagePullSpec":    PlacementImage(overrides),
+	log := log.FromContext(context.Background())
+
+	cm := &ocmapiv1.ClusterManager{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "operator.open-cluster-management.io/v1",
+			Kind:       "ClusterManager",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "cluster-manager",
+		},
+		Spec: ocmapiv1.ClusterManagerSpec{
+			RegistrationImagePullSpec: RegistrationImage(overrides),
+			WorkImagePullSpec:         WorkImage(overrides),
+			PlacementImagePullSpec:    PlacementImage(overrides),
+			NodePlacement: ocmapiv1.NodePlacement{
+				NodeSelector: m.Spec.NodeSelector,
+				Tolerations:  m.Spec.Tolerations,
 			},
 		},
 	}
 
 	utils.AddBackplaneConfigLabels(cm, m.GetName())
+	unstructured, err := utils.CoreToUnstructured(cm)
+	if err != nil {
+		log.Error(err, err.Error())
+	}
 
-	return cm
+	return unstructured
 }
 
 // ValidateSpec returns true if an update is needed to reconcile differences with the current spec. If an update
@@ -62,6 +63,10 @@ func ValidateSpec(found *unstructured.Unstructured, want *unstructured.Unstructu
 	current, err := yaml.Marshal(found.Object["spec"])
 	if err != nil {
 		log.Error(err, "issue parsing current object values")
+	}
+
+	if reflect.DeepEqual(desired, current) {
+		return nil, false
 	}
 
 	if res := bytes.Compare(desired, current); res != 0 {

@@ -95,6 +95,12 @@ var _ = Describe("BackplaneConfig controller", func() {
 			Expected:       nil,
 		},
 		{
+			Name:           "Managed Cluster Import Controller",
+			NamespacedName: types.NamespacedName{Name: "managedcluster-import-controller-v2", Namespace: BackplaneOperatorNamespace},
+			ResourceType:   &appsv1.Deployment{},
+			Expected:       nil,
+		},
+		{
 			Name:           "Cluster Manager",
 			NamespacedName: types.NamespacedName{Name: "cluster-manager"},
 			ResourceType:   clusterManager,

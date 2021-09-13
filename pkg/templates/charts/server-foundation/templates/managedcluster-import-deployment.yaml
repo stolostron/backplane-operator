@@ -1,0 +1,136 @@
+# Copyright Contributors to the Open Cluster Management project
+
+###############################################################################
+# Licensed Materials - Property of IBM
+# (C) Copyright IBM Corporation 2018, 2019 All Rights Reserved
+# US Government Users Restricted Rights - Use, duplication or disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
+###############################################################################
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: managedcluster-import-controller-v2
+spec:
+  minReadySeconds: 0
+  replicas: {{ .Values.hubconfig.replicaCount }}
+  selector:
+    matchLabels:
+      app: managedcluster-import-controller-v2
+      ocm-antiaffinity-selector: managedclusterimport
+  template:
+    metadata:
+      labels:
+        app: managedcluster-import-controller-v2
+        ocm-antiaffinity-selector: managedclusterimport
+      annotations:
+        productName: "Advanced Cluster Management"
+        productID: "product-id"
+        productVersion: 2.1.0
+        scheduler.alpha.kubernetes.io/critical-pod: ''
+    spec:
+    {{- if .Values.global.pullSecret }}
+      imagePullSecrets:
+        - name: {{ .Values.global.pullSecret }}
+    {{- end }}
+      serviceAccountName: managedcluster-import-controller-v2
+      hostNetwork: false
+      hostPID: false
+      hostIPC: false
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        runAsNonRoot: true
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: beta.kubernetes.io/arch
+                operator: In
+                values:
+                - amd64
+                - ppc64le
+                - s390x
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 70
+            podAffinityTerm:
+              topologyKey: topology.kubernetes.io/zone
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - managedclusterimport
+          - weight: 35
+            podAffinityTerm:
+              topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - managedclusterimport
+      containers:
+      - name: managedcluster-import-controller
+        image: "{{ .Values.global.imageOverrides.managedcluster_import_controller }}"
+        imagePullPolicy: {{ .Values.global.pullPolicy }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+        resources:
+          requests:
+            memory: "96Mi"
+            cpu: "50m"
+          limits:
+            memory: "2Gi"
+            cpu: "500m"
+        env:
+{{- if .Values.hubconfig.proxyConfigs }}
+        - name: HTTP_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
+        - name: HTTPS_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.HTTPS_PROXY }}
+        - name: NO_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
+{{- end }}
+        - name: WATCH_NAMESPACE
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: MAX_CONCURRENT_RECONCILES
+          value: "10"
+        - name: OPERATOR_NAME
+          value: managedcluster-import-controller
+        - name: DEFAULT_IMAGE_PULL_SECRET
+          value: {{ .Values.global.pullSecret }}
+        - name: DEFAULT_IMAGE_REGISTRY
+          value: ""
+        - name: REGISTRATION_OPERATOR_IMAGE
+          value: {{ .Values.global.imageOverrides.registration_operator }}
+        - name: REGISTRATION_IMAGE
+          value: {{ .Values.global.imageOverrides.registration }}
+        - name: WORK_IMAGE
+          value: {{ .Values.global.imageOverrides.work }}
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+{{- with .Values.hubconfig.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+{{- end }}
+{{- with .Values.hubconfig.tolerations }}
+      tolerations:
+      {{- range . }}
+      - {{ if .Key }} key: {{ .Key }} {{- end }}
+        {{ if .Operator }} operator: {{ .Operator }} {{- end }}
+        {{ if .Value }} value: {{ .Value }} {{- end }}
+        {{ if .Effect }} effect: {{ .Effect }} {{- end }}
+        {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
+        {{- end }}
+{{- end }}

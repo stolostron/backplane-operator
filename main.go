@@ -53,9 +53,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	clustermanager "github.com/open-cluster-management/api/operator/v1"
 	backplanev1alpha1 "github.com/open-cluster-management/backplane-operator/api/v1alpha1"
 	"github.com/open-cluster-management/backplane-operator/controllers"
+	clustermanager "open-cluster-management.io/api/operator/v1"
 	//+kubebuilder:scaffold:imports
 )
 

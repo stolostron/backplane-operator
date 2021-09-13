@@ -159,3 +159,8 @@ func ValidateClusterRoleRules(found *unstructured.Unstructured, want *unstructur
 	}
 	return nil, false
 }
+
+func GetTestImages() []string {
+	return []string{"registration_operator", "openshift_hive", "multicloud_manager",
+		"managedcluster_import_controller", "registration", "work"}
+}

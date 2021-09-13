@@ -19,15 +19,19 @@ limitations under the License.
 package controllers
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	clustermanager "github.com/open-cluster-management/api/operator/v1"
 	backplanev1alpha1 "github.com/open-cluster-management/backplane-operator/api/v1alpha1"
 	"github.com/open-cluster-management/backplane-operator/pkg/status"
+	"github.com/open-cluster-management/backplane-operator/pkg/utils"
+	clustermanager "open-cluster-management.io/api/operator/v1"
+
 	hiveconfig "github.com/openshift/hive/apis/hive/v1"
 
 	admissionregistration "k8s.io/api/admissionregistration/v1"
@@ -100,10 +104,12 @@ var _ = BeforeSuite(func() {
 
 	err = os.Setenv("POD_NAMESPACE", "default")
 	Expect(err).NotTo(HaveOccurred())
-	err = os.Setenv("OPERAND_IMAGE_MULTICLOUD_MANAGER", "quay.io/test/test:test")
-	err = os.Setenv("OPERAND_IMAGE_REGISTRATION_OPERATOR", "quay.io/test/test:test")
-	err = os.Setenv("OPERAND_IMAGE_OPENSHIFT_HIVE", "quay.io/test/test:test")
-	Expect(err).NotTo(HaveOccurred())
+
+	for _, v := range utils.GetTestImages() {
+		key := fmt.Sprintf("OPERAND_IMAGE_%s", strings.ToUpper(v))
+		err = os.Setenv(key, "quay.io/test/test:test")
+		Expect(err).NotTo(HaveOccurred())
+	}
 	//+kubebuilder:scaffold:scheme
 
 	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
