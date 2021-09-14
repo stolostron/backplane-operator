@@ -2,7 +2,7 @@
 
 # Backplane Operator
 
-Operator for managing installation of Backplane components
+Operator for managing installation of Backplane components.
 
 ## Prerequisites
 
