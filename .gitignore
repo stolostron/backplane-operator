@@ -8,10 +8,7 @@
 testbin/*
 .DS_STORE
 
-bin/pipeline
-bin/controller-gen
-bin/kustomize
-bin/backplane-operator
+bin/
 
 darwin-amd64/
 linux-amd64/
