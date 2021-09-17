@@ -20,6 +20,7 @@ upstream-install: ## Installs the upstream Backplane Operator by deploying a Cat
 	bash ./hack/scripts/upstream-install.sh
 
 regenerate-operator-bundles:
+	pip install -r hack/bundle-automation/requirements.txt
 	python ./hack/bundle-automation/generate-bundles.py --destination pkg/templates/
 
 catalog-deploy: ## Deploys backplane operator via subscription
