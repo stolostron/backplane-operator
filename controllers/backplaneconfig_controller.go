@@ -203,7 +203,7 @@ func (r *MultiClusterEngineReconciler) SetupWithManager(mgr ctrl.Manager) error 
 
 // DeploySubcomponents ensures all subcomponents exist
 func (r *MultiClusterEngineReconciler) DeploySubcomponents(ctx context.Context, backplaneConfig *backplanev1alpha1.MultiClusterEngine) (ctrl.Result, error) {
-	log := log.FromContext(context.Background())
+	log := log.FromContext(ctx)
 
 	// Renders all templates from charts
 	templates, errs := renderer.RenderTemplates(backplaneConfig, r.Images)
@@ -236,7 +236,7 @@ func (r *MultiClusterEngineReconciler) DeploySubcomponents(ctx context.Context, 
 		} else {
 			// Apply the object data.
 			force := true
-			err = r.Client.Patch(context.TODO(), template, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
+			err = r.Client.Patch(ctx, template, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
 			if err != nil {
 				return ctrl.Result{}, errors.Wrapf(err, "error applying object Name: %s Kind: %s", template.GetName(), template.GetKind())
 			}
@@ -316,9 +316,9 @@ func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Conte
 }
 
 func (r *MultiClusterEngineReconciler) getBackplaneConfig(ctx context.Context, req ctrl.Request) (*backplanev1alpha1.MultiClusterEngine, error) {
-	log := log.FromContext(context.Background())
+	log := log.FromContext(ctx)
 	backplaneConfig := &backplanev1alpha1.MultiClusterEngine{}
-	err := r.Client.Get(context.TODO(), req.NamespacedName, backplaneConfig)
+	err := r.Client.Get(ctx, req.NamespacedName, backplaneConfig)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
