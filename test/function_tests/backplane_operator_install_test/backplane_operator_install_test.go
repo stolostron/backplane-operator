@@ -536,10 +536,7 @@ func defaultBackplaneConfig() *backplane.MultiClusterEngine {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: BackplaneConfigName,
 		},
-		Spec: backplane.MultiClusterEngineSpec{
-			Foo: "bar",
-			// NodeSelector: backplaneNodeSelector,
-		},
+		Spec: backplane.MultiClusterEngineSpec{},
 		Status: backplane.MultiClusterEngineStatus{
 			Phase: "",
 		},

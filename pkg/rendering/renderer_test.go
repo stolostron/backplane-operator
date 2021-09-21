@@ -47,7 +47,6 @@ func TestRender(t *testing.T) {
 			Name: "testBackplane",
 		},
 		Spec: backplane.MultiClusterEngineSpec{
-			Foo:             "bar",
 			NodeSelector:    backplaneNodeSelector,
 			ImagePullSecret: backplaneImagePullSecret,
 			Tolerations:     backplaneTolerations,
