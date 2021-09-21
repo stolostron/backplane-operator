@@ -10,9 +10,7 @@ metadata:
           "metadata": {
             "name": "multiclusterengine-sample"
           },
-          "spec": {
-            "foo": "bar"
-          }
+          "spec": null
         }
       ]
     capabilities: Basic Install
