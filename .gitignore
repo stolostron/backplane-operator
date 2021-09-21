@@ -5,6 +5,7 @@
 *.dll
 *.so
 *.dylib
+*.pyc
 testbin/*
 .DS_STORE
 
