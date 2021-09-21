@@ -19,6 +19,10 @@ add-images-local:  ## Generates a local image manifest. Source this file to defi
 upstream-install: ## Installs the upstream Backplane Operator by deploying a CatalogSource and Subscription
 	bash ./hack/scripts/upstream-install.sh
 
+lint-operator-bundles:
+	pip install -r hack/bundle-automation/requirements.txt
+	python ./hack/bundle-automation/generate-bundles.py --lint
+
 regenerate-operator-bundles:
 	pip install -r hack/bundle-automation/requirements.txt
 	python ./hack/bundle-automation/generate-bundles.py --destination pkg/templates/

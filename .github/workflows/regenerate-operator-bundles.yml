@@ -33,6 +33,11 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       # Runs a set of commands using the runners shell
+      - name: Lint Operator Bundles
+        run: |
+          make lint-operator-bundles
+          
+      # Runs a set of commands using the runners shell
       - name: Regenerate Operator Bundles
         run: |
           make regenerate-operator-bundles
