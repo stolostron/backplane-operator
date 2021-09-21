@@ -11,6 +11,8 @@ import array
 import logging
 from git import Repo, exc
 
+from validate_csv import *
+
 # Parse an image reference, return dict containing image reference information
 def parse_image_ref(image_ref):
    # Image ref:  [registry-and-ns/]repository-name[:tag][@digest]
@@ -535,13 +537,20 @@ def getCSVPath(repo, operator):
 def main():
     ## Initialize ArgParser
     parser = argparse.ArgumentParser()
-    parser.add_argument("--destination", dest="destination", type=str, required=True, help="Destination directory of the created helm chart")
+    parser.add_argument("--destination", dest="destination", type=str, required=False, help="Destination directory of the created helm chart")
     parser.add_argument("--skipOverrides", dest="skipOverrides", type=bool, help="If true, overrides such as helm flow control will not be applied")
+    parser.add_argument("--lint", dest="lint", action='store_true', help="If true, bundles will only be linted to ensure they can be transformed successfully. Default is False.")
     parser.set_defaults(skipOverrides=False)
+    parser.set_defaults(lint=False)
 
     args = parser.parse_args()
     skipOverrides = args.skipOverrides
     destination = args.destination
+    lint = args.lint
+
+    if lint == False and not destination:
+        logging.critical("Destination directory is required when not linting.")
+        exit(1)
 
     logging.basicConfig(level=logging.DEBUG)
 
@@ -571,9 +580,6 @@ def main():
                 # Validate the bundlePath or package-yml path exists in config.yaml
                 print("Unable to find given channel: " +  operator["channel"] + " in package.yaml: " + operator["package-yml"])
                 exit(1)
-            
-            # Copy over all CRDs to the destination directory
-            addCRDs(repo["repo_name"], operator, destination)
 
             logging.basicConfig(level=logging.DEBUG)
 
@@ -582,7 +588,22 @@ def main():
             if not os.path.isfile(csvPath):
                 logging.critical("Unable to find CSV at given path - '" + csvPath + "'.")
                 exit(1)
-            
+
+            if lint:
+                # Lint the CSV
+                errs = validateCSV(csvPath)
+                if len(errs) > 0:
+                    logging.error("CSV Validation errors detected")
+                    for err in errs:
+                        logging.error(err)
+                    exit(1)
+                logging.info("CSV validated successfully!\n")
+                continue
+
+
+            # Copy over all CRDs to the destination directory
+            addCRDs(repo["repo_name"], operator, destination)
+
             # If name is empty, fail
             helmChart = operator["name"]
             if helmChart == "":
