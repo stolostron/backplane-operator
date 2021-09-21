@@ -40,6 +40,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -96,17 +97,10 @@ const (
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
-// the MultiClusterEngine object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
-//
-// For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.8.3/pkg/reconcile
 func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (retRes ctrl.Result, retErr error) {
 	log := log.FromContext(ctx)
 	// Fetch the BackplaneConfig instance
-	backplaneConfig, err := r.getBackplaneConfig(req)
+	backplaneConfig, err := r.getBackplaneConfig(ctx, req)
 	if err != nil && !apierrors.IsNotFound(err) {
 		// Unknown error. Requeue
 		log.Info("Failed to fetch backplaneConfig")
@@ -119,17 +113,27 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 
 	// If deletion detected, finalize backplane config
 	if backplaneConfig.GetDeletionTimestamp() != nil {
-		err := r.finalizeBackplaneConfig(backplaneConfig) // returns all errors
-		if err != nil {
-			log.Info(err.Error())
-			return ctrl.Result{RequeueAfter: 5 * time.Second}, nil
+		if controllerutil.ContainsFinalizer(backplaneConfig, backplaneFinalizer) {
+			err := r.finalizeBackplaneConfig(ctx, backplaneConfig) // returns all errors
+			if err != nil {
+				log.Info(err.Error())
+				return ctrl.Result{RequeueAfter: 5 * time.Second}, nil
+			}
+
+			log.Info("all subcomponents have been finalized successfully - removing finalizer")
+			controllerutil.RemoveFinalizer(backplaneConfig, backplaneFinalizer)
+			if err := r.Client.Update(ctx, backplaneConfig); err != nil {
+				return ctrl.Result{}, err
+			}
 		}
+
 		return ctrl.Result{}, nil // Object finalized successfully
 	}
 
 	// Add finalizer for this CR
-	if !contains(backplaneConfig.GetFinalizers(), backplaneFinalizer) {
-		if err := r.addFinalizer(backplaneConfig); err != nil {
+	if !controllerutil.ContainsFinalizer(backplaneConfig, backplaneFinalizer) {
+		controllerutil.AddFinalizer(backplaneConfig, backplaneFinalizer)
+		if err := r.Client.Update(ctx, backplaneConfig); err != nil {
 			return ctrl.Result{}, err
 		}
 	}
@@ -154,7 +158,7 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return ctrl.Result{RequeueAfter: requeuePeriod}, e.New("no image references exist. images must be defined as environment variables")
 	}
 
-	result, err := r.DeploySubcomponents(backplaneConfig)
+	result, err := r.DeploySubcomponents(ctx, backplaneConfig)
 	if err != nil {
 		r.StatusManager.AddCondition(status.NewCondition(backplanev1alpha1.MultiClusterEngineProgressing, metav1.ConditionUnknown, status.DeployFailedReason, err.Error()))
 		return result, err
@@ -198,8 +202,8 @@ func (r *MultiClusterEngineReconciler) SetupWithManager(mgr ctrl.Manager) error 
 }
 
 // DeploySubcomponents ensures all subcomponents exist
-func (r *MultiClusterEngineReconciler) DeploySubcomponents(backplaneConfig *backplanev1alpha1.MultiClusterEngine) (ctrl.Result, error) {
-	log := log.FromContext(context.Background())
+func (r *MultiClusterEngineReconciler) DeploySubcomponents(ctx context.Context, backplaneConfig *backplanev1alpha1.MultiClusterEngine) (ctrl.Result, error) {
+	log := log.FromContext(ctx)
 
 	// Renders all templates from charts
 	templates, errs := renderer.RenderTemplates(backplaneConfig, r.Images)
@@ -225,14 +229,14 @@ func (r *MultiClusterEngineReconciler) DeploySubcomponents(backplaneConfig *back
 		}
 
 		if template.GetKind() == "APIService" {
-			result, err := r.ensureUnstructuredResource(backplaneConfig, template)
+			result, err := r.ensureUnstructuredResource(ctx, backplaneConfig, template)
 			if err != nil {
 				return result, err
 			}
 		} else {
 			// Apply the object data.
 			force := true
-			err = r.Client.Patch(context.TODO(), template, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
+			err = r.Client.Patch(ctx, template, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
 			if err != nil {
 				return ctrl.Result{}, errors.Wrapf(err, "error applying object Name: %s Kind: %s", template.GetName(), template.GetKind())
 			}
@@ -240,7 +244,7 @@ func (r *MultiClusterEngineReconciler) DeploySubcomponents(backplaneConfig *back
 
 	}
 
-	result, err := r.ensureCustomResources(backplaneConfig)
+	result, err := r.ensureCustomResources(ctx, backplaneConfig)
 	if err != nil {
 		return result, err
 	}
@@ -248,14 +252,14 @@ func (r *MultiClusterEngineReconciler) DeploySubcomponents(backplaneConfig *back
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterEngineReconciler) ensureCustomResources(backplaneConfig *backplanev1alpha1.MultiClusterEngine) (ctrl.Result, error) {
+func (r *MultiClusterEngineReconciler) ensureCustomResources(ctx context.Context, backplaneConfig *backplanev1alpha1.MultiClusterEngine) (ctrl.Result, error) {
 
 	cmTemplate := foundation.ClusterManager(backplaneConfig, r.Images)
 	if err := ctrl.SetControllerReference(backplaneConfig, cmTemplate, r.Scheme); err != nil {
 		return ctrl.Result{}, errors.Wrapf(err, "Error setting controller reference on resource %s", cmTemplate.GetName())
 	}
 	force := true
-	err := r.Client.Patch(context.TODO(), cmTemplate, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
+	err := r.Client.Patch(ctx, cmTemplate, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
 	if err != nil {
 		return ctrl.Result{}, errors.Wrapf(err, "error applying object Name: %s Kind: %s", cmTemplate.GetName(), cmTemplate.GetKind())
 	}
@@ -269,7 +273,7 @@ func (r *MultiClusterEngineReconciler) ensureCustomResources(backplaneConfig *ba
 		return ctrl.Result{}, errors.Wrapf(err, "Error setting controller reference on resource %s", hiveTemplate.GetName())
 	}
 
-	result, err := r.ensureUnstructuredResource(backplaneConfig, hiveTemplate)
+	result, err := r.ensureUnstructuredResource(ctx, backplaneConfig, hiveTemplate)
 	if err != nil {
 		return result, err
 	}
@@ -277,67 +281,44 @@ func (r *MultiClusterEngineReconciler) ensureCustomResources(backplaneConfig *ba
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterEngineReconciler) addFinalizer(backplaneConfig *backplanev1alpha1.MultiClusterEngine) error {
-	log := log.FromContext(context.Background())
-	backplaneConfig.SetFinalizers(append(backplaneConfig.GetFinalizers(), backplaneFinalizer))
-	// Update CR
-	err := r.Client.Update(context.TODO(), backplaneConfig)
-	if err != nil {
-		log.Error(err, "Failed to update BackplaneConfig with finalizer")
-		return err
-	}
-	return nil
-}
-
-func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(backplaneConfig *backplanev1alpha1.MultiClusterEngine) error {
-	ctx := context.Background()
+func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Context, backplaneConfig *backplanev1alpha1.MultiClusterEngine) error {
 	log := log.FromContext(ctx)
-	if contains(backplaneConfig.GetFinalizers(), backplaneFinalizer) {
-		clusterManager := &unstructured.Unstructured{}
-		clusterManager.SetGroupVersionKind(
-			schema.GroupVersionKind{
-				Group:   "operator.open-cluster-management.io",
-				Version: "v1",
-				Kind:    "ClusterManager",
-			},
-		)
-		ocmHubNamespace := &corev1.Namespace{}
 
-		err := r.Client.Get(ctx, types.NamespacedName{Name: "cluster-manager"}, clusterManager)
-		if err == nil { // If resource exists, delete
-			log.Info("finalizing cluster-manager custom resource")
-			err := r.Client.Delete(ctx, clusterManager)
-			if err != nil {
-				return err
-			}
-		} else if err != nil && !apierrors.IsNotFound(err) { // Return error, if error is not not found error
-			return err
-		}
+	clusterManager := &unstructured.Unstructured{}
+	clusterManager.SetGroupVersionKind(
+		schema.GroupVersionKind{
+			Group:   "operator.open-cluster-management.io",
+			Version: "v1",
+			Kind:    "ClusterManager",
+		},
+	)
 
-		err = r.Client.Get(ctx, types.NamespacedName{Name: "open-cluster-management-hub"}, ocmHubNamespace)
-		if err == nil {
-			return fmt.Errorf("waiting for 'open-cluster-management-hub' namespace to be terminated before proceeding with uninstallation")
-		} else if err != nil && !apierrors.IsNotFound(err) { // Return error, if error is not not found error
-			return err
-		}
-
-		log.Info("all subcomponents have been finalized successfully - removing finalizer")
-		// Remove finalizer. Once all finalizers have been
-		// removed, the object will be deleted.
-		backplaneConfig.SetFinalizers(remove(backplaneConfig.GetFinalizers(), backplaneFinalizer))
-
-		err = r.Client.Update(ctx, backplaneConfig)
+	err := r.Client.Get(ctx, types.NamespacedName{Name: "cluster-manager"}, clusterManager)
+	if err == nil { // If resource exists, delete
+		log.Info("finalizing cluster-manager custom resource")
+		err := r.Client.Delete(ctx, clusterManager)
 		if err != nil {
 			return err
 		}
+	} else if err != nil && !apierrors.IsNotFound(err) { // Return error, if error is not not found error
+		return err
 	}
+
+	ocmHubNamespace := &corev1.Namespace{}
+	err = r.Client.Get(ctx, types.NamespacedName{Name: "open-cluster-management-hub"}, ocmHubNamespace)
+	if err == nil {
+		return fmt.Errorf("waiting for 'open-cluster-management-hub' namespace to be terminated before proceeding with uninstallation")
+	} else if err != nil && !apierrors.IsNotFound(err) { // Return error, if error is not not found error
+		return err
+	}
+
 	return nil
 }
 
-func (r *MultiClusterEngineReconciler) getBackplaneConfig(req ctrl.Request) (*backplanev1alpha1.MultiClusterEngine, error) {
-	log := log.FromContext(context.Background())
+func (r *MultiClusterEngineReconciler) getBackplaneConfig(ctx context.Context, req ctrl.Request) (*backplanev1alpha1.MultiClusterEngine, error) {
+	log := log.FromContext(ctx)
 	backplaneConfig := &backplanev1alpha1.MultiClusterEngine{}
-	err := r.Client.Get(context.TODO(), req.NamespacedName, backplaneConfig)
+	err := r.Client.Get(ctx, req.NamespacedName, backplaneConfig)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
@@ -350,4 +331,69 @@ func (r *MultiClusterEngineReconciler) getBackplaneConfig(req ctrl.Request) (*ba
 		return nil, err
 	}
 	return backplaneConfig, nil
+}
+
+// ensureUnstructuredResource ensures that the unstructured resource is applied in the cluster properly
+func (r *MultiClusterEngineReconciler) ensureUnstructuredResource(ctx context.Context, bpc *backplanev1alpha1.MultiClusterEngine, u *unstructured.Unstructured) (ctrl.Result, error) {
+	log := log.FromContext(ctx)
+
+	found := &unstructured.Unstructured{}
+	found.SetGroupVersionKind(u.GroupVersionKind())
+
+	utils.AddBackplaneConfigLabels(u, bpc.Name)
+
+	// Try to get API group instance
+	err := r.Client.Get(ctx, types.NamespacedName{
+		Name:      u.GetName(),
+		Namespace: u.GetNamespace(),
+	}, found)
+	if err != nil && apierrors.IsNotFound(err) {
+		// Resource doesn't exist so create it
+		err := r.Client.Create(ctx, u)
+		if err != nil {
+			// Creation failed
+			log.Error(err, "Failed to create new instance")
+			return ctrl.Result{}, err
+		}
+		// Creation was successful
+		log.Info(fmt.Sprintf("Created new resource - kind: %s name: %s", u.GetKind(), u.GetName()))
+		// condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
+		// SetHubCondition(&m.Status, *condition)
+		return ctrl.Result{}, nil
+
+	} else if err != nil {
+		// Error that isn't due to the resource not existing
+		log.Error(err, "Failed to get resource")
+		return ctrl.Result{}, err
+	}
+
+	// Validate object based on name
+	var desired *unstructured.Unstructured
+	var needsUpdate bool
+
+	switch found.GetKind() {
+	case "ClusterManager":
+		desired, needsUpdate = foundation.ValidateSpec(found, u)
+	case "ClusterRole":
+		desired, needsUpdate = utils.ValidateClusterRoleRules(found, u)
+	case "Deployment":
+		desired = u
+		needsUpdate = true
+	case "CustomResourceDefinition", "HiveConfig":
+		// skip update
+		return ctrl.Result{}, nil
+	default:
+		log.Info("Could not validate unstructured resource. Skipping update.", "Type", found.GetKind())
+		return ctrl.Result{}, nil
+	}
+
+	if needsUpdate {
+		log.Info(fmt.Sprintf("Updating %s - %s", desired.GetKind(), desired.GetName()))
+		err = r.Client.Update(ctx, desired)
+		if err != nil {
+			log.Error(err, "Failed to update resource.")
+			return ctrl.Result{}, err
+		}
+	}
+	return ctrl.Result{}, nil
 }
