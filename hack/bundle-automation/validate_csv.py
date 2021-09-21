@@ -64,8 +64,9 @@ def validateCSV(csvPath):
     errs.extend(validateFieldMapping(csv, 'disallowedFields', "spec.install.spec"))
     errs.extend(validateFieldMapping(csv, 'disallowedFields', "spec.install"))
     errs.extend(validateFieldMapping(csv, 'disallowedFields', "spec"))
-
+    csv.pop('metadata') # Remove metadata from the CSV
+    
     if csv != {}:
         errs.append(name + " CSV is not empty")
-        
+
     return errs

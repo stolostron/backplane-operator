@@ -3,7 +3,6 @@ disallowedFields:
 - spec.webhookdefinitions
 noOpFields:
 - apiVersion
-- kind
 - spec.annotations
 - spec.customresourcedefinitions
 - spec.description
@@ -23,9 +22,9 @@ noOpFields:
 - spec.version
 - spec.install.strategy
 requiredFields:
-- apiVersion
 - kind
-- metadata
+- metadata.name
+- metadata.annotations.description
 - spec.install.spec.clusterPermissions
 - spec.install.spec.deployments
 optionalFields:

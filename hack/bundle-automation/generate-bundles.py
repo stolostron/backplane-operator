@@ -597,7 +597,7 @@ def main():
                     for err in errs:
                         logging.error(err)
                     exit(1)
-                logging.info("CSV validated successfully!")
+                logging.info("CSV validated successfully!\n")
                 continue
 
 
