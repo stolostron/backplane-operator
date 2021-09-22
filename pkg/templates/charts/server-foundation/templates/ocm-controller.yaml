@@ -38,6 +38,8 @@ spec:
       containers:
       - args:
         - /controller
+        - "--enable-agent-deploy=true"
+        - "--agent-addon-image={{ .Values.global.imageOverrides.multicloud_manager }}"
         env:
 {{- if .Values.hubconfig.proxyConfigs }}
         - name: HTTP_PROXY
