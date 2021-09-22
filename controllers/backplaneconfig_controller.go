@@ -367,33 +367,5 @@ func (r *MultiClusterEngineReconciler) ensureUnstructuredResource(ctx context.Co
 		return ctrl.Result{}, err
 	}
 
-	// Validate object based on name
-	var desired *unstructured.Unstructured
-	var needsUpdate bool
-
-	switch found.GetKind() {
-	case "ClusterManager":
-		desired, needsUpdate = foundation.ValidateSpec(found, u)
-	case "ClusterRole":
-		desired, needsUpdate = utils.ValidateClusterRoleRules(found, u)
-	case "Deployment":
-		desired = u
-		needsUpdate = true
-	case "CustomResourceDefinition", "HiveConfig":
-		// skip update
-		return ctrl.Result{}, nil
-	default:
-		log.Info("Could not validate unstructured resource. Skipping update.", "Type", found.GetKind())
-		return ctrl.Result{}, nil
-	}
-
-	if needsUpdate {
-		log.Info(fmt.Sprintf("Updating %s - %s", desired.GetKind(), desired.GetName()))
-		err = r.Client.Update(ctx, desired)
-		if err != nil {
-			log.Error(err, "Failed to update resource.")
-			return ctrl.Result{}, err
-		}
-	}
 	return ctrl.Result{}, nil
 }
