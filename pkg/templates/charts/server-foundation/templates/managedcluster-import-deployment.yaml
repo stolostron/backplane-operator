@@ -23,9 +23,6 @@ spec:
         app: managedcluster-import-controller-v2
         ocm-antiaffinity-selector: managedclusterimport
       annotations:
-        productName: "Advanced Cluster Management"
-        productID: "product-id"
-        productVersion: 2.1.0
         scheduler.alpha.kubernetes.io/critical-pod: ''
     spec:
     {{- if .Values.global.pullSecret }}
