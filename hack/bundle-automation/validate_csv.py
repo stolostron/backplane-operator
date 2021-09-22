@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2020 Red Hat, Inc.
+# Copyright (c) 2021 Red Hat, Inc.
 # Copyright Contributors to the Open Cluster Management project
 # Assumes: Python 3.6+
 
