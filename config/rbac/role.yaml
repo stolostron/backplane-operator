@@ -96,6 +96,7 @@ rules:
   - apps
   resources:
   - deployments
+  - replicasets
   verbs:
   - create
   - delete
@@ -129,6 +130,18 @@ rules:
   verbs:
   - get
   - list
+  - watch
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
   - watch
 - apiGroups:
   - hive.openshift.io
