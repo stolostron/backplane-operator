@@ -172,8 +172,11 @@ rules:
   - deployments
   verbs:
   - get
+  - list
+  - watch
   - create
   - update
+  - patch
 - apiGroups:
   - operator.open-cluster-management.io
   resources:
@@ -197,3 +200,11 @@ rules:
     - get
     - list
     - watch
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - get
+  - create
+  - update
