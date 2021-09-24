@@ -90,6 +90,7 @@ const (
 //+kubebuilder:rbac:groups=imageregistry.open-cluster-management.io,resources=managedclusterimageregistries;managedclusterimageregistries/status,verbs=approve;bind;create;delete;deletecollection;escalate;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io;inventory.open-cluster-management.io;observability.open-cluster-management.io;operator.open-cluster-management.io,resources=managedclusters;baremetalassets;multiclusterobservabilities;multiclusterhubs,verbs=get;list;watch
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclustersets/join,verbs=create
+//+kubebuilder:rbac:groups=migration.k8s.io,resources=storageversionmigrations,verbs=create;get;list;update;patch;watch;delete
 
 // Hive RBAC
 //+kubebuilder:rbac:groups="hive.openshift.io",resources=hiveconfigs,verbs=get;create;update;delete;list;watch
