@@ -84,9 +84,10 @@ type ComponentCondition struct {
 type PhaseType string
 
 const (
-	MultiClusterEnginePhaseProgressing PhaseType = "Progressing"
-	MultiClusterEnginePhaseAvailable   PhaseType = "Available"
-	MultiClusterEnginePhaseError       PhaseType = "Error"
+	MultiClusterEnginePhaseProgressing  PhaseType = "Progressing"
+	MultiClusterEnginePhaseAvailable    PhaseType = "Available"
+	MultiClusterEnginePhaseUninstalling PhaseType = "Uninstalling"
+	MultiClusterEnginePhaseError        PhaseType = "Error"
 )
 
 type MultiClusterEngineConditionType string

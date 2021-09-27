@@ -18,6 +18,10 @@ const (
 	// RequirementsNotMetReason is when there is something missing or misconfigured
 	// that is preventing progress
 	RequirementsNotMetReason = "RequirementsNotMet"
+	// DeleteTimestampReason means the resource is schedule for deletion with a DeletionTimestamp present
+	DeleteTimestampReason = "DeletionTimestampPresent"
+	// WaitingForResourceReason means the reconciler is waiting on a resource before it can progress
+	WaitingForResourceReason = "WaitingForResource"
 )
 
 // NewCondition creates a new condition.

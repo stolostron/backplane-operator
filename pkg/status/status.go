@@ -30,15 +30,19 @@ func (sm *StatusTracker) AddCondition(c bpv1alpha1.MultiClusterEngineCondition) 
 	sm.Conditions = setCondition(sm.Conditions, c)
 }
 
-func (sm *StatusTracker) ReportStatus() bpv1alpha1.MultiClusterEngineStatus {
+func (sm *StatusTracker) ReportStatus(mce bpv1alpha1.MultiClusterEngine) bpv1alpha1.MultiClusterEngineStatus {
 	components := sm.reportComponents()
-	phase := sm.reportPhase(components)
-	if phase == bpv1alpha1.MultiClusterEnginePhaseAvailable {
+
+	// Infer available condition from component health
+	if allComponentsReady(components) {
 		sm.AddCondition(NewCondition(bpv1alpha1.MultiClusterEngineAvailable, metav1.ConditionTrue, ComponentsAvailableReason, ""))
+
 	} else {
 		sm.AddCondition(NewCondition(bpv1alpha1.MultiClusterEngineAvailable, metav1.ConditionFalse, ComponentsUnavailableReason, ""))
 	}
+
 	conditions := sm.reportConditions()
+	phase := sm.reportPhase(mce, components, conditions)
 
 	return bpv1alpha1.MultiClusterEngineStatus{
 		Components: components,
@@ -59,16 +63,42 @@ func (sm *StatusTracker) reportConditions() []bpv1alpha1.MultiClusterEngineCondi
 	return sm.Conditions
 }
 
-func (sm *StatusTracker) reportPhase(cc []bpv1alpha1.ComponentCondition) bpv1alpha1.PhaseType {
-	if len(cc) == 0 {
+func (sm *StatusTracker) reportPhase(mce bpv1alpha1.MultiClusterEngine, components []bpv1alpha1.ComponentCondition, conditions []bpv1alpha1.MultiClusterEngineCondition) bpv1alpha1.PhaseType {
+	progress := getCondition(conditions, bpv1alpha1.MultiClusterEngineProgressing)
+
+	// If operator isn't progressing show error phase
+	if progress != nil && progress.Status == metav1.ConditionFalse {
 		return bpv1alpha1.MultiClusterEnginePhaseError
 	}
-	for _, val := range cc {
+
+	// If deleting show uninstall phase
+	if mce.GetDeletionTimestamp() != nil {
+		return bpv1alpha1.MultiClusterEnginePhaseUninstalling
+	}
+
+	// If status isn't tracking anything show error phase
+	if len(components) == 0 {
+		return bpv1alpha1.MultiClusterEnginePhaseError
+	}
+
+	// If a component isn't ready show progressing phase
+	if !allComponentsReady(components) {
+		return bpv1alpha1.MultiClusterEnginePhaseProgressing
+	}
+
+	return bpv1alpha1.MultiClusterEnginePhaseAvailable
+}
+
+func allComponentsReady(components []bpv1alpha1.ComponentCondition) bool {
+	if len(components) == 0 {
+		return false
+	}
+	for _, val := range components {
 		if !val.Available {
-			return bpv1alpha1.MultiClusterEnginePhaseProgressing
+			return false
 		}
 	}
-	return bpv1alpha1.MultiClusterEnginePhaseAvailable
+	return true
 }
 
 // StatusReporter is a resource that can report back a status

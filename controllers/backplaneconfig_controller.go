@@ -111,6 +111,18 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return ctrl.Result{}, nil
 	}
 
+	defer func() {
+		log.Info("Updating status")
+		backplaneConfig.Status = r.StatusManager.ReportStatus(*backplaneConfig)
+		err := r.Client.Status().Update(ctx, backplaneConfig)
+		if backplaneConfig.Status.Phase != backplanev1alpha1.MultiClusterEnginePhaseAvailable {
+			retRes = ctrl.Result{RequeueAfter: 10 * time.Second}
+		}
+		if err != nil {
+			retErr = err
+		}
+	}()
+
 	// If deletion detected, finalize backplane config
 	if backplaneConfig.GetDeletionTimestamp() != nil {
 		if controllerutil.ContainsFinalizer(backplaneConfig, backplaneFinalizer) {
@@ -137,18 +149,6 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 			return ctrl.Result{}, err
 		}
 	}
-
-	defer func() {
-		log.Info("Updating status")
-		backplaneConfig.Status = r.StatusManager.ReportStatus()
-		err := r.Client.Status().Update(ctx, backplaneConfig)
-		if backplaneConfig.Status.Phase != backplanev1alpha1.MultiClusterEnginePhaseAvailable {
-			retRes = ctrl.Result{RequeueAfter: 10 * time.Second}
-		}
-		if err != nil {
-			retErr = err
-		}
-	}()
 
 	// Read image overrides from environmental variables
 	r.Images = utils.GetImageOverrides()
@@ -307,6 +307,15 @@ func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Conte
 	ocmHubNamespace := &corev1.Namespace{}
 	err = r.Client.Get(ctx, types.NamespacedName{Name: "open-cluster-management-hub"}, ocmHubNamespace)
 	if err == nil {
+		// If wait time exceeds expected then uninstall may not be able to progress
+		if time.Since(backplaneConfig.DeletionTimestamp.Time) < 5*time.Minute {
+			terminatingCondition := status.NewCondition(backplanev1alpha1.MultiClusterEngineConditionType(backplanev1alpha1.MultiClusterEngineProgressing), metav1.ConditionTrue, status.WaitingForResourceReason, "Waiting for namespace open-cluster-management-hub to terminate.")
+			r.StatusManager.AddCondition(terminatingCondition)
+		} else {
+			terminatingCondition := status.NewCondition(backplanev1alpha1.MultiClusterEngineConditionType(backplanev1alpha1.MultiClusterEngineProgressing), metav1.ConditionFalse, status.WaitingForResourceReason, "Namespace open-cluster-management-hub still exists.")
+			r.StatusManager.AddCondition(terminatingCondition)
+		}
+
 		return fmt.Errorf("waiting for 'open-cluster-management-hub' namespace to be terminated before proceeding with uninstallation")
 	} else if err != nil && !apierrors.IsNotFound(err) { // Return error, if error is not not found error
 		return err
