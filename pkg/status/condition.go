@@ -22,6 +22,8 @@ const (
 	DeleteTimestampReason = "DeletionTimestampPresent"
 	// WaitingForResourceReason means the reconciler is waiting on a resource before it can progress
 	WaitingForResourceReason = "WaitingForResource"
+	// PausedReason is added when the multiclusterengine is paused
+	PausedReason = "Paused"
 )
 
 // NewCondition creates a new condition.
@@ -36,7 +38,7 @@ func NewCondition(condType bpv1alpha1.MultiClusterEngineConditionType, status me
 	}
 }
 
-// setCondition sets the status condition. It either overwrites the existing one or creates a new one.
+// SetCondition sets the status condition. It either overwrites the existing one or creates a new one.
 func setCondition(conditions []bpv1alpha1.MultiClusterEngineCondition, c bpv1alpha1.MultiClusterEngineCondition) []bpv1alpha1.MultiClusterEngineCondition {
 	currentCond := getCondition(conditions, c.Type)
 	if currentCond != nil && currentCond.Status == c.Status && currentCond.Reason == c.Reason {
@@ -53,7 +55,7 @@ func setCondition(conditions []bpv1alpha1.MultiClusterEngineCondition, c bpv1alp
 	return append(newConditions, c)
 }
 
-// getCondition returns the condition you're looking for by type
+// GetCondition returns the condition you're looking for by type
 func getCondition(conditions []bpv1alpha1.MultiClusterEngineCondition, condType bpv1alpha1.MultiClusterEngineConditionType) *bpv1alpha1.MultiClusterEngineCondition {
 	for i := range conditions {
 		c := conditions[i]

@@ -5,9 +5,11 @@ package utils
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"strings"
 
+	backplanev1alpha1 "github.com/open-cluster-management/backplane-operator/api/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -20,9 +22,16 @@ const (
 )
 
 // GetImageOverrides Reads and formats full image reference from image manifest file.
-func GetImageOverrides() map[string]string {
+func GetImageOverrides(mce *backplanev1alpha1.MultiClusterEngine) map[string]string {
 	log := log.FromContext(context.Background())
 	imageOverrides := make(map[string]string)
+
+	defer func() {
+		if imageRepo := GetImageRepository(mce); imageRepo != "" {
+			log.Info(fmt.Sprintf("Overriding Image Repository from annotation 'imageRepository': %s", imageRepo))
+			imageOverrides = OverrideImageRepository(imageOverrides, imageRepo)
+		}
+	}()
 
 	// First check for environment variables containing the 'OPERAND_IMAGE_' prefix
 	for _, e := range os.Environ() {

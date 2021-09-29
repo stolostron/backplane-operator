@@ -53,6 +53,7 @@ import (
 	"github.com/open-cluster-management/backplane-operator/pkg/hive"
 	renderer "github.com/open-cluster-management/backplane-operator/pkg/rendering"
 	"github.com/open-cluster-management/backplane-operator/pkg/status"
+
 	"github.com/open-cluster-management/backplane-operator/pkg/utils"
 )
 
@@ -117,7 +118,7 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		log.Info("Updating status")
 		backplaneConfig.Status = r.StatusManager.ReportStatus(*backplaneConfig)
 		err := r.Client.Status().Update(ctx, backplaneConfig)
-		if backplaneConfig.Status.Phase != backplanev1alpha1.MultiClusterEnginePhaseAvailable {
+		if backplaneConfig.Status.Phase != backplanev1alpha1.MultiClusterEnginePhaseAvailable && !utils.IsPaused(backplaneConfig) {
 			retRes = ctrl.Result{RequeueAfter: 10 * time.Second}
 		}
 		if err != nil {
@@ -153,11 +154,18 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}
 
 	// Read image overrides from environmental variables
-	r.Images = utils.GetImageOverrides()
+	r.Images = utils.GetImageOverrides(backplaneConfig)
 	if len(r.Images) == 0 {
 		// If imageoverrides are not set from environmental variables, fail
 		r.StatusManager.AddCondition(status.NewCondition(backplanev1alpha1.MultiClusterEngineProgressing, metav1.ConditionFalse, status.RequirementsNotMetReason, "No image references defined in deployment"))
 		return ctrl.Result{RequeueAfter: requeuePeriod}, e.New("no image references exist. images must be defined as environment variables")
+	}
+
+	// Do not reconcile objects if this instance of mce is labeled "paused"
+	if utils.IsPaused(backplaneConfig) {
+		log.Info("MultiClusterEngine reconciliation is paused. Nothing more to do.")
+		r.StatusManager.AddCondition(status.NewCondition(backplanev1alpha1.MultiClusterEngineProgressing, metav1.ConditionUnknown, status.PausedReason, "Multiclusterengine is paused"))
+		return ctrl.Result{}, nil
 	}
 
 	result, err := r.DeploySubcomponents(ctx, backplaneConfig)
