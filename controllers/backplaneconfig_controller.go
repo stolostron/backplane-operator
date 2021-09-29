@@ -52,7 +52,7 @@ import (
 	"github.com/open-cluster-management/backplane-operator/pkg/foundation"
 	"github.com/open-cluster-management/backplane-operator/pkg/hive"
 	renderer "github.com/open-cluster-management/backplane-operator/pkg/rendering"
-	status "github.com/open-cluster-management/backplane-operator/pkg/status"
+	"github.com/open-cluster-management/backplane-operator/pkg/status"
 
 	"github.com/open-cluster-management/backplane-operator/pkg/utils"
 )
@@ -118,7 +118,7 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		log.Info("Updating status")
 		backplaneConfig.Status = r.StatusManager.ReportStatus(*backplaneConfig)
 		err := r.Client.Status().Update(ctx, backplaneConfig)
-		if backplaneConfig.Status.Phase != backplanev1alpha1.MultiClusterEnginePhaseAvailable {
+		if backplaneConfig.Status.Phase != backplanev1alpha1.MultiClusterEnginePhaseAvailable && !utils.IsPaused(backplaneConfig) {
 			retRes = ctrl.Result{RequeueAfter: 10 * time.Second}
 		}
 		if err != nil {
@@ -162,9 +162,9 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}
 
 	// Do not reconcile objects if this instance of mce is labeled "paused"
-	r.UpdatePausedCondition(backplaneConfig)
 	if utils.IsPaused(backplaneConfig) {
 		log.Info("MultiClusterEngine reconciliation is paused. Nothing more to do.")
+		r.StatusManager.AddCondition(status.NewCondition(backplanev1alpha1.MultiClusterEngineProgressing, metav1.ConditionUnknown, status.PausedReason, "Multiclusterengine is paused"))
 		return ctrl.Result{}, nil
 	}
 
@@ -387,24 +387,4 @@ func (r *MultiClusterEngineReconciler) ensureUnstructuredResource(ctx context.Co
 	}
 
 	return ctrl.Result{}, nil
-}
-
-func (r *MultiClusterEngineReconciler) UpdatePausedCondition(m *backplanev1alpha1.MultiClusterEngine) {
-	c := status.GetCondition(m.Status.Conditions, backplanev1alpha1.MultiClusterEngineProgressing)
-
-	if utils.IsPaused(m) {
-		// Pause condition needs to go on
-		if c == nil || c.Reason != status.PausedReason {
-			condition := status.NewCondition(backplanev1alpha1.MultiClusterEngineProgressing, metav1.ConditionUnknown, status.PausedReason, "Multiclusterengine is paused")
-			r.StatusManager.AddCondition(condition)
-		}
-	} else {
-		// Pause condition needs to come off
-		if c != nil && c.Reason == status.PausedReason {
-			condition := status.NewCondition(backplanev1alpha1.MultiClusterEngineProgressing, metav1.ConditionTrue, status.ResumedReason, "Multiclusterengine is resumed")
-			r.StatusManager.AddCondition(condition)
-
-		}
-
-	}
 }
