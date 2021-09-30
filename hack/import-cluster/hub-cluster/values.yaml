@@ -1,0 +1,18 @@
+# Copyright Contributors to the Open Cluster Management project
+
+managedCluster:
+  name: dev-cluster 
+  labels: # map of custom labels, if cloud and vendor labels are not specified they will be set to "auto-detect"
+    environment: Dev # Set up labels here to match with placement policies
+  autoImportRetry: 5
+  # For automatically import the cluster, 
+  # provide the kubeconfig or the server/token pair
+  # The cluster kubeconfig, token and server can also be passed as parameter
+  # The parameters override these values
+  # Provide either KubeConfig, or Token and API Server URL. As of now does not support manual import.
+  kubeConfig: |-
+    
+  token: ""
+  server: ""
+    
+

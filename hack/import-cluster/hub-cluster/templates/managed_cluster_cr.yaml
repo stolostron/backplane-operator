@@ -1,0 +1,25 @@
+# Copyright Contributors to the Open Cluster Management project
+
+apiVersion: cluster.open-cluster-management.io/v1
+kind: ManagedCluster
+metadata:
+  labels:
+    {{- range $key, $value := .Values.managedCluster.labels }}
+    {{ $key }}: {{ $value }}
+    {{- end }}
+    {{- if eq .Values.managedCluster.name "local-cluster" }}
+    local-cluster: "true"
+    {{- end }}
+    {{- if .Values.managedCluster.cloud }}
+    cloud: {{ .Values.managedCluster.cloud }}
+    {{- end}}
+    {{- if .Values.managedCluster.vendor }}
+    vendor: {{ .Values.managedCluster.vendor }}
+    {{- end}}
+    {{- if .Values.managedCluster.name }}
+    name: "{{ .Values.managedCluster.name }}"
+    {{- end}}
+  name: "{{ .Values.managedCluster.name }}"
+spec:
+  hubAcceptsClient: true
+  leaseDurationSeconds: 60
