@@ -36,6 +36,7 @@ rules:
   - secrets/finalizers
   - services
   - services/finalizers
+  - endpoints
   - events
   - configmaps
   - namespaces
@@ -103,6 +104,19 @@ rules:
   - clusterrolebindings
   - roles
   - rolebindings
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - prometheusrules
+  - servicemonitors
   verbs:
   - get
   - list
