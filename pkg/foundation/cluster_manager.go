@@ -5,6 +5,7 @@ package foundation
 import (
 	"context"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	v1alpha1 "github.com/open-cluster-management/backplane-operator/api/v1alpha1"
@@ -40,45 +41,31 @@ func PlacementImage(overrides map[string]string) string {
 
 func ClusterManager(m *v1alpha1.MultiClusterEngine, overrides map[string]string) *unstructured.Unstructured {
 	log := log.FromContext(context.Background())
-	cm := &ocmapiv1.ClusterManager{}
+
+	cmTolerations := []corev1.Toleration{}
 	if m.Spec.Tolerations != nil {
-		cm = &ocmapiv1.ClusterManager{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "operator.open-cluster-management.io/v1",
-				Kind:       "ClusterManager",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "cluster-manager",
-			},
-			Spec: ocmapiv1.ClusterManagerSpec{
-				RegistrationImagePullSpec: RegistrationImage(overrides),
-				WorkImagePullSpec:         WorkImage(overrides),
-				PlacementImagePullSpec:    PlacementImage(overrides),
-				NodePlacement: ocmapiv1.NodePlacement{
-					NodeSelector: m.Spec.NodeSelector,
-					Tolerations:  m.Spec.Tolerations,
-				},
-			},
-		}
+		cmTolerations = m.Spec.Tolerations
 	} else {
-		cm = &ocmapiv1.ClusterManager{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "operator.open-cluster-management.io/v1",
-				Kind:       "ClusterManager",
+		cmTolerations = utils.DefaultTolerations()
+	}
+
+	cm := &ocmapiv1.ClusterManager{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "operator.open-cluster-management.io/v1",
+			Kind:       "ClusterManager",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "cluster-manager",
+		},
+		Spec: ocmapiv1.ClusterManagerSpec{
+			RegistrationImagePullSpec: RegistrationImage(overrides),
+			WorkImagePullSpec:         WorkImage(overrides),
+			PlacementImagePullSpec:    PlacementImage(overrides),
+			NodePlacement: ocmapiv1.NodePlacement{
+				NodeSelector: m.Spec.NodeSelector,
+				Tolerations:  cmTolerations,
 			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "cluster-manager",
-			},
-			Spec: ocmapiv1.ClusterManagerSpec{
-				RegistrationImagePullSpec: RegistrationImage(overrides),
-				WorkImagePullSpec:         WorkImage(overrides),
-				PlacementImagePullSpec:    PlacementImage(overrides),
-				NodePlacement: ocmapiv1.NodePlacement{
-					NodeSelector: m.Spec.NodeSelector,
-					Tolerations:  utils.DefaultTolerations(),
-				},
-			},
-		}
+		},
 	}
 
 	utils.AddBackplaneConfigLabels(cm, m.GetName())
