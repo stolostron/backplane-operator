@@ -162,7 +162,7 @@ func injectValuesOverrides(values *Values, backplaneConfig *v1alpha1.MultiCluste
 	if len(backplaneConfig.Spec.Tolerations) > 0 {
 		values.HubConfig.Tolerations = backplaneConfig.Spec.Tolerations
 	} else {
-		values.HubConfig.Tolerations = defaultTolerations()
+		values.HubConfig.Tolerations = utils.DefaultTolerations()
 	}
 
 	values.Org = "open-cluster-management"
@@ -176,19 +176,4 @@ func injectValuesOverrides(values *Values, backplaneConfig *v1alpha1.MultiCluste
 	}
 
 	// TODO: Define all overrides
-}
-
-func defaultTolerations() []corev1.Toleration {
-	return []corev1.Toleration{
-		{
-			Effect:   "NoSchedule",
-			Key:      "node-role.kubernetes.io/infra",
-			Operator: "Exists",
-		},
-		{
-			Effect:   "NoSchedule",
-			Key:      "dedicated",
-			Operator: "Exists",
-		},
-	}
 }
