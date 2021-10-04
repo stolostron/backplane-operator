@@ -56,6 +56,9 @@ spec:
                   type: string
                 description: Set the nodeselectors
                 type: object
+              targetNamespace:
+                description: Location where MCE resources will be placed
+                type: string
               tolerations:
                 description: Tolerations causes all components to tolerate any taints.
                 items:

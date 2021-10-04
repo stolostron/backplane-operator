@@ -154,8 +154,14 @@ func (r *MultiClusterEngine) ValidateCreate() error {
 func (r *MultiClusterEngine) ValidateUpdate(old runtime.Object) error {
 	backplaneconfiglog.Info("validate update", "name", r.Name)
 
+	// oldMCE := old.(*MultiClusterEngine)
+	// backplaneconfiglog.Info(oldMCE.Spec.TargetNamespace)
+	// if r.Spec.TargetNamespace != oldMCE.Spec.TargetNamespace {
+	// if r.Spec.TargetNamespace != "" {
+	return errors.New("changes cannot be made to target namespace")
+	// }
 	// TODO(user): fill in your validation logic upon object update.
-	return nil
+	// return nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
