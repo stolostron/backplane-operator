@@ -34,6 +34,9 @@ type MultiClusterEngineSpec struct {
 
 	// Tolerations causes all components to tolerate any taints.
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
+
+	// Location where MCE resources will be placed
+	TargetNamespace string `json:"targetNamespace,omitempty"`
 }
 
 // MultiClusterEngineStatus defines the observed state of MultiClusterEngine
