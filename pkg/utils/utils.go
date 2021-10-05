@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"os"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -49,4 +50,19 @@ func ProxyEnvVarsAreSet() bool {
 func GetTestImages() []string {
 	return []string{"registration_operator", "openshift_hive", "multicloud_manager",
 		"managedcluster_import_controller", "registration", "work"}
+}
+
+func DefaultTolerations() []corev1.Toleration {
+	return []corev1.Toleration{
+		{
+			Effect:   "NoSchedule",
+			Key:      "node-role.kubernetes.io/infra",
+			Operator: "Exists",
+		},
+		{
+			Effect:   "NoSchedule",
+			Key:      "dedicated",
+			Operator: "Exists",
+		},
+	}
 }
