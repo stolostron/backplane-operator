@@ -320,12 +320,12 @@ spec:
           replicas: 2
           selector:
             matchLabels:
-              control-plane: backplane-operator
+              control-plane: multicluster-engine-operator
           strategy: {}
           template:
             metadata:
               labels:
-                control-plane: backplane-operator
+                control-plane: multicluster-engine-operator
             spec:
               containers:
               - args:

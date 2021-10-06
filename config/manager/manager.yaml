@@ -2,25 +2,25 @@ apiVersion: v1
 kind: Namespace
 metadata:
   labels:
-    control-plane: backplane-operator
+    control-plane: multicluster-engine-operator
   name: system
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    control-plane: backplane-operator
-  name: backplane-operator
+    control-plane: multicluster-engine-operator
+  name: multicluster-engine-operator
   namespace: system
 spec:
   replicas: 2
   selector:
     matchLabels:
-      control-plane: backplane-operator
+      control-plane: multicluster-engine-operator
   template:
     metadata:
       labels:
-        control-plane: backplane-operator
+        control-plane: multicluster-engine-operator
     spec:
       containers:
       - args:
@@ -61,10 +61,10 @@ spec:
           readOnly: true
       securityContext:
         runAsNonRoot: true
-      serviceAccountName: backplane-operator
+      serviceAccountName: multicluster-engine-operator
       terminationGracePeriodSeconds: 10
       volumes:
       - name: cert
         secret:
           defaultMode: 420
-          secretName: backplane-operator-webhook
+          secretName: multicluster-engine-operator-webhook
