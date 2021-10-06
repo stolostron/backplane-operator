@@ -100,8 +100,7 @@ func TestRender(t *testing.T) {
 			if !tolerationEquality {
 				t.Fatalf("Toleration did not propagate to the deployments use")
 			}
-			namespaceEquality := reflect.DeepEqual(deployment.ObjectMeta.Namespace, backplaneNamespace)
-			if !namespaceEquality {
+			if deployment.ObjectMeta.Namespace != backplaneNamespace {
 				t.Fatalf("Nammespace did not propagate to the deployments use")
 			}
 

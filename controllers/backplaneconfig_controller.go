@@ -170,10 +170,16 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 	if result != (ctrl.Result{}) {
 		return ctrl.Result{}, err
 	}
+	if err != nil {
+		return ctrl.Result{Requeue: true}, err
+	}
 
 	result, err = r.validateNamespace(ctx, backplaneConfig)
 	if result != (ctrl.Result{}) {
 		return ctrl.Result{}, err
+	}
+	if err != nil {
+		return ctrl.Result{Requeue: true}, err
 	}
 
 	// Read image overrides from environmental variables
@@ -191,7 +197,6 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return ctrl.Result{}, nil
 	}
 
-	log.Info("here is where we add the components")
 	result, err = r.DeploySubcomponents(ctx, backplaneConfig)
 	if err != nil {
 		r.StatusManager.AddCondition(status.NewCondition(backplanev1alpha1.MultiClusterEngineProgressing, metav1.ConditionUnknown, status.DeployFailedReason, err.Error()))
@@ -454,6 +459,9 @@ func (r *MultiClusterEngineReconciler) validateNamespace(ctx context.Context, m 
 		}
 		log.Info("Namespace created")
 		return ctrl.Result{Requeue: true}, nil
+	}
+	if err != nil && !apierrors.IsNotFound(err) {
+		return ctrl.Result{Requeue: true}, err
 	}
 	log.Info("Namespace already exists")
 	return ctrl.Result{}, nil

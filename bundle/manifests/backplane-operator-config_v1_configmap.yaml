@@ -14,4 +14,4 @@ data:
       resourceName: 797f9276.open-cluster-management.io
 kind: ConfigMap
 metadata:
-  name: mullticluster-engine-operator-config
+  name: multicluster-engine-operator-config
