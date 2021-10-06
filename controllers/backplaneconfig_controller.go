@@ -22,6 +22,7 @@ import (
 	"context"
 	e "errors"
 	"fmt"
+	"os"
 	"time"
 
 	"k8s.io/client-go/util/workqueue"
@@ -163,6 +164,22 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		}
 	}
 
+	var result ctrl.Result
+
+	log.Info("about to check the if statement")
+	if len(backplaneConfig.Spec.TargetNamespace) == 0 {
+		log.Info("if statement entered")
+		result, err = r.setDefaults(ctx, backplaneConfig)
+		if result != (ctrl.Result{}) {
+			return ctrl.Result{}, err
+		}
+	}
+
+	result, err = r.validateNamespace(ctx, backplaneConfig)
+	if result != (ctrl.Result{}) {
+		return ctrl.Result{}, err
+	}
+
 	// Read image overrides from environmental variables
 	r.Images = utils.GetImageOverrides(backplaneConfig)
 	if len(r.Images) == 0 {
@@ -178,7 +195,8 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return ctrl.Result{}, nil
 	}
 
-	result, err := r.DeploySubcomponents(ctx, backplaneConfig)
+	log.Info("here is where we add the components")
+	result, err = r.DeploySubcomponents(ctx, backplaneConfig)
 	if err != nil {
 		r.StatusManager.AddCondition(status.NewCondition(backplanev1alpha1.MultiClusterEngineProgressing, metav1.ConditionUnknown, status.DeployFailedReason, err.Error()))
 		return result, err
@@ -237,6 +255,7 @@ func (r *MultiClusterEngineReconciler) DeploySubcomponents(ctx context.Context, 
 	// Applies all templates
 	for _, template := range templates {
 		if template.GetKind() == "Deployment" {
+			log.Info(template.GetNamespace())
 			r.StatusManager.AddComponent(status.DeploymentStatus{
 				NamespacedName: types.NamespacedName{Name: template.GetName(), Namespace: template.GetNamespace()},
 			})
@@ -396,5 +415,50 @@ func (r *MultiClusterEngineReconciler) ensureUnstructuredResource(ctx context.Co
 		return ctrl.Result{}, err
 	}
 
+	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backplanev1alpha1.MultiClusterEngine) (ctrl.Result, error) {
+
+	log := log.FromContext(ctx)
+	if len(m.Spec.TargetNamespace) != 0 {
+		log.Info("no need to default")
+		return ctrl.Result{}, nil
+	}
+	log.Info("set to default")
+	m.Spec.TargetNamespace = os.Getenv("POD_NAMESPACE")
+	// Apply defaults to server
+	err := r.Client.Update(context.TODO(), m)
+	if err != nil {
+		log.Error(err, "Failed to update MultiClusterEngine")
+		return ctrl.Result{}, err
+	}
+	log.Info("MultiClusterEngine successfully updated")
+	return ctrl.Result{Requeue: true}, nil
+
+}
+
+func (r *MultiClusterEngineReconciler) validateNamespace(ctx context.Context, m *backplanev1alpha1.MultiClusterEngine) (ctrl.Result, error) {
+	log := log.FromContext(ctx)
+	newNs := &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: m.Spec.TargetNamespace,
+		},
+	}
+	checkNs := &corev1.Namespace{}
+	err := r.Client.Get(context.TODO(), types.NamespacedName{Name: m.Spec.TargetNamespace}, checkNs)
+	if err != nil && apierrors.IsNotFound(err) {
+		if err := ctrl.SetControllerReference(m, newNs, r.Scheme); err != nil {
+			return ctrl.Result{}, errors.Wrapf(err, "Error setting controller reference on resource %s", m.Spec.TargetNamespace)
+		}
+		err = r.Client.Create(context.TODO(), newNs)
+		if err != nil {
+			log.Error(err, "Could not create namespace")
+			return ctrl.Result{}, err
+		}
+		log.Info("Namespace created")
+		return ctrl.Result{Requeue: true}, nil
+	}
+	log.Info("Namespace already exists")
 	return ctrl.Result{}, nil
 }

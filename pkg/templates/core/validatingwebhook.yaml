@@ -10,7 +10,7 @@ webhooks:
   - v1beta1
   clientConfig:
     service:
-      name: backplane-operator-webhook-service
+      name: multicluster-engine-operator-webhook-service
       namespace: system
       path: /validate-multicluster-openshift-io-v1alpha1-multiclusterengine
   failurePolicy: Fail

@@ -21,6 +21,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -51,6 +52,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 	clusterManager.SetGroupVersionKind(schema.GroupVersionKind{Group: "operator.open-cluster-management.io", Version: "v1", Kind: "ClusterManager"})
 	hiveConfig := &unstructured.Unstructured{}
 	hiveConfig.SetGroupVersionKind(schema.GroupVersionKind{Group: "hive.openshift.io", Version: "v1", Kind: "HiveConfig"})
+	os.Setenv("POD_NAMESPACE", "default")
 
 	tests := []struct {
 		Name           string
@@ -126,7 +128,9 @@ var _ = Describe("BackplaneConfig controller", func() {
 				ObjectMeta: metav1.ObjectMeta{
 					Name: BackplaneConfigName,
 				},
-				Spec: v1alpha1.MultiClusterEngineSpec{},
+				Spec: v1alpha1.MultiClusterEngineSpec{
+					TargetNamespace: "default",
+				},
 			}
 			Expect(k8sClient.Create(ctx, backplaneConfig)).Should(Succeed())
 
@@ -154,4 +158,5 @@ var _ = Describe("BackplaneConfig controller", func() {
 			}
 		})
 	})
+	os.Unsetenv("POD_NAMESPACE")
 })

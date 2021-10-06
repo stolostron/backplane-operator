@@ -21,6 +21,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -99,7 +100,9 @@ var _ webhook.Defaulter = &MultiClusterEngine{}
 // Default implements webhook.Defaulter so a webhook will be registered for the type
 func (r *MultiClusterEngine) Default() {
 	backplaneconfiglog.Info("default", "name", r.Name)
-
+	if r.Spec.TargetNamespace == "" {
+		r.Spec.TargetNamespace = os.Getenv("POD_NAMESPACE")
+	}
 	// TODO(user): fill in your defaulting logic.
 }
 
@@ -154,14 +157,13 @@ func (r *MultiClusterEngine) ValidateCreate() error {
 func (r *MultiClusterEngine) ValidateUpdate(old runtime.Object) error {
 	backplaneconfiglog.Info("validate update", "name", r.Name)
 
-	// oldMCE := old.(*MultiClusterEngine)
-	// backplaneconfiglog.Info(oldMCE.Spec.TargetNamespace)
-	// if r.Spec.TargetNamespace != oldMCE.Spec.TargetNamespace {
-	// if r.Spec.TargetNamespace != "" {
-	return errors.New("changes cannot be made to target namespace")
-	// }
+	oldMCE := old.(*MultiClusterEngine)
+	backplaneconfiglog.Info(oldMCE.Spec.TargetNamespace)
+	if (r.Spec.TargetNamespace != oldMCE.Spec.TargetNamespace) && (oldMCE.Spec.TargetNamespace != "") {
+		return errors.New("changes cannot be made to target namespace")
+	}
 	// TODO(user): fill in your validation logic upon object update.
-	// return nil
+	return nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
