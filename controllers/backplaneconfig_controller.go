@@ -166,13 +166,9 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 
 	var result ctrl.Result
 
-	log.Info("about to check the if statement")
-	if len(backplaneConfig.Spec.TargetNamespace) == 0 {
-		log.Info("if statement entered")
-		result, err = r.setDefaults(ctx, backplaneConfig)
-		if result != (ctrl.Result{}) {
-			return ctrl.Result{}, err
-		}
+	result, err = r.setDefaults(ctx, backplaneConfig)
+	if result != (ctrl.Result{}) {
+		return ctrl.Result{}, err
 	}
 
 	result, err = r.validateNamespace(ctx, backplaneConfig)
@@ -422,10 +418,10 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 
 	log := log.FromContext(ctx)
 	if len(m.Spec.TargetNamespace) != 0 {
-		log.Info("no need to default")
+		log.Info("No need to default")
 		return ctrl.Result{}, nil
 	}
-	log.Info("set to default")
+	log.Info("Set to default")
 	m.Spec.TargetNamespace = os.Getenv("POD_NAMESPACE")
 	// Apply defaults to server
 	err := r.Client.Update(context.TODO(), m)

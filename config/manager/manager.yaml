@@ -2,25 +2,25 @@ apiVersion: v1
 kind: Namespace
 metadata:
   labels:
-    control-plane: multicluster-engine-operator
+    control-plane: backplane-operator
   name: system
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    control-plane: multicluster-engine-operator
+    control-plane: backplane-operator
   name: multicluster-engine-operator
   namespace: system
 spec:
   replicas: 2
   selector:
     matchLabels:
-      control-plane: multicluster-engine-operator
+      control-plane: backplane-operator
   template:
     metadata:
       labels:
-        control-plane: multicluster-engine-operator
+        control-plane: backplane-operator
     spec:
       containers:
       - args:

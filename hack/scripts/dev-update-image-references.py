@@ -40,7 +40,7 @@ def addImageRefsToDeploymentYaml(deployYaml, operandImages):
         managerDocs = yaml.load_all(f, yaml.SafeLoader)
         yamlArr = []
         for doc in managerDocs:
-            if doc['kind'] == 'Deployment' and doc['metadata']['name'] == 'backplane-operator':
+            if doc['kind'] == 'Deployment' and doc['metadata']['name'] == 'multicluster-engine-operator':
                 for container in doc['spec']['template']['spec']['containers']:
                     updateContainerWithEnvVars(container, operandImages)
             yamlArr.append(doc)
