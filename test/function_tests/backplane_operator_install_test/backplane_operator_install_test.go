@@ -84,17 +84,6 @@ var (
 			Expected: "Existing BareMetalAsset resources must first be deleted",
 		},
 		{
-			Name: "MultiClusterObservability",
-			GVK: schema.GroupVersionKind{
-				Group:   "observability.open-cluster-management.io",
-				Version: "v1beta2",
-				Kind:    "MultiClusterObservability",
-			},
-			crdPath:  "../resources/multiclusterobservabilities_crd.yaml",
-			Filepath: "../resources/multiclusterobservability.yaml",
-			Expected: "Existing MultiClusterObservability resources must first be deleted",
-		},
-		{
 			Name: "ManagedCluster",
 			GVK: schema.GroupVersionKind{
 				Group:   "cluster.open-cluster-management.io",

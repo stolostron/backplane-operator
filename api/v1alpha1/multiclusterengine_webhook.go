@@ -75,14 +75,6 @@ var (
 				Kind:    "BareMetalAssetList",
 			},
 		},
-		{
-			Name: "MultiClusterObservability",
-			GVK: schema.GroupVersionKind{
-				Group:   "observability.open-cluster-management.io",
-				Version: "v1beta2",
-				Kind:    "MultiClusterObservabilityList",
-			},
-		},
 	}
 )
 
