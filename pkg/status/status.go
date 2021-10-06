@@ -9,8 +9,16 @@ import (
 
 type StatusTracker struct {
 	Client     client.Client
+	UID        string
 	Components []StatusReporter
 	Conditions []bpv1alpha1.MultiClusterEngineCondition
+}
+
+// Flush out any cached data being tracked, and assigns the tracker to a UID
+func (sm *StatusTracker) Reset(uid string) {
+	sm.UID = uid
+	sm.Components = []StatusReporter{}
+	sm.Conditions = []bpv1alpha1.MultiClusterEngineCondition{}
 }
 
 // Adds a StatusReporter to the list of statuses to watch
