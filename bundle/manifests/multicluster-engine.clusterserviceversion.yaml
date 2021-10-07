@@ -313,19 +313,19 @@ spec:
           - patch
           - update
           - watch
-        serviceAccountName: backplane-operator
+        serviceAccountName: multicluster-engine-operator
       deployments:
-      - name: backplane-operator
+      - name: multicluster-operator
         spec:
           replicas: 2
           selector:
             matchLabels:
-              control-plane: multicluster-engine-operator
+              control-plane: backplane-operator
           strategy: {}
           template:
             metadata:
               labels:
-                control-plane: multicluster-engine-operator
+                control-plane: backplane-operator
             spec:
               containers:
               - args:
@@ -344,7 +344,7 @@ spec:
                     port: 8081
                   initialDelaySeconds: 15
                   periodSeconds: 20
-                name: backplane-operator
+                name: multicluster-engine-operator
                 readinessProbe:
                   httpGet:
                     path: /readyz
@@ -366,13 +366,13 @@ spec:
                   readOnly: true
               securityContext:
                 runAsNonRoot: true
-              serviceAccountName: backplane-operator
+              serviceAccountName: multicluster-engine-operator
               terminationGracePeriodSeconds: 10
               volumes:
               - name: cert
                 secret:
                   defaultMode: 420
-                  secretName: backplane-operator-webhook
+                  secretName: multicluster-engine-operator-webhook
       permissions:
       - rules:
         - apiGroups:
@@ -406,7 +406,7 @@ spec:
           verbs:
           - create
           - patch
-        serviceAccountName: backplane-operator
+        serviceAccountName: multicluster-engine-operator
     strategy: deployment
   installModes:
   - supported: true

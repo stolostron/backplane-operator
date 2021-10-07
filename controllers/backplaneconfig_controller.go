@@ -256,7 +256,6 @@ func (r *MultiClusterEngineReconciler) DeploySubcomponents(ctx context.Context, 
 	// Applies all templates
 	for _, template := range templates {
 		if template.GetKind() == "Deployment" {
-			log.Info(template.GetNamespace())
 			r.StatusManager.AddComponent(status.DeploymentStatus{
 				NamespacedName: types.NamespacedName{Name: template.GetName(), Namespace: template.GetNamespace()},
 			})
@@ -423,7 +422,6 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 
 	log := log.FromContext(ctx)
 	if len(m.Spec.TargetNamespace) != 0 {
-		log.Info("No need to default")
 		return ctrl.Result{}, nil
 	}
 	log.Info("Set to default")
@@ -463,6 +461,5 @@ func (r *MultiClusterEngineReconciler) validateNamespace(ctx context.Context, m 
 	if err != nil && !apierrors.IsNotFound(err) {
 		return ctrl.Result{Requeue: true}, err
 	}
-	log.Info("Namespace already exists")
 	return ctrl.Result{}, nil
 }

@@ -36,6 +36,7 @@ type MultiClusterEngineSpec struct {
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 
 	// Location where MCE resources will be placed
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Target Namespace",xDescriptors={"urn:alm:descriptor:io.kubernetes:text","urn:alm:descriptor:com.tectonic.ui:advanced"}
 	TargetNamespace string `json:"targetNamespace,omitempty"`
 }
 

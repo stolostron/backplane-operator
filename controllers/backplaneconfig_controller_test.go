@@ -41,9 +41,10 @@ var _ = Describe("BackplaneConfig controller", func() {
 	const (
 		BackplaneConfigName        = "test-backplaneconfig"
 		BackplaneOperatorNamespace = "default"
+		DestinationNamespace       = "test"
 		JobName                    = "test-job"
 
-		timeout  = time.Second * 10
+		timeout  = time.Second * 60
 		duration = time.Second * 10
 		interval = time.Millisecond * 250
 	)
@@ -68,37 +69,37 @@ var _ = Describe("BackplaneConfig controller", func() {
 		},
 		{
 			Name:           "OCM Webhook",
-			NamespacedName: types.NamespacedName{Name: "ocm-webhook", Namespace: BackplaneOperatorNamespace},
+			NamespacedName: types.NamespacedName{Name: "ocm-webhook", Namespace: DestinationNamespace},
 			ResourceType:   &appsv1.Deployment{},
 			Expected:       nil,
 		},
 		{
 			Name:           "OCM Controller",
-			NamespacedName: types.NamespacedName{Name: "ocm-controller", Namespace: BackplaneOperatorNamespace},
+			NamespacedName: types.NamespacedName{Name: "ocm-controller", Namespace: DestinationNamespace},
 			ResourceType:   &appsv1.Deployment{},
 			Expected:       nil,
 		},
 		{
 			Name:           "OCM Proxy Server",
-			NamespacedName: types.NamespacedName{Name: "ocm-proxyserver", Namespace: BackplaneOperatorNamespace},
+			NamespacedName: types.NamespacedName{Name: "ocm-proxyserver", Namespace: DestinationNamespace},
 			ResourceType:   &appsv1.Deployment{},
 			Expected:       nil,
 		},
 		{
 			Name:           "Cluster Manager Deployment",
-			NamespacedName: types.NamespacedName{Name: "cluster-manager", Namespace: BackplaneOperatorNamespace},
+			NamespacedName: types.NamespacedName{Name: "cluster-manager", Namespace: DestinationNamespace},
 			ResourceType:   &appsv1.Deployment{},
 			Expected:       nil,
 		},
 		{
 			Name:           "Hive Operator Deployment",
-			NamespacedName: types.NamespacedName{Name: "hive-operator", Namespace: BackplaneOperatorNamespace},
+			NamespacedName: types.NamespacedName{Name: "hive-operator", Namespace: DestinationNamespace},
 			ResourceType:   &appsv1.Deployment{},
 			Expected:       nil,
 		},
 		{
 			Name:           "Managed Cluster Import Controller",
-			NamespacedName: types.NamespacedName{Name: "managedcluster-import-controller-v2", Namespace: BackplaneOperatorNamespace},
+			NamespacedName: types.NamespacedName{Name: "managedcluster-import-controller-v2", Namespace: DestinationNamespace},
 			ResourceType:   &appsv1.Deployment{},
 			Expected:       nil,
 		},
@@ -129,7 +130,8 @@ var _ = Describe("BackplaneConfig controller", func() {
 					Name: BackplaneConfigName,
 				},
 				Spec: v1alpha1.MultiClusterEngineSpec{
-					TargetNamespace: "default",
+					TargetNamespace: DestinationNamespace,
+					ImagePullSecret: "testsecret",
 				},
 			}
 			Expect(k8sClient.Create(ctx, backplaneConfig)).Should(Succeed())
