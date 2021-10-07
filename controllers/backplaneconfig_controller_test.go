@@ -21,6 +21,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -40,9 +41,10 @@ var _ = Describe("BackplaneConfig controller", func() {
 	const (
 		BackplaneConfigName        = "test-backplaneconfig"
 		BackplaneOperatorNamespace = "default"
+		DestinationNamespace       = "test"
 		JobName                    = "test-job"
 
-		timeout  = time.Second * 10
+		timeout  = time.Second * 60
 		duration = time.Second * 10
 		interval = time.Millisecond * 250
 	)
@@ -51,6 +53,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 	clusterManager.SetGroupVersionKind(schema.GroupVersionKind{Group: "operator.open-cluster-management.io", Version: "v1", Kind: "ClusterManager"})
 	hiveConfig := &unstructured.Unstructured{}
 	hiveConfig.SetGroupVersionKind(schema.GroupVersionKind{Group: "hive.openshift.io", Version: "v1", Kind: "HiveConfig"})
+	os.Setenv("POD_NAMESPACE", "default")
 
 	tests := []struct {
 		Name           string
@@ -66,37 +69,37 @@ var _ = Describe("BackplaneConfig controller", func() {
 		},
 		{
 			Name:           "OCM Webhook",
-			NamespacedName: types.NamespacedName{Name: "ocm-webhook", Namespace: BackplaneOperatorNamespace},
+			NamespacedName: types.NamespacedName{Name: "ocm-webhook", Namespace: DestinationNamespace},
 			ResourceType:   &appsv1.Deployment{},
 			Expected:       nil,
 		},
 		{
 			Name:           "OCM Controller",
-			NamespacedName: types.NamespacedName{Name: "ocm-controller", Namespace: BackplaneOperatorNamespace},
+			NamespacedName: types.NamespacedName{Name: "ocm-controller", Namespace: DestinationNamespace},
 			ResourceType:   &appsv1.Deployment{},
 			Expected:       nil,
 		},
 		{
 			Name:           "OCM Proxy Server",
-			NamespacedName: types.NamespacedName{Name: "ocm-proxyserver", Namespace: BackplaneOperatorNamespace},
+			NamespacedName: types.NamespacedName{Name: "ocm-proxyserver", Namespace: DestinationNamespace},
 			ResourceType:   &appsv1.Deployment{},
 			Expected:       nil,
 		},
 		{
 			Name:           "Cluster Manager Deployment",
-			NamespacedName: types.NamespacedName{Name: "cluster-manager", Namespace: BackplaneOperatorNamespace},
+			NamespacedName: types.NamespacedName{Name: "cluster-manager", Namespace: DestinationNamespace},
 			ResourceType:   &appsv1.Deployment{},
 			Expected:       nil,
 		},
 		{
 			Name:           "Hive Operator Deployment",
-			NamespacedName: types.NamespacedName{Name: "hive-operator", Namespace: BackplaneOperatorNamespace},
+			NamespacedName: types.NamespacedName{Name: "hive-operator", Namespace: DestinationNamespace},
 			ResourceType:   &appsv1.Deployment{},
 			Expected:       nil,
 		},
 		{
 			Name:           "Managed Cluster Import Controller",
-			NamespacedName: types.NamespacedName{Name: "managedcluster-import-controller-v2", Namespace: BackplaneOperatorNamespace},
+			NamespacedName: types.NamespacedName{Name: "managedcluster-import-controller-v2", Namespace: DestinationNamespace},
 			ResourceType:   &appsv1.Deployment{},
 			Expected:       nil,
 		},
@@ -126,7 +129,10 @@ var _ = Describe("BackplaneConfig controller", func() {
 				ObjectMeta: metav1.ObjectMeta{
 					Name: BackplaneConfigName,
 				},
-				Spec: v1alpha1.MultiClusterEngineSpec{},
+				Spec: v1alpha1.MultiClusterEngineSpec{
+					TargetNamespace: DestinationNamespace,
+					ImagePullSecret: "testsecret",
+				},
 			}
 			Expect(k8sClient.Create(ctx, backplaneConfig)).Should(Succeed())
 
@@ -154,4 +160,5 @@ var _ = Describe("BackplaneConfig controller", func() {
 			}
 		})
 	})
+	os.Unsetenv("POD_NAMESPACE")
 })

@@ -35,6 +35,7 @@ func TestRender(t *testing.T) {
 
 	backplaneNodeSelector := map[string]string{"select": "test"}
 	backplaneImagePullSecret := "test"
+	backplaneNamespace := "default"
 	backplaneTolerations := []corev1.Toleration{
 		{
 			Key:      "dedicated",
@@ -50,6 +51,7 @@ func TestRender(t *testing.T) {
 			NodeSelector:    backplaneNodeSelector,
 			ImagePullSecret: backplaneImagePullSecret,
 			Tolerations:     backplaneTolerations,
+			TargetNamespace: backplaneNamespace,
 		},
 		Status: backplane.MultiClusterEngineStatus{
 			Phase: "",
@@ -97,6 +99,9 @@ func TestRender(t *testing.T) {
 			tolerationEquality := reflect.DeepEqual(deployment.Spec.Template.Spec.Tolerations, backplaneTolerations)
 			if !tolerationEquality {
 				t.Fatalf("Toleration did not propagate to the deployments use")
+			}
+			if deployment.ObjectMeta.Namespace != backplaneNamespace {
+				t.Fatalf("Nammespace did not propagate to the deployments use")
 			}
 
 			for _, proxyVar := range deployment.Spec.Template.Spec.Containers[0].Env {

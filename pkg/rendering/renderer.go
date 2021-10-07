@@ -87,16 +87,9 @@ func RenderTemplates(backplaneConfig *v1alpha1.MultiClusterEngine, images map[st
 	log := log.FromContext(context.Background())
 	var templates []*unstructured.Unstructured
 	errs := []error{}
-	backplaneOperatorNamespace := ""
 	chartDir := chartsDir
 	if val, ok := os.LookupEnv("DIRECTORY_OVERRIDE"); ok {
 		chartDir = path.Join(val, chartDir)
-	}
-	if val, ok := os.LookupEnv("POD_NAMESPACE"); ok {
-		backplaneOperatorNamespace = val
-	} else {
-		log.Info(fmt.Sprintf("error retrieving namespace"))
-		return nil, append(errs, fmt.Errorf("error retrieving namespace"))
 	}
 	charts, err := ioutil.ReadDir(chartDir)
 	if err != nil {
@@ -117,7 +110,7 @@ func RenderTemplates(backplaneConfig *v1alpha1.MultiClusterEngine, images map[st
 		}
 
 		valuesYaml := &Values{}
-		injectValuesOverrides(valuesYaml, backplaneConfig, backplaneOperatorNamespace, images)
+		injectValuesOverrides(valuesYaml, backplaneConfig, images)
 
 		rawTemplates, err := helmEngine.Render(chart, chartutil.Values{"Values": structs.Map(valuesYaml)})
 		if err != nil {
@@ -136,7 +129,7 @@ func RenderTemplates(backplaneConfig *v1alpha1.MultiClusterEngine, images map[st
 			// Add namespace to namespaced resources
 			switch unstructured.GetKind() {
 			case "Deployment", "ServiceAccount", "Role", "RoleBinding", "Service":
-				unstructured.SetNamespace(backplaneOperatorNamespace)
+				unstructured.SetNamespace(backplaneConfig.Spec.TargetNamespace)
 			}
 			templates = append(templates, unstructured)
 		}
@@ -145,13 +138,13 @@ func RenderTemplates(backplaneConfig *v1alpha1.MultiClusterEngine, images map[st
 	return templates, errs
 }
 
-func injectValuesOverrides(values *Values, backplaneConfig *v1alpha1.MultiClusterEngine, backplaneOperatorNamespace string, images map[string]string) {
+func injectValuesOverrides(values *Values, backplaneConfig *v1alpha1.MultiClusterEngine, images map[string]string) {
 
 	values.Global.ImageOverrides = images
 
 	values.Global.PullPolicy = "Always"
 
-	values.Global.Namespace = backplaneOperatorNamespace
+	values.Global.Namespace = backplaneConfig.Spec.TargetNamespace
 
 	values.Global.PullSecret = backplaneConfig.Spec.ImagePullSecret
 

@@ -1,12 +1,12 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: backplane-operator-rolebinding
+  name: multicluster-engine-operator-rolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: backplane-operator-role
+  name: multicluster-engine-operator-role
 subjects:
 - kind: ServiceAccount
-  name: backplane-operator
+  name: multicluster-engine-operator
   namespace: system
