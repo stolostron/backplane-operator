@@ -34,6 +34,12 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
         - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: Location where MCE resources will be placed
+        displayName: Target Namespace
+        path: targetNamespace
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes:text
+        - urn:alm:descriptor:com.tectonic.ui:advanced
       version: v1alpha1
   description: Provides the components making up the multiclusterengine
   displayName: MultiCluster Engine
@@ -313,7 +319,7 @@ spec:
           - watch
         serviceAccountName: multicluster-engine-operator
       deployments:
-      - name: multicluster-operator
+      - name: multicluster-engine-operator
         spec:
           replicas: 2
           selector:
@@ -342,7 +348,7 @@ spec:
                     port: 8081
                   initialDelaySeconds: 15
                   periodSeconds: 20
-                name: multicluster-engine-operator
+                name: backplane-operator
                 readinessProbe:
                   httpGet:
                     path: /readyz
