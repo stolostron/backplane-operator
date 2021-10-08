@@ -22,15 +22,11 @@ import (
 	"context"
 	e "errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"time"
 
-	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-
 	"k8s.io/client-go/util/workqueue"
 	clustermanager "open-cluster-management.io/api/operator/v1"
-	"sigs.k8s.io/yaml"
 
 	hiveconfig "github.com/openshift/hive/apis/hive/v1"
 	"github.com/pkg/errors"
@@ -73,10 +69,6 @@ type MultiClusterEngineReconciler struct {
 const (
 	requeuePeriod      = 15 * time.Second
 	backplaneFinalizer = "finalizer.multicluster.openshift.io"
-)
-
-var (
-	clusterManagementAddonCRDName = "clustermanagementaddons.addon.open-cluster-management.io"
 )
 
 //+kubebuilder:rbac:groups=multicluster.openshift.io,resources=multiclusterengines,verbs=get;list;watch;create;update;patch;delete
@@ -302,6 +294,7 @@ func (r *MultiClusterEngineReconciler) DeploySubcomponents(ctx context.Context, 
 
 func (r *MultiClusterEngineReconciler) ensureCustomResources(ctx context.Context, backplaneConfig *backplanev1alpha1.MultiClusterEngine) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
+
 	cmTemplate := foundation.ClusterManager(backplaneConfig, r.Images)
 	if err := ctrl.SetControllerReference(backplaneConfig, cmTemplate, r.Scheme); err != nil {
 		return ctrl.Result{}, errors.Wrapf(err, "Error setting controller reference on resource %s", cmTemplate.GetName())
@@ -326,25 +319,24 @@ func (r *MultiClusterEngineReconciler) ensureCustomResources(ctx context.Context
 		return result, err
 	}
 
-	addonWorkManagerPath := "pkg/templates/core/clustermanageraddon_workmanager.yaml"
-	addonCRD := &apixv1.CustomResourceDefinition{}
-
-	err = r.Client.Get(ctx, types.NamespacedName{Name: clusterManagementAddonCRDName}, addonCRD)
-	if err != nil && apierrors.IsNotFound(err) {
-		log.Info(fmt.Sprintf("Waiting for CRD '%s' to be created by clustermanager resource", clusterManagementAddonCRDName))
+	if foundation.CanInstallAddons(ctx, r.Client) {
+		addonTemplates, err := foundation.GetAddons()
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		for _, addonTemplate := range addonTemplates {
+			addonTemplate.SetNamespace(backplaneConfig.Spec.TargetNamespace)
+			if err := ctrl.SetControllerReference(backplaneConfig, addonTemplate, r.Scheme); err != nil {
+				return ctrl.Result{}, errors.Wrapf(err, "Error setting controller reference on resource %s", addonTemplate.GetName())
+			}
+			err := r.Client.Patch(ctx, addonTemplate, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
+			if err != nil {
+				return ctrl.Result{}, errors.Wrapf(err, "error applying object Name: %s Kind: %s", addonTemplate.GetName(), addonTemplate.GetKind())
+			}
+		}
+	} else {
+		log.Info("ClusterManagementAddon API is not installed. Waiting to install addons.")
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
-	} else if err != nil {
-		return result, err
-	}
-
-	addonWorkManager, err := getClusterManagementAddon(addonWorkManagerPath, backplaneConfig.Spec.TargetNamespace)
-	if err != nil {
-		return result, err
-	}
-
-	result, err = r.ensureUnstructuredResource(ctx, backplaneConfig, addonWorkManager)
-	if err != nil {
-		return result, err
 	}
 
 	return ctrl.Result{}, nil
@@ -492,25 +484,4 @@ func (r *MultiClusterEngineReconciler) validateNamespace(ctx context.Context, m 
 		return ctrl.Result{Requeue: true}, err
 	}
 	return ctrl.Result{}, nil
-}
-
-func getClusterManagementAddon(path, namespace string) (*unstructured.Unstructured, error) {
-	bytesFile, err := ioutil.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
-
-	addon := &unstructured.Unstructured{}
-	addon.SetGroupVersionKind(
-		schema.GroupVersionKind{
-			Group:   "addon.open-cluster-management.io",
-			Version: "v1alpha1",
-			Kind:    "ClusterManagementAddOn",
-		},
-	)
-	if err = yaml.Unmarshal(bytesFile, addon); err != nil {
-		return nil, err
-	}
-	addon.SetNamespace(namespace)
-	return addon, nil
 }
