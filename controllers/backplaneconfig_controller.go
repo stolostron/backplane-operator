@@ -22,11 +22,15 @@ import (
 	"context"
 	e "errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"time"
 
+	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+
 	"k8s.io/client-go/util/workqueue"
 	clustermanager "open-cluster-management.io/api/operator/v1"
+	"sigs.k8s.io/yaml"
 
 	hiveconfig "github.com/openshift/hive/apis/hive/v1"
 	"github.com/pkg/errors"
@@ -71,6 +75,10 @@ const (
 	backplaneFinalizer = "finalizer.multicluster.openshift.io"
 )
 
+var (
+	clusterManagementAddonCRDName = "clustermanagementaddons.addon.open-cluster-management.io"
+)
+
 //+kubebuilder:rbac:groups=multicluster.openshift.io,resources=multiclusterengines,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=multicluster.openshift.io,resources=multiclusterengines/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=multicluster.openshift.io,resources=multiclusterengines/finalizers,verbs=update
@@ -94,6 +102,7 @@ const (
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclustersets/join,verbs=create
 //+kubebuilder:rbac:groups=migration.k8s.io,resources=storageversionmigrations,verbs=create;get;list;update;patch;watch;delete
 //+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=create;get;list;update;patch;watch;delete
+//+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=clustermanagementaddons,verbs=create;get;list;update;patch;watch;delete
 
 // Hive RBAC
 //+kubebuilder:rbac:groups="hive.openshift.io",resources=hiveconfigs,verbs=get;create;update;delete;list;watch
@@ -292,7 +301,7 @@ func (r *MultiClusterEngineReconciler) DeploySubcomponents(ctx context.Context, 
 }
 
 func (r *MultiClusterEngineReconciler) ensureCustomResources(ctx context.Context, backplaneConfig *backplanev1alpha1.MultiClusterEngine) (ctrl.Result, error) {
-
+	log := log.FromContext(ctx)
 	cmTemplate := foundation.ClusterManager(backplaneConfig, r.Images)
 	if err := ctrl.SetControllerReference(backplaneConfig, cmTemplate, r.Scheme); err != nil {
 		return ctrl.Result{}, errors.Wrapf(err, "Error setting controller reference on resource %s", cmTemplate.GetName())
@@ -313,6 +322,27 @@ func (r *MultiClusterEngineReconciler) ensureCustomResources(ctx context.Context
 	}
 
 	result, err := r.ensureUnstructuredResource(ctx, backplaneConfig, hiveTemplate)
+	if err != nil {
+		return result, err
+	}
+
+	addonWorkManagerPath := "pkg/templates/core/clustermanageraddon_workmanager.yaml"
+	addonCRD := &apixv1.CustomResourceDefinition{}
+
+	err = r.Client.Get(ctx, types.NamespacedName{Name: clusterManagementAddonCRDName}, addonCRD)
+	if err != nil && apierrors.IsNotFound(err) {
+		log.Info(fmt.Sprintf("Waiting for CRD '%s' to be created by clustermanager resource", clusterManagementAddonCRDName))
+		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+	} else if err != nil {
+		return result, err
+	}
+
+	addonWorkManager, err := getClusterManagementAddon(addonWorkManagerPath, backplaneConfig.Spec.TargetNamespace)
+	if err != nil {
+		return result, err
+	}
+
+	result, err = r.ensureUnstructuredResource(ctx, backplaneConfig, addonWorkManager)
 	if err != nil {
 		return result, err
 	}
@@ -462,4 +492,25 @@ func (r *MultiClusterEngineReconciler) validateNamespace(ctx context.Context, m 
 		return ctrl.Result{Requeue: true}, err
 	}
 	return ctrl.Result{}, nil
+}
+
+func getClusterManagementAddon(path, namespace string) (*unstructured.Unstructured, error) {
+	bytesFile, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	addon := &unstructured.Unstructured{}
+	addon.SetGroupVersionKind(
+		schema.GroupVersionKind{
+			Group:   "addon.open-cluster-management.io",
+			Version: "v1alpha1",
+			Kind:    "ClusterManagementAddOn",
+		},
+	)
+	if err = yaml.Unmarshal(bytesFile, addon); err != nil {
+		return nil, err
+	}
+	addon.SetNamespace(namespace)
+	return addon, nil
 }
