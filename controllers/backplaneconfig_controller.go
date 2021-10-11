@@ -94,6 +94,7 @@ const (
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclustersets/join,verbs=create
 //+kubebuilder:rbac:groups=migration.k8s.io,resources=storageversionmigrations,verbs=create;get;list;update;patch;watch;delete
 //+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=create;get;list;update;patch;watch;delete
+//+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=clustermanagementaddons,verbs=create;get;list;update;patch;watch;delete
 
 // Hive RBAC
 //+kubebuilder:rbac:groups="hive.openshift.io",resources=hiveconfigs,verbs=get;create;update;delete;list;watch
@@ -292,6 +293,7 @@ func (r *MultiClusterEngineReconciler) DeploySubcomponents(ctx context.Context, 
 }
 
 func (r *MultiClusterEngineReconciler) ensureCustomResources(ctx context.Context, backplaneConfig *backplanev1alpha1.MultiClusterEngine) (ctrl.Result, error) {
+	log := log.FromContext(ctx)
 
 	cmTemplate := foundation.ClusterManager(backplaneConfig, r.Images)
 	if err := ctrl.SetControllerReference(backplaneConfig, cmTemplate, r.Scheme); err != nil {
@@ -315,6 +317,26 @@ func (r *MultiClusterEngineReconciler) ensureCustomResources(ctx context.Context
 	result, err := r.ensureUnstructuredResource(ctx, backplaneConfig, hiveTemplate)
 	if err != nil {
 		return result, err
+	}
+
+	if foundation.CanInstallAddons(ctx, r.Client) {
+		addonTemplates, err := foundation.GetAddons()
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		for _, addonTemplate := range addonTemplates {
+			addonTemplate.SetNamespace(backplaneConfig.Spec.TargetNamespace)
+			if err := ctrl.SetControllerReference(backplaneConfig, addonTemplate, r.Scheme); err != nil {
+				return ctrl.Result{}, errors.Wrapf(err, "Error setting controller reference on resource %s", addonTemplate.GetName())
+			}
+			err := r.Client.Patch(ctx, addonTemplate, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
+			if err != nil {
+				return ctrl.Result{}, errors.Wrapf(err, "error applying object Name: %s Kind: %s", addonTemplate.GetName(), addonTemplate.GetKind())
+			}
+		}
+	} else {
+		log.Info("ClusterManagementAddon API is not installed. Waiting to install addons.")
+		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
 
 	return ctrl.Result{}, nil

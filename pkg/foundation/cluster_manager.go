@@ -4,9 +4,17 @@ package foundation
 
 import (
 	"context"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	corev1 "k8s.io/api/core/v1"
+	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/yaml"
 
 	v1alpha1 "github.com/open-cluster-management/backplane-operator/api/v1alpha1"
 	"github.com/open-cluster-management/backplane-operator/pkg/utils"
@@ -15,14 +23,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-// RegistrationImageKey used by registration deployments
-const RegistrationImageKey = "registration"
+const (
+	// RegistrationImageKey used by registration deployments
+	RegistrationImageKey = "registration"
+	// WorkImageKey used by work deployments
+	WorkImageKey = "work"
+	// PlacementImageKey used by placement deployments
+	PlacementImageKey = "placement"
 
-// WorkImageKey used by work deployments
-const WorkImageKey = "work"
-
-// PlacementImageKey used by placement deployments
-const PlacementImageKey = "placement"
+	addonPath                     = "pkg/templates/clustermanagementaddons/"
+	clusterManagementAddonCRDName = "clustermanagementaddons.addon.open-cluster-management.io"
+)
 
 // RegistrationImage ...
 func RegistrationImage(overrides map[string]string) string {
@@ -75,4 +86,37 @@ func ClusterManager(m *v1alpha1.MultiClusterEngine, overrides map[string]string)
 	}
 
 	return unstructured
+}
+
+// CanInstallAddons returns true if addons can be installed
+func CanInstallAddons(ctx context.Context, client client.Client) bool {
+	addonCRD := &apixv1.CustomResourceDefinition{}
+	err := client.Get(ctx, types.NamespacedName{Name: clusterManagementAddonCRDName}, addonCRD)
+	return err == nil
+}
+
+func GetAddons() ([]*unstructured.Unstructured, error) {
+	var addons []*unstructured.Unstructured
+
+	// Read CRD files
+	err := filepath.Walk(addonPath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		addon := &unstructured.Unstructured{}
+		if info == nil || info.IsDir() {
+			return nil
+		}
+		bytesFile, e := ioutil.ReadFile(path)
+		if e != nil {
+			return err
+		}
+		if err = yaml.Unmarshal(bytesFile, addon); err != nil {
+			return err
+		}
+		addons = append(addons, addon)
+		return nil
+	})
+	return addons, err
+
 }
