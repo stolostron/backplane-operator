@@ -201,6 +201,14 @@ rules:
     - list
     - watch
 - apiGroups:
+    - agent-install.openshift.io
+  resources:
+    - infraenvs
+  verbs:
+    - get
+    - list
+    - watch
+- apiGroups:
   - coordination.k8s.io
   resources:
   - leases
