@@ -22,9 +22,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strings"
-
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -41,20 +38,6 @@ import (
 var (
 	backplaneconfiglog = logf.Log.WithName("backplaneconfig-resource")
 	Client             cl.Client
-
-	blockCreationResources = []struct {
-		Name string
-		GVK  schema.GroupVersionKind
-	}{
-		{
-			Name: "MultiClusterHub",
-			GVK: schema.GroupVersionKind{
-				Group:   "operator.open-cluster-management.io",
-				Version: "v1",
-				Kind:    "MultiClusterHubList",
-			},
-		},
-	}
 
 	blockDeletionResources = []struct {
 		Name string
@@ -105,37 +88,8 @@ func (r *MultiClusterEngine) ValidateCreate() error {
 	ctx := context.Background()
 	backplaneconfiglog.Info("validate create", "name", r.Name)
 
-	cfg, err := config.GetConfig()
-	if err != nil {
-		return err
-	}
-
-	c, err := discovery.NewDiscoveryClientForConfig(cfg)
-	if err != nil {
-		return err
-	}
-
-	for _, resource := range blockCreationResources {
-		list := &unstructured.UnstructuredList{}
-		list.SetGroupVersionKind(resource.GVK)
-		err := discovery.ServerSupportsVersion(c, list.GroupVersionKind().GroupVersion())
-		if err == nil {
-			if err := Client.List(ctx, list); err != nil {
-				// Server may support Group Version, but explicitly also exempt Kind
-				if strings.Contains(err.Error(), "no matches for kind") || k8serrors.IsNotFound(err) {
-					continue
-				}
-				return fmt.Errorf("unable to list %s: %s", resource.Name, err)
-			}
-			if len(list.Items) == 0 {
-				continue
-			}
-			return fmt.Errorf("cannot create %s resource. Existing %s resources must first be deleted", r.Name, resource.Name)
-		}
-	}
-
 	backplaneConfigList := &MultiClusterEngineList{}
-	if err := Client.List(context.TODO(), backplaneConfigList); err != nil {
+	if err := Client.List(ctx, backplaneConfigList); err != nil {
 		return fmt.Errorf("unable to list BackplaneConfigs: %s", err)
 	}
 	if len(backplaneConfigList.Items) == 0 {
