@@ -367,50 +367,6 @@ var webhookTests = func() func() {
 			}
 		})
 
-		It("blocks creation if resouces exist", func() {
-			key := &backplane.MultiClusterEngine{}
-			Expect(k8sClient.Get(ctx, multiClusterEngine, key)).To(Succeed())
-			ns := key.Spec.TargetNamespace
-
-			blockCreationResources := []struct {
-				Name     string
-				GVK      schema.GroupVersionKind
-				Filepath string
-				crdPath  string
-				Expected string
-			}{
-				{
-					Name: "MultiClusterHub",
-					GVK: schema.GroupVersionKind{
-						Group:   "operator.open-cluster-management.io",
-						Version: "v1",
-						Kind:    "MultiClusterHub",
-					},
-					Filepath: "../resources/multiclusterhub.yaml",
-					crdPath:  "../resources/multiclusterhub_crd.yaml",
-					Expected: "Existing MultiClusterHub resources must first be deleted",
-				},
-			}
-			for _, r := range blockCreationResources {
-				By("Creating a new "+r.Name, func() {
-
-					if r.crdPath != "" {
-						applyResource(r.crdPath, ns)
-						defer deleteResource(r.crdPath, ns)
-					}
-					applyResource(r.Filepath, ns)
-					defer deleteResource(r.Filepath, ns)
-
-					multiClusterEngine := defaultmultiClusterEngine()
-					multiClusterEngine.Name = "test"
-
-					err := k8sClient.Create(ctx, multiClusterEngine)
-					Expect(err).ShouldNot(BeNil())
-					Expect(err.Error()).Should(ContainSubstring(r.Expected))
-				})
-			}
-		})
-
 		It("Prevents modifications of the targetNamespace", func() {
 			Eventually(func(g Gomega) {
 				key := &backplane.MultiClusterEngine{}
