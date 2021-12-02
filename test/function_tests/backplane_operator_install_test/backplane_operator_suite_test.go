@@ -4,6 +4,7 @@
 package backplane_install_test
 
 import (
+	"context"
 	"flag"
 	"testing"
 
@@ -27,6 +28,7 @@ var (
 
 var (
 	scheme             = runtime.NewScheme()
+	ctx                = context.Background()
 	BackplaneNamespace = flag.String("namespace", "backplane-operator-system", "The namespace to run tests")
 )
 
