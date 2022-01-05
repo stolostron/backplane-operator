@@ -28,20 +28,6 @@ spec:
         command:
         - /app/backplane-operator
         env:
-        - name: OPERAND_IMAGE_BACKPLANE_MUST_GATHER
-          value: quay.io/open-cluster-management/backplane-must-gather@sha256:2fb5c5663c47418a25a7eaadbfd699df1ddd5520ddccff9a6a110afa9ae46598
-        - name: OPERAND_IMAGE_BACKPLANE_OPERATOR
-          value: quay.io/open-cluster-management/backplane-operator@sha256:8f5da2afcb8793f552b575b1f2647deccc002c142598d8b009152b2239ae6865
-        - name: OPERAND_IMAGE_BACKPLANE_OPERATOR_TEST
-          value: quay.io/open-cluster-management/backplane-operator-test@sha256:6a0f225785687d1c6220f981399047ae1e30f9b520177f34ba59da185e643739
-        - name: OPERAND_IMAGE_HELLOPROW_GO
-          value: quay.io/open-cluster-management/helloprow-go@sha256:d860b73ce3c448be708db70b4544491a2639fac45075078ce3509e358714ccfc
-        - name: OPERAND_IMAGE_HELLOWORLD
-          value: quay.io/open-cluster-management/helloworld@sha256:952905d0514944aedbcab56565cb1479d9de8902eed0c38a616ab9b53df49e20
-        - name: OPERAND_IMAGE_OPENSHIFT_HIVE
-          value: quay.io/open-cluster-management/hive@sha256:9404c1df3e2401b09883d985eae13d13e05a0fe083dc7e10456a68478759faa3
-        - name: OPERAND_IMAGE_MANAGEDCLUSTER_IMPORT_CONTROLLER
-          value: quay.io/open-cluster-management/managedcluster-import-controller@sha256:c1cc27d358383075b71c6bbd58818d049965c4fd6928b95dd6485eec8259278a
         - name: POD_NAMESPACE
           valueFrom:
             fieldRef:
