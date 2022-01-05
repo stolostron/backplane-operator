@@ -3,8 +3,8 @@
 package hive
 
 import (
-	v1alpha1 "github.com/open-cluster-management/backplane-operator/api/v1alpha1"
-	"github.com/open-cluster-management/backplane-operator/pkg/utils"
+	v1alpha1 "github.com/stolostron/backplane-operator/api/v1alpha1"
+	"github.com/stolostron/backplane-operator/pkg/utils"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 

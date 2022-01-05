@@ -28,7 +28,7 @@ contribution. See the [DCO](DCO) file for details.
 
 ## DCO Sign Off
 
-You must sign off your commit to state that you certify the [DCO](https://github.com/open-cluster-management/community/blob/main/DCO). To certify your commit for DCO, add a line like the following at the end of your commit message:
+You must sign off your commit to state that you certify the [DCO](https://github.com/open-cluster-management-io/community/blob/main/DCO). To certify your commit for DCO, add a line like the following at the end of your commit message:
 
 ```
 Signed-off-by: John Smith <john@example.com>
@@ -47,7 +47,7 @@ This can be done with the `--signoff` option to `git commit`. See the [Git docum
 
 Anyone may comment on issues and submit reviews for pull requests. However, in
 order to be assigned an issue or pull request, you must be a member of the
-[open-cluster-management](https://github.com/open-cluster-management) GitHub organization.
+[stolostron](https://github.com/stolostron) GitHub organization.
 
 Repo maintainers can assign you an issue or pull request by leaving a
 `/assign <your Github ID>` comment on the issue or pull request.
@@ -78,4 +78,4 @@ make manifests              ## Regenerate manifests if necessary
 make docker-build           ## Ensure build succeeds
 ```
 
-Now, you can follow the [README](./README.md) to work with the open-cluster-management/backplane-operator repository.
+Now, you can follow the [README](./README.md) to work with the stolostron/backplane-operator repository.

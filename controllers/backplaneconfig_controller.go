@@ -48,13 +48,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
-	backplanev1alpha1 "github.com/open-cluster-management/backplane-operator/api/v1alpha1"
-	"github.com/open-cluster-management/backplane-operator/pkg/foundation"
-	"github.com/open-cluster-management/backplane-operator/pkg/hive"
-	renderer "github.com/open-cluster-management/backplane-operator/pkg/rendering"
-	"github.com/open-cluster-management/backplane-operator/pkg/status"
+	backplanev1alpha1 "github.com/stolostron/backplane-operator/api/v1alpha1"
+	"github.com/stolostron/backplane-operator/pkg/foundation"
+	"github.com/stolostron/backplane-operator/pkg/hive"
+	renderer "github.com/stolostron/backplane-operator/pkg/rendering"
+	"github.com/stolostron/backplane-operator/pkg/status"
 
-	"github.com/open-cluster-management/backplane-operator/pkg/utils"
+	"github.com/stolostron/backplane-operator/pkg/utils"
 )
 
 // MultiClusterEngineReconciler reconciles a MultiClusterEngine object

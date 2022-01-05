@@ -4,8 +4,8 @@
 set -e
 
 _IMAGE_NAME="cmb-custom-registry"
-_WEB_REPO="https://quay.io/repository/open-cluster-management/${_IMAGE_NAME}?tab=tags"
-_REPO="quay.io/open-cluster-management/${_IMAGE_NAME}"
+_WEB_REPO="https://quay.io/repository/stolostron/${_IMAGE_NAME}?tab=tags"
+_REPO="quay.io/stolostron/${_IMAGE_NAME}"
 
 # This is needed for the deploy
 echo "* Testing connection"
