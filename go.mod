@@ -1,4 +1,4 @@
-module github.com/open-cluster-management/backplane-operator
+module github.com/stolostron/backplane-operator
 
 go 1.17
 

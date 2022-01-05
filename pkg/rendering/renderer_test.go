@@ -4,8 +4,8 @@
 package renderer
 
 import (
-	backplane "github.com/open-cluster-management/backplane-operator/api/v1alpha1"
-	"github.com/open-cluster-management/backplane-operator/pkg/utils"
+	backplane "github.com/stolostron/backplane-operator/api/v1alpha1"
+	"github.com/stolostron/backplane-operator/pkg/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

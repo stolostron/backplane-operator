@@ -2,7 +2,7 @@
 package status
 
 import (
-	bpv1alpha1 "github.com/open-cluster-management/backplane-operator/api/v1alpha1"
+	bpv1alpha1 "github.com/stolostron/backplane-operator/api/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

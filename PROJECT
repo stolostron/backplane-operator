@@ -5,7 +5,7 @@ plugins:
   manifests.sdk.operatorframework.io/v2: {}
   scorecard.sdk.operatorframework.io/v2: {}
 projectName: multicluster-engine
-repo: github.com/open-cluster-management/backplane-operator
+repo: github.com/stolostron/backplane-operator
 resources:
 - api:
     crdVersion: v1alpha1
@@ -14,7 +14,7 @@ resources:
   domain: openshift.io
   group: multicluster
   kind: MultiClusterEngine
-  path: github.com/open-cluster-management/backplane-operator/api/v1alpha1
+  path: github.com/stolostron/backplane-operator/api/v1alpha1
   version: v1alpha1
   webhooks:
     defaulting: true
