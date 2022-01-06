@@ -27,9 +27,9 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	backplanev1alpha1 "github.com/open-cluster-management/backplane-operator/api/v1alpha1"
-	"github.com/open-cluster-management/backplane-operator/pkg/status"
-	"github.com/open-cluster-management/backplane-operator/pkg/utils"
+	backplanev1alpha1 "github.com/stolostron/backplane-operator/api/v1alpha1"
+	"github.com/stolostron/backplane-operator/pkg/status"
+	"github.com/stolostron/backplane-operator/pkg/utils"
 	clustermanager "open-cluster-management.io/api/operator/v1"
 
 	hiveconfig "github.com/openshift/hive/apis/hive/v1"

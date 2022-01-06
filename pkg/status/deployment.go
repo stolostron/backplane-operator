@@ -5,7 +5,7 @@ import (
 	"context"
 	"fmt"
 
-	bpv1alpha1 "github.com/open-cluster-management/backplane-operator/api/v1alpha1"
+	bpv1alpha1 "github.com/stolostron/backplane-operator/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"

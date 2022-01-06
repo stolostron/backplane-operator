@@ -15,7 +15,7 @@ mkdir -p crd-temp
 mkdir -p ${crds_dir}
 
 # Clone hub-crds into crd-temp
-git clone --depth=1 --branch ${branch} https://github.com/open-cluster-management/hub-crds  crd-temp
+git clone --depth=1 --branch ${branch} https://github.com/stolostron/hub-crds  crd-temp
 
 # Update sha
 sha=$(cd crd-temp && git rev-parse HEAD)

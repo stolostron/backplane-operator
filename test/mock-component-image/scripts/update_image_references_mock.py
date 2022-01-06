@@ -16,7 +16,7 @@ mockImageKeys = ["OPERAND_IMAGE_MULTICLOUD_MANAGER"]
 def getLatestManifest():
     pipelineDir = os.path.join(os.getcwd(), "bin/pipeline")
     if not os.path.exists(pipelineDir):
-        Repo.clone_from("https://github.com/open-cluster-management/pipeline.git", pipelineDir)
+        Repo.clone_from("https://github.com/stolostron/pipeline.git", pipelineDir)
     manifests = glob.glob('bin/pipeline/snapshots/manifest-*.json')
     manifests.sort()
     return manifests[-1]

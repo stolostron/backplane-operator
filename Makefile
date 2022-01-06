@@ -27,7 +27,7 @@ BUNDLE_DEFAULT_CHANNEL := --default-channel=$(DEFAULT_CHANNEL)
 endif
 BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
-REGISTRY ?= quay.io/open-cluster-management
+REGISTRY ?= quay.io/stolostron
 # IMAGE_TAG_BASE defines the docker.io namespace and part of the image name for remote images.
 # This variable is used to construct full image tags for bundle and catalog images.
 #
@@ -69,7 +69,7 @@ ifeq ($(DIFF), 1)
     GIT_TREESTATE = "dirty"
 endif
 
-VERSION_PKG = "github.com/open-cluster-management/backplane-operator/pkg/version"
+VERSION_PKG = "github.com/stolostron/backplane-operator/pkg/version"
 LDFLAGS = "-X $(VERSION_PKG).gitVersion=$(GIT_VERSION) \
              -X $(VERSION_PKG).gitCommit=$(GIT_HASH) \
              -X $(VERSION_PKG).gitTreeState=$(GIT_TREESTATE) \
