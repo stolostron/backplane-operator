@@ -26,7 +26,7 @@ import (
 	"os"
 	"time"
 
-	renderer "github.com/open-cluster-management/backplane-operator/pkg/rendering"
+	renderer "github.com/stolostron/backplane-operator/pkg/rendering"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
@@ -38,8 +38,8 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"sigs.k8s.io/yaml"
 
-	"github.com/open-cluster-management/backplane-operator/pkg/status"
-	"github.com/open-cluster-management/backplane-operator/pkg/version"
+	"github.com/stolostron/backplane-operator/pkg/status"
+	"github.com/stolostron/backplane-operator/pkg/version"
 
 	hiveconfig "github.com/openshift/hive/apis/hive/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -53,8 +53,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	backplanev1alpha1 "github.com/open-cluster-management/backplane-operator/api/v1alpha1"
-	"github.com/open-cluster-management/backplane-operator/controllers"
+	backplanev1alpha1 "github.com/stolostron/backplane-operator/api/v1alpha1"
+	"github.com/stolostron/backplane-operator/controllers"
 	clustermanager "open-cluster-management.io/api/operator/v1"
 	//+kubebuilder:scaffold:imports
 )

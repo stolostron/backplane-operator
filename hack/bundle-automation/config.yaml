@@ -8,7 +8,7 @@
       imageMappings:
         hive: openshift_hive
 - repo_name: registration-operator
-  github_ref: "https://github.com/open-cluster-management/registration-operator.git"
+  github_ref: "https://github.com/stolostron/registration-operator.git"
   branch: "backplane-1.0"
   operators:
     - name: cluster-manager

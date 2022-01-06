@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	backplanev1alpha1 "github.com/open-cluster-management/backplane-operator/api/v1alpha1"
+	backplanev1alpha1 "github.com/stolostron/backplane-operator/api/v1alpha1"
 )
 
 var (
