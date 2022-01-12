@@ -33,9 +33,11 @@ func TestRender(t *testing.T) {
 		t.Fatalf("Unable to render CRDs")
 	}
 
+	availabilityList := []string{"managedcluster-import-controller-v2", "ocm-controller", "ocm-proxyserver", "ocm-webhook"}
 	backplaneNodeSelector := map[string]string{"select": "test"}
 	backplaneImagePullSecret := "test"
 	backplaneNamespace := "default"
+	backplaneAvailability := backplane.HABasic
 	backplaneTolerations := []corev1.Toleration{
 		{
 			Key:      "dedicated",
@@ -48,10 +50,11 @@ func TestRender(t *testing.T) {
 			Name: "testBackplane",
 		},
 		Spec: backplane.MultiClusterEngineSpec{
-			NodeSelector:    backplaneNodeSelector,
-			ImagePullSecret: backplaneImagePullSecret,
-			Tolerations:     backplaneTolerations,
-			TargetNamespace: backplaneNamespace,
+			AvailabilityConfig: backplaneAvailability,
+			NodeSelector:       backplaneNodeSelector,
+			ImagePullSecret:    backplaneImagePullSecret,
+			Tolerations:        backplaneTolerations,
+			TargetNamespace:    backplaneNamespace,
 		},
 		Status: backplane.MultiClusterEngineStatus{
 			Phase: "",
@@ -101,7 +104,11 @@ func TestRender(t *testing.T) {
 				t.Fatalf("Toleration did not propagate to the deployments use")
 			}
 			if deployment.ObjectMeta.Namespace != backplaneNamespace {
-				t.Fatalf("Nammespace did not propagate to the deployments use")
+				t.Fatalf("Namespace did not propagate to the deployments use")
+			}
+
+			if utils.Contains(availabilityList, deployment.ObjectMeta.Name) && *deployment.Spec.Replicas != 1 {
+				t.Fatalf("AvailabilityConfig did not propagate to the deployments use")
 			}
 
 			for _, proxyVar := range deployment.Spec.Template.Spec.Containers[0].Env {

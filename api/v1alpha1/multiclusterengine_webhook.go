@@ -88,6 +88,9 @@ func (r *MultiClusterEngine) ValidateCreate() error {
 	ctx := context.Background()
 	backplaneconfiglog.Info("validate create", "name", r.Name)
 
+	if (r.Spec.AvailabilityConfig != HABasic) && (r.Spec.AvailabilityConfig != HAHigh) && (r.Spec.AvailabilityConfig != "") {
+		return errors.New("Invalid AvailabilityConfig given")
+	}
 	backplaneConfigList := &MultiClusterEngineList{}
 	if err := Client.List(ctx, backplaneConfigList); err != nil {
 		return fmt.Errorf("unable to list BackplaneConfigs: %s", err)
@@ -107,6 +110,9 @@ func (r *MultiClusterEngine) ValidateUpdate(old runtime.Object) error {
 	backplaneconfiglog.Info(oldMCE.Spec.TargetNamespace)
 	if (r.Spec.TargetNamespace != oldMCE.Spec.TargetNamespace) && (oldMCE.Spec.TargetNamespace != "") {
 		return errors.New("changes cannot be made to target namespace")
+	}
+	if (r.Spec.AvailabilityConfig != HABasic) && (r.Spec.AvailabilityConfig != HAHigh) && (r.Spec.AvailabilityConfig != "") {
+		return errors.New("Invalid AvailabilityConfig given")
 	}
 	// TODO(user): fill in your validation logic upon object update.
 	return nil
