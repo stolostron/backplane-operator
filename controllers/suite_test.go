@@ -27,12 +27,13 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	hiveconfig "github.com/openshift/hive/apis/hive/v1"
 	backplanev1alpha1 "github.com/stolostron/backplane-operator/api/v1alpha1"
 	"github.com/stolostron/backplane-operator/pkg/status"
 	"github.com/stolostron/backplane-operator/pkg/utils"
 	clustermanager "open-cluster-management.io/api/operator/v1"
 
-	hiveconfig "github.com/openshift/hive/apis/hive/v1"
+	mcho "github.com/stolostron/multiclusterhub-operator/api/v1"
 
 	admissionregistration "k8s.io/api/admissionregistration/v1"
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -73,6 +74,7 @@ var _ = BeforeSuite(func() {
 			filepath.Join("..", "pkg", "templates", "crds", "cluster-manager"),
 			filepath.Join("..", "pkg", "templates", "crds", "hive-operator"),
 			filepath.Join("..", "pkg", "templates", "crds", "foundation"),
+			filepath.Join("..", "test", "function_tests", "resources"),
 		},
 		ErrorIfCRDPathMissing: true,
 	}
@@ -100,6 +102,9 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 
 	err = clustermanager.AddToScheme(scheme.Scheme)
+	Expect(err).NotTo(HaveOccurred())
+
+	err = mcho.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	err = os.Setenv("POD_NAMESPACE", "default")

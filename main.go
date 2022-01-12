@@ -40,6 +40,7 @@ import (
 
 	"github.com/stolostron/backplane-operator/pkg/status"
 	"github.com/stolostron/backplane-operator/pkg/version"
+	mcho "github.com/stolostron/multiclusterhub-operator/api/v1"
 
 	hiveconfig "github.com/openshift/hive/apis/hive/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -83,6 +84,7 @@ func init() {
 
 	utilruntime.Must(clustermanager.AddToScheme(scheme))
 
+	utilruntime.Must(mcho.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -196,7 +198,7 @@ func ensureCRD(mgr ctrl.Manager, crd *unstructured.Unstructured) error {
 			} else if err != nil {
 				setupLog.Error(err, fmt.Sprintf("Error getting '%s' CRD", crd.GetName()))
 			} else if err == nil {
-				// Webhook already exists. Update and return
+				// CRD already exists. Update and return
 				setupLog.Info(fmt.Sprintf("'%s' CRD already exists. Updating.", crd.GetName()))
 				crd.SetResourceVersion(existingCRD.GetResourceVersion())
 				err = mgr.GetClient().Update(ctx, crd)

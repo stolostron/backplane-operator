@@ -198,6 +198,12 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return ctrl.Result{}, nil
 	}
 
+	result, err = r.adoptExistingSubcomponents(ctx, backplaneConfig)
+	if err != nil {
+		r.StatusManager.AddCondition(status.NewCondition(backplanev1alpha1.MultiClusterEngineProgressing, metav1.ConditionUnknown, status.DeployFailedReason, err.Error()))
+		return result, err
+	}
+
 	result, err = r.DeploySubcomponents(ctx, backplaneConfig)
 	if err != nil {
 		r.StatusManager.AddCondition(status.NewCondition(backplanev1alpha1.MultiClusterEngineProgressing, metav1.ConditionUnknown, status.DeployFailedReason, err.Error()))
@@ -281,7 +287,6 @@ func (r *MultiClusterEngineReconciler) DeploySubcomponents(ctx context.Context, 
 				return ctrl.Result{}, errors.Wrapf(err, "error applying object Name: %s Kind: %s", template.GetName(), template.GetKind())
 			}
 		}
-
 	}
 
 	result, err := r.ensureCustomResources(ctx, backplaneConfig)
@@ -354,6 +359,15 @@ func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Conte
 		},
 	)
 
+	hiveConfig := &unstructured.Unstructured{}
+	hiveConfig.SetGroupVersionKind(
+		schema.GroupVersionKind{
+			Group:   "hive.openshift.io",
+			Version: "v1",
+			Kind:    "HiveConfig",
+		},
+	)
+
 	err := r.Client.Get(ctx, types.NamespacedName{Name: "cluster-manager"}, clusterManager)
 	if err == nil { // If resource exists, delete
 		log.Info("finalizing cluster-manager custom resource")
@@ -378,6 +392,19 @@ func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Conte
 		}
 
 		return fmt.Errorf("waiting for 'open-cluster-management-hub' namespace to be terminated before proceeding with uninstallation")
+	} else if err != nil && !apierrors.IsNotFound(err) { // Return error, if error is not not found error
+		return err
+	}
+
+	// Hiveconfig must be finalized manually, since we may not have necessarilly applied our ownerreference to it.
+	// If the Hiveconfig exists on an MCH install, we do not update the hiveconfig currently to contain the ownerreference.
+	err = r.Client.Get(ctx, types.NamespacedName{Name: "hive"}, hiveConfig)
+	if err == nil { // If resource exists, delete
+		log.Info("finalizing hiveconfig custom resource")
+		err := r.Client.Delete(ctx, hiveConfig)
+		if err != nil {
+			return err
+		}
 	} else if err != nil && !apierrors.IsNotFound(err) { // Return error, if error is not not found error
 		return err
 	}
@@ -482,6 +509,88 @@ func (r *MultiClusterEngineReconciler) validateNamespace(ctx context.Context, m 
 	}
 	if err != nil && !apierrors.IsNotFound(err) {
 		return ctrl.Result{Requeue: true}, err
+	}
+	return ctrl.Result{}, nil
+}
+
+// adoptExistingSubcomponents checks for the existence of subcomponents installed by the MCH, and adds a label
+// signaling that they have been adopted by the MCE.
+func (r *MultiClusterEngineReconciler) adoptExistingSubcomponents(ctx context.Context, mce *backplanev1alpha1.MultiClusterEngine) (ctrl.Result, error) {
+
+	log := log.FromContext(ctx)
+	log.Info("Checking for existing subcomponents")
+
+	multiClusterHubList := &unstructured.UnstructuredList{}
+	multiClusterHubList.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "operator.open-cluster-management.io",
+		Version: "v1",
+		Kind:    "MultiClusterHubList",
+	})
+
+	err := r.List(ctx, multiClusterHubList)
+	if err != nil {
+		log.Info(fmt.Sprintf("Unable to list multiclusterhubs: %v", err.Error()))
+		return ctrl.Result{}, nil
+	}
+
+	if len(multiClusterHubList.Items) == 0 {
+		// No multiclusterhubs found, no need to adopt
+		return ctrl.Result{}, nil
+	}
+
+	// Only 1 MCH can exist
+	mch := multiClusterHubList.Items[0]
+
+	cmTemplate := foundation.ClusterManager(mce, r.Images)
+	hiveTemplate := hive.HiveConfig(mce)
+
+	// Renders all templates from charts
+	templates, errs := renderer.RenderTemplates(mce, r.Images)
+	if len(errs) > 0 {
+		for _, err := range errs {
+			log.Info(err.Error())
+		}
+		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+	}
+
+	resources := []*unstructured.Unstructured{cmTemplate, hiveTemplate}
+	resources = append(resources, templates...)
+
+	validKinds := []string{"HiveConfig", "ClusterManager", "ClusterRole", "ClusterRoleBinding"}
+
+	for _, resource := range resources {
+		if !utils.Contains(validKinds, resource.GetKind()) {
+			// Kind does not need to be adopted
+			continue
+		}
+
+		existingResource := &unstructured.Unstructured{}
+		existingResource.SetGroupVersionKind(resource.GroupVersionKind())
+		err = r.Get(ctx, types.NamespacedName{Name: resource.GetName(), Namespace: resource.GetNamespace()}, existingResource)
+		if err != nil && !apierrors.IsNotFound(err) {
+			log.Info(fmt.Sprintf("Unable to get existing resource: %+v", err.Error()))
+			return ctrl.Result{}, err
+		} else if apierrors.IsNotFound(err) {
+			// Resource doesn't exist, no need to adopt
+			continue
+		}
+
+		resourceLabels := existingResource.GetLabels()
+		if resourceLabels["multiclusterengines.multicluster.openshift.io/adopted"] == "true" {
+			// No need to update if label exists
+			continue
+		}
+
+		if resourceLabels != nil && resourceLabels["installer.name"] == mch.GetName() && resourceLabels["installer.namespace"] == mch.GetNamespace() {
+			resourceLabels["multiclusterengines.multicluster.openshift.io/adopted"] = "true"
+			existingResource.SetLabels(resourceLabels)
+		}
+
+		err = r.Update(ctx, existingResource)
+		if err != nil {
+			log.Info(fmt.Sprintf("Unable to update existing resource: %+v", err.Error()))
+			return ctrl.Result{}, err
+		}
 	}
 	return ctrl.Result{}, nil
 }
