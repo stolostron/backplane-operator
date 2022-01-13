@@ -442,6 +442,9 @@ func (r *MultiClusterEngineReconciler) ensureUnstructuredResource(ctx context.Co
 
 func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backplanev1alpha1.MultiClusterEngine) (ctrl.Result, error) {
 
+	if !utils.AvailabilityConfigIsValid(m.Spec.AvailabilityConfig) {
+		m.Spec.AvailabilityConfig = backplanev1alpha1.HAHigh
+	}
 	log := log.FromContext(ctx)
 	if len(m.Spec.TargetNamespace) != 0 {
 		return ctrl.Result{}, nil

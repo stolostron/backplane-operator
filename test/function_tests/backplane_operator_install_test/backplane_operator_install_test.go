@@ -19,6 +19,7 @@ import (
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"github.com/stolostron/backplane-operator/pkg/utils"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
@@ -168,6 +169,7 @@ var uninstallTests = func() func() {
 var configurationTests = func() func() {
 	return func() {
 		Context("default spec", func() {
+			var defaultAvailabilityConfig backplane.AvailabilityType
 			var defaultNodeSelector map[string]string
 			defaultPullSecret := ""
 			defaultTolerations := []corev1.Toleration{
@@ -187,12 +189,13 @@ var configurationTests = func() func() {
 				key := &backplane.MultiClusterEngine{}
 				Expect(k8sClient.Get(ctx, multiClusterEngine, key)).To(Succeed())
 
-				validateResourceSpecs(key.Spec.TargetNamespace, defaultNodeSelector, defaultPullSecret, defaultTolerations)
+				validateResourceSpecs(key.Spec.TargetNamespace, defaultNodeSelector, defaultPullSecret, defaultTolerations, defaultAvailabilityConfig)
 			})
 
 		})
 
 		Context("customized spec", func() {
+			backplaneAvailabilityConfig := backplane.HABasic
 			backplaneNodeSelector := map[string]string{"beta.kubernetes.io/os": "linux"}
 			backplanePullSecret := "test"
 			backplaneTolerations := []corev1.Toleration{
@@ -212,10 +215,11 @@ var configurationTests = func() func() {
 					key.Spec.NodeSelector = backplaneNodeSelector
 					key.Spec.ImagePullSecret = backplanePullSecret
 					key.Spec.Tolerations = backplaneTolerations
+					key.Spec.AvailabilityConfig = backplaneAvailabilityConfig
 					g.Expect(k8sClient.Update(ctx, key)).To(Succeed())
 				}, 10*time.Second, time.Second).Should(Succeed())
 
-				validateResourceSpecs(key.Spec.TargetNamespace, backplaneNodeSelector, backplanePullSecret, backplaneTolerations)
+				validateResourceSpecs(key.Spec.TargetNamespace, backplaneNodeSelector, backplanePullSecret, backplaneTolerations, backplaneAvailabilityConfig)
 			})
 		})
 
@@ -375,6 +379,18 @@ var webhookTests = func() func() {
 				err := k8sClient.Update(ctx, key)
 				g.Expect(err).ShouldNot(BeNil())
 				g.Expect(err.Error()).Should(ContainSubstring("changes cannot be made to target namespace"))
+			}, 10*time.Second, time.Second).Should(Succeed())
+
+		})
+
+		It("Prevents illegal modifications of the availabilityConfig", func() {
+			Eventually(func(g Gomega) {
+				key := &backplane.MultiClusterEngine{}
+				g.Expect(k8sClient.Get(ctx, multiClusterEngine, key)).To(Succeed())
+				key.Spec.AvailabilityConfig = "shouldnotexist"
+				err := k8sClient.Update(ctx, key)
+				g.Expect(err).ShouldNot(BeNil())
+				g.Expect(err.Error()).Should(ContainSubstring("Invalid AvailabilityConfig given"))
 			}, 10*time.Second, time.Second).Should(Succeed())
 
 		})
@@ -540,9 +556,10 @@ func validateDelete() {
 	})
 }
 
+
 // validateResourceSpec scans clustermanager and deployments in namespace for the provided node selector, pull secret,
 // and tolerations
-func validateResourceSpecs(namespace string, nodeSelector map[string]string, pullSecret string, tolerations []corev1.Toleration) {
+func validateResourceSpecs(namespace string, nodeSelector map[string]string, pullSecret string, tolerations []corev1.Toleration, availabilityConfig backplane.AvailabilityType) {
 	Eventually(func(g Gomega) {
 		deployments := &appsv1.DeploymentList{}
 		err := k8sClient.List(ctx, deployments,
@@ -552,6 +569,7 @@ func validateResourceSpecs(namespace string, nodeSelector map[string]string, pul
 			})
 		g.Expect(err).To(BeNil())
 		g.Expect(len(deployments.Items)).ToNot(BeZero())
+		availabilityList := []string{"managedcluster-import-controller-v2", "ocm-controller", "ocm-proxyserver", "ocm-webhook"}
 
 		for _, deployment := range deployments.Items {
 			// check nodeSelector
@@ -570,6 +588,17 @@ func validateResourceSpecs(namespace string, nodeSelector map[string]string, pul
 			// check tolerations
 			componentTolerations := deployment.Spec.Template.Spec.Tolerations
 			g.Expect(componentTolerations).To(Equal(tolerations), fmt.Sprintf("Deployment %s does not have expected tolerations", deployment.Name))
+
+			// check replicas
+			if utils.Contains(availabilityList, deployment.ObjectMeta.Name) {
+				componentReplicas := deployment.Spec.Replicas
+				if (availabilityConfig == backplane.HAHigh) || (availabilityConfig == "") {
+					g.Expect(*componentReplicas).To(Equal(int32(2)), fmt.Sprintf("Deployment %s does not have expected replicas", deployment.Name))
+				}
+				if availabilityConfig == backplane.HABasic {
+					g.Expect(*componentReplicas).To(Equal(int32(1)), fmt.Sprintf("Deployment %s does not have expected replicas", deployment.Name))
+				}
+			}
 
 		}
 
