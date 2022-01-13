@@ -27,6 +27,14 @@ spec:
       kind: MultiClusterEngine
       name: multiclusterengines.multicluster.openshift.io
       specDescriptors:
+      - description: 'Specifies deployment replication for improved availability.
+          Options are: Basic and High (default)'
+        displayName: Availability Configuration
+        path: availabilityConfig
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:select:High
+        - urn:alm:descriptor:com.tectonic.ui:select:Basic
       - description: Override pull secret for accessing MultiClusterEngine operand
           and endpoint images
         displayName: Image Pull Secret
