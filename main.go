@@ -38,11 +38,9 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"sigs.k8s.io/yaml"
 
+	hiveconfig "github.com/openshift/hive/apis/hive/v1"
 	"github.com/stolostron/backplane-operator/pkg/status"
 	"github.com/stolostron/backplane-operator/pkg/version"
-	mcho "github.com/stolostron/multiclusterhub-operator/api/v1"
-
-	hiveconfig "github.com/openshift/hive/apis/hive/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -84,7 +82,6 @@ func init() {
 
 	utilruntime.Must(clustermanager.AddToScheme(scheme))
 
-	utilruntime.Must(mcho.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 

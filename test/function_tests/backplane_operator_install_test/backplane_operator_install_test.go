@@ -17,9 +17,9 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 
+	"github.com/stolostron/backplane-operator/pkg/utils"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"github.com/stolostron/backplane-operator/pkg/utils"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
@@ -555,7 +555,6 @@ func validateDelete() {
 		}, deleteTimeout, interval).Should(Succeed())
 	})
 }
-
 
 // validateResourceSpec scans clustermanager and deployments in namespace for the provided node selector, pull secret,
 // and tolerations

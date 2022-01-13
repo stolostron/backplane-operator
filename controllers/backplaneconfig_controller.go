@@ -523,53 +523,16 @@ func (r *MultiClusterEngineReconciler) adoptExistingSubcomponents(ctx context.Co
 	log := log.FromContext(ctx)
 	log.Info("Checking for existing subcomponents")
 
-	multiClusterHubList := &unstructured.UnstructuredList{}
-	multiClusterHubList.SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   "operator.open-cluster-management.io",
-		Version: "v1",
-		Kind:    "MultiClusterHubList",
-	})
-
-	err := r.List(ctx, multiClusterHubList)
-	if err != nil {
-		log.Info(fmt.Sprintf("Unable to list multiclusterhubs: %v", err.Error()))
-		return ctrl.Result{}, nil
-	}
-
-	if len(multiClusterHubList.Items) == 0 {
-		// No multiclusterhubs found, no need to adopt
-		return ctrl.Result{}, nil
-	}
-
-	// Only 1 MCH can exist
-	mch := multiClusterHubList.Items[0]
-
 	cmTemplate := foundation.ClusterManager(mce, r.Images)
 	hiveTemplate := hive.HiveConfig(mce)
 
-	// Renders all templates from charts
-	templates, errs := renderer.RenderTemplates(mce, r.Images)
-	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
-	}
-
 	resources := []*unstructured.Unstructured{cmTemplate, hiveTemplate}
-	resources = append(resources, templates...)
-
-	validKinds := []string{"HiveConfig", "ClusterManager", "ClusterRole", "ClusterRoleBinding"}
 
 	for _, resource := range resources {
-		if !utils.Contains(validKinds, resource.GetKind()) {
-			// Kind does not need to be adopted
-			continue
-		}
 
 		existingResource := &unstructured.Unstructured{}
 		existingResource.SetGroupVersionKind(resource.GroupVersionKind())
-		err = r.Get(ctx, types.NamespacedName{Name: resource.GetName(), Namespace: resource.GetNamespace()}, existingResource)
+		err := r.Get(ctx, types.NamespacedName{Name: resource.GetName(), Namespace: resource.GetNamespace()}, existingResource)
 		if err != nil && !apierrors.IsNotFound(err) {
 			log.Info(fmt.Sprintf("Unable to get existing resource: %+v", err.Error()))
 			return ctrl.Result{}, err
@@ -584,7 +547,7 @@ func (r *MultiClusterEngineReconciler) adoptExistingSubcomponents(ctx context.Co
 			continue
 		}
 
-		if resourceLabels != nil && resourceLabels["installer.name"] == mch.GetName() && resourceLabels["installer.namespace"] == mch.GetNamespace() {
+		if resourceLabels != nil && resourceLabels["installer.name"] != "" && resourceLabels["installer.namespace"] != "" {
 			resourceLabels["multiclusterengines.multicluster.openshift.io/adopted"] = "true"
 			existingResource.SetLabels(resourceLabels)
 		}
