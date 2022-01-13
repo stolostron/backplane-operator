@@ -383,7 +383,7 @@ var webhookTests = func() func() {
 
 		})
 
-		It("Prevents modifications of the targetNamespace", func() {
+		It("Prevents illegal modifications of the availabilityConfig", func() {
 			Eventually(func(g Gomega) {
 				key := &backplane.MultiClusterEngine{}
 				g.Expect(k8sClient.Get(ctx, multiClusterEngine, key)).To(Succeed())
