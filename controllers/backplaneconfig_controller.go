@@ -359,15 +359,6 @@ func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Conte
 		},
 	)
 
-	hiveConfig := &unstructured.Unstructured{}
-	hiveConfig.SetGroupVersionKind(
-		schema.GroupVersionKind{
-			Group:   "hive.openshift.io",
-			Version: "v1",
-			Kind:    "HiveConfig",
-		},
-	)
-
 	err := r.Client.Get(ctx, types.NamespacedName{Name: "cluster-manager"}, clusterManager)
 	if err == nil { // If resource exists, delete
 		log.Info("finalizing cluster-manager custom resource")
@@ -392,19 +383,6 @@ func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Conte
 		}
 
 		return fmt.Errorf("waiting for 'open-cluster-management-hub' namespace to be terminated before proceeding with uninstallation")
-	} else if err != nil && !apierrors.IsNotFound(err) { // Return error, if error is not not found error
-		return err
-	}
-
-	// Hiveconfig must be finalized manually, since we may not have necessarilly applied our ownerreference to it.
-	// If the Hiveconfig exists on an MCH install, we do not update the hiveconfig currently to contain the ownerreference.
-	err = r.Client.Get(ctx, types.NamespacedName{Name: "hive"}, hiveConfig)
-	if err == nil { // If resource exists, delete
-		log.Info("finalizing hiveconfig custom resource")
-		err := r.Client.Delete(ctx, hiveConfig)
-		if err != nil {
-			return err
-		}
 	} else if err != nil && !apierrors.IsNotFound(err) { // Return error, if error is not not found error
 		return err
 	}
@@ -550,6 +528,10 @@ func (r *MultiClusterEngineReconciler) adoptExistingSubcomponents(ctx context.Co
 		if resourceLabels != nil && resourceLabels["installer.name"] != "" && resourceLabels["installer.namespace"] != "" {
 			resourceLabels["multiclusterengines.multicluster.openshift.io/adopted"] = "true"
 			existingResource.SetLabels(resourceLabels)
+		}
+
+		if err := ctrl.SetControllerReference(mce, existingResource, r.Scheme); err != nil {
+			return ctrl.Result{}, errors.Wrapf(err, "Error setting controller reference on resource %s", existingResource.GetName())
 		}
 
 		err = r.Update(ctx, existingResource)
