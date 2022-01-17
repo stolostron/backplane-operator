@@ -519,17 +519,6 @@ func (r *MultiClusterEngineReconciler) adoptExistingSubcomponents(ctx context.Co
 			continue
 		}
 
-		resourceLabels := existingResource.GetLabels()
-		if resourceLabels["multiclusterengines.multicluster.openshift.io/adopted"] == "true" {
-			// No need to update if label exists
-			continue
-		}
-
-		if resourceLabels != nil && resourceLabels["installer.name"] != "" && resourceLabels["installer.namespace"] != "" {
-			resourceLabels["multiclusterengines.multicluster.openshift.io/adopted"] = "true"
-			existingResource.SetLabels(resourceLabels)
-		}
-
 		if err := ctrl.SetControllerReference(mce, existingResource, r.Scheme); err != nil {
 			return ctrl.Result{}, errors.Wrapf(err, "Error setting controller reference on resource %s", existingResource.GetName())
 		}
