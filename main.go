@@ -38,10 +38,9 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"sigs.k8s.io/yaml"
 
+	hiveconfig "github.com/openshift/hive/apis/hive/v1"
 	"github.com/stolostron/backplane-operator/pkg/status"
 	"github.com/stolostron/backplane-operator/pkg/version"
-
-	hiveconfig "github.com/openshift/hive/apis/hive/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -196,7 +195,7 @@ func ensureCRD(mgr ctrl.Manager, crd *unstructured.Unstructured) error {
 			} else if err != nil {
 				setupLog.Error(err, fmt.Sprintf("Error getting '%s' CRD", crd.GetName()))
 			} else if err == nil {
-				// Webhook already exists. Update and return
+				// CRD already exists. Update and return
 				setupLog.Info(fmt.Sprintf("'%s' CRD already exists. Updating.", crd.GetName()))
 				crd.SetResourceVersion(existingCRD.GetResourceVersion())
 				err = mgr.GetClient().Update(ctx, crd)

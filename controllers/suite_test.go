@@ -27,12 +27,11 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	hiveconfig "github.com/openshift/hive/apis/hive/v1"
 	backplanev1alpha1 "github.com/stolostron/backplane-operator/api/v1alpha1"
 	"github.com/stolostron/backplane-operator/pkg/status"
 	"github.com/stolostron/backplane-operator/pkg/utils"
 	clustermanager "open-cluster-management.io/api/operator/v1"
-
-	hiveconfig "github.com/openshift/hive/apis/hive/v1"
 
 	admissionregistration "k8s.io/api/admissionregistration/v1"
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
