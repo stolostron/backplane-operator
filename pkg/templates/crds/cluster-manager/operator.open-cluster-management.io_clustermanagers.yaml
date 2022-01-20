@@ -61,15 +61,15 @@ spec:
                     type: array
                 type: object
               placementImagePullSpec:
-                default: quay.io/stolostron/placement
+                default: quay.io/open-cluster-management/placement
                 description: PlacementImagePullSpec represents the desired image configuration of placement controller/webhook installed on hub.
                 type: string
               registrationImagePullSpec:
-                default: quay.io/stolostron/registration
+                default: quay.io/open-cluster-management/registration
                 description: RegistrationImagePullSpec represents the desired image of registration controller/webhook installed on hub.
                 type: string
               workImagePullSpec:
-                default: quay.io/stolostron/work
+                default: quay.io/open-cluster-management/work
                 description: WorkImagePullSpec represents the desired image configuration of work controller/webhook installed on hub.
                 type: string
             type: object
