@@ -32,12 +32,22 @@ type MultiClusterEngineSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Image Pull Secret",xDescriptors={"urn:alm:descriptor:io.kubernetes:Secret","urn:alm:descriptor:com.tectonic.ui:advanced"}
 	ImagePullSecret string `json:"imagePullSecret,omitempty"`
 
+	// Developer Overrides
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Developer Overrides",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
+	Overrides *Overrides `json:"overrides,omitempty"`
+
 	// Tolerations causes all components to tolerate any taints.
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 
 	// Location where MCE resources will be placed
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Target Namespace",xDescriptors={"urn:alm:descriptor:io.kubernetes:text","urn:alm:descriptor:com.tectonic.ui:advanced"}
 	TargetNamespace string `json:"targetNamespace,omitempty"`
+}
+
+// Overrides provides developer overrides for MCE installation
+type Overrides struct {
+	// Pull policy for the MCE images
+	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
 }
 
 // MultiClusterEngineStatus defines the observed state of MultiClusterEngine

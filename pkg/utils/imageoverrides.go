@@ -10,6 +10,8 @@ import (
 	"strings"
 
 	backplanev1alpha1 "github.com/stolostron/backplane-operator/api/v1alpha1"
+
+	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -63,4 +65,12 @@ func GetImageOverrides(mce *backplanev1alpha1.MultiClusterEngine) map[string]str
 	}
 
 	return imageOverrides
+}
+
+//GetImagePullPolicy returns either pull policy from CR overrides or default of Always
+func GetImagePullPolicy(m *backplanev1alpha1.MultiClusterEngine) corev1.PullPolicy {
+	if m.Spec.Overrides == nil || m.Spec.Overrides.ImagePullPolicy == "" {
+		return corev1.PullIfNotPresent
+	}
+	return m.Spec.Overrides.ImagePullPolicy
 }

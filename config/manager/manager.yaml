@@ -28,11 +28,36 @@ spec:
         command:
         - /app/backplane-operator
         env:
+        - name: OPERAND_IMAGE_BACKPLANE_MUST_GATHER
+          value: quay.io/stolostron/backplane-must-gather@sha256:2fb5c5663c47418a25a7eaadbfd699df1ddd5520ddccff9a6a110afa9ae46598
+        - name: OPERAND_IMAGE_BACKPLANE_OPERATOR
+          value: quay.io/stolostron/backplane-operator@sha256:01cfa232acb43b2f392c47c1662397991960d54472ddfe846891996ec30c122c
+        - name: OPERAND_IMAGE_BACKPLANE_OPERATOR_TEST
+          value: quay.io/stolostron/backplane-operator-test@sha256:7befdce99faf8bfd9919e93dbbe64e8578897fff81681ca9035421460bd50184
+        - name: OPERAND_IMAGE_HELLOPROW_GO
+          value: quay.io/stolostron/helloprow-go@sha256:d860b73ce3c448be708db70b4544491a2639fac45075078ce3509e358714ccfc
+        - name: OPERAND_IMAGE_HELLOWORLD
+          value: quay.io/stolostron/helloworld@sha256:fb64a6626111bf245b3cfea96d1f9a12799941d2206e5489b3f4820edf7cea86
+        - name: OPERAND_IMAGE_OPENSHIFT_HIVE
+          value: quay.io/stolostron/hive@sha256:9404c1df3e2401b09883d985eae13d13e05a0fe083dc7e10456a68478759faa3
+        - name: OPERAND_IMAGE_MANAGEDCLUSTER_IMPORT_CONTROLLER
+          value: quay.io/stolostron/managedcluster-import-controller@sha256:c1cc27d358383075b71c6bbd58818d049965c4fd6928b95dd6485eec8259278a
+        - name: OPERAND_IMAGE_MULTICLOUD_MANAGER
+          value: quay.io/stolostron/multicloud-manager@sha256:b6e4b06bdba7c831b271b6c2ac72b17c31714d1a74ef3aca2872e109f4ecb3be
+        - name: OPERAND_IMAGE_PLACEMENT
+          value: quay.io/stolostron/placement@sha256:f7dda937a400d33ae954725397680e2784c5e19bb9749133e7f801f11edba6e9
+        - name: OPERAND_IMAGE_REGISTRATION
+          value: quay.io/stolostron/registration@sha256:4e496cf4c5c0a6f11b66a617a37d29081a82234b83b98060b2a3992706674b3c
+        - name: OPERAND_IMAGE_REGISTRATION_OPERATOR
+          value: quay.io/stolostron/registration-operator@sha256:5a79b2df930eaba5eea23468723ded291eb171d35d9778e4daff124e0b3f08b6
+        - name: OPERAND_IMAGE_WORK
+          value: quay.io/stolostron/work@sha256:c258ca73ede98ee09f94de30cd551086353fb99810a7ab3cb5da8ac8a7d79eba
         - name: POD_NAMESPACE
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
         image: controller:latest
+        imagePullPolicy: IfNotPresent
         livenessProbe:
           httpGet:
             path: /healthz
