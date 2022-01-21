@@ -142,7 +142,7 @@ func injectValuesOverrides(values *Values, backplaneConfig *v1alpha1.MultiCluste
 
 	values.Global.ImageOverrides = images
 
-	values.Global.PullPolicy = "Always"
+	values.Global.PullPolicy = string(utils.GetImagePullPolicy(backplaneConfig))
 
 	values.Global.Namespace = backplaneConfig.Spec.TargetNamespace
 
