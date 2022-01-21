@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"os"
 
+	backplanev1alpha1 "github.com/stolostron/backplane-operator/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -47,6 +48,23 @@ func ProxyEnvVarsAreSet() bool {
 	return false
 }
 
+func DefaultReplicaCount(mce *backplanev1alpha1.MultiClusterEngine) int {
+	if mce.Spec.AvailabilityConfig == backplanev1alpha1.HABasic {
+		return 1
+	}
+	return 2
+}
+
+//AvailabilityConfigIsValid ...
+func AvailabilityConfigIsValid(config backplanev1alpha1.AvailabilityType) bool {
+	switch config {
+	case backplanev1alpha1.HAHigh, backplanev1alpha1.HABasic:
+		return true
+	default:
+		return false
+	}
+}
+
 func GetTestImages() []string {
 	return []string{"registration_operator", "openshift_hive", "multicloud_manager",
 		"managedcluster_import_controller", "registration", "work"}
@@ -65,4 +83,14 @@ func DefaultTolerations() []corev1.Toleration {
 			Operator: "Exists",
 		},
 	}
+}
+
+func Contains(s []string, str string) bool {
+	for _, v := range s {
+		if v == str {
+			return true
+		}
+	}
+
+	return false
 }

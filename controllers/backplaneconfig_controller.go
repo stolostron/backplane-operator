@@ -198,6 +198,12 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return ctrl.Result{}, nil
 	}
 
+	result, err = r.adoptExistingSubcomponents(ctx, backplaneConfig)
+	if err != nil {
+		r.StatusManager.AddCondition(status.NewCondition(backplanev1alpha1.MultiClusterEngineProgressing, metav1.ConditionUnknown, status.DeployFailedReason, err.Error()))
+		return result, err
+	}
+
 	result, err = r.DeploySubcomponents(ctx, backplaneConfig)
 	if err != nil {
 		r.StatusManager.AddCondition(status.NewCondition(backplanev1alpha1.MultiClusterEngineProgressing, metav1.ConditionUnknown, status.DeployFailedReason, err.Error()))
@@ -281,7 +287,6 @@ func (r *MultiClusterEngineReconciler) DeploySubcomponents(ctx context.Context, 
 				return ctrl.Result{}, errors.Wrapf(err, "error applying object Name: %s Kind: %s", template.GetName(), template.GetKind())
 			}
 		}
-
 	}
 
 	result, err := r.ensureCustomResources(ctx, backplaneConfig)
@@ -442,6 +447,9 @@ func (r *MultiClusterEngineReconciler) ensureUnstructuredResource(ctx context.Co
 
 func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backplanev1alpha1.MultiClusterEngine) (ctrl.Result, error) {
 
+	if !utils.AvailabilityConfigIsValid(m.Spec.AvailabilityConfig) {
+		m.Spec.AvailabilityConfig = backplanev1alpha1.HAHigh
+	}
 	log := log.FromContext(ctx)
 	if len(m.Spec.TargetNamespace) != 0 {
 		return ctrl.Result{}, nil
@@ -482,6 +490,44 @@ func (r *MultiClusterEngineReconciler) validateNamespace(ctx context.Context, m 
 	}
 	if err != nil && !apierrors.IsNotFound(err) {
 		return ctrl.Result{Requeue: true}, err
+	}
+	return ctrl.Result{}, nil
+}
+
+// adoptExistingSubcomponents checks for the existence of subcomponents installed by the MCH, and adds a label
+// signaling that they have been adopted by the MCE.
+func (r *MultiClusterEngineReconciler) adoptExistingSubcomponents(ctx context.Context, mce *backplanev1alpha1.MultiClusterEngine) (ctrl.Result, error) {
+
+	log := log.FromContext(ctx)
+	log.Info("Checking for existing subcomponents")
+
+	cmTemplate := foundation.ClusterManager(mce, r.Images)
+	hiveTemplate := hive.HiveConfig(mce)
+
+	resources := []*unstructured.Unstructured{cmTemplate, hiveTemplate}
+
+	for _, resource := range resources {
+
+		existingResource := &unstructured.Unstructured{}
+		existingResource.SetGroupVersionKind(resource.GroupVersionKind())
+		err := r.Get(ctx, types.NamespacedName{Name: resource.GetName(), Namespace: resource.GetNamespace()}, existingResource)
+		if err != nil && !apierrors.IsNotFound(err) {
+			log.Info(fmt.Sprintf("Unable to get existing resource: %+v", err.Error()))
+			return ctrl.Result{}, err
+		} else if apierrors.IsNotFound(err) {
+			// Resource doesn't exist, no need to adopt
+			continue
+		}
+
+		if err := ctrl.SetControllerReference(mce, existingResource, r.Scheme); err != nil {
+			return ctrl.Result{}, errors.Wrapf(err, "Error setting controller reference on resource %s", existingResource.GetName())
+		}
+
+		err = r.Update(ctx, existingResource)
+		if err != nil {
+			log.Info(fmt.Sprintf("Unable to update existing resource: %+v", err.Error()))
+			return ctrl.Result{}, err
+		}
 	}
 	return ctrl.Result{}, nil
 }
