@@ -67,8 +67,11 @@ type MultiClusterEngineReconciler struct {
 }
 
 const (
-	requeuePeriod      = 15 * time.Second
-	backplaneFinalizer = "finalizer.multicluster.openshift.io"
+	requeuePeriod                 = 15 * time.Second
+	backplaneFinalizer            = "finalizer.multicluster.openshift.io"
+	chartsDir                     = "pkg/templates/charts"
+	managedServiceAccountChartDir = "pkg/templates/managed-serviceaccount/charts"
+	managedServiceAccountCRDPath  = "pkg/templates/managed-serviceaccount/crds"
 )
 
 //+kubebuilder:rbac:groups=multicluster.openshift.io,resources=multiclusterengines,verbs=get;list;watch;create;update;patch;delete
@@ -251,8 +254,9 @@ func (r *MultiClusterEngineReconciler) SetupWithManager(mgr ctrl.Manager) error 
 func (r *MultiClusterEngineReconciler) DeploySubcomponents(ctx context.Context, backplaneConfig *backplanev1alpha1.MultiClusterEngine) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 
+	chartsDir := chartsDir
 	// Renders all templates from charts
-	templates, errs := renderer.RenderTemplates(backplaneConfig, r.Images)
+	templates, errs := renderer.RenderTemplates(chartsDir, backplaneConfig, r.Images)
 	if len(errs) > 0 {
 		for _, err := range errs {
 			log.Info(err.Error())
@@ -262,30 +266,9 @@ func (r *MultiClusterEngineReconciler) DeploySubcomponents(ctx context.Context, 
 
 	// Applies all templates
 	for _, template := range templates {
-		if template.GetKind() == "Deployment" {
-			r.StatusManager.AddComponent(status.DeploymentStatus{
-				NamespacedName: types.NamespacedName{Name: template.GetName(), Namespace: template.GetNamespace()},
-			})
-		}
-
-		// Set owner reference.
-		err := ctrl.SetControllerReference(backplaneConfig, template, r.Scheme)
+		result, err := r.applyTemplate(ctx, backplaneConfig, template)
 		if err != nil {
-			return ctrl.Result{}, errors.Wrapf(err, "Error setting controller reference on resource %s", template.GetName())
-		}
-
-		if template.GetKind() == "APIService" {
-			result, err := r.ensureUnstructuredResource(ctx, backplaneConfig, template)
-			if err != nil {
-				return result, err
-			}
-		} else {
-			// Apply the object data.
-			force := true
-			err = r.Client.Patch(ctx, template, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
-			if err != nil {
-				return ctrl.Result{}, errors.Wrapf(err, "error applying object Name: %s Kind: %s", template.GetName(), template.GetKind())
-			}
+			return result, err
 		}
 	}
 
@@ -293,6 +276,80 @@ func (r *MultiClusterEngineReconciler) DeploySubcomponents(ctx context.Context, 
 	if err != nil {
 		return result, err
 	}
+
+	// Render CRD templates
+	msaToggle := true
+
+	if msaToggle {
+		managedServiceAccountCRDPath := managedServiceAccountCRDPath
+		_, errs := renderer.RenderCRDs(managedServiceAccountCRDPath)
+		if len(errs) > 0 {
+			for _, err := range errs {
+				log.Info(err.Error())
+			}
+			return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+		}
+
+		// Renders all templates from charts
+		managedServiceAccountChartDir := managedServiceAccountChartDir
+		managedServiceAccountTemplates, errs := renderer.RenderTemplates(managedServiceAccountChartDir, backplaneConfig, r.Images)
+		if len(errs) > 0 {
+			for _, err := range errs {
+				log.Info(err.Error())
+			}
+			return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+		}
+
+		// Applies all templates
+		for _, template := range managedServiceAccountTemplates {
+			result, err := r.applyTemplate(ctx, backplaneConfig, template)
+			if err != nil {
+				return result, err
+			}
+		}
+
+		result, err := r.ensureManagedServiceAccount(ctx, backplaneConfig)
+		if err != nil {
+			return result, err
+		}
+
+	}
+
+	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterEngineReconciler) applyTemplate(ctx context.Context, backplaneConfig *backplanev1alpha1.MultiClusterEngine, template *unstructured.Unstructured) (ctrl.Result, error) {
+	// log := log.FromContext(ctx)
+	if template.GetKind() == "Deployment" {
+		r.StatusManager.AddComponent(status.DeploymentStatus{
+			NamespacedName: types.NamespacedName{Name: template.GetName(), Namespace: template.GetNamespace()},
+		})
+	}
+
+	// Set owner reference.
+	err := ctrl.SetControllerReference(backplaneConfig, template, r.Scheme)
+	if err != nil {
+		return ctrl.Result{}, errors.Wrapf(err, "Error setting controller reference on resource %s", template.GetName())
+	}
+
+	if template.GetKind() == "APIService" {
+		result, err := r.ensureUnstructuredResource(ctx, backplaneConfig, template)
+		if err != nil {
+			return result, err
+		}
+	} else {
+		// Apply the object data.
+		force := true
+		err = r.Client.Patch(ctx, template, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
+		if err != nil {
+			return ctrl.Result{}, errors.Wrapf(err, "error applying object Name: %s Kind: %s", template.GetName(), template.GetKind())
+		}
+	}
+	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterEngineReconciler) ensureManagedServiceAccount(ctx context.Context, backplaneConfig *backplanev1alpha1.MultiClusterEngine) (ctrl.Result, error) {
+	// log := log.FromContext(ctx)
 
 	return ctrl.Result{}, nil
 }

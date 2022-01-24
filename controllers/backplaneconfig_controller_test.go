@@ -92,6 +92,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 				filepath.Join("..", "pkg", "templates", "crds", "cluster-manager"),
 				filepath.Join("..", "pkg", "templates", "crds", "hive-operator"),
 				filepath.Join("..", "pkg", "templates", "crds", "foundation"),
+				filepath.Join("..", "test", "mock-crds"),
 			},
 			CRDInstallOptions: envtest.CRDInstallOptions{
 				CleanUpAfterUse: true,

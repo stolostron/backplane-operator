@@ -17,12 +17,17 @@ import (
 	"testing"
 )
 
+const (
+	chartsDir = "pkg/templates/charts"
+	crdsDir   = "pkg/templates/crds"
+)
+
 func TestRender(t *testing.T) {
 
 	os.Setenv("DIRECTORY_OVERRIDE", "../../")
 	defer os.Unsetenv("DIRECTORY_OVERRIDE")
-
-	crds, errs := RenderCRDs()
+	crdsDir := crdsDir
+	crds, errs := RenderCRDs(crdsDir)
 	if len(errs) > 0 {
 		for _, err := range errs {
 			t.Logf(err.Error())
@@ -72,8 +77,8 @@ func TestRender(t *testing.T) {
 	for _, v := range utils.GetTestImages() {
 		testImages[v] = "quay.io/test/test:Test"
 	}
-
-	templates, errs := RenderTemplates(testBackplane, testImages)
+	chartsDir := chartsDir
+	templates, errs := RenderTemplates(chartsDir, testBackplane, testImages)
 	if len(errs) > 0 {
 		for _, err := range errs {
 			t.Logf(err.Error())

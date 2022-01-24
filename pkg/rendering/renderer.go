@@ -22,11 +22,6 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-const (
-	crdsDir   = "pkg/templates/crds"
-	chartsDir = "pkg/templates/charts"
-)
-
 type Values struct {
 	Global    Global    `yaml:"global" structs:"global"`
 	HubConfig HubConfig `yaml:"hubconfig" structs:"hubconfig"`
@@ -47,17 +42,16 @@ type HubConfig struct {
 	Tolerations  []corev1.Toleration `yaml:"tolerations" structs:"tolerations"`
 }
 
-func RenderCRDs() ([]*unstructured.Unstructured, []error) {
+func RenderCRDs(crdDir string) ([]*unstructured.Unstructured, []error) {
 	var crds []*unstructured.Unstructured
 	errs := []error{}
 
-	crdPath := crdsDir
 	if val, ok := os.LookupEnv("DIRECTORY_OVERRIDE"); ok {
-		crdPath = path.Join(val, crdPath)
+		crdDir = path.Join(val, crdDir)
 	}
 
 	// Read CRD files
-	err := filepath.Walk(crdPath, func(path string, info os.FileInfo, err error) error {
+	err := filepath.Walk(crdDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			fmt.Println(err.Error())
 			return err
@@ -83,11 +77,10 @@ func RenderCRDs() ([]*unstructured.Unstructured, []error) {
 	return crds, errs
 }
 
-func RenderTemplates(backplaneConfig *v1alpha1.MultiClusterEngine, images map[string]string) ([]*unstructured.Unstructured, []error) {
+func RenderTemplates(chartDir string, backplaneConfig *v1alpha1.MultiClusterEngine, images map[string]string) ([]*unstructured.Unstructured, []error) {
 	log := log.FromContext(context.Background())
 	var templates []*unstructured.Unstructured
 	errs := []error{}
-	chartDir := chartsDir
 	if val, ok := os.LookupEnv("DIRECTORY_OVERRIDE"); ok {
 		chartDir = path.Join(val, chartDir)
 	}
