@@ -277,17 +277,35 @@ func (r *MultiClusterEngineReconciler) DeploySubcomponents(ctx context.Context, 
 		return result, err
 	}
 
+	result, err = r.ensureManagedServiceAccount(ctx, backplaneConfig)
+	if err != nil {
+		return result, err
+	}
+
+	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterEngineReconciler) ensureManagedServiceAccount(ctx context.Context, backplaneConfig *backplanev1alpha1.MultiClusterEngine) (ctrl.Result, error) {
+	log := log.FromContext(ctx)
 	// Render CRD templates
 	msaToggle := true
 
 	if msaToggle {
 		managedServiceAccountCRDPath := managedServiceAccountCRDPath
-		_, errs := renderer.RenderCRDs(managedServiceAccountCRDPath)
+		managedServiceAccountCRDs, errs := renderer.RenderCRDs(managedServiceAccountCRDPath)
 		if len(errs) > 0 {
 			for _, err := range errs {
 				log.Info(err.Error())
 			}
 			return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+		}
+
+		// Apply all CRDs
+		for _, crd := range managedServiceAccountCRDs {
+			result, err := r.applyTemplate(ctx, backplaneConfig, crd)
+			if err != nil {
+				return result, err
+			}
 		}
 
 		// Renders all templates from charts
@@ -307,14 +325,7 @@ func (r *MultiClusterEngineReconciler) DeploySubcomponents(ctx context.Context, 
 				return result, err
 			}
 		}
-
-		result, err := r.ensureManagedServiceAccount(ctx, backplaneConfig)
-		if err != nil {
-			return result, err
-		}
-
 	}
-
 	return ctrl.Result{}, nil
 }
 
@@ -345,12 +356,6 @@ func (r *MultiClusterEngineReconciler) applyTemplate(ctx context.Context, backpl
 			return ctrl.Result{}, errors.Wrapf(err, "error applying object Name: %s Kind: %s", template.GetName(), template.GetKind())
 		}
 	}
-	return ctrl.Result{}, nil
-}
-
-func (r *MultiClusterEngineReconciler) ensureManagedServiceAccount(ctx context.Context, backplaneConfig *backplanev1alpha1.MultiClusterEngine) (ctrl.Result, error) {
-	// log := log.FromContext(ctx)
-
 	return ctrl.Result{}, nil
 }
 
