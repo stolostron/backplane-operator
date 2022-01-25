@@ -57,6 +57,10 @@ type MultiClusterEngineSpec struct {
 	// Location where MCE resources will be placed
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Target Namespace",xDescriptors={"urn:alm:descriptor:io.kubernetes:text","urn:alm:descriptor:com.tectonic.ui:advanced"}
 	TargetNamespace string `json:"targetNamespace,omitempty"`
+
+	// Enable managed-serviceaccount component (Tech Preview).
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Enable ManagedServiceAccount",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
+	EnableManagedServiceAccount bool `json:"enableManagedServiceAccount,omitempty"`
 }
 
 // Overrides provides developer overrides for MCE installation

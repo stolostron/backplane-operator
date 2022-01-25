@@ -35,6 +35,12 @@ spec:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:select:High
         - urn:alm:descriptor:com.tectonic.ui:select:Basic
+      - description: Enable managed-serviceaccount component (Tech Preview).
+        displayName: Enable ManagedServiceAccount
+        path: enableManagedServiceAccount
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
       - description: Override pull secret for accessing MultiClusterEngine operand
           and endpoint images
         displayName: Image Pull Secret
