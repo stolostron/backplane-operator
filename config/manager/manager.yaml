@@ -27,6 +27,11 @@ spec:
         - --leader-elect
         command:
         - /app/backplane-operator
+        env:
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: controller:latest
         imagePullPolicy: IfNotPresent
         livenessProbe:
