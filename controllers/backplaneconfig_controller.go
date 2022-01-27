@@ -415,12 +415,18 @@ func (r *MultiClusterEngineReconciler) deleteTemplate(ctx context.Context, backp
 		log.Info(fmt.Sprintf("finalizing template: %s\n", template.GetName()))
 		err := r.Client.Delete(ctx, template)
 		if err != nil {
-			log.Error(err, "Failed to create delete template")
+			log.Error(err, "Failed to delete template")
 			return ctrl.Result{}, err
 		}
-	} else if err != nil && !(apierrors.IsNotFound(err) || apierrors.IsInvalid(err)) { // Return error, if error is not 'not found' error
+		// NW wrong error
+	} else if err != nil && !apierrors.IsNotFound(err) { // Return error, if error is not 'not found' error
 		log.Error(err, "Odd error delete template")
 		return ctrl.Result{}, err
+	}
+	if template.GetKind() == "Deployment" {
+		r.StatusManager.RemoveComponent(status.DeploymentStatus{
+			NamespacedName: types.NamespacedName{Name: template.GetName(), Namespace: template.GetNamespace()},
+		})
 	}
 	return ctrl.Result{}, nil
 }
