@@ -7,20 +7,20 @@ import (
 	"reflect"
 	"testing"
 
-	backplanev1alpha1 "github.com/stolostron/backplane-operator/api/v1alpha1"
+	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestIsPaused(t *testing.T) {
 	t.Run("Unpaused MCE", func(t *testing.T) {
-		mce := &backplanev1alpha1.MultiClusterEngine{}
+		mce := &backplanev1.MultiClusterEngine{}
 		want := false
 		if got := IsPaused(mce); got != want {
 			t.Errorf("IsPaused() = %v, want %v", got, want)
 		}
 	})
 	t.Run("Paused MCE", func(t *testing.T) {
-		mce := &backplanev1alpha1.MultiClusterEngine{
+		mce := &backplanev1.MultiClusterEngine{
 			ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{AnnotationMCEPause: "true"}},
 		}
 		want := true
@@ -29,7 +29,7 @@ func TestIsPaused(t *testing.T) {
 		}
 	})
 	t.Run("Pause label false MCE", func(t *testing.T) {
-		mce := &backplanev1alpha1.MultiClusterEngine{
+		mce := &backplanev1.MultiClusterEngine{
 			ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{AnnotationMCEPause: "false"}},
 		}
 		want := false
@@ -42,7 +42,7 @@ func TestIsPaused(t *testing.T) {
 
 func Test_getAnnotation(t *testing.T) {
 	type args struct {
-		instance *backplanev1alpha1.MultiClusterEngine
+		instance *backplanev1.MultiClusterEngine
 		key      string
 	}
 	tests := []struct {
@@ -53,7 +53,7 @@ func Test_getAnnotation(t *testing.T) {
 		{
 			name: "Annotation does not exist",
 			args: args{
-				instance: &backplanev1alpha1.MultiClusterEngine{},
+				instance: &backplanev1.MultiClusterEngine{},
 				key:      "",
 			},
 			want: "",
@@ -61,7 +61,7 @@ func Test_getAnnotation(t *testing.T) {
 		{
 			name: "Annotation exists",
 			args: args{
-				instance: &backplanev1alpha1.MultiClusterEngine{
+				instance: &backplanev1.MultiClusterEngine{
 					ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{"foo": "bar"}},
 				},
 				key: "foo",

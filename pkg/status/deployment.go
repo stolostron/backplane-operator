@@ -5,7 +5,7 @@ import (
 	"context"
 	"fmt"
 
-	bpv1alpha1 "github.com/stolostron/backplane-operator/api/v1alpha1"
+	bpv1 "github.com/stolostron/backplane-operator/api/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -32,7 +32,7 @@ func (ds DeploymentStatus) GetKind() string {
 }
 
 // Converts a deployment's status to a backplane component status
-func (ds DeploymentStatus) Status(k8sClient client.Client) bpv1alpha1.ComponentCondition {
+func (ds DeploymentStatus) Status(k8sClient client.Client) bpv1.ComponentCondition {
 	deploy := &appsv1.Deployment{}
 	err := k8sClient.Get(context.TODO(), ds.NamespacedName, deploy)
 	if err != nil && !apierrors.IsNotFound(err) {
@@ -45,13 +45,13 @@ func (ds DeploymentStatus) Status(k8sClient client.Client) bpv1alpha1.ComponentC
 	return mapDeployment(deploy)
 }
 
-func mapDeployment(ds *appsv1.Deployment) bpv1alpha1.ComponentCondition {
+func mapDeployment(ds *appsv1.Deployment) bpv1.ComponentCondition {
 	if len(ds.Status.Conditions) < 1 {
 		return unknownStatus(ds.Name, ds.Kind)
 	}
 
 	dcs := latestDeployCondition(ds.Status.Conditions)
-	ret := bpv1alpha1.ComponentCondition{
+	ret := bpv1.ComponentCondition{
 		Name:               ds.Name,
 		Kind:               "Deployment",
 		Type:               string(dcs.Type),
@@ -70,7 +70,7 @@ func mapDeployment(ds *appsv1.Deployment) bpv1alpha1.ComponentCondition {
 	// despite an available deployment present. To avoid confusion we should show a different status.
 	if dcs.Type == appsv1.DeploymentAvailable && dcs.Status == corev1.ConditionTrue && ret.Available == false {
 		sub := progressingDeployCondition(ds.Status.Conditions)
-		ret = bpv1alpha1.ComponentCondition{
+		ret = bpv1.ComponentCondition{
 			Name:               ds.Name,
 			Kind:               "Deployment",
 			Type:               string(sub.Type),

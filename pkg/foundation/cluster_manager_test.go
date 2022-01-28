@@ -6,14 +6,14 @@ package foundation
 import (
 	"testing"
 
-	v1alpha1 "github.com/stolostron/backplane-operator/api/v1alpha1"
+	v1 "github.com/stolostron/backplane-operator/api/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 func TestClusterManager(t *testing.T) {
 	tests := []struct {
 		name                      string
-		mce                       *v1alpha1.MultiClusterEngine
+		mce                       *v1.MultiClusterEngine
 		imageOverrides            map[string]string
 		expectedNodeSelector      map[string]string
 		expectedRegistrationImage string
@@ -22,7 +22,7 @@ func TestClusterManager(t *testing.T) {
 	}{
 		{
 			name: "craete cluster manager without nodeSelector",
-			mce:  &v1alpha1.MultiClusterEngine{},
+			mce:  &v1.MultiClusterEngine{},
 			imageOverrides: map[string]string{
 				"registration": "quay.io/stolostron/registration@sha256:fe95bca419976ca8ffe608bc66afcead6ef333b863f22be55df57c89ded75dda",
 				"work":         "quay.io/stolostron/work@sha256:856d2151423f020952d9b9253676c1c4d462fab6722c8af4885fe2b19ccd1be0",
@@ -34,7 +34,7 @@ func TestClusterManager(t *testing.T) {
 		},
 		{
 			name: "craete cluster manager with nodeSelector",
-			mce:  &v1alpha1.MultiClusterEngine{Spec: v1alpha1.MultiClusterEngineSpec{NodeSelector: map[string]string{"node-role.kubernetes.io/infra": ""}}},
+			mce:  &v1.MultiClusterEngine{Spec: v1.MultiClusterEngineSpec{NodeSelector: map[string]string{"node-role.kubernetes.io/infra": ""}}},
 			imageOverrides: map[string]string{
 				"registration": "quay.io/stolostron/registration@sha256:fe95bca419976ca8ffe608bc66afcead6ef333b863f22be55df57c89ded75dda",
 				"work":         "quay.io/stolostron/work@sha256:856d2151423f020952d9b9253676c1c4d462fab6722c8af4885fe2b19ccd1be0",

@@ -52,7 +52,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	backplanev1alpha1 "github.com/stolostron/backplane-operator/api/v1alpha1"
+	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 	"github.com/stolostron/backplane-operator/controllers"
 	clustermanager "open-cluster-management.io/api/operator/v1"
 	//+kubebuilder:scaffold:imports
@@ -70,7 +70,7 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
-	utilruntime.Must(backplanev1alpha1.AddToScheme(scheme))
+	utilruntime.Must(backplanev1.AddToScheme(scheme))
 
 	utilruntime.Must(apiregistrationv1.AddToScheme(scheme))
 
@@ -151,7 +151,7 @@ func main() {
 			os.Exit(1)
 		}
 
-		if err = (&backplanev1alpha1.MultiClusterEngine{}).SetupWebhookWithManager(mgr); err != nil {
+		if err = (&backplanev1.MultiClusterEngine{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "MultiClusterEngine")
 			os.Exit(1)
 		}

@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"os"
 
-	backplanev1alpha1 "github.com/stolostron/backplane-operator/api/v1alpha1"
+	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -48,17 +48,17 @@ func ProxyEnvVarsAreSet() bool {
 	return false
 }
 
-func DefaultReplicaCount(mce *backplanev1alpha1.MultiClusterEngine) int {
-	if mce.Spec.AvailabilityConfig == backplanev1alpha1.HABasic {
+func DefaultReplicaCount(mce *backplanev1.MultiClusterEngine) int {
+	if mce.Spec.AvailabilityConfig == backplanev1.HABasic {
 		return 1
 	}
 	return 2
 }
 
 //AvailabilityConfigIsValid ...
-func AvailabilityConfigIsValid(config backplanev1alpha1.AvailabilityType) bool {
+func AvailabilityConfigIsValid(config backplanev1.AvailabilityType) bool {
 	switch config {
-	case backplanev1alpha1.HAHigh, backplanev1alpha1.HABasic:
+	case backplanev1.HAHigh, backplanev1.HABasic:
 		return true
 	default:
 		return false
