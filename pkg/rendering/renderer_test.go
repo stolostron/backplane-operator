@@ -4,7 +4,7 @@
 package renderer
 
 import (
-	backplane "github.com/stolostron/backplane-operator/api/v1alpha1"
+	backplane "github.com/stolostron/backplane-operator/api/v1"
 	"github.com/stolostron/backplane-operator/pkg/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"

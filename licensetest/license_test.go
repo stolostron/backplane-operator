@@ -18,8 +18,8 @@ var slashScanner = regexp.MustCompile(`// Copyright Contributors to the Open Clu
 var poundScanner = regexp.MustCompile(`\# Copyright Contributors to the Open Cluster Management project`)
 
 var skip = map[string]bool{
-	"../api/v1alpha1/zz_generated.deepcopy.go": true, // Generated file
-	"../testbin": true,
+	"../api/v1/zz_generated.deepcopy.go": true, // Generated file
+	"../testbin":                         true,
 }
 
 func TestLicense(t *testing.T) {

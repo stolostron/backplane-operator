@@ -3,12 +3,12 @@
 package hive
 
 import (
-	v1alpha1 "github.com/stolostron/backplane-operator/api/v1alpha1"
+	v1 "github.com/stolostron/backplane-operator/api/v1"
 	"github.com/stolostron/backplane-operator/pkg/utils"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
-func HiveConfig(bpc *v1alpha1.MultiClusterEngine) *unstructured.Unstructured {
+func HiveConfig(bpc *v1.MultiClusterEngine) *unstructured.Unstructured {
 
 	cm := &unstructured.Unstructured{
 		Object: map[string]interface{}{

@@ -2,7 +2,7 @@
 package status
 
 import (
-	bpv1alpha1 "github.com/stolostron/backplane-operator/api/v1alpha1"
+	v1 "github.com/stolostron/backplane-operator/api/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -27,8 +27,8 @@ const (
 )
 
 // NewCondition creates a new condition.
-func NewCondition(condType bpv1alpha1.MultiClusterEngineConditionType, status metav1.ConditionStatus, reason, message string) bpv1alpha1.MultiClusterEngineCondition {
-	return bpv1alpha1.MultiClusterEngineCondition{
+func NewCondition(condType v1.MultiClusterEngineConditionType, status metav1.ConditionStatus, reason, message string) v1.MultiClusterEngineCondition {
+	return v1.MultiClusterEngineCondition{
 		Type:               condType,
 		Status:             status,
 		LastUpdateTime:     metav1.Now(),
@@ -39,7 +39,7 @@ func NewCondition(condType bpv1alpha1.MultiClusterEngineConditionType, status me
 }
 
 // SetCondition sets the status condition. It either overwrites the existing one or creates a new one.
-func setCondition(conditions []bpv1alpha1.MultiClusterEngineCondition, c bpv1alpha1.MultiClusterEngineCondition) []bpv1alpha1.MultiClusterEngineCondition {
+func setCondition(conditions []v1.MultiClusterEngineCondition, c v1.MultiClusterEngineCondition) []v1.MultiClusterEngineCondition {
 	currentCond := getCondition(conditions, c.Type)
 	if currentCond != nil && currentCond.Status == c.Status && currentCond.Reason == c.Reason {
 		// Condition already present
@@ -56,7 +56,7 @@ func setCondition(conditions []bpv1alpha1.MultiClusterEngineCondition, c bpv1alp
 }
 
 // GetCondition returns the condition you're looking for by type
-func getCondition(conditions []bpv1alpha1.MultiClusterEngineCondition, condType bpv1alpha1.MultiClusterEngineConditionType) *bpv1alpha1.MultiClusterEngineCondition {
+func getCondition(conditions []v1.MultiClusterEngineCondition, condType v1.MultiClusterEngineConditionType) *v1.MultiClusterEngineCondition {
 	for i := range conditions {
 		c := conditions[i]
 		if c.Type == condType {
@@ -67,8 +67,8 @@ func getCondition(conditions []bpv1alpha1.MultiClusterEngineCondition, condType 
 }
 
 // filterOutCondition returns a new slice of hub conditions without conditions with the provided type.
-func filterOutCondition(conditions []bpv1alpha1.MultiClusterEngineCondition, condType bpv1alpha1.MultiClusterEngineConditionType) []bpv1alpha1.MultiClusterEngineCondition {
-	var newConditions []bpv1alpha1.MultiClusterEngineCondition
+func filterOutCondition(conditions []v1.MultiClusterEngineCondition, condType v1.MultiClusterEngineConditionType) []v1.MultiClusterEngineCondition {
+	var newConditions []v1.MultiClusterEngineCondition
 	for _, c := range conditions {
 		if c.Type == condType {
 			continue
