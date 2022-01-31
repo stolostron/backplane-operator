@@ -51,9 +51,19 @@ spec:
                 description: 'Specifies deployment replication for improved availability.
                   Options are: Basic and High (default)'
                 type: string
-              enableManagedServiceAccount:
-                description: Enable managed-serviceaccount component (Tech Preview).
-                type: boolean
+              componentConfig:
+                description: Provides optional configuration for components
+                properties:
+                  managedServiceAccount:
+                    description: Optional configuration items for the managed-serviceaccount
+                      component
+                    properties:
+                      enable:
+                        description: Enable managed-serviceaccount component (Tech
+                          Preview).
+                        type: boolean
+                    type: object
+                type: object
               imagePullSecret:
                 description: Override pull secret for accessing MultiClusterEngine
                   operand and endpoint images

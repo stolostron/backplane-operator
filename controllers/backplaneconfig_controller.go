@@ -277,7 +277,7 @@ func (r *MultiClusterEngineReconciler) DeploySubcomponents(ctx context.Context, 
 		return result, err
 	}
 
-	if backplaneConfig.Spec.EnableManagedServiceAccount {
+	if backplaneConfig.ComponentEnabled(backplanev1alpha1.ManagedServiceAccount) {
 		if foundation.CanInstallAddons(ctx, r.Client) {
 			result, err = r.ensureManagedServiceAccount(ctx, backplaneConfig)
 			if err != nil {
@@ -421,12 +421,12 @@ func (r *MultiClusterEngineReconciler) deleteTemplate(ctx context.Context, backp
 		err := r.Client.Delete(ctx, template)
 		if err != nil {
 			log.Error(err, "Failed to delete template")
+			// NW ADD STATUS CHECK HERE
 			return ctrl.Result{}, err
 		}
-		// NW wrong error
-
 	} else if err != nil && !apierrors.IsNotFound(err) { // Return error, if error is not 'not found' error
 		log.Error(err, "Odd error delete template")
+		// NW ADD STATUS CHECK HERE
 		return ctrl.Result{}, err
 	}
 	if template.GetKind() == "Deployment" {
