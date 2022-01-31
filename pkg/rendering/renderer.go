@@ -77,7 +77,7 @@ func RenderCRDs(crdDir string) ([]*unstructured.Unstructured, []error) {
 	return crds, errs
 }
 
-func RenderTemplates(chartDir string, backplaneConfig *v1alpha1.MultiClusterEngine, images map[string]string) ([]*unstructured.Unstructured, []error) {
+func RenderCharts(chartDir string, backplaneConfig *v1alpha1.MultiClusterEngine, images map[string]string) ([]*unstructured.Unstructured, []error) {
 	log := log.FromContext(context.Background())
 	var templates []*unstructured.Unstructured
 	errs := []error{}
@@ -88,44 +88,72 @@ func RenderTemplates(chartDir string, backplaneConfig *v1alpha1.MultiClusterEngi
 	if err != nil {
 		errs = append(errs, err)
 	}
+	for _, chart := range charts {
+		chartPath := filepath.Join(chartDir, chart.Name())
+		chartTemplates, errs := RenderTemplates(chartPath, backplaneConfig, images)
+		if len(errs) > 0 {
+			for _, err := range errs {
+				log.Info(err.Error())
+			}
+			return nil, errs
+		}
+		templates = append(templates, chartTemplates...)
+	}
+	return templates, nil
+}
 
+func RenderChart(chartPath string, backplaneConfig *v1alpha1.MultiClusterEngine, images map[string]string) ([]*unstructured.Unstructured, []error) {
+	log := log.FromContext(context.Background())
+	errs := []error{}
+	if val, ok := os.LookupEnv("DIRECTORY_OVERRIDE"); ok {
+		chartPath = path.Join(val, chartPath)
+	}
+	chartTemplates, errs := RenderTemplates(chartPath, backplaneConfig, images)
+	if len(errs) > 0 {
+		for _, err := range errs {
+			log.Info(err.Error())
+		}
+		return nil, errs
+	}
+	return chartTemplates, nil
+
+}
+
+func RenderTemplates(chartPath string, backplaneConfig *v1alpha1.MultiClusterEngine, images map[string]string) ([]*unstructured.Unstructured, []error) {
+	log := log.FromContext(context.Background())
+	var templates []*unstructured.Unstructured
+	errs := []error{}
+	chart, err := loader.Load(chartPath)
+	if err != nil {
+		log.Info(fmt.Sprintf("error loading chart: %s", chart.Name()))
+		return nil, append(errs, err)
+	}
+	valuesYaml := &Values{}
+	injectValuesOverrides(valuesYaml, backplaneConfig, images)
 	helmEngine := engine.Engine{
 		Strict:   true,
 		LintMode: false,
 	}
+	rawTemplates, err := helmEngine.Render(chart, chartutil.Values{"Values": structs.Map(valuesYaml)})
+	if err != nil {
+		log.Info(fmt.Sprintf("error rendering chart: %s", chart.Name()))
+		return nil, append(errs, err)
+	}
 
-	for _, chart := range charts {
-
-		chart, err := loader.Load(filepath.Join(chartDir, chart.Name()))
-		if err != nil {
-			log.Info(fmt.Sprintf("error loading chart: %s", chart.Name()))
-			return nil, append(errs, err)
+	for fileName, templateFile := range rawTemplates {
+		unstructured := &unstructured.Unstructured{}
+		if err = yaml.Unmarshal([]byte(templateFile), unstructured); err != nil {
+			return nil, append(errs, fmt.Errorf("error converting file %s to unstructured", fileName))
 		}
 
-		valuesYaml := &Values{}
-		injectValuesOverrides(valuesYaml, backplaneConfig, images)
+		utils.AddBackplaneConfigLabels(unstructured, backplaneConfig.Name)
 
-		rawTemplates, err := helmEngine.Render(chart, chartutil.Values{"Values": structs.Map(valuesYaml)})
-		if err != nil {
-			log.Info(fmt.Sprintf("error rendering chart: %s", chart.Name()))
-			return nil, append(errs, err)
+		// Add namespace to namespaced resources
+		switch unstructured.GetKind() {
+		case "Deployment", "ServiceAccount", "Role", "RoleBinding", "Service":
+			unstructured.SetNamespace(backplaneConfig.Spec.TargetNamespace)
 		}
-
-		for fileName, templateFile := range rawTemplates {
-			unstructured := &unstructured.Unstructured{}
-			if err = yaml.Unmarshal([]byte(templateFile), unstructured); err != nil {
-				return nil, append(errs, fmt.Errorf("error converting file %s to unstructured", fileName))
-			}
-
-			utils.AddBackplaneConfigLabels(unstructured, backplaneConfig.Name)
-
-			// Add namespace to namespaced resources
-			switch unstructured.GetKind() {
-			case "Deployment", "ServiceAccount", "Role", "RoleBinding", "Service":
-				unstructured.SetNamespace(backplaneConfig.Spec.TargetNamespace)
-			}
-			templates = append(templates, unstructured)
-		}
+		templates = append(templates, unstructured)
 	}
 
 	return templates, errs

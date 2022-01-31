@@ -69,8 +69,8 @@ type MultiClusterEngineReconciler struct {
 const (
 	requeuePeriod                 = 15 * time.Second
 	backplaneFinalizer            = "finalizer.multicluster.openshift.io"
-	chartsDir                     = "pkg/templates/charts"
-	managedServiceAccountChartDir = "pkg/templates/managed-serviceaccount/charts"
+	alwaysChartsDir               = "pkg/templates/charts/always"
+	managedServiceAccountChartDir = "pkg/templates/charts/toggle/managed-serviceaccount"
 	managedServiceAccountCRDPath  = "pkg/templates/managed-serviceaccount/crds"
 )
 
@@ -254,9 +254,9 @@ func (r *MultiClusterEngineReconciler) SetupWithManager(mgr ctrl.Manager) error 
 func (r *MultiClusterEngineReconciler) DeploySubcomponents(ctx context.Context, backplaneConfig *backplanev1alpha1.MultiClusterEngine) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 
-	chartsDir := chartsDir
+	chartsDir := alwaysChartsDir
 	// Renders all templates from charts
-	templates, errs := renderer.RenderTemplates(chartsDir, backplaneConfig, r.Images)
+	templates, errs := renderer.RenderCharts(chartsDir, backplaneConfig, r.Images)
 	if len(errs) > 0 {
 		for _, err := range errs {
 			log.Info(err.Error())
@@ -278,9 +278,11 @@ func (r *MultiClusterEngineReconciler) DeploySubcomponents(ctx context.Context, 
 	}
 
 	if backplaneConfig.Spec.EnableManagedServiceAccount {
-		result, err = r.ensureManagedServiceAccount(ctx, backplaneConfig)
-		if err != nil {
-			return result, err
+		if foundation.CanInstallAddons(ctx, r.Client) {
+			result, err = r.ensureManagedServiceAccount(ctx, backplaneConfig)
+			if err != nil {
+				return result, err
+			}
 		}
 	} else {
 		result, err = r.ensureNoManagedServiceAccount(ctx, backplaneConfig)
@@ -314,7 +316,7 @@ func (r *MultiClusterEngineReconciler) ensureManagedServiceAccount(ctx context.C
 
 	// Renders all templates from charts
 	chartPath := managedServiceAccountChartDir
-	templates, errs := renderer.RenderTemplates(chartPath, backplaneConfig, r.Images)
+	templates, errs := renderer.RenderChart(chartPath, backplaneConfig, r.Images)
 	if len(errs) > 0 {
 		for _, err := range errs {
 			log.Info(err.Error())
@@ -337,7 +339,7 @@ func (r *MultiClusterEngineReconciler) ensureNoManagedServiceAccount(ctx context
 
 	// Renders all templates from charts
 	chartPath := managedServiceAccountChartDir
-	templates, errs := renderer.RenderTemplates(chartPath, backplaneConfig, r.Images)
+	templates, errs := renderer.RenderChart(chartPath, backplaneConfig, r.Images)
 	if len(errs) > 0 {
 		for _, err := range errs {
 			log.Info(err.Error())
@@ -347,6 +349,10 @@ func (r *MultiClusterEngineReconciler) ensureNoManagedServiceAccount(ctx context
 
 	// Deletes all templates
 	for _, template := range templates {
+		if template.GetKind() == foundation.ClusterManagementAddonKind && !foundation.CanInstallAddons(ctx, r.Client) {
+			// Can't delete ClusterManagementAddon if Kind doesn't exists
+			continue
+		}
 		result, err := r.deleteTemplate(ctx, backplaneConfig, template)
 		if err != nil {
 			log.Error(err, "Failed to delete MSA template")
@@ -409,7 +415,6 @@ func (r *MultiClusterEngineReconciler) applyTemplate(ctx context.Context, backpl
 // means the resource is in the process of deleting.
 func (r *MultiClusterEngineReconciler) deleteTemplate(ctx context.Context, backplaneConfig *backplanev1alpha1.MultiClusterEngine, template *unstructured.Unstructured) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
-
 	err := r.Client.Get(ctx, types.NamespacedName{Name: template.GetName(), Namespace: template.GetNamespace()}, template)
 	if err == nil { // If resource exists, delete
 		log.Info(fmt.Sprintf("finalizing template: %s\n", template.GetName()))
@@ -419,6 +424,7 @@ func (r *MultiClusterEngineReconciler) deleteTemplate(ctx context.Context, backp
 			return ctrl.Result{}, err
 		}
 		// NW wrong error
+
 	} else if err != nil && !apierrors.IsNotFound(err) { // Return error, if error is not 'not found' error
 		log.Error(err, "Odd error delete template")
 		return ctrl.Result{}, err

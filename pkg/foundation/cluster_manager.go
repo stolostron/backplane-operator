@@ -33,6 +33,7 @@ const (
 
 	addonPath                     = "pkg/templates/clustermanagementaddons/"
 	clusterManagementAddonCRDName = "clustermanagementaddons.addon.open-cluster-management.io"
+	ClusterManagementAddonKind    = "ClusterManagementAddOn"
 )
 
 // RegistrationImage ...
