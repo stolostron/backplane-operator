@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	chartsDir = "pkg/templates/charts"
+	chartsDir = "pkg/templates/charts/always"
 	crdsDir   = "pkg/templates/crds"
 )
 
@@ -78,7 +78,7 @@ func TestRender(t *testing.T) {
 		testImages[v] = "quay.io/test/test:Test"
 	}
 	chartsDir := chartsDir
-	templates, errs := RenderTemplates(chartsDir, testBackplane, testImages)
+	templates, errs := RenderCharts(chartsDir, testBackplane, testImages)
 	if len(errs) > 0 {
 		for _, err := range errs {
 			t.Logf(err.Error())
