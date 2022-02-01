@@ -90,7 +90,7 @@ func RenderCharts(chartDir string, backplaneConfig *v1.MultiClusterEngine, image
 	}
 	for _, chart := range charts {
 		chartPath := filepath.Join(chartDir, chart.Name())
-		chartTemplates, errs := RenderTemplates(chartPath, backplaneConfig, images)
+		chartTemplates, errs := renderTemplates(chartPath, backplaneConfig, images)
 		if len(errs) > 0 {
 			for _, err := range errs {
 				log.Info(err.Error())
@@ -108,7 +108,7 @@ func RenderChart(chartPath string, backplaneConfig *v1.MultiClusterEngine, image
 	if val, ok := os.LookupEnv("DIRECTORY_OVERRIDE"); ok {
 		chartPath = path.Join(val, chartPath)
 	}
-	chartTemplates, errs := RenderTemplates(chartPath, backplaneConfig, images)
+	chartTemplates, errs := renderTemplates(chartPath, backplaneConfig, images)
 	if len(errs) > 0 {
 		for _, err := range errs {
 			log.Info(err.Error())
@@ -119,7 +119,7 @@ func RenderChart(chartPath string, backplaneConfig *v1.MultiClusterEngine, image
 
 }
 
-func RenderTemplates(chartPath string, backplaneConfig *v1.MultiClusterEngine, images map[string]string) ([]*unstructured.Unstructured, []error) {
+func renderTemplates(chartPath string, backplaneConfig *v1.MultiClusterEngine, images map[string]string) ([]*unstructured.Unstructured, []error) {
 	log := log.FromContext(context.Background())
 	var templates []*unstructured.Unstructured
 	errs := []error{}
