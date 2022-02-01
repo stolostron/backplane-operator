@@ -16,7 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/yaml"
 
-	v1alpha1 "github.com/stolostron/backplane-operator/api/v1alpha1"
+	v1 "github.com/stolostron/backplane-operator/api/v1"
 	"github.com/stolostron/backplane-operator/pkg/utils"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	ocmapiv1 "open-cluster-management.io/api/operator/v1"
@@ -51,7 +51,7 @@ func PlacementImage(overrides map[string]string) string {
 	return overrides[PlacementImageKey]
 }
 
-func ClusterManager(m *v1alpha1.MultiClusterEngine, overrides map[string]string) *unstructured.Unstructured {
+func ClusterManager(m *v1.MultiClusterEngine, overrides map[string]string) *unstructured.Unstructured {
 	log := log.FromContext(context.Background())
 
 	cmTolerations := []corev1.Toleration{}

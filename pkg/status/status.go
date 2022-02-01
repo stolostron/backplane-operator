@@ -2,7 +2,7 @@
 package status
 
 import (
-	bpv1alpha1 "github.com/stolostron/backplane-operator/api/v1alpha1"
+	bpv1 "github.com/stolostron/backplane-operator/api/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -11,14 +11,14 @@ type StatusTracker struct {
 	Client     client.Client
 	UID        string
 	Components []StatusReporter
-	Conditions []bpv1alpha1.MultiClusterEngineCondition
+	Conditions []bpv1.MultiClusterEngineCondition
 }
 
 // Flush out any cached data being tracked, and assigns the tracker to a UID
 func (sm *StatusTracker) Reset(uid string) {
 	sm.UID = uid
 	sm.Components = []StatusReporter{}
-	sm.Conditions = []bpv1alpha1.MultiClusterEngineCondition{}
+	sm.Conditions = []bpv1.MultiClusterEngineCondition{}
 }
 
 // Adds a StatusReporter to the list of statuses to watch
@@ -46,70 +46,70 @@ func (sm *StatusTracker) RemoveComponent(sr StatusReporter) {
 	}
 }
 
-func (sm *StatusTracker) AddCondition(c bpv1alpha1.MultiClusterEngineCondition) {
+func (sm *StatusTracker) AddCondition(c bpv1.MultiClusterEngineCondition) {
 	sm.Conditions = setCondition(sm.Conditions, c)
 }
 
-func (sm *StatusTracker) ReportStatus(mce bpv1alpha1.MultiClusterEngine) bpv1alpha1.MultiClusterEngineStatus {
+func (sm *StatusTracker) ReportStatus(mce bpv1.MultiClusterEngine) bpv1.MultiClusterEngineStatus {
 	components := sm.reportComponents()
 
 	// Infer available condition from component health
 	if allComponentsReady(components) {
-		sm.AddCondition(NewCondition(bpv1alpha1.MultiClusterEngineAvailable, metav1.ConditionTrue, ComponentsAvailableReason, ""))
+		sm.AddCondition(NewCondition(bpv1.MultiClusterEngineAvailable, metav1.ConditionTrue, ComponentsAvailableReason, ""))
 
 	} else {
-		sm.AddCondition(NewCondition(bpv1alpha1.MultiClusterEngineAvailable, metav1.ConditionFalse, ComponentsUnavailableReason, ""))
+		sm.AddCondition(NewCondition(bpv1.MultiClusterEngineAvailable, metav1.ConditionFalse, ComponentsUnavailableReason, ""))
 	}
 
 	conditions := sm.reportConditions()
 	phase := sm.reportPhase(mce, components, conditions)
 
-	return bpv1alpha1.MultiClusterEngineStatus{
+	return bpv1.MultiClusterEngineStatus{
 		Components: components,
 		Conditions: conditions,
 		Phase:      phase,
 	}
 }
 
-func (sm *StatusTracker) reportComponents() []bpv1alpha1.ComponentCondition {
-	components := []bpv1alpha1.ComponentCondition{}
+func (sm *StatusTracker) reportComponents() []bpv1.ComponentCondition {
+	components := []bpv1.ComponentCondition{}
 	for _, c := range sm.Components {
 		components = append(components, c.Status(sm.Client))
 	}
 	return components
 }
 
-func (sm *StatusTracker) reportConditions() []bpv1alpha1.MultiClusterEngineCondition {
+func (sm *StatusTracker) reportConditions() []bpv1.MultiClusterEngineCondition {
 	return sm.Conditions
 }
 
-func (sm *StatusTracker) reportPhase(mce bpv1alpha1.MultiClusterEngine, components []bpv1alpha1.ComponentCondition, conditions []bpv1alpha1.MultiClusterEngineCondition) bpv1alpha1.PhaseType {
-	progress := getCondition(conditions, bpv1alpha1.MultiClusterEngineProgressing)
+func (sm *StatusTracker) reportPhase(mce bpv1.MultiClusterEngine, components []bpv1.ComponentCondition, conditions []bpv1.MultiClusterEngineCondition) bpv1.PhaseType {
+	progress := getCondition(conditions, bpv1.MultiClusterEngineProgressing)
 
 	// If operator isn't progressing show error phase
 	if progress != nil && progress.Status == metav1.ConditionFalse {
-		return bpv1alpha1.MultiClusterEnginePhaseError
+		return bpv1.MultiClusterEnginePhaseError
 	}
 
 	// If deleting show uninstall phase
 	if mce.GetDeletionTimestamp() != nil {
-		return bpv1alpha1.MultiClusterEnginePhaseUninstalling
+		return bpv1.MultiClusterEnginePhaseUninstalling
 	}
 
 	// If status isn't tracking anything show error phase
 	if len(components) == 0 {
-		return bpv1alpha1.MultiClusterEnginePhaseError
+		return bpv1.MultiClusterEnginePhaseError
 	}
 
 	// If a component isn't ready show progressing phase
 	if !allComponentsReady(components) {
-		return bpv1alpha1.MultiClusterEnginePhaseProgressing
+		return bpv1.MultiClusterEnginePhaseProgressing
 	}
 
-	return bpv1alpha1.MultiClusterEnginePhaseAvailable
+	return bpv1.MultiClusterEnginePhaseAvailable
 }
 
-func allComponentsReady(components []bpv1alpha1.ComponentCondition) bool {
+func allComponentsReady(components []bpv1.ComponentCondition) bool {
 	if len(components) == 0 {
 		return false
 	}
@@ -126,11 +126,11 @@ type StatusReporter interface {
 	GetName() string
 	GetNamespace() string
 	GetKind() string
-	Status(client.Client) bpv1alpha1.ComponentCondition
+	Status(client.Client) bpv1.ComponentCondition
 }
 
-func unknownStatus(name, kind string) bpv1alpha1.ComponentCondition {
-	return bpv1alpha1.ComponentCondition{
+func unknownStatus(name, kind string) bpv1.ComponentCondition {
+	return bpv1.ComponentCondition{
 		Name:               name,
 		Kind:               kind,
 		Type:               "Unknown",

@@ -14,8 +14,8 @@ resources:
   domain: openshift.io
   group: multicluster
   kind: MultiClusterEngine
-  path: github.com/stolostron/backplane-operator/api/v1alpha1
-  version: v1alpha1
+  path: github.com/stolostron/backplane-operator/api/v1
+  version: v1
   webhooks:
     defaulting: true
     validation: true

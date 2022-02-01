@@ -5,7 +5,7 @@ import (
 	"context"
 	"fmt"
 
-	bpv1alpha1 "github.com/stolostron/backplane-operator/api/v1alpha1"
+	bpv1 "github.com/stolostron/backplane-operator/api/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -31,7 +31,7 @@ func (cms ClusterManagerStatus) GetKind() string {
 }
 
 // Converts a ClusterManager's status to a backplane component status
-func (cms ClusterManagerStatus) Status(k8sClient client.Client) bpv1alpha1.ComponentCondition {
+func (cms ClusterManagerStatus) Status(k8sClient client.Client) bpv1.ComponentCondition {
 	cm := &unstructured.Unstructured{
 		Object: map[string]interface{}{
 			"apiVersion": "operator.open-cluster-management.io/v1",
@@ -53,7 +53,7 @@ func (cms ClusterManagerStatus) Status(k8sClient client.Client) bpv1alpha1.Compo
 	return mapClusterManager(cm)
 }
 
-func mapClusterManager(cm *unstructured.Unstructured) bpv1alpha1.ComponentCondition {
+func mapClusterManager(cm *unstructured.Unstructured) bpv1.ComponentCondition {
 	if cm == nil {
 		return unknownStatus(cm.GetName(), cm.GetKind())
 	}
@@ -63,7 +63,7 @@ func mapClusterManager(cm *unstructured.Unstructured) bpv1alpha1.ComponentCondit
 		return unknownStatus(cm.GetName(), cm.GetKind())
 	}
 
-	componentCondition := bpv1alpha1.ComponentCondition{}
+	componentCondition := bpv1.ComponentCondition{}
 
 	for _, condition := range conditions {
 		statusCondition, ok := condition.(map[string]interface{})
@@ -76,7 +76,7 @@ func mapClusterManager(cm *unstructured.Unstructured) bpv1alpha1.ComponentCondit
 		message, _ := statusCondition["message"].(string)
 		reason, _ := statusCondition["reason"].(string)
 
-		componentCondition = bpv1alpha1.ComponentCondition{
+		componentCondition = bpv1.ComponentCondition{
 			Name:               cm.GetName(),
 			Kind:               "ClusterManager",
 			Type:               sType,

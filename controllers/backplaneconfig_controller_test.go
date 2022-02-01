@@ -26,7 +26,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/stolostron/backplane-operator/api/v1alpha1"
+	v1 "github.com/stolostron/backplane-operator/api/v1"
 	"github.com/stolostron/backplane-operator/pkg/status"
 	"github.com/stolostron/backplane-operator/pkg/utils"
 
@@ -118,7 +118,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 			{
 				Name:           BackplaneConfigTestName,
 				NamespacedName: types.NamespacedName{Name: BackplaneConfigName},
-				ResourceType:   &v1alpha1.MultiClusterEngine{},
+				ResourceType:   &v1.MultiClusterEngine{},
 				Expected:       nil,
 			},
 			{
@@ -181,7 +181,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 		}, timeout, interval).Should(Succeed())
 		Expect(clientConfig).NotTo(BeNil())
 
-		err = v1alpha1.AddToScheme(scheme.Scheme)
+		err = v1.AddToScheme(scheme.Scheme)
 		Expect(err).NotTo(HaveOccurred())
 
 		err = scheme.AddToScheme(scheme.Scheme)
@@ -244,15 +244,15 @@ var _ = Describe("BackplaneConfig controller", func() {
 		Context("and no image pull policy is specified", func() {
 			It("should deploy sub components", func() {
 				By("creating the backplane config")
-				backplaneConfig := &v1alpha1.MultiClusterEngine{
+				backplaneConfig := &v1.MultiClusterEngine{
 					TypeMeta: metav1.TypeMeta{
-						APIVersion: "multicluster.openshift.io/v1alpha1",
+						APIVersion: "multicluster.openshift.io/v1",
 						Kind:       "MultiClusterEngine",
 					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name: BackplaneConfigName,
 					},
-					Spec: v1alpha1.MultiClusterEngineSpec{
+					Spec: v1.MultiClusterEngineSpec{
 						TargetNamespace: DestinationNamespace,
 						ImagePullSecret: "testsecret",
 					},
@@ -312,18 +312,18 @@ var _ = Describe("BackplaneConfig controller", func() {
 		Context("and an image pull policy is specified in an override", func() {
 			It("should deploy sub components with the image pull policy in the override", func() {
 				By("creating the backplane config with an image pull policy override")
-				backplaneConfig := &v1alpha1.MultiClusterEngine{
+				backplaneConfig := &v1.MultiClusterEngine{
 					TypeMeta: metav1.TypeMeta{
-						APIVersion: "multicluster.openshift.io/v1alpha1",
+						APIVersion: "multicluster.openshift.io/v1",
 						Kind:       "MultiClusterEngine",
 					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name: BackplaneConfigName,
 					},
-					Spec: v1alpha1.MultiClusterEngineSpec{
+					Spec: v1.MultiClusterEngineSpec{
 						TargetNamespace: DestinationNamespace,
 						ImagePullSecret: "testsecret",
-						Overrides: &v1alpha1.Overrides{
+						Overrides: &v1.Overrides{
 							ImagePullPolicy: corev1.PullAlways,
 						},
 					},

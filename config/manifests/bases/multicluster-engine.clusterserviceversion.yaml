@@ -47,7 +47,7 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:text
         - urn:alm:descriptor:com.tectonic.ui:advanced
-      version: v1alpha1
+      version: v1
   description: Provides the components making up the multiclusterengine
   displayName: MultiCluster Engine
   icon:

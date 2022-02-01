@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	backplanev1alpha1 "github.com/stolostron/backplane-operator/api/v1alpha1"
+	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 )
 
 var (
@@ -18,7 +18,7 @@ var (
 )
 
 // IsPaused returns true if the multiclusterengine instance is labeled as paused, and false otherwise
-func IsPaused(instance *backplanev1alpha1.MultiClusterEngine) bool {
+func IsPaused(instance *backplanev1.MultiClusterEngine) bool {
 	a := instance.GetAnnotations()
 	if a == nil {
 		return false
@@ -38,7 +38,7 @@ func AnnotationsMatch(old, new map[string]string) bool {
 }
 
 // getAnnotation returns the annotation value for a given key, or an empty string if not set
-func getAnnotation(instance *backplanev1alpha1.MultiClusterEngine, key string) string {
+func getAnnotation(instance *backplanev1.MultiClusterEngine, key string) string {
 	a := instance.GetAnnotations()
 	if a == nil {
 		return ""
@@ -47,7 +47,7 @@ func getAnnotation(instance *backplanev1alpha1.MultiClusterEngine, key string) s
 }
 
 // GetImageRepository returns the image repo annotation, or an empty string if not set
-func GetImageRepository(instance *backplanev1alpha1.MultiClusterEngine) string {
+func GetImageRepository(instance *backplanev1.MultiClusterEngine) string {
 	return getAnnotation(instance, AnnotationImageRepo)
 }
 

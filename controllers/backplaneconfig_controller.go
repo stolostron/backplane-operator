@@ -49,7 +49,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
-	backplanev1alpha1 "github.com/stolostron/backplane-operator/api/v1alpha1"
+	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 	"github.com/stolostron/backplane-operator/pkg/foundation"
 	"github.com/stolostron/backplane-operator/pkg/hive"
 	renderer "github.com/stolostron/backplane-operator/pkg/rendering"
@@ -133,7 +133,7 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		log.Info("Updating status")
 		backplaneConfig.Status = r.StatusManager.ReportStatus(*backplaneConfig)
 		err := r.Client.Status().Update(ctx, backplaneConfig)
-		if backplaneConfig.Status.Phase != backplanev1alpha1.MultiClusterEnginePhaseAvailable && !utils.IsPaused(backplaneConfig) {
+		if backplaneConfig.Status.Phase != backplanev1.MultiClusterEnginePhaseAvailable && !utils.IsPaused(backplaneConfig) {
 			retRes = ctrl.Result{RequeueAfter: 10 * time.Second}
 		}
 		if err != nil {
@@ -190,29 +190,29 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 	r.Images = utils.GetImageOverrides(backplaneConfig)
 	if len(r.Images) == 0 {
 		// If imageoverrides are not set from environmental variables, fail
-		r.StatusManager.AddCondition(status.NewCondition(backplanev1alpha1.MultiClusterEngineProgressing, metav1.ConditionFalse, status.RequirementsNotMetReason, "No image references defined in deployment"))
+		r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing, metav1.ConditionFalse, status.RequirementsNotMetReason, "No image references defined in deployment"))
 		return ctrl.Result{RequeueAfter: requeuePeriod}, e.New("no image references exist. images must be defined as environment variables")
 	}
 
 	// Do not reconcile objects if this instance of mce is labeled "paused"
 	if utils.IsPaused(backplaneConfig) {
 		log.Info("MultiClusterEngine reconciliation is paused. Nothing more to do.")
-		r.StatusManager.AddCondition(status.NewCondition(backplanev1alpha1.MultiClusterEngineProgressing, metav1.ConditionUnknown, status.PausedReason, "Multiclusterengine is paused"))
+		r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing, metav1.ConditionUnknown, status.PausedReason, "Multiclusterengine is paused"))
 		return ctrl.Result{}, nil
 	}
 
 	result, err = r.adoptExistingSubcomponents(ctx, backplaneConfig)
 	if err != nil {
-		r.StatusManager.AddCondition(status.NewCondition(backplanev1alpha1.MultiClusterEngineProgressing, metav1.ConditionUnknown, status.DeployFailedReason, err.Error()))
+		r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing, metav1.ConditionUnknown, status.DeployFailedReason, err.Error()))
 		return result, err
 	}
 
 	result, err = r.DeploySubcomponents(ctx, backplaneConfig)
 	if err != nil {
-		r.StatusManager.AddCondition(status.NewCondition(backplanev1alpha1.MultiClusterEngineProgressing, metav1.ConditionUnknown, status.DeployFailedReason, err.Error()))
+		r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing, metav1.ConditionUnknown, status.DeployFailedReason, err.Error()))
 		return result, err
 	}
-	r.StatusManager.AddCondition(status.NewCondition(backplanev1alpha1.MultiClusterEngineProgressing, metav1.ConditionTrue, status.DeploySuccessReason, "All components deployed"))
+	r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing, metav1.ConditionTrue, status.DeploySuccessReason, "All components deployed"))
 
 	return ctrl.Result{}, nil
 }
@@ -220,10 +220,10 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 // SetupWithManager sets up the controller with the Manager.
 func (r *MultiClusterEngineReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&backplanev1alpha1.MultiClusterEngine{}).
+		For(&backplanev1.MultiClusterEngine{}).
 		WithEventFilter(predicate.Or(predicate.GenerationChangedPredicate{}, predicate.LabelChangedPredicate{}, predicate.AnnotationChangedPredicate{})).
 		Watches(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueRequestForOwner{
-			OwnerType: &backplanev1alpha1.MultiClusterEngine{},
+			OwnerType: &backplanev1.MultiClusterEngine{},
 		}).
 		Watches(&source.Kind{Type: &hiveconfig.HiveConfig{}}, &handler.Funcs{
 			DeleteFunc: func(e event.DeleteEvent, q workqueue.RateLimitingInterface) {
@@ -251,7 +251,7 @@ func (r *MultiClusterEngineReconciler) SetupWithManager(mgr ctrl.Manager) error 
 }
 
 // DeploySubcomponents ensures all subcomponents exist
-func (r *MultiClusterEngineReconciler) DeploySubcomponents(ctx context.Context, backplaneConfig *backplanev1alpha1.MultiClusterEngine) (ctrl.Result, error) {
+func (r *MultiClusterEngineReconciler) DeploySubcomponents(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 
 	chartsDir := alwaysChartsDir
@@ -437,7 +437,7 @@ func (r *MultiClusterEngineReconciler) deleteTemplate(ctx context.Context, backp
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterEngineReconciler) ensureCustomResources(ctx context.Context, backplaneConfig *backplanev1alpha1.MultiClusterEngine) (ctrl.Result, error) {
+func (r *MultiClusterEngineReconciler) ensureCustomResources(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 
 	cmTemplate := foundation.ClusterManager(backplaneConfig, r.Images)
@@ -487,7 +487,7 @@ func (r *MultiClusterEngineReconciler) ensureCustomResources(ctx context.Context
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Context, backplaneConfig *backplanev1alpha1.MultiClusterEngine) error {
+func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) error {
 	log := log.FromContext(ctx)
 
 	clusterManager := &unstructured.Unstructured{}
@@ -515,10 +515,10 @@ func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Conte
 	if err == nil {
 		// If wait time exceeds expected then uninstall may not be able to progress
 		if time.Since(backplaneConfig.DeletionTimestamp.Time) < 5*time.Minute {
-			terminatingCondition := status.NewCondition(backplanev1alpha1.MultiClusterEngineConditionType(backplanev1alpha1.MultiClusterEngineProgressing), metav1.ConditionTrue, status.WaitingForResourceReason, "Waiting for namespace open-cluster-management-hub to terminate.")
+			terminatingCondition := status.NewCondition(backplanev1.MultiClusterEngineConditionType(backplanev1.MultiClusterEngineProgressing), metav1.ConditionTrue, status.WaitingForResourceReason, "Waiting for namespace open-cluster-management-hub to terminate.")
 			r.StatusManager.AddCondition(terminatingCondition)
 		} else {
-			terminatingCondition := status.NewCondition(backplanev1alpha1.MultiClusterEngineConditionType(backplanev1alpha1.MultiClusterEngineProgressing), metav1.ConditionFalse, status.WaitingForResourceReason, "Namespace open-cluster-management-hub still exists.")
+			terminatingCondition := status.NewCondition(backplanev1.MultiClusterEngineConditionType(backplanev1.MultiClusterEngineProgressing), metav1.ConditionFalse, status.WaitingForResourceReason, "Namespace open-cluster-management-hub still exists.")
 			r.StatusManager.AddCondition(terminatingCondition)
 		}
 
@@ -530,9 +530,9 @@ func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Conte
 	return nil
 }
 
-func (r *MultiClusterEngineReconciler) getBackplaneConfig(ctx context.Context, req ctrl.Request) (*backplanev1alpha1.MultiClusterEngine, error) {
+func (r *MultiClusterEngineReconciler) getBackplaneConfig(ctx context.Context, req ctrl.Request) (*backplanev1.MultiClusterEngine, error) {
 	log := log.FromContext(ctx)
-	backplaneConfig := &backplanev1alpha1.MultiClusterEngine{}
+	backplaneConfig := &backplanev1.MultiClusterEngine{}
 	err := r.Client.Get(ctx, req.NamespacedName, backplaneConfig)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
@@ -549,7 +549,7 @@ func (r *MultiClusterEngineReconciler) getBackplaneConfig(ctx context.Context, r
 }
 
 // ensureUnstructuredResource ensures that the unstructured resource is applied in the cluster properly
-func (r *MultiClusterEngineReconciler) ensureUnstructuredResource(ctx context.Context, bpc *backplanev1alpha1.MultiClusterEngine, u *unstructured.Unstructured) (ctrl.Result, error) {
+func (r *MultiClusterEngineReconciler) ensureUnstructuredResource(ctx context.Context, bpc *backplanev1.MultiClusterEngine, u *unstructured.Unstructured) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 
 	found := &unstructured.Unstructured{}
@@ -585,10 +585,10 @@ func (r *MultiClusterEngineReconciler) ensureUnstructuredResource(ctx context.Co
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backplanev1alpha1.MultiClusterEngine) (ctrl.Result, error) {
+func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 
 	if !utils.AvailabilityConfigIsValid(m.Spec.AvailabilityConfig) {
-		m.Spec.AvailabilityConfig = backplanev1alpha1.HAHigh
+		m.Spec.AvailabilityConfig = backplanev1.HAHigh
 	}
 	log := log.FromContext(ctx)
 	if len(m.Spec.TargetNamespace) != 0 {
@@ -607,7 +607,7 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 
 }
 
-func (r *MultiClusterEngineReconciler) validateNamespace(ctx context.Context, m *backplanev1alpha1.MultiClusterEngine) (ctrl.Result, error) {
+func (r *MultiClusterEngineReconciler) validateNamespace(ctx context.Context, m *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 	newNs := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
@@ -636,7 +636,7 @@ func (r *MultiClusterEngineReconciler) validateNamespace(ctx context.Context, m 
 
 // adoptExistingSubcomponents checks for the existence of subcomponents installed by the MCH, and adds a label
 // signaling that they have been adopted by the MCE.
-func (r *MultiClusterEngineReconciler) adoptExistingSubcomponents(ctx context.Context, mce *backplanev1alpha1.MultiClusterEngine) (ctrl.Result, error) {
+func (r *MultiClusterEngineReconciler) adoptExistingSubcomponents(ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 
 	log := log.FromContext(ctx)
 	log.Info("Checking for existing subcomponents")

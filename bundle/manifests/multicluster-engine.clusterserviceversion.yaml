@@ -5,7 +5,7 @@ metadata:
     alm-examples: |-
       [
         {
-          "apiVersion": "multicluster.openshift.io/v1alpha1",
+          "apiVersion": "multicluster.openshift.io/v1",
           "kind": "MultiClusterEngine",
           "metadata": {
             "name": "multiclusterengine-sample"
@@ -59,7 +59,7 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:text
         - urn:alm:descriptor:com.tectonic.ui:advanced
-      version: v1alpha1
+      version: v1
   description: Provides the components making up the multiclusterengine
   displayName: MultiCluster Engine
   icon:

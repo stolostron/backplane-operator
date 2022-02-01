@@ -13,7 +13,7 @@ import (
 	"helm.sh/helm/v3/pkg/chartutil"
 
 	"github.com/fatih/structs"
-	"github.com/stolostron/backplane-operator/api/v1alpha1"
+	v1 "github.com/stolostron/backplane-operator/api/v1"
 	"github.com/stolostron/backplane-operator/pkg/utils"
 	"helm.sh/helm/v3/pkg/engine"
 	corev1 "k8s.io/api/core/v1"
@@ -77,7 +77,7 @@ func RenderCRDs(crdDir string) ([]*unstructured.Unstructured, []error) {
 	return crds, errs
 }
 
-func RenderCharts(chartDir string, backplaneConfig *v1alpha1.MultiClusterEngine, images map[string]string) ([]*unstructured.Unstructured, []error) {
+func RenderCharts(chartDir string, backplaneConfig *v1.MultiClusterEngine, images map[string]string) ([]*unstructured.Unstructured, []error) {
 	log := log.FromContext(context.Background())
 	var templates []*unstructured.Unstructured
 	errs := []error{}
@@ -102,7 +102,7 @@ func RenderCharts(chartDir string, backplaneConfig *v1alpha1.MultiClusterEngine,
 	return templates, nil
 }
 
-func RenderChart(chartPath string, backplaneConfig *v1alpha1.MultiClusterEngine, images map[string]string) ([]*unstructured.Unstructured, []error) {
+func RenderChart(chartPath string, backplaneConfig *v1.MultiClusterEngine, images map[string]string) ([]*unstructured.Unstructured, []error) {
 	log := log.FromContext(context.Background())
 	errs := []error{}
 	if val, ok := os.LookupEnv("DIRECTORY_OVERRIDE"); ok {
@@ -119,7 +119,7 @@ func RenderChart(chartPath string, backplaneConfig *v1alpha1.MultiClusterEngine,
 
 }
 
-func RenderTemplates(chartPath string, backplaneConfig *v1alpha1.MultiClusterEngine, images map[string]string) ([]*unstructured.Unstructured, []error) {
+func RenderTemplates(chartPath string, backplaneConfig *v1.MultiClusterEngine, images map[string]string) ([]*unstructured.Unstructured, []error) {
 	log := log.FromContext(context.Background())
 	var templates []*unstructured.Unstructured
 	errs := []error{}
@@ -159,7 +159,7 @@ func RenderTemplates(chartPath string, backplaneConfig *v1alpha1.MultiClusterEng
 	return templates, errs
 }
 
-func injectValuesOverrides(values *Values, backplaneConfig *v1alpha1.MultiClusterEngine, images map[string]string) {
+func injectValuesOverrides(values *Values, backplaneConfig *v1.MultiClusterEngine, images map[string]string) {
 
 	values.Global.ImageOverrides = images
 
