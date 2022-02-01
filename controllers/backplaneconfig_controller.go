@@ -277,7 +277,7 @@ func (r *MultiClusterEngineReconciler) DeploySubcomponents(ctx context.Context, 
 		return result, err
 	}
 
-	if backplaneConfig.ComponentEnabled(backplanev1alpha1.ManagedServiceAccount) {
+	if backplaneConfig.ComponentEnabled(backplanev1.ManagedServiceAccount) {
 		if foundation.CanInstallAddons(ctx, r.Client) {
 			result, err = r.ensureManagedServiceAccount(ctx, backplaneConfig)
 			if err != nil {
@@ -294,7 +294,7 @@ func (r *MultiClusterEngineReconciler) DeploySubcomponents(ctx context.Context, 
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterEngineReconciler) ensureManagedServiceAccount(ctx context.Context, backplaneConfig *backplanev1alpha1.MultiClusterEngine) (ctrl.Result, error) {
+func (r *MultiClusterEngineReconciler) ensureManagedServiceAccount(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 	// Render CRD templates
 	crdPath := managedServiceAccountCRDPath
@@ -334,7 +334,7 @@ func (r *MultiClusterEngineReconciler) ensureManagedServiceAccount(ctx context.C
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterEngineReconciler) ensureNoManagedServiceAccount(ctx context.Context, backplaneConfig *backplanev1alpha1.MultiClusterEngine) (ctrl.Result, error) {
+func (r *MultiClusterEngineReconciler) ensureNoManagedServiceAccount(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 
 	// Renders all templates from charts
@@ -381,7 +381,7 @@ func (r *MultiClusterEngineReconciler) ensureNoManagedServiceAccount(ctx context
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterEngineReconciler) applyTemplate(ctx context.Context, backplaneConfig *backplanev1alpha1.MultiClusterEngine, template *unstructured.Unstructured) (ctrl.Result, error) {
+func (r *MultiClusterEngineReconciler) applyTemplate(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine, template *unstructured.Unstructured) (ctrl.Result, error) {
 	// log := log.FromContext(ctx)
 	if template.GetKind() == "Deployment" {
 		r.StatusManager.AddComponent(status.DeploymentStatus{
@@ -413,7 +413,7 @@ func (r *MultiClusterEngineReconciler) applyTemplate(ctx context.Context, backpl
 
 // deleteTemplate return true if resource does not exist and returns an error if a GET or DELETE errors unexpectedly. A false response without error
 // means the resource is in the process of deleting.
-func (r *MultiClusterEngineReconciler) deleteTemplate(ctx context.Context, backplaneConfig *backplanev1alpha1.MultiClusterEngine, template *unstructured.Unstructured) (ctrl.Result, error) {
+func (r *MultiClusterEngineReconciler) deleteTemplate(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine, template *unstructured.Unstructured) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 	err := r.Client.Get(ctx, types.NamespacedName{Name: template.GetName(), Namespace: template.GetNamespace()}, template)
 	if err == nil { // If resource exists, delete
