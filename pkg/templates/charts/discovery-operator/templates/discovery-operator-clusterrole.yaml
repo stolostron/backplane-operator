@@ -1,0 +1,78 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: '{{ .Values.org }}:{{ .Chart.Name }}:discovery-operator'
+rules:
+- apiGroups:
+  - cluster.open-cluster-management.io
+  resources:
+  - managedclusters
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ''
+  resources:
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - discovery.open-cluster-management.io
+  resources:
+  - discoveredclusters
+  verbs:
+  - create
+  - delete
+  - deletecollection
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - discovery.open-cluster-management.io
+  resources:
+  - discoveredclusters/finalizers
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - discovery.open-cluster-management.io
+  resources:
+  - discoveredclusters/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - discovery.open-cluster-management.io
+  resources:
+  - discoveryconfigs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - discovery.open-cluster-management.io
+  resources:
+  - discoveryconfigs/finalizers
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - discovery.open-cluster-management.io
+  resources:
+  - discoveryconfigs/status
+  verbs:
+  - get
+  - patch
+  - update

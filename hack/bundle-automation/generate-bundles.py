@@ -83,11 +83,16 @@ def fillChartYaml(helmChart, name, csvPath):
         csv = yaml.safe_load(f)
 
     logging.info("Chart Name: %s", helmChart)
-    logging.info("Description: %s", csv["metadata"]["annotations"]["description"])
+    
 
     # Write to Chart.yaml
     chart['name'] = name
-    chart['description'] = csv["metadata"]["annotations"]["description"]
+    
+    if 'metadata' in csv:
+        if 'annotations' in csv ["metadata"]:
+            if 'description' in csv["metadata"]["annotations"]:
+                logging.info("Description: %s", csv["metadata"]["annotations"]["description"])
+                chart['description'] = csv["metadata"]["annotations"]["description"]
     # chart['version'] = csv['metadata']['name'].split(".", 1)[1][1:]
     with open(chartYml, 'w') as f:
         yaml.dump(chart, f)
