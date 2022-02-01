@@ -276,13 +276,10 @@ func (r *MultiClusterEngineReconciler) DeploySubcomponents(ctx context.Context, 
 	if err != nil {
 		return result, err
 	}
-
 	if backplaneConfig.ComponentEnabled(backplanev1.ManagedServiceAccount) {
-		if foundation.CanInstallAddons(ctx, r.Client) {
-			result, err = r.ensureManagedServiceAccount(ctx, backplaneConfig)
-			if err != nil {
-				return result, err
-			}
+		result, err = r.ensureManagedServiceAccount(ctx, backplaneConfig)
+		if err != nil {
+			return result, err
 		}
 	} else {
 		result, err = r.ensureNoManagedServiceAccount(ctx, backplaneConfig)
@@ -296,39 +293,41 @@ func (r *MultiClusterEngineReconciler) DeploySubcomponents(ctx context.Context, 
 
 func (r *MultiClusterEngineReconciler) ensureManagedServiceAccount(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
-	// Render CRD templates
-	crdPath := managedServiceAccountCRDPath
-	crds, errs := renderer.RenderCRDs(crdPath)
-	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
+	if foundation.CanInstallAddons(ctx, r.Client) {
+		// Render CRD templates
+		crdPath := managedServiceAccountCRDPath
+		crds, errs := renderer.RenderCRDs(crdPath)
+		if len(errs) > 0 {
+			for _, err := range errs {
+				log.Info(err.Error())
+			}
+			return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 		}
-		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
-	}
 
-	// Apply all CRDs
-	for _, crd := range crds {
-		result, err := r.applyTemplate(ctx, backplaneConfig, crd)
-		if err != nil {
-			return result, err
+		// Apply all CRDs
+		for _, crd := range crds {
+			result, err := r.applyTemplate(ctx, backplaneConfig, crd)
+			if err != nil {
+				return result, err
+			}
 		}
-	}
 
-	// Renders all templates from charts
-	chartPath := managedServiceAccountChartDir
-	templates, errs := renderer.RenderChart(chartPath, backplaneConfig, r.Images)
-	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
+		// Renders all templates from charts
+		chartPath := managedServiceAccountChartDir
+		templates, errs := renderer.RenderChart(chartPath, backplaneConfig, r.Images)
+		if len(errs) > 0 {
+			for _, err := range errs {
+				log.Info(err.Error())
+			}
+			return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 		}
-		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
-	}
 
-	// Applies all templates
-	for _, template := range templates {
-		result, err := r.applyTemplate(ctx, backplaneConfig, template)
-		if err != nil {
-			return result, err
+		// Applies all templates
+		for _, template := range templates {
+			result, err := r.applyTemplate(ctx, backplaneConfig, template)
+			if err != nil {
+				return result, err
+			}
 		}
 	}
 	return ctrl.Result{}, nil

@@ -1,7 +1,6 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  namespace: '{{ .Values.global.namespace }}'
   name: managed-serviceaccount-addon-manager
 spec:
   replicas: 1

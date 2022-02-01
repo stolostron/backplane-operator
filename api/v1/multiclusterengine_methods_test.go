@@ -17,3 +17,17 @@ limitations under the License.
 */
 
 package v1
+
+// backplaneConfig := &v1.MultiClusterEngine{
+// 	TypeMeta: metav1.TypeMeta{
+// 		APIVersion: "multicluster.openshift.io/v1",
+// 		Kind:       "MultiClusterEngine",
+// 	},
+// 	ObjectMeta: metav1.ObjectMeta{
+// 		Name: BackplaneConfigName,
+// 	},
+// 	Spec: v1.MultiClusterEngineSpec{
+// 		TargetNamespace: DestinationNamespace,
+// 		ImagePullSecret: "testsecret",
+// 	},
+// }

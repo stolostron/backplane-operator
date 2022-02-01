@@ -37,6 +37,7 @@ import (
 	admissionregistration "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -77,12 +78,14 @@ type testList []struct {
 
 var _ = Describe("BackplaneConfig controller", func() {
 	var (
-		testEnv        *envtest.Environment
-		clientConfig   *rest.Config
-		k8sClient      client.Client
-		clusterManager *unstructured.Unstructured
-		hiveConfig     *unstructured.Unstructured
-		tests          testList
+		testEnv                *envtest.Environment
+		clientConfig           *rest.Config
+		k8sClient              client.Client
+		clusterManager         *unstructured.Unstructured
+		hiveConfig             *unstructured.Unstructured
+		clusterManagementAddon *unstructured.Unstructured
+		tests                  testList
+		msaTests               testList
 	)
 
 	BeforeEach(func() {
@@ -112,6 +115,13 @@ var _ = Describe("BackplaneConfig controller", func() {
 			Group:   "hive.openshift.io",
 			Version: "v1",
 			Kind:    "HiveConfig",
+		})
+
+		clusterManagementAddon = &unstructured.Unstructured{}
+		clusterManagementAddon.SetGroupVersionKind(schema.GroupVersionKind{
+			Group:   "addon.open-cluster-management.io",
+			Version: "v1alpha1",
+			Kind:    "ClusterManagementAddOn",
 		})
 
 		tests = testList{
@@ -167,6 +177,51 @@ var _ = Describe("BackplaneConfig controller", func() {
 				Name:           "Hive Config",
 				NamespacedName: types.NamespacedName{Name: "hive"},
 				ResourceType:   hiveConfig,
+				Expected:       nil,
+			},
+			{
+				Name:           "worker-manager ClusterManagementAddon",
+				NamespacedName: types.NamespacedName{Name: "work-manager"},
+				ResourceType:   clusterManagementAddon,
+				Expected:       nil,
+			},
+		}
+
+		msaTests = testList{
+			{
+				Name:           "Managed-ServiceAccount Deployment",
+				NamespacedName: types.NamespacedName{Name: "managed-serviceaccount-addon-manager", Namespace: DestinationNamespace},
+				ResourceType:   &appsv1.Deployment{},
+				Expected:       nil,
+			},
+			{
+				Name:           "Managed-ServiceAccount ServiceAccount",
+				NamespacedName: types.NamespacedName{Name: "managed-serviceaccount", Namespace: DestinationNamespace},
+				ResourceType:   &corev1.ServiceAccount{},
+				Expected:       nil,
+			},
+			{
+				Name:           "Managed-ServiceAccount ClusterRole",
+				NamespacedName: types.NamespacedName{Name: "open-cluster-management:managed-serviceaccount:addon-manager"},
+				ResourceType:   &rbacv1.ClusterRole{},
+				Expected:       nil,
+			},
+			{
+				Name:           "Managed-ServiceAccount ClusterRoleBinding",
+				NamespacedName: types.NamespacedName{Name: "open-cluster-management:managed-serviceaccount:addon-manager"},
+				ResourceType:   &rbacv1.ClusterRoleBinding{},
+				Expected:       nil,
+			},
+			{
+				Name:           "Managed-ServiceAccount CRD",
+				NamespacedName: types.NamespacedName{Name: "managedserviceaccounts.authentication.open-cluster-management.io"},
+				ResourceType:   &apixv1.CustomResourceDefinition{},
+				Expected:       nil,
+			},
+			{
+				Name:           "Managed-ServiceAccount ClusterManagementAddon",
+				NamespacedName: types.NamespacedName{Name: "managed-serviceaccount"},
+				ResourceType:   clusterManagementAddon,
 				Expected:       nil,
 			},
 		}
@@ -360,6 +415,59 @@ var _ = Describe("BackplaneConfig controller", func() {
 						)
 					}, timeout, interval).Should(Succeed())
 				}
+			})
+		})
+
+		Context("and enable ManagedServiceAccount", func() {
+			It("should deploy sub components", func() {
+				By("creating the backplane config")
+				backplaneConfig := &v1.MultiClusterEngine{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "multicluster.openshift.io/v1",
+						Kind:       "MultiClusterEngine",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: BackplaneConfigName,
+					},
+					Spec: v1.MultiClusterEngineSpec{
+						TargetNamespace: DestinationNamespace,
+						ComponentConfig: &v1.ComponentConfig{
+							ManagedServiceAccount: &v1.ManagedServiceAccountConfig{
+								Enable: true,
+							},
+						},
+					},
+				}
+				createCtx := context.Background()
+				Expect(k8sClient.Create(createCtx, backplaneConfig)).Should(Succeed())
+				withMSATests := append(tests, msaTests...)
+				By("ensuring each deployment and config is created")
+				for _, test := range withMSATests {
+					By(fmt.Sprintf("ensuring %s is created", test.Name))
+					Eventually(func() bool {
+						ctx := context.Background()
+						err := k8sClient.Get(ctx, test.NamespacedName, test.ResourceType)
+						return err == test.Expected
+					}, timeout, interval).Should(BeTrue())
+				}
+
+				By("ensuring each deployment and config has an owner reference")
+				for _, test := range withMSATests {
+					if test.Name == BackplaneConfigTestName {
+						continue // config itself won't have ownerreference
+					}
+					By(fmt.Sprintf("ensuring %s has an ownerreference set", test.Name))
+					Eventually(func(g Gomega) {
+						ctx := context.Background()
+						g.Expect(k8sClient.Get(ctx, test.NamespacedName, test.ResourceType)).To(Succeed())
+						g.Expect(len(test.ResourceType.GetOwnerReferences())).To(
+							Equal(1),
+							fmt.Sprintf("Missing ownerreference on %s", test.Name),
+						)
+						g.Expect(test.ResourceType.GetOwnerReferences()[0].Name).To(Equal(BackplaneConfigName))
+					}, timeout, interval).Should(Succeed())
+				}
+
 			})
 		})
 	})
