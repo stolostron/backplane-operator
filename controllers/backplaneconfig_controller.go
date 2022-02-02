@@ -415,24 +415,42 @@ func (r *MultiClusterEngineReconciler) applyTemplate(ctx context.Context, backpl
 func (r *MultiClusterEngineReconciler) deleteTemplate(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine, template *unstructured.Unstructured) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 	err := r.Client.Get(ctx, types.NamespacedName{Name: template.GetName(), Namespace: template.GetNamespace()}, template)
-	if err == nil { // If resource exists, delete
-		log.Info(fmt.Sprintf("finalizing template: %s\n", template.GetName()))
-		err := r.Client.Delete(ctx, template)
-		if err != nil {
-			log.Error(err, "Failed to delete template")
-			// NW ADD STATUS CHECK HERE
-			return ctrl.Result{}, err
+
+	if err != nil && apierrors.IsNotFound(err) {
+		if template.GetKind() == "Deployment" {
+			log.Info(fmt.Sprintf("not found remove status: %s\n", template.GetName()))
+			r.StatusManager.RemoveComponent(status.DeploymentStatus{
+				NamespacedName: types.NamespacedName{Name: template.GetName(), Namespace: template.GetNamespace()},
+			})
 		}
-	} else if err != nil && !apierrors.IsNotFound(err) { // Return error, if error is not 'not found' error
+		return ctrl.Result{}, nil
+	}
+
+	// set status progressing condition
+
+	if err != nil {
 		log.Error(err, "Odd error delete template")
-		// NW ADD STATUS CHECK HERE
+		if template.GetKind() == "Deployment" {
+
+		}
 		return ctrl.Result{}, err
 	}
-	if template.GetKind() == "Deployment" {
-		r.StatusManager.RemoveComponent(status.DeploymentStatus{
-			NamespacedName: types.NamespacedName{Name: template.GetName(), Namespace: template.GetNamespace()},
-		})
+
+	log.Info(fmt.Sprintf("finalizing template: %s\n", template.GetName()))
+	err = r.Client.Delete(ctx, template)
+	if err != nil {
+		log.Error(err, "Failed to delete template")
+		if template.GetKind() == "Deployment" {
+
+		}
+		return ctrl.Result{}, err
 	}
+
+	log.Info(fmt.Sprintf("about to update status if deployment: %s\n", template.GetName()))
+	if template.GetKind() == "Deployment" {
+
+	}
+
 	return ctrl.Result{}, nil
 }
 
