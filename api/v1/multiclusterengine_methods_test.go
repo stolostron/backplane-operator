@@ -126,7 +126,7 @@ func Test_ComponentEnabled(t *testing.T) {
 				TargetNamespace: "test",
 				ComponentConfig: &ComponentConfig{
 					ManagedServiceAccount: &ManagedServiceAccountConfig{
-						Enable: false,
+						Enable: true,
 					},
 				},
 			},
