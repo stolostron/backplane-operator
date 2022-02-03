@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: managed-serviceaccount-addon-manager
 spec:
-  replicas: 1
+  replicas: {{ .Values.hubconfig.replicaCount }}
   selector:
     matchLabels:
       open-cluster-management.io/addon: managed-serviceaccount
