@@ -52,6 +52,7 @@ import (
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 	"github.com/stolostron/backplane-operator/pkg/foundation"
 	"github.com/stolostron/backplane-operator/pkg/hive"
+	"github.com/stolostron/backplane-operator/pkg/managedservice"
 	renderer "github.com/stolostron/backplane-operator/pkg/rendering"
 	"github.com/stolostron/backplane-operator/pkg/status"
 
@@ -266,6 +267,11 @@ func (r *MultiClusterEngineReconciler) DeploySubcomponents(ctx context.Context, 
 
 	// Applies all templates
 	for _, template := range templates {
+		if template.GetKind() == "Deployment" {
+			r.StatusManager.AddComponent(status.DeploymentStatus{
+				NamespacedName: types.NamespacedName{Name: template.GetName(), Namespace: template.GetNamespace()},
+			})
+		}
 		result, err := r.applyTemplate(ctx, backplaneConfig, template)
 		if err != nil {
 			return result, err
@@ -292,7 +298,11 @@ func (r *MultiClusterEngineReconciler) DeploySubcomponents(ctx context.Context, 
 }
 
 func (r *MultiClusterEngineReconciler) ensureManagedServiceAccount(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+	r.StatusManager.RemoveComponent(managedservice.ManagedServiceDisabledStatus(backplaneConfig.Spec.TargetNamespace, []*unstructured.Unstructured{}))
+	r.StatusManager.AddComponent(managedservice.ManagedServiceEnabledStatus(backplaneConfig.Spec.TargetNamespace))
+
 	log := log.FromContext(ctx)
+
 	if foundation.CanInstallAddons(ctx, r.Client) {
 		// Render CRD templates
 		crdPath := managedServiceAccountCRDPath
@@ -346,6 +356,9 @@ func (r *MultiClusterEngineReconciler) ensureNoManagedServiceAccount(ctx context
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
 
+	r.StatusManager.RemoveComponent(managedservice.ManagedServiceEnabledStatus(backplaneConfig.Spec.TargetNamespace))
+	r.StatusManager.AddComponent(managedservice.ManagedServiceDisabledStatus(backplaneConfig.Spec.TargetNamespace, templates))
+
 	// Deletes all templates
 	for _, template := range templates {
 		if template.GetKind() == foundation.ClusterManagementAddonKind && !foundation.CanInstallAddons(ctx, r.Client) {
@@ -381,13 +394,6 @@ func (r *MultiClusterEngineReconciler) ensureNoManagedServiceAccount(ctx context
 }
 
 func (r *MultiClusterEngineReconciler) applyTemplate(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine, template *unstructured.Unstructured) (ctrl.Result, error) {
-	// log := log.FromContext(ctx)
-	if template.GetKind() == "Deployment" {
-		r.StatusManager.AddComponent(status.DeploymentStatus{
-			NamespacedName: types.NamespacedName{Name: template.GetName(), Namespace: template.GetNamespace()},
-		})
-	}
-
 	// Set owner reference.
 	err := ctrl.SetControllerReference(backplaneConfig, template, r.Scheme)
 	if err != nil {
