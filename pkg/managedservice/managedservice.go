@@ -3,12 +3,12 @@ package managedservice
 import (
 	"context"
 
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-
+	"fmt"
 	bpv1 "github.com/stolostron/backplane-operator/api/v1"
 	"github.com/stolostron/backplane-operator/pkg/status"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -66,6 +66,7 @@ func (ts ToggledOffStatus) GetKind() string {
 // Converts this component's status to a backplane component status
 func (ts ToggledOffStatus) Status(k8sClient client.Client) bpv1.ComponentCondition {
 	present := []*unstructured.Unstructured{}
+	presentString := ""
 	for _, u := range ts.resources {
 		err := k8sClient.Get(context.TODO(), types.NamespacedName{
 			Name:      u.GetName(),
@@ -91,6 +92,11 @@ func (ts ToggledOffStatus) Status(k8sClient client.Client) bpv1.ComponentConditi
 		}
 
 		present = append(present, u)
+		resourceName := u.GetName()
+		if u.GetNamespace() != "" {
+			resourceName = fmt.Sprintf("%s/%s", u.GetNamespace(), resourceName)
+		}
+		presentString = fmt.Sprintf("%s <%s %s>", presentString, u.GetKind(), resourceName)
 	}
 
 	if len(present) == 0 {
@@ -107,6 +113,7 @@ func (ts ToggledOffStatus) Status(k8sClient client.Client) bpv1.ComponentConditi
 			Available:          true,
 		}
 	} else {
+		conditionMessage := fmt.Sprintf("The following resources remain:%s", presentString)
 		return bpv1.ComponentCondition{
 			Name:               ts.GetName(),
 			Kind:               ts.GetKind(),
@@ -115,7 +122,7 @@ func (ts ToggledOffStatus) Status(k8sClient client.Client) bpv1.ComponentConditi
 			LastUpdateTime:     metav1.Now(),
 			LastTransitionTime: metav1.Now(),
 			Reason:             "ResourcesPresent",
-			Message:            "The following resources remain: abc",
+			Message:            conditionMessage,
 			Available:          false,
 		}
 	}
