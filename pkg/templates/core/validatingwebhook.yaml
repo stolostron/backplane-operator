@@ -19,7 +19,7 @@ webhooks:
   - apiGroups:
     - multicluster.openshift.io
     apiVersions:
-    - v1alpha1
+    - v1
     operations:
     - CREATE
     - UPDATE
