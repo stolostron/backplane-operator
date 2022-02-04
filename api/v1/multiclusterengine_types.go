@@ -130,7 +130,6 @@ type ComponentCondition struct {
 // PhaseType is a summary of the current state of the MultiClusterEngine in its lifecycle
 type PhaseType string
 
-// NW look here
 const (
 	MultiClusterEnginePhaseProgressing  PhaseType = "Progressing"
 	MultiClusterEnginePhaseAvailable    PhaseType = "Available"
@@ -182,7 +181,6 @@ type MultiClusterEngineCondition struct {
 // PhaseType is a summary of the current state of the MultiClusterEngine in its lifecycle
 type ComponentEnabled string
 
-// NW look here
 const (
 	ManagedServiceAccount ComponentEnabled = "Managed-ServiceAccount"
 )

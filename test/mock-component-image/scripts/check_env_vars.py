@@ -10,7 +10,6 @@ if shutil.which("docker") is None:
 if shutil.which("helm") is None:
     raise Exception("Helm not installed! Go install Helm 3 CLI!")
 
-# NW this can be set when the code is in the mch operator
 _product_version = os.environ.get('PRODUCT_VERSION')
 if not _product_version:
     raise Exception("You must export PRODUCT_VERSION!")
