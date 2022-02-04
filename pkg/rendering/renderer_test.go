@@ -17,12 +17,18 @@ import (
 	"testing"
 )
 
+const (
+	chartsDir  = "pkg/templates/charts/always"
+	chartsPath = "pkg/templates/charts/toggle/managed-serviceaccount"
+	crdsDir    = "pkg/templates/crds"
+)
+
 func TestRender(t *testing.T) {
 
 	os.Setenv("DIRECTORY_OVERRIDE", "../../")
 	defer os.Unsetenv("DIRECTORY_OVERRIDE")
-
-	crds, errs := RenderCRDs()
+	crdsDir := crdsDir
+	crds, errs := RenderCRDs(crdsDir)
 	if len(errs) > 0 {
 		for _, err := range errs {
 			t.Logf(err.Error())
@@ -72,8 +78,9 @@ func TestRender(t *testing.T) {
 	for _, v := range utils.GetTestImages() {
 		testImages[v] = "quay.io/test/test:Test"
 	}
-
-	templates, errs := RenderTemplates(testBackplane, testImages)
+	// multiple charts
+	chartsDir := chartsDir
+	templates, errs := RenderCharts(chartsDir, testBackplane, testImages)
 	if len(errs) > 0 {
 		for _, err := range errs {
 			t.Logf(err.Error())
@@ -141,6 +148,81 @@ func TestRender(t *testing.T) {
 		}
 
 	}
+
+	// single chart
+	singleChartTestImages := map[string]string{}
+	for _, v := range utils.GetTestImages() {
+		singleChartTestImages[v] = "quay.io/test/test:Test"
+	}
+	chartsPath := chartsPath
+	singleChartTemplates, errs := RenderChart(chartsPath, testBackplane, singleChartTestImages)
+	if len(errs) > 0 {
+		for _, err := range errs {
+			t.Logf(err.Error())
+		}
+		t.Fatalf("failed to retrieve templates")
+		if len(singleChartTemplates) == 0 {
+			t.Fatalf("Unable to render templates")
+		}
+	}
+	for _, template := range singleChartTemplates {
+		if template.GetKind() == "Deployment" {
+			deployment := &appsv1.Deployment{}
+			err := runtime.DefaultUnstructuredConverter.FromUnstructured(template.Object, deployment)
+			if err != nil {
+				t.Fatalf(err.Error())
+			}
+
+			selectorEquality := reflect.DeepEqual(deployment.Spec.Template.Spec.NodeSelector, backplaneNodeSelector)
+			if !selectorEquality {
+				t.Fatalf("Node Selector did not propagate to the deployments use")
+			}
+			secretEquality := reflect.DeepEqual(deployment.Spec.Template.Spec.ImagePullSecrets[0].Name, backplaneImagePullSecret)
+			if !secretEquality {
+				t.Fatalf("Image Pull Secret did not propagate to the deployments use")
+			}
+			tolerationEquality := reflect.DeepEqual(deployment.Spec.Template.Spec.Tolerations, backplaneTolerations)
+			if !tolerationEquality {
+				t.Fatalf("Toleration did not propagate to the deployments use")
+			}
+			if deployment.ObjectMeta.Namespace != backplaneNamespace {
+				t.Fatalf("Namespace did not propagate to the deployments use")
+			}
+
+			if utils.Contains(availabilityList, deployment.ObjectMeta.Name) && *deployment.Spec.Replicas != 1 {
+				t.Fatalf("AvailabilityConfig did not propagate to the deployments use")
+			}
+
+			for _, proxyVar := range deployment.Spec.Template.Spec.Containers[0].Env {
+				switch proxyVar.Name {
+				case "HTTP_PROXY":
+					containsHTTP = true
+					if proxyVar.Value != "test1" {
+						t.Fatalf("HTTP_PROXY not propagated")
+					}
+				case "HTTPS_PROXY":
+					containsHTTPS = true
+					if proxyVar.Value != "test2" {
+						t.Fatalf("HTTPS_PROXY not propagated")
+					}
+				case "NO_PROXY":
+					containsNO = true
+					if proxyVar.Value != "test3" {
+						t.Fatalf("NO_PROXY not propagated")
+					}
+				}
+			}
+
+			if !containsHTTP || !containsHTTPS || !containsNO {
+				t.Fatalf("proxy variables not set")
+			}
+			containsHTTP = false
+			containsHTTPS = false
+			containsNO = false
+		}
+
+	}
+
 	os.Unsetenv("HTTP_PROXY")
 	os.Unsetenv("HTTPS_PROXY")
 	os.Unsetenv("NO_PROXY")

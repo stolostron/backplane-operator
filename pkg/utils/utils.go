@@ -67,7 +67,7 @@ func AvailabilityConfigIsValid(config backplanev1.AvailabilityType) bool {
 
 func GetTestImages() []string {
 	return []string{"registration_operator", "openshift_hive", "multicloud_manager",
-		"managedcluster_import_controller", "registration", "work"}
+		"managedcluster_import_controller", "registration", "work", "managed_serviceaccount"}
 }
 
 func DefaultTolerations() []corev1.Toleration {

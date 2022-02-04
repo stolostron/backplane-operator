@@ -6,6 +6,7 @@ import (
 	"context"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -29,10 +30,10 @@ const (
 	// WorkImageKey used by work deployments
 	WorkImageKey = "work"
 	// PlacementImageKey used by placement deployments
-	PlacementImageKey = "placement"
-
+	PlacementImageKey             = "placement"
 	addonPath                     = "pkg/templates/clustermanagementaddons/"
 	clusterManagementAddonCRDName = "clustermanagementaddons.addon.open-cluster-management.io"
+	ClusterManagementAddonKind    = "ClusterManagementAddOn"
 )
 
 // RegistrationImage ...
@@ -97,9 +98,12 @@ func CanInstallAddons(ctx context.Context, client client.Client) bool {
 
 func GetAddons() ([]*unstructured.Unstructured, error) {
 	var addons []*unstructured.Unstructured
-
 	// Read CRD files
-	err := filepath.Walk(addonPath, func(path string, info os.FileInfo, err error) error {
+	addonPathNotConst := addonPath
+	if val, ok := os.LookupEnv("DIRECTORY_OVERRIDE"); ok {
+		addonPathNotConst = path.Join(val, addonPathNotConst)
+	}
+	err := filepath.Walk(addonPathNotConst, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
