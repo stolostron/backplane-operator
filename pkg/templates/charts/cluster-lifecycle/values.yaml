@@ -1,0 +1,14 @@
+global:
+  imageOverrides:
+    cluster_curator_controller: quay.io/test/test:test
+    clusterclaims_controller: quay.io/test/test:test
+    clusterlifecycle_state_metrics: quay.io/test/test:test
+    provider_credential_controller: quay.io/test/test:test
+  pullSecret: ""
+  namespace: default
+hubconfig:
+  nodeSelector: {}
+  proxyConfigs: {}
+  replicaCount: 1
+  tolerations: []
+org: open-cluster-management

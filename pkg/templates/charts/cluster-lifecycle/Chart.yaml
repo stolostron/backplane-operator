@@ -1,0 +1,6 @@
+apiVersion: v2
+appVersion: 1.16.0
+description: cluster lifecycle components.
+name: cluster-lifecycle
+type: application
+version: 2.5.0
