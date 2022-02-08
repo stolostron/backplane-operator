@@ -9,7 +9,7 @@
         hive: openshift_hive
 - repo_name: registration-operator
   github_ref: "https://github.com/stolostron/registration-operator.git"
-  branch: "backplane-1.0"
+  branch: "backplane-2.0"
   operators:
     - name: cluster-manager
       bundlePath: "deploy/cluster-manager/olm-catalog/cluster-manager/manifests/"
