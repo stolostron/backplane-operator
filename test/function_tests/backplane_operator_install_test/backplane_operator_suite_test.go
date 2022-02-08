@@ -8,8 +8,7 @@ import (
 	"flag"
 	"testing"
 
-	. "github.com/onsi/ginkgo"
-	"github.com/onsi/ginkgo/reporters"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	backplane "github.com/stolostron/backplane-operator/api/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -48,8 +47,7 @@ func init() {
 
 func TestBackplaneOperatorInstall(t *testing.T) {
 	RegisterFailHandler(Fail)
-	junitReporter := reporters.NewJUnitReporter(reportFile)
-	RunSpecsWithDefaultAndCustomReporters(t, "BackplaneOperator Install Suite", []Reporter{junitReporter})
+	RunSpecs(t, "BackplaneOperator Install Suite")
 }
 
 var _ = BeforeSuite(func() {

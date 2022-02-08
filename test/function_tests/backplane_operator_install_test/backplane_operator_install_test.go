@@ -6,9 +6,11 @@ package backplane_install_test
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
+	"path/filepath"
 	"time"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
@@ -17,7 +19,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/stolostron/backplane-operator/pkg/utils"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -323,6 +324,11 @@ var webhookTests = func() func() {
 			Expect(k8sClient.Get(ctx, multiClusterEngine, key)).To(Succeed())
 			ns := key.Spec.TargetNamespace
 
+			resourcesDir := os.Getenv("RESOURCE_DIR")
+			if resourcesDir == "" {
+				resourcesDir = "../resources"
+			}
+
 			blockDeletionResources := []struct {
 				Name     string
 				GVK      schema.GroupVersionKind
@@ -337,7 +343,7 @@ var webhookTests = func() func() {
 						Version: "v1alpha1",
 						Kind:    "BareMetalAsset",
 					},
-					Filepath: "../resources/baremetalassets.yaml",
+					Filepath: filepath.Join(resourcesDir, "baremetalassets.yaml"),
 					Expected: "Existing BareMetalAsset resources must first be deleted",
 				},
 				{
@@ -347,7 +353,7 @@ var webhookTests = func() func() {
 						Version: "v1",
 						Kind:    "ManagedClusterList",
 					},
-					Filepath: "../resources/managedcluster.yaml",
+					Filepath: filepath.Join(resourcesDir, "managedcluster.yaml"),
 					Expected: "Existing ManagedCluster resources must first be deleted",
 				},
 			}
@@ -589,7 +595,7 @@ func validateResourceSpecs(namespace string, nodeSelector map[string]string, pul
 			g.Expect(componentTolerations).To(Equal(tolerations), fmt.Sprintf("Deployment %s does not have expected tolerations", deployment.Name))
 
 			// check replicas
-			if utils.Contains(availabilityList, deployment.ObjectMeta.Name) {
+			if contains(availabilityList, deployment.ObjectMeta.Name) {
 				componentReplicas := deployment.Spec.Replicas
 				if (availabilityConfig == backplane.HAHigh) || (availabilityConfig == "") {
 					g.Expect(*componentReplicas).To(Equal(int32(2)), fmt.Sprintf("Deployment %s does not have expected replicas", deployment.Name))
@@ -628,4 +634,14 @@ func validateResourceSpecs(namespace string, nodeSelector map[string]string, pul
 		}
 
 	}, time.Minute, time.Second).Should(Succeed())
+}
+
+func contains(s []string, str string) bool {
+	for _, v := range s {
+		if v == str {
+			return true
+		}
+	}
+
+	return false
 }

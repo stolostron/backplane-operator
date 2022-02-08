@@ -231,7 +231,7 @@ catalog-push: ## Push a catalog image.
 ## Build the BP functional test image
 test-image: 
 	@echo "Building $(REGISTRY)/backplane-operator-test:$(VERSION)"
-	docker build . -f Dockerfile.test.prow -t $(REGISTRY)/backplane-operator:$(VERSION)
+	docker build . -f Dockerfile.test.prow -t $(REGISTRY)/backplane-operator-test:$(VERSION)
 
 ft-install:
-	docker run --env TEST_MODE="install" --volume ~/.kube/config:/opt/.kube/config $(REGISTRY)/backplane-operator:$(VERSION)
+	docker run --env TEST_MODE="install" --volume ~/.kube/config:/opt/.kube/config $(REGISTRY)/backplane-operator-test:$(VERSION)
