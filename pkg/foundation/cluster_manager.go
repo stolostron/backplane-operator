@@ -103,13 +103,8 @@ func GetAddons() ([]*unstructured.Unstructured, error) {
 	if val, ok := os.LookupEnv("DIRECTORY_OVERRIDE"); ok {
 		addonPath = path.Join(val, addonPath)
 	}
-
-	// Read CRD files
-	addonPathNotConst := addonPath
-	if val, ok := os.LookupEnv("DIRECTORY_OVERRIDE"); ok {
-		addonPathNotConst = path.Join(val, addonPathNotConst)
-	}
-	err := filepath.Walk(addonPathNotConst, func(path string, info os.FileInfo, err error) error {
+	
+	err := filepath.Walk(addonPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
