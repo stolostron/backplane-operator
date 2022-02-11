@@ -37,6 +37,7 @@ rules:
       - watch
       - update
       - patch
+      - delete
   - apiGroups:
       - certificates.k8s.io
     resources:
