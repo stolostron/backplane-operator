@@ -25,12 +25,13 @@ spec:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
             - matchExpressions:
-              - key: beta.kubernetes.io/arch
+              - key: kubernetes.io/arch
                 operator: In
                 values:
                 - amd64
                 - ppc64le
                 - s390x
+                - arm64
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
           - weight: 70
