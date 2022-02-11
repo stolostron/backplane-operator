@@ -59,6 +59,14 @@ var (
 				Kind:    "BareMetalAssetList",
 			},
 		},
+		{
+			Name: "DiscoveryConfig",
+			GVK: schema.GroupVersionKind{
+				Group:   "discovery.open-cluster-management.io",
+				Version: "v1alpha1",
+				Kind:    "DiscoveryConfigList",
+			},
+		},
 	}
 )
 
