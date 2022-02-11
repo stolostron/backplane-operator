@@ -462,11 +462,6 @@ func (r *MultiClusterEngineReconciler) deleteTemplate(ctx context.Context, backp
 		return ctrl.Result{}, err
 	}
 
-	log.Info(fmt.Sprintf("about to update status if deployment: %s\n", template.GetName()))
-	if template.GetKind() == "Deployment" {
-
-	}
-
 	return ctrl.Result{}, nil
 }
 
