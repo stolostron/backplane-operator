@@ -1,0 +1,108 @@
+
+# Copyright Contributors to the Open Cluster Management project.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cluster-curator-controller
+spec:
+  replicas: {{ .Values.hubconfig.replicaCount }}
+  selector:
+    matchLabels:
+      name: cluster-curator-controller
+  template:
+    metadata:
+      labels:
+        name: cluster-curator-controller
+        ocm-antiaffinity-selector: "cluster-curator-controller"
+    spec:
+      {{- if .Values.global.pullSecret }}
+      imagePullSecrets:
+        - name: {{ .Values.global.pullSecret }}
+      {{- end }}
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: beta.kubernetes.io/arch
+                operator: In
+                values:
+                - amd64
+                - ppc64le
+                - s390x
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 70
+            podAffinityTerm:
+              topologyKey: topology.kubernetes.io/zone
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - cluster-curator-controller
+          - weight: 35
+            podAffinityTerm:
+              topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - cluster-curator-controller
+      serviceAccountName: cluster-curator
+      hostNetwork: false
+      hostPID: false
+      hostIPC: false
+      securityContext:
+        runAsNonRoot: true
+      containers:
+      - command: ["/bin/sh","-c"]
+        args: ["./cluster-curator-controller || ./manager -enable-leader-election"]
+        image: "{{ .Values.global.imageOverrides.cluster_curator_controller }}"
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: IMAGE_URI
+          value: "{{ .Values.global.imageOverrides.cluster_curator_controller }}"
+{{- if .Values.hubconfig.proxyConfigs }}
+        - name: HTTP_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
+        - name: HTTPS_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.HTTPS_PROXY }}
+        - name: NO_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
+{{- end }}
+        imagePullPolicy: "{{ .Values.global.pullPolicy }}"
+        name: cluster-curator-controller
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+        resources:
+          limits:
+            cpu: "10m"
+            memory: "128Mi"
+          requests:
+            cpu: "3m"        # Runs < 2m most of the time
+            memory: "25Mi"   # Runs between 25-28Mi
+{{- with .Values.hubconfig.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+{{- end }}
+{{- with .Values.hubconfig.tolerations }}
+      tolerations:
+      {{- range . }}
+      - {{ if .Key }} key: {{ .Key }} {{- end }}
+        {{ if .Operator }} operator: {{ .Operator }} {{- end }}
+        {{ if .Value }} value: {{ .Value }} {{- end }}
+        {{ if .Effect }} effect: {{ .Effect }} {{- end }}
+        {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
+        {{- end }}
+{{- end }}

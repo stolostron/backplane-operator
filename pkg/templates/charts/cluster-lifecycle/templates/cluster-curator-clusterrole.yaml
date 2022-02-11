@@ -1,0 +1,102 @@
+# Copyright Contributors to the Open Cluster Management project
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ .Values.org }}.cluster-lifecycle.cluster-curator
+rules:
+- apiGroups: ["tower.ansible.com","batch",""]
+  resources: ["ansiblejobs","jobs","secrets","serviceaccounts"]
+  verbs: ["create"]
+
+- apiGroups: ["batch", "hive.openshift.io", "tower.ansible.com",""]
+  resources: ["ansiblejobs","jobs","clusterdeployments","serviceaccounts", "machinepools"]
+  verbs: ["get"]
+
+- apiGroups: ["rbac.authorization.k8s.io",""]
+  resources: ["roles","rolebindings"]
+  verbs: ["create","get"]
+
+- apiGroups: ["hive.openshift.io"]
+  resources: ["clusterdeployments"]
+  verbs: ["patch","delete"]
+
+- apiGroups: ["internal.open-cluster-management.io",""]
+  resources: ["managedclusterinfos","pods","secrets"]
+  verbs: ["get"]
+
+- apiGroups: ["view.open-cluster-management.io"]
+  resources: ["managedclusterviews"]
+  verbs: ["get", "create", "update", "delete"]
+
+- apiGroups: ["action.open-cluster-management.io"]
+  resources: ["managedclusteractions"]
+  verbs: ["get", "create", "update", "delete"]
+
+# Only used by the controller
+
+- apiGroups: [""]
+  resources: ["namespaces"]
+  verbs: ["delete"]
+
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["list"]
+
+# ClusterCurator apiGroup
+- apiGroups:
+  - cluster.open-cluster-management.io
+  resources:
+  - clustercurators
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.open-cluster-management.io
+  resources:
+  - clustercurators/status
+  verbs:
+  - get
+  - patch
+  - update
+
+# Leader election
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - configmaps/status
+  verbs:
+  - get
+  - update
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - get
+  - create
+  - update

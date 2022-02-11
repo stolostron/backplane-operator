@@ -52,6 +52,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 	"github.com/stolostron/backplane-operator/controllers"
 	clustermanager "open-cluster-management.io/api/operator/v1"
@@ -81,6 +82,8 @@ func init() {
 	utilruntime.Must(hiveconfig.AddToScheme(scheme))
 
 	utilruntime.Must(clustermanager.AddToScheme(scheme))
+
+	utilruntime.Must(monitoringv1.AddToScheme(scheme))
 
 	//+kubebuilder:scaffold:scheme
 }

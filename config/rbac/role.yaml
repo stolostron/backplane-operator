@@ -10,6 +10,7 @@ rules:
   - ""
   resources:
   - configmaps
+  - configmaps/status
   - namespaces
   - secrets
   - serviceaccounts
@@ -25,6 +26,7 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - endpoints
   - nodes
   verbs:
   - get
@@ -48,12 +50,44 @@ rules:
   - update
 - apiGroups:
   - ""
+  - batch
+  - tower.ansible.com
+  resources:
+  - ansiblejobs
+  - clusterdeployments
+  - jobs
+  - machinepools
+  - serviceaccounts
+  verbs:
+  - get
+- apiGroups:
+  - ""
+  - batch
+  - tower.ansible.com
+  resources:
+  - ansiblejobs
+  - jobs
+  - secrets
+  - serviceaccounts
+  verbs:
+  - create
+- apiGroups:
+  - ""
   - events.k8s.io
   resources:
   - events
   verbs:
   - create
   - patch
+  - update
+- apiGroups:
+  - action.open-cluster-management.io
+  resources:
+  - managedclusteractions
+  verbs:
+  - create
+  - delete
+  - get
   - update
 - apiGroups:
   - addon.open-cluster-management.io
@@ -79,6 +113,22 @@ rules:
   - list
   - patch
   - update
+  - watch
+- apiGroups:
+  - agent.open-cluster-management.io
+  - cluster.open-cluster-management.io
+  - inventory.open-cluster-management.io
+  - operator.open-cluster-management.io
+  resources:
+  - baremetalassets
+  - klusterletaddonconfigs
+  - managedclusters
+  - multiclusterhubs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
   - watch
 - apiGroups:
   - apiextensions.k8s.io
@@ -118,6 +168,15 @@ rules:
   - update
   - watch
 - apiGroups:
+  - authentication.k8s.io
+  - config.openshift.io
+  resources:
+  - clusterversions
+  - tokenreviews
+  verbs:
+  - create
+  - get
+- apiGroups:
   - authorization.k8s.io
   resources:
   - subjectaccessreviews
@@ -126,21 +185,22 @@ rules:
 - apiGroups:
   - cluster.open-cluster-management.io
   resources:
+  - clustercurators
+  - clustercurators/status
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.open-cluster-management.io
+  resources:
   - managedclustersets/join
   verbs:
   - create
-- apiGroups:
-  - cluster.open-cluster-management.io
-  - inventory.open-cluster-management.io
-  - operator.open-cluster-management.io
-  resources:
-  - baremetalassets
-  - managedclusters
-  - multiclusterhubs
-  verbs:
-  - get
-  - list
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -201,9 +261,29 @@ rules:
   - update
   - watch
 - apiGroups:
+  - internal.open-cluster-management.io
+  resources:
+  - managedclusterinfos
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - migration.k8s.io
   resources:
   - storageversionmigrations
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - servicemonitors
   verbs:
   - create
   - delete
@@ -285,3 +365,9 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - register.open-cluster-management.io
+  resources:
+  - managedclusters/accept
+  verbs:
+  - update

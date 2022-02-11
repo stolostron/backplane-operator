@@ -33,11 +33,11 @@ func TestRender(t *testing.T) {
 		t.Fatalf("Unable to render CRDs")
 	}
 
-	availabilityList := []string{"managedcluster-import-controller-v2", "ocm-controller", "ocm-proxyserver", "ocm-webhook"}
+	availabilityList := []string{"clusterclaims-controller", "cluster-curator-controller", "managedcluster-import-controller-v2", "ocm-controller", "ocm-proxyserver", "ocm-webhook"}
 	backplaneNodeSelector := map[string]string{"select": "test"}
 	backplaneImagePullSecret := "test"
 	backplaneNamespace := "default"
-	backplaneAvailability := backplane.HABasic
+	backplaneAvailability := backplane.HAHigh
 	backplaneTolerations := []corev1.Toleration{
 		{
 			Key:      "dedicated",
@@ -107,8 +107,8 @@ func TestRender(t *testing.T) {
 				t.Fatalf("Namespace did not propagate to the deployments use")
 			}
 
-			if utils.Contains(availabilityList, deployment.ObjectMeta.Name) && *deployment.Spec.Replicas != 1 {
-				t.Fatalf("AvailabilityConfig did not propagate to the deployments use")
+			if utils.Contains(availabilityList, deployment.ObjectMeta.Name) && *deployment.Spec.Replicas != 2 {
+				t.Fatalf("AvailabilityConfig did not propagate to the %s deployment", deployment.ObjectMeta.Name)
 			}
 
 			for _, proxyVar := range deployment.Spec.Template.Spec.Containers[0].Env {
@@ -133,7 +133,7 @@ func TestRender(t *testing.T) {
 			}
 
 			if !containsHTTP || !containsHTTPS || !containsNO {
-				t.Fatalf("proxy variables not set")
+				t.Fatalf("proxy variables not set in %s", deployment.ObjectMeta.Name)
 			}
 			containsHTTP = false
 			containsHTTPS = false
