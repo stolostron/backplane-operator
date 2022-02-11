@@ -61,6 +61,7 @@ import (
 
 const (
 	crdName = "multiclusterengines.multicluster.openshift.io"
+	crdsDir = "pkg/templates/crds"
 )
 
 var (
@@ -131,7 +132,8 @@ func main() {
 	}
 
 	// Render CRD templates
-	crds, errs := renderer.RenderCRDs()
+	crdsDir := crdsDir
+	crds, errs := renderer.RenderCRDs(crdsDir)
 	if len(errs) > 0 {
 		for _, err := range errs {
 			setupLog.Info(err.Error())

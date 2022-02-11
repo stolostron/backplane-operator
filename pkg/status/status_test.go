@@ -65,6 +65,33 @@ func Test_AddComponent(t *testing.T) {
 	})
 }
 
+func Test_RemoveComponent(t *testing.T) {
+	tracker := StatusTracker{Client: fake.NewClientBuilder().Build()}
+	tracker.AddComponent(MockStatus{
+		NamespacedName: types.NamespacedName{Name: "mock-name-a", Namespace: "mock-ns"},
+	})
+	tracker.AddComponent(MockStatus{
+		NamespacedName: types.NamespacedName{Name: "mock-name-b", Namespace: "mock-ns"},
+	})
+	t.Run("Remove component", func(t *testing.T) {
+		tracker.RemoveComponent(MockStatus{
+			NamespacedName: types.NamespacedName{Name: "mock-name-a", Namespace: "mock-ns"},
+		})
+		if len(tracker.Components) != 1 {
+			t.Errorf("StatusTracker.RemoveComponent() did not remove component")
+		}
+	})
+
+	t.Run("Remove component again", func(t *testing.T) {
+		tracker.RemoveComponent(MockStatus{
+			NamespacedName: types.NamespacedName{Name: "mock-name-a", Namespace: "mock-ns"},
+		})
+		if len(tracker.Components) != 1 {
+			t.Errorf("StatusTracker.RemoveComponent() is not idempotent")
+		}
+	})
+}
+
 func Test_AddCondition(t *testing.T) {
 	tracker := StatusTracker{}
 
