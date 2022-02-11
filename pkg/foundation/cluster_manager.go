@@ -98,6 +98,12 @@ func CanInstallAddons(ctx context.Context, client client.Client) bool {
 
 func GetAddons() ([]*unstructured.Unstructured, error) {
 	var addons []*unstructured.Unstructured
+
+	addonPath := addonPath
+	if val, ok := os.LookupEnv("DIRECTORY_OVERRIDE"); ok {
+		addonPath = path.Join(val, addonPath)
+	}
+
 	// Read CRD files
 	addonPathNotConst := addonPath
 	if val, ok := os.LookupEnv("DIRECTORY_OVERRIDE"); ok {

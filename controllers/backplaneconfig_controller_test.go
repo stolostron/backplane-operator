@@ -30,6 +30,8 @@ import (
 	"github.com/stolostron/backplane-operator/pkg/status"
 	"github.com/stolostron/backplane-operator/pkg/utils"
 
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+
 	clustermanager "open-cluster-management.io/api/operator/v1"
 
 	hiveconfig "github.com/openshift/hive/apis/hive/v1"
@@ -88,20 +90,14 @@ var _ = Describe("BackplaneConfig controller", func() {
 		msaTests               testList
 	)
 
-	BeforeEach(func() {
-		testEnv = &envtest.Environment{
-			CRDDirectoryPaths: []string{
-				filepath.Join("..", "config", "crd", "bases"),
-				filepath.Join("..", "pkg", "templates", "crds", "cluster-manager"),
-				filepath.Join("..", "pkg", "templates", "crds", "hive-operator"),
-				filepath.Join("..", "pkg", "templates", "crds", "foundation"),
-				filepath.Join("..", "test", "mock-crds"),
+	JustBeforeEach(func() {
+		// Create openshift-monitoring namespace because metrics stands up prometheus endpoint here
+		Expect(k8sClient.Create(context.Background(), &corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "openshift-monitoring",
 			},
-			CRDInstallOptions: envtest.CRDInstallOptions{
-				CleanUpAfterUse: true,
-			},
-			ErrorIfCRDPathMissing: true,
-		}
+			Spec: corev1.NamespaceSpec{},
+		})).To(Succeed())
 
 		clusterManager = &unstructured.Unstructured{}
 		clusterManager.SetGroupVersionKind(schema.GroupVersionKind{
@@ -168,6 +164,30 @@ var _ = Describe("BackplaneConfig controller", func() {
 				Expected:       nil,
 			},
 			{
+				Name:           "Cluster Curator Controller",
+				NamespacedName: types.NamespacedName{Name: "cluster-curator-controller", Namespace: DestinationNamespace},
+				ResourceType:   &appsv1.Deployment{},
+				Expected:       nil,
+			},
+			{
+				Name:           "Cluster Claims Controller",
+				NamespacedName: types.NamespacedName{Name: "clusterclaims-controller", Namespace: DestinationNamespace},
+				ResourceType:   &appsv1.Deployment{},
+				Expected:       nil,
+			},
+			{
+				Name:           "ClusterLifecycle State Metrics",
+				NamespacedName: types.NamespacedName{Name: "clusterlifecycle-state-metrics-v2", Namespace: DestinationNamespace},
+				ResourceType:   &appsv1.Deployment{},
+				Expected:       nil,
+			},
+			{
+				Name:           "Provider Credentials Controller",
+				NamespacedName: types.NamespacedName{Name: "provider-credential-controller", Namespace: DestinationNamespace},
+				ResourceType:   &appsv1.Deployment{},
+				Expected:       nil,
+			},
+			{
 				Name:           "Cluster Manager",
 				NamespacedName: types.NamespacedName{Name: "cluster-manager"},
 				ResourceType:   clusterManager,
@@ -227,8 +247,22 @@ var _ = Describe("BackplaneConfig controller", func() {
 		}
 	})
 
-	JustBeforeEach(func() {
+	BeforeEach(func() {
 		By("bootstrap test environment")
+		testEnv = &envtest.Environment{
+			CRDDirectoryPaths: []string{
+				filepath.Join("..", "config", "crd", "bases"),
+				filepath.Join("..", "pkg", "templates", "crds", "cluster-manager"),
+				filepath.Join("..", "pkg", "templates", "crds", "hive-operator"),
+				filepath.Join("..", "pkg", "templates", "crds", "foundation"),
+				filepath.Join("..", "pkg", "templates", "crds", "cluster-lifecycle"),
+				filepath.Join("..", "hack", "unit-test-crds"),
+			},
+			CRDInstallOptions: envtest.CRDInstallOptions{
+				CleanUpAfterUse: true,
+			},
+			ErrorIfCRDPathMissing: true,
+		}
 		var err error
 		Eventually(func() error {
 			clientConfig, err = testEnv.Start()
@@ -255,6 +289,9 @@ var _ = Describe("BackplaneConfig controller", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		err = clustermanager.AddToScheme(scheme.Scheme)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = monitoringv1.AddToScheme(scheme.Scheme)
 		Expect(err).NotTo(HaveOccurred())
 
 		err = os.Setenv("POD_NAMESPACE", "default")
@@ -353,7 +390,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 						ctx := context.Background()
 						g.Expect(k8sClient.Get(ctx, test.NamespacedName, res)).To(Succeed())
 						g.Expect(len(res.Spec.Template.Spec.Containers)).To(
-							Equal(1),
+							Not(Equal(0)),
 							fmt.Sprintf("no containers in %s", test.Name),
 						)
 						g.Expect(res.Spec.Template.Spec.Containers[0].ImagePullPolicy).To(
@@ -407,7 +444,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 						ctx := context.Background()
 						g.Expect(k8sClient.Get(ctx, test.NamespacedName, res)).To(Succeed())
 						g.Expect(len(res.Spec.Template.Spec.Containers)).To(
-							Equal(1),
+							Not(Equal(0)),
 							fmt.Sprintf("no containers in %s", test.Name),
 						)
 						g.Expect(res.Spec.Template.Spec.Containers[0].ImagePullPolicy).To(
