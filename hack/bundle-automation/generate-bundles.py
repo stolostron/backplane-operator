@@ -60,13 +60,13 @@ def parse_image_ref(image_ref):
 def templateHelmChart(outputDir, helmChart):
     logging.info("Copying templates into new '%s' chart directory ...", helmChart)
     # Create main folder
-    if os.path.exists(os.path.join(outputDir, "charts", helmChart)):
-        shutil.rmtree(os.path.join(outputDir, "charts", helmChart))
+    if os.path.exists(os.path.join(outputDir, "charts", "always",  helmChart)):
+        shutil.rmtree(os.path.join(outputDir, "charts","always", helmChart))
 
     # Create Chart.yaml, values.yaml, and templates dir
-    os.makedirs(os.path.join(outputDir, "charts", helmChart, "templates"))
-    shutil.copyfile(os.path.join(os.path.dirname(os.path.realpath(__file__)), "chart-templates", "Chart.yaml"), os.path.join(outputDir, "charts", helmChart, "Chart.yaml"))
-    shutil.copyfile(os.path.join(os.path.dirname(os.path.realpath(__file__)), "chart-templates", "values.yaml"), os.path.join(outputDir, "charts", helmChart, "values.yaml"))
+    os.makedirs(os.path.join(outputDir, "charts", "always",  helmChart, "templates"))
+    shutil.copyfile(os.path.join(os.path.dirname(os.path.realpath(__file__)), "chart-templates", "Chart.yaml"), os.path.join(outputDir, "charts",  "always", helmChart, "Chart.yaml"))
+    shutil.copyfile(os.path.join(os.path.dirname(os.path.realpath(__file__)), "chart-templates", "values.yaml"), os.path.join(outputDir, "charts", "always", helmChart, "values.yaml"))
     logging.info("Templates copied.\n")
 
 # Fill in the chart.yaml template with information from the CSV
@@ -616,7 +616,7 @@ def main():
             templateHelmChart(destination, operator["name"])
             
             # Generate the Chart.yaml file based off of the CSV
-            helmChart = os.path.join(destination, "charts", operator["name"])
+            helmChart = os.path.join(destination, "charts", "always", operator["name"])
             logging.info("Filling Chart.yaml ...")
             fillChartYaml(helmChart, operator["name"],csvPath)
 

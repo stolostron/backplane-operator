@@ -4,7 +4,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.4.1
+    controller-gen.kubebuilder.io/version: v0.6.1
   creationTimestamp: null
   name: multiclusterengines.multicluster.openshift.io
 spec:
@@ -51,6 +51,19 @@ spec:
                 description: 'Specifies deployment replication for improved availability.
                   Options are: Basic and High (default)'
                 type: string
+              componentConfig:
+                description: Provides optional configuration for components
+                properties:
+                  managedServiceAccount:
+                    description: Optional configuration items for the managed-serviceaccount
+                      component
+                    properties:
+                      enable:
+                        description: Enable managed-serviceaccount component (Tech
+                          Preview).
+                        type: boolean
+                    type: object
+                type: object
               imagePullSecret:
                 description: Override pull secret for accessing MultiClusterEngine
                   operand and endpoint images
