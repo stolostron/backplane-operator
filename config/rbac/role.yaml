@@ -214,6 +214,30 @@ rules:
   - update
   - watch
 - apiGroups:
+  - discovery.open-cluster-management.io
+  resources:
+  - discoveredclusters
+  - discoveryconfigs
+  verbs:
+  - approve
+  - bind
+  - create
+  - delete
+  - deletecollection
+  - escalate
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - discovery.open-cluster-management.io
+  resources:
+  - discoveryconfigs
+  verbs:
+  - get
+  - list
+- apiGroups:
   - hive.openshift.io
   resources:
   - clusterclaims
