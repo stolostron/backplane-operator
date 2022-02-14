@@ -1,7 +1,6 @@
 global:
   imageOverrides:
     discovery_operator: ''
-  pullPolicy: Always
   pullSecret: null
 hubconfig:
   nodeSelector: null

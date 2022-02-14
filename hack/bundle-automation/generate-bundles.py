@@ -233,6 +233,22 @@ def addResources(helmChart, csvPath):
         for role in permissions:
             addNamespaceScopedRBAC(helmChart, role)
     logging.info("Resources have been successfully added to chart '%s' from CSV '%s'.\n", helmChart, csvPath)
+    
+    logging.info("Copying over other resources in the bundle if they exist ...")
+    dirPath = os.path.dirname(csvPath)
+
+    otherBundleResourceTypes = ["ClusterRole", "ClusterRoleBinding", "Role", "RoleBinding", "Service"]
+    for filename in os.listdir(dirPath):
+        if filename.endswith(".yaml") or filename.endswith(".yml"):
+            filePath = os.path.join(dirPath, filename)
+            with open(filePath, 'r') as f:
+                fileYml = yaml.safe_load(f)
+            if fileYml['kind'] in otherBundleResourceTypes:
+                shutil.copyfile(filePath, os.path.join(helmChart, "templates", os.path.basename(filePath)))
+            continue
+        else:
+            continue
+
 
 # Given a resource Kind, return all filepaths of that resource type in a chart directory
 def findTemplatesOfType(helmChart, kind):
