@@ -63,7 +63,7 @@ var (
 			Name: "DiscoveryConfig",
 			GVK: schema.GroupVersionKind{
 				Group:   "discovery.open-cluster-management.io",
-				Version: "v1alpha1",
+				Version: "v1",
 				Kind:    "DiscoveryConfigList",
 			},
 		},
