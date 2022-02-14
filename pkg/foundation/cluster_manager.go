@@ -30,10 +30,10 @@ const (
 	// WorkImageKey used by work deployments
 	WorkImageKey = "work"
 	// PlacementImageKey used by placement deployments
-	PlacementImageKey = "placement"
-
+	PlacementImageKey             = "placement"
 	addonPath                     = "pkg/templates/clustermanagementaddons/"
 	clusterManagementAddonCRDName = "clustermanagementaddons.addon.open-cluster-management.io"
+	ClusterManagementAddonKind    = "ClusterManagementAddOn"
 )
 
 // RegistrationImage ...
@@ -104,7 +104,6 @@ func GetAddons() ([]*unstructured.Unstructured, error) {
 		addonPath = path.Join(val, addonPath)
 	}
 
-	// Read CRD files
 	err := filepath.Walk(addonPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
