@@ -1,6 +1,7 @@
 global:
   imageOverrides:
     openshift_hive: ''
+  namespace: default
   pullSecret: null
 hubconfig:
   nodeSelector: null
