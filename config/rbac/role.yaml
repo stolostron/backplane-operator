@@ -93,6 +93,8 @@ rules:
   - addon.open-cluster-management.io
   resources:
   - clustermanagementaddons
+  - clustermanagementaddons/finalizers
+  - managedclusteraddons
   verbs:
   - create
   - delete
