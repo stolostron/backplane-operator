@@ -44,4 +44,3 @@ The operator can also run inside the cluster as a Deployment. To do that first b
     ```shell
     make deploy IMG=<registry>/<imagename>:<tag>
     ```
-
