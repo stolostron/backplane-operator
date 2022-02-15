@@ -1,6 +1,7 @@
 global:
   imageOverrides:
     discovery_operator: ''
+  namespace: default
   pullSecret: null
 hubconfig:
   nodeSelector: null

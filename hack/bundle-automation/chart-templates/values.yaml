@@ -8,6 +8,7 @@ global:
   pullSecret: null
   imageOverrides:
     imageOverride: ""
+  namespace: default
     
 hubconfig:
   nodeSelector: null

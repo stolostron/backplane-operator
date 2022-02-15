@@ -1,6 +1,7 @@
 global:
   imageOverrides:
     registration_operator: ''
+  namespace: default
   pullSecret: null
 hubconfig:
   nodeSelector: null

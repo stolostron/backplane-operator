@@ -9,4 +9,4 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: discovery-operator
-  namespace: '{{ .Release.Namespace }}'
+  namespace: '{{ .Values.global.namespace }}'
