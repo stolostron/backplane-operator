@@ -2,5 +2,4 @@ apiVersion: multicluster.openshift.io/v1
 kind: MultiClusterEngine
 metadata:
   name: multiclusterengine-sample
-spec:
-  # Add fields here
+spec: {}
