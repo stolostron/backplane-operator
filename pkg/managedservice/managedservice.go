@@ -1,9 +1,12 @@
+// Copyright Contributors to the Open Cluster Management project
+
 package managedservice
 
 import (
 	"context"
 
 	"fmt"
+
 	bpv1 "github.com/stolostron/backplane-operator/api/v1"
 	"github.com/stolostron/backplane-operator/pkg/status"
 	"k8s.io/apimachinery/pkg/api/errors"
