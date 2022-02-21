@@ -22,7 +22,6 @@ import (
 	"context"
 	e "errors"
 	"fmt"
-	"os"
 	"time"
 
 	"k8s.io/client-go/util/workqueue"
@@ -626,7 +625,7 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 		return ctrl.Result{}, nil
 	}
 	log.Info("Set to default")
-	m.Spec.TargetNamespace = os.Getenv("POD_NAMESPACE")
+	m.Spec.TargetNamespace = backplanev1.DefaultTargetNamespace
 	// Apply defaults to server
 	err := r.Client.Update(context.TODO(), m)
 	if err != nil {
