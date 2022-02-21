@@ -21,7 +21,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -32,6 +31,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+)
+
+const (
+	DefaultTargetNamespace = "multicluster-engine"
 )
 
 // log is for logging in this package.
@@ -84,9 +87,8 @@ var _ webhook.Defaulter = &MultiClusterEngine{}
 func (r *MultiClusterEngine) Default() {
 	backplaneconfiglog.Info("default", "name", r.Name)
 	if r.Spec.TargetNamespace == "" {
-		r.Spec.TargetNamespace = os.Getenv("POD_NAMESPACE")
+		r.Spec.TargetNamespace = DefaultTargetNamespace
 	}
-	// TODO(user): fill in your defaulting logic.
 }
 
 var _ webhook.Validator = &MultiClusterEngine{}
