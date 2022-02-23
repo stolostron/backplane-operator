@@ -20,13 +20,18 @@ package v1
 
 const (
 	managedServiceAccountEnabledDefault = false
+	consoleMCEEnabledDefault            = false
 )
 
 func (mce *MultiClusterEngine) ComponentEnabled(c ComponentEnabled) bool {
-	if c == ManagedServiceAccount {
+	switch c {
+	case ManagedServiceAccount:
 		return mce.managedServiceAccountEnabled()
+	case ConsoleMCE:
+		return mce.consoleMCEEnabled()
+	default:
+		return false
 	}
-	return false
 }
 
 func (mce *MultiClusterEngine) hasComponentConfig() bool {
@@ -40,9 +45,23 @@ func (mce *MultiClusterEngine) hasManagedServiceAccountConfig() bool {
 	return mce.Spec.ComponentConfig.ManagedServiceAccount != nil
 }
 
+func (mce *MultiClusterEngine) hasConsoleMCEConfig() bool {
+	if !mce.hasComponentConfig() {
+		return false
+	}
+	return mce.Spec.ComponentConfig.ConsoleMCE != nil
+}
+
 func (mce *MultiClusterEngine) managedServiceAccountEnabled() bool {
 	if !mce.hasManagedServiceAccountConfig() {
 		return managedServiceAccountEnabledDefault
 	}
 	return mce.Spec.ComponentConfig.ManagedServiceAccount.Enable
+}
+
+func (mce *MultiClusterEngine) consoleMCEEnabled() bool {
+	if !mce.hasConsoleMCEConfig() {
+		return consoleMCEEnabledDefault
+	}
+	return mce.Spec.ComponentConfig.ConsoleMCE.Enable
 }

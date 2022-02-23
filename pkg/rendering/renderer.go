@@ -22,6 +22,10 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
+const (
+	AlwaysChartsDir = "pkg/templates/charts/always"
+)
+
 type Values struct {
 	Global    Global    `yaml:"global" structs:"global"`
 	HubConfig HubConfig `yaml:"hubconfig" structs:"hubconfig"`
@@ -150,7 +154,7 @@ func renderTemplates(chartPath string, backplaneConfig *v1.MultiClusterEngine, i
 
 		// Add namespace to namespaced resources
 		switch unstructured.GetKind() {
-		case "Deployment", "ServiceAccount", "Role", "RoleBinding", "Service":
+		case "Deployment", "ServiceAccount", "Role", "RoleBinding", "Service", "ConfigMap":
 			unstructured.SetNamespace(backplaneConfig.Spec.TargetNamespace)
 		}
 		templates = append(templates, unstructured)
