@@ -36,6 +36,7 @@ rules:
   - secrets/finalizers
   - services
   - services/finalizers
+  - endpoints
   - events
   - configmaps
   - namespaces
@@ -112,6 +113,19 @@ rules:
   - patch
   - delete
 - apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - prometheusrules
+  - servicemonitors
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
   - apps.openshift.io
   resources:
   - deploymentconfigs
@@ -177,6 +191,18 @@ rules:
   - machinepools
   - selectorsyncsets
   - syncsets
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
   verbs:
   - get
   - list
