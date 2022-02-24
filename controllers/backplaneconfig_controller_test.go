@@ -207,6 +207,12 @@ var _ = Describe("BackplaneConfig controller", func() {
 				Expected:       nil,
 			},
 			{
+				Name:           "Assisted Installer",
+				NamespacedName: types.NamespacedName{Name: "infrastructure-operator", Namespace: DestinationNamespace},
+				ResourceType:   &appsv1.Deployment{},
+				Expected:       nil,
+			},
+			{
 				Name:           "Cluster Manager",
 				NamespacedName: types.NamespacedName{Name: "cluster-manager"},
 				ResourceType:   clusterManager,
