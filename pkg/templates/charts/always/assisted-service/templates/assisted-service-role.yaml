@@ -1,0 +1,61 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: '{{ .Values.org }}:{{ .Chart.Name }}:assisted-service'
+rules:
+- apiGroups:
+  - ''
+  resources:
+  - configmaps
+  verbs:
+  - create
+- apiGroups:
+  - ''
+  resourceNames:
+  - assisted-service-baseiso-helper
+  - assisted-service-leader-election-helper
+  - assisted-service-migration-helper
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - update
+  - delete
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - create
+  - get
+  - update
+  - delete
+- apiGroups:
+  - ''
+  - coordination.k8s.io
+  resources:
+  - configmaps
+  - leases
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - ''
+  resources:
+  - configmaps/status
+  verbs:
+  - get
+  - update
+  - patch
+- apiGroups:
+  - ''
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
