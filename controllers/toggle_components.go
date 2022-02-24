@@ -49,14 +49,13 @@ func (r *MultiClusterEngineReconciler) ensureConsoleMCE(ctx context.Context, bac
 				}
 				return ctrl.Result{}, nil
 			} else {
-				log.Info("Console MCE is not yet available. Waiting to enable console plugin")
-				return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+				log.Info("MCE console is not yet available. Waiting to enable console plugin")
+				return ctrl.Result{RequeueAfter: requeuePeriod}, fmt.Errorf("MCE console is not yet available. Waiting to enable console plugin")
 			}
 		}
-		continue
 	}
 
-	return ctrl.Result{Requeue: true}, nil
+	return ctrl.Result{RequeueAfter: requeuePeriod}, fmt.Errorf("MCE console is not yet available. Waiting to enable console plugin")
 }
 
 func (r *MultiClusterEngineReconciler) ensureNoConsoleMCE(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {

@@ -544,6 +544,7 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 	}
 	log := log.FromContext(ctx)
 	log.Info("Setting defaults")
+
 	if len(m.Spec.TargetNamespace) == 0 {
 		m.Spec.TargetNamespace = backplanev1.DefaultTargetNamespace
 		updateNecessary = true
@@ -577,21 +578,26 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 		}
 	}
 
-	clusterVerion := ""
+	currentClusterVersion := ""
+	upgradeCompleted := false
 	if unitTest {
 		// If unit test pass along a version, Can't set status in unit test
-		clusterVerion = "4.9.0"
+		currentClusterVersion = "4.9.0"
+		upgradeCompleted = true
 	} else {
-		clusterVerion = clusterVersion.Status.History[0].Version
+		currentClusterVersion = clusterVersion.Status.History[0].Version
+		if clusterVersion.Status.History[0].State == configv1.CompletedUpdate {
+			upgradeCompleted = true
+		}
 	}
 
-	currentVersion, err := semver.NewVersion(clusterVerion)
+	currentVersion, err := semver.NewVersion(currentClusterVersion)
 	if err != nil {
 		log.Error(err, "Failed to convert currentVersion of cluster to semver compatible value for comparison")
 		return ctrl.Result{}, err
 	}
 
-	if constraint.Check(currentVersion) {
+	if constraint.Check(currentVersion) && upgradeCompleted {
 		if m.Spec.ComponentConfig == nil {
 			m.Spec.ComponentConfig = &backplanev1.ComponentConfig{}
 		}
