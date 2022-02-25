@@ -44,6 +44,7 @@ type HubConfig struct {
 	ProxyConfigs map[string]string   `yaml:"proxyConfigs" structs:"proxyConfigs"`
 	ReplicaCount int                 `yaml:"replicaCount" structs:"replicaCount"`
 	Tolerations  []corev1.Toleration `yaml:"tolerations" structs:"tolerations"`
+	OCPVersion   string              `yaml:"ocpVersion" structs:"ocpVersion"`
 }
 
 func RenderCRDs(crdDir string) ([]*unstructured.Unstructured, []error) {
@@ -184,6 +185,8 @@ func injectValuesOverrides(values *Values, backplaneConfig *v1.MultiClusterEngin
 	}
 
 	values.Org = "open-cluster-management"
+
+	values.HubConfig.OCPVersion = os.Getenv("ACM_HUB_OCP_VERSION")
 
 	if utils.ProxyEnvVarsAreSet() {
 		proxyVar := map[string]string{}

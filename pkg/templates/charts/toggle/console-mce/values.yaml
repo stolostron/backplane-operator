@@ -15,4 +15,5 @@ hubconfig:
   proxyConfigs: {}
   replicaCount: 1
   tolerations: []
+  ocpVersion: ""
 org: open-cluster-management

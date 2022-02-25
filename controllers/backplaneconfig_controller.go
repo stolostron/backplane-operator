@@ -591,6 +591,9 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 		}
 	}
 
+	// Set OCP version as env var, so that charts can render this value
+	os.Setenv("ACM_HUB_OCP_VERSION", currentClusterVersion)
+
 	currentVersion, err := semver.NewVersion(currentClusterVersion)
 	if err != nil {
 		log.Error(err, "Failed to convert currentVersion of cluster to semver compatible value for comparison")
