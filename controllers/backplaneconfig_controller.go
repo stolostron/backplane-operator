@@ -22,8 +22,10 @@ import (
 	"context"
 	e "errors"
 	"fmt"
+	"os"
 	"time"
 
+	configv1 "github.com/openshift/api/config/v1"
 	"k8s.io/client-go/util/workqueue"
 	clustermanager "open-cluster-management.io/api/operator/v1"
 
@@ -48,10 +50,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
+	semver "github.com/Masterminds/semver"
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 	"github.com/stolostron/backplane-operator/pkg/foundation"
 	"github.com/stolostron/backplane-operator/pkg/hive"
-	"github.com/stolostron/backplane-operator/pkg/managedservice"
 	renderer "github.com/stolostron/backplane-operator/pkg/rendering"
 	"github.com/stolostron/backplane-operator/pkg/status"
 
@@ -67,11 +69,8 @@ type MultiClusterEngineReconciler struct {
 }
 
 const (
-	requeuePeriod                 = 15 * time.Second
-	backplaneFinalizer            = "finalizer.multicluster.openshift.io"
-	alwaysChartsDir               = "pkg/templates/charts/always"
-	managedServiceAccountChartDir = "pkg/templates/charts/toggle/managed-serviceaccount"
-	managedServiceAccountCRDPath  = "pkg/templates/managed-serviceaccount/crds"
+	requeuePeriod      = 15 * time.Second
+	backplaneFinalizer = "finalizer.multicluster.openshift.io"
 )
 
 //+kubebuilder:rbac:groups=multicluster.openshift.io,resources=multiclusterengines,verbs=get;list;watch;create;update;patch;delete
@@ -82,6 +81,9 @@ const (
 //+kubebuilder:rbac:groups="discovery.open-cluster-management.io",resources=discoveryconfigs,verbs=get
 //+kubebuilder:rbac:groups="discovery.open-cluster-management.io",resources=discoveryconfigs,verbs=list
 //+kubebuilder:rbac:groups="discovery.open-cluster-management.io",resources=discoveryconfigs;discoveredclusters,verbs=create;get;list;watch;update;delete;deletecollection;patch;approve;escalate;bind
+//+kubebuilder:rbac:groups=config.openshift.io,resources=clusterversions,verbs=get;list;watch;
+//+kubebuilder:rbac:groups=console.openshift.io,resources=consoleplugins,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=operator.openshift.io,resources=consoles,verbs=get;list;watch;update;patch
 
 // ClusterManager RBAC
 //+kubebuilder:rbac:groups="",resources=configmaps;configmaps/status;namespaces;serviceaccounts;services;secrets,verbs=create;get;list;update;watch;patch;delete
@@ -220,11 +222,17 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return result, err
 	}
 
-	result, err = r.DeploySubcomponents(ctx, backplaneConfig)
+	result, err = r.DeployAlwaysSubcomponents(ctx, backplaneConfig)
 	if err != nil {
 		r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing, metav1.ConditionUnknown, status.DeployFailedReason, err.Error()))
 		return result, err
 	}
+
+	result, err = r.ensureToggleableComponents(ctx, backplaneConfig)
+	if err != nil {
+		return result, err
+	}
+
 	r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing, metav1.ConditionTrue, status.DeploySuccessReason, "All components deployed"))
 
 	return ctrl.Result{}, nil
@@ -263,11 +271,11 @@ func (r *MultiClusterEngineReconciler) SetupWithManager(mgr ctrl.Manager) error 
 		Complete(r)
 }
 
-// DeploySubcomponents ensures all subcomponents exist
-func (r *MultiClusterEngineReconciler) DeploySubcomponents(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+// DeployAlwaysSubcomponents ensures all subcomponents exist
+func (r *MultiClusterEngineReconciler) DeployAlwaysSubcomponents(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 
-	chartsDir := alwaysChartsDir
+	chartsDir := renderer.AlwaysChartsDir
 	// Renders all templates from charts
 	templates, errs := renderer.RenderCharts(chartsDir, backplaneConfig, r.Images)
 	if len(errs) > 0 {
@@ -294,114 +302,35 @@ func (r *MultiClusterEngineReconciler) DeploySubcomponents(ctx context.Context, 
 	if err != nil {
 		return result, err
 	}
+
+	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 	if backplaneConfig.ComponentEnabled(backplanev1.ManagedServiceAccount) {
-		result, err = r.ensureManagedServiceAccount(ctx, backplaneConfig)
+		result, err := r.ensureManagedServiceAccount(ctx, backplaneConfig)
 		if err != nil {
 			return result, err
 		}
 	} else {
-		result, err = r.ensureNoManagedServiceAccount(ctx, backplaneConfig)
+		result, err := r.ensureNoManagedServiceAccount(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
 			return result, err
 		}
 	}
 
-	return ctrl.Result{}, nil
-}
-
-func (r *MultiClusterEngineReconciler) ensureManagedServiceAccount(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	r.StatusManager.RemoveComponent(managedservice.ManagedServiceDisabledStatus(backplaneConfig.Spec.TargetNamespace, []*unstructured.Unstructured{}))
-	r.StatusManager.AddComponent(managedservice.ManagedServiceEnabledStatus(backplaneConfig.Spec.TargetNamespace))
-
-	log := log.FromContext(ctx)
-
-	if foundation.CanInstallAddons(ctx, r.Client) {
-		// Render CRD templates
-		crdPath := managedServiceAccountCRDPath
-		crds, errs := renderer.RenderCRDs(crdPath)
-		if len(errs) > 0 {
-			for _, err := range errs {
-				log.Info(err.Error())
-			}
-			return ctrl.Result{RequeueAfter: requeuePeriod}, nil
-		}
-
-		// Apply all CRDs
-		for _, crd := range crds {
-			result, err := r.applyTemplate(ctx, backplaneConfig, crd)
-			if err != nil {
-				return result, err
-			}
-		}
-
-		// Renders all templates from charts
-		chartPath := managedServiceAccountChartDir
-		templates, errs := renderer.RenderChart(chartPath, backplaneConfig, r.Images)
-		if len(errs) > 0 {
-			for _, err := range errs {
-				log.Info(err.Error())
-			}
-			return ctrl.Result{RequeueAfter: requeuePeriod}, nil
-		}
-
-		// Applies all templates
-		for _, template := range templates {
-			result, err := r.applyTemplate(ctx, backplaneConfig, template)
-			if err != nil {
-				return result, err
-			}
-		}
-	}
-	return ctrl.Result{}, nil
-}
-
-func (r *MultiClusterEngineReconciler) ensureNoManagedServiceAccount(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
-
-	// Renders all templates from charts
-	chartPath := managedServiceAccountChartDir
-	templates, errs := renderer.RenderChart(chartPath, backplaneConfig, r.Images)
-	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
-	}
-
-	r.StatusManager.RemoveComponent(managedservice.ManagedServiceEnabledStatus(backplaneConfig.Spec.TargetNamespace))
-	r.StatusManager.AddComponent(managedservice.ManagedServiceDisabledStatus(backplaneConfig.Spec.TargetNamespace, templates))
-
-	// Deletes all templates
-	for _, template := range templates {
-		if template.GetKind() == foundation.ClusterManagementAddonKind && !foundation.CanInstallAddons(ctx, r.Client) {
-			// Can't delete ClusterManagementAddon if Kind doesn't exists
-			continue
-		}
-		result, err := r.deleteTemplate(ctx, backplaneConfig, template)
+	if backplaneConfig.ComponentEnabled(backplanev1.ConsoleMCE) {
+		result, err := r.ensureConsoleMCE(ctx, backplaneConfig)
 		if err != nil {
-			log.Error(err, "Failed to delete MSA template")
+			return result, err
+		}
+	} else {
+		result, err := r.ensureNoConsoleMCE(ctx, backplaneConfig)
+		if result != (ctrl.Result{}) {
 			return result, err
 		}
 	}
 
-	// Render CRD templates
-	crdPath := managedServiceAccountCRDPath
-	crds, errs := renderer.RenderCRDs(crdPath)
-	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
-	}
-
-	// Delete all CRDs
-	for _, crd := range crds {
-		result, err := r.deleteTemplate(ctx, backplaneConfig, crd)
-		if err != nil {
-			log.Error(err, "Failed to delete CRD")
-			return result, err
-		}
-	}
 	return ctrl.Result{}, nil
 }
 
@@ -435,22 +364,12 @@ func (r *MultiClusterEngineReconciler) deleteTemplate(ctx context.Context, backp
 	err := r.Client.Get(ctx, types.NamespacedName{Name: template.GetName(), Namespace: template.GetNamespace()}, template)
 
 	if err != nil && apierrors.IsNotFound(err) {
-		if template.GetKind() == "Deployment" {
-			log.Info(fmt.Sprintf("not found remove status: %s\n", template.GetName()))
-			r.StatusManager.RemoveComponent(status.DeploymentStatus{
-				NamespacedName: types.NamespacedName{Name: template.GetName(), Namespace: template.GetNamespace()},
-			})
-		}
 		return ctrl.Result{}, nil
 	}
 
 	// set status progressing condition
-
 	if err != nil {
 		log.Error(err, "Odd error delete template")
-		if template.GetKind() == "Deployment" {
-
-		}
 		return ctrl.Result{}, err
 	}
 
@@ -458,9 +377,6 @@ func (r *MultiClusterEngineReconciler) deleteTemplate(ctx context.Context, backp
 	err = r.Client.Delete(ctx, template)
 	if err != nil {
 		log.Error(err, "Failed to delete template")
-		if template.GetKind() == "Deployment" {
-
-		}
 		return ctrl.Result{}, err
 	}
 
@@ -519,6 +435,11 @@ func (r *MultiClusterEngineReconciler) ensureCustomResources(ctx context.Context
 
 func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) error {
 	log := log.FromContext(ctx)
+	_, err := r.removePluginFromConsoleResource(ctx, backplaneConfig)
+	if err != nil {
+		log.Info("Error ensuring plugin is removed from console resource")
+		return err
+	}
 
 	clusterManager := &unstructured.Unstructured{}
 	clusterManager.SetGroupVersionKind(
@@ -529,7 +450,7 @@ func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Conte
 		},
 	)
 
-	err := r.Client.Get(ctx, types.NamespacedName{Name: "cluster-manager"}, clusterManager)
+	err = r.Client.Get(ctx, types.NamespacedName{Name: "cluster-manager"}, clusterManager)
 	if err == nil { // If resource exists, delete
 		log.Info("finalizing cluster-manager custom resource")
 		err := r.Client.Delete(ctx, clusterManager)
@@ -616,24 +537,107 @@ func (r *MultiClusterEngineReconciler) ensureUnstructuredResource(ctx context.Co
 }
 
 func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-
+	updateNecessary := false
 	if !utils.AvailabilityConfigIsValid(m.Spec.AvailabilityConfig) {
 		m.Spec.AvailabilityConfig = backplanev1.HAHigh
+		updateNecessary = true
 	}
 	log := log.FromContext(ctx)
-	if len(m.Spec.TargetNamespace) != 0 {
-		return ctrl.Result{}, nil
+	log.Info("Setting defaults")
+
+	if len(m.Spec.TargetNamespace) == 0 {
+		m.Spec.TargetNamespace = backplanev1.DefaultTargetNamespace
+		updateNecessary = true
 	}
-	log.Info("Set to default")
-	m.Spec.TargetNamespace = backplanev1.DefaultTargetNamespace
-	// Apply defaults to server
-	err := r.Client.Update(context.TODO(), m)
+
+	// If OCP 4.10+ then set then enable the MCE console. Else ensure it is disabled
+	clusterVersion := &configv1.ClusterVersion{}
+	err := r.Client.Get(ctx, types.NamespacedName{Name: "version"}, clusterVersion)
 	if err != nil {
-		log.Error(err, "Failed to update MultiClusterEngine")
+		log.Error(err, "Failed to detect clusterversion")
 		return ctrl.Result{}, err
 	}
-	log.Info("MultiClusterEngine successfully updated")
-	return ctrl.Result{Requeue: true}, nil
+
+	// -0 allows for prerelease builds to pass the validation.
+	// If -0 is removed, developer/rc builds will not pass this check
+	constraint, err := semver.NewConstraint(">= 4.10.0-0")
+	if err != nil {
+		log.Error(err, "Failed to set constraint of minimum supported version for plugins")
+		return ctrl.Result{}, err
+	}
+
+	unitTest := false
+	if val, ok := os.LookupEnv("UNIT_TEST"); ok && val == "true" {
+		unitTest = true
+	}
+
+	if len(clusterVersion.Status.History) == 0 {
+		if !unitTest {
+			log.Error(err, "Failed to detect status in clusterversion.status.history")
+			return ctrl.Result{}, err
+		}
+	}
+
+	currentClusterVersion := ""
+	upgradeCompleted := false
+	if unitTest {
+		// If unit test pass along a version, Can't set status in unit test
+		currentClusterVersion = "4.9.0"
+		upgradeCompleted = true
+	} else {
+		currentClusterVersion = clusterVersion.Status.History[0].Version
+		if clusterVersion.Status.History[0].State == configv1.CompletedUpdate {
+			upgradeCompleted = true
+		}
+	}
+
+	// Set OCP version as env var, so that charts can render this value
+	os.Setenv("ACM_HUB_OCP_VERSION", currentClusterVersion)
+
+	currentVersion, err := semver.NewVersion(currentClusterVersion)
+	if err != nil {
+		log.Error(err, "Failed to convert currentVersion of cluster to semver compatible value for comparison")
+		return ctrl.Result{}, err
+	}
+
+	if constraint.Check(currentVersion) && upgradeCompleted {
+		if m.Spec.ComponentConfig == nil {
+			m.Spec.ComponentConfig = &backplanev1.ComponentConfig{}
+		}
+		// If ConsoleMCE config already exists, then don't overwrite it
+		if m.Spec.ComponentConfig.ConsoleMCE == nil {
+			log.Info("Dynamic plugins are supported. ConsoleMCE Config is not detected. Enabling ConsoleMCE")
+			m.Spec.ComponentConfig.ConsoleMCE = &backplanev1.ConsoleMCEConfig{
+				Enable: true,
+			}
+			updateNecessary = true
+		}
+	} else {
+		if m.Spec.ComponentConfig == nil {
+			m.Spec.ComponentConfig = &backplanev1.ComponentConfig{}
+		}
+		if m.Spec.ComponentConfig.ConsoleMCE == nil || m.Spec.ComponentConfig.ConsoleMCE.Enable {
+			log.Info("Dynamic plugins are not supported. Disabling MCE console")
+			m.Spec.ComponentConfig.ConsoleMCE = &backplanev1.ConsoleMCEConfig{
+				Enable: false,
+			}
+			updateNecessary = true
+		}
+	}
+
+	// Apply defaults to server
+	if updateNecessary {
+		err = r.Client.Update(ctx, m)
+		if err != nil {
+			log.Error(err, "Failed to update MultiClusterEngine")
+			return ctrl.Result{}, err
+		}
+		log.Info("MultiClusterEngine successfully updated")
+		return ctrl.Result{Requeue: true}, nil
+	} else {
+		log.Info("No updates to defaults detected")
+		return ctrl.Result{}, nil
+	}
 
 }
 

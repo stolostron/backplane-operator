@@ -22,6 +22,10 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
+const (
+	AlwaysChartsDir = "pkg/templates/charts/always"
+)
+
 type Values struct {
 	Global    Global    `yaml:"global" structs:"global"`
 	HubConfig HubConfig `yaml:"hubconfig" structs:"hubconfig"`
@@ -40,6 +44,7 @@ type HubConfig struct {
 	ProxyConfigs map[string]string   `yaml:"proxyConfigs" structs:"proxyConfigs"`
 	ReplicaCount int                 `yaml:"replicaCount" structs:"replicaCount"`
 	Tolerations  []corev1.Toleration `yaml:"tolerations" structs:"tolerations"`
+	OCPVersion   string              `yaml:"ocpVersion" structs:"ocpVersion"`
 }
 
 func RenderCRDs(crdDir string) ([]*unstructured.Unstructured, []error) {
@@ -150,7 +155,7 @@ func renderTemplates(chartPath string, backplaneConfig *v1.MultiClusterEngine, i
 
 		// Add namespace to namespaced resources
 		switch unstructured.GetKind() {
-		case "Deployment", "ServiceAccount", "Role", "RoleBinding", "Service":
+		case "Deployment", "ServiceAccount", "Role", "RoleBinding", "Service", "ConfigMap":
 			unstructured.SetNamespace(backplaneConfig.Spec.TargetNamespace)
 		}
 		templates = append(templates, unstructured)
@@ -180,6 +185,8 @@ func injectValuesOverrides(values *Values, backplaneConfig *v1.MultiClusterEngin
 	}
 
 	values.Org = "open-cluster-management"
+
+	values.HubConfig.OCPVersion = os.Getenv("ACM_HUB_OCP_VERSION")
 
 	if utils.ProxyEnvVarsAreSet() {
 		proxyVar := map[string]string{}
