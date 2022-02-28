@@ -20,6 +20,8 @@ noOpFields:
 - spec.replaces
 - spec.selector
 - spec.version
+- spec.skips
+- spec.relatedImages
 - spec.install.strategy
 requiredFields:
 - kind

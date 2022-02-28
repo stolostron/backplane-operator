@@ -17,25 +17,25 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
+    - jsonPath: .spec.clusterMetadata.infraID
+      name: InfraID
+      type: string
     - jsonPath: .metadata.labels.hive\.openshift\.io/cluster-platform
       name: Platform
       type: string
     - jsonPath: .metadata.labels.hive\.openshift\.io/cluster-region
       name: Region
       type: string
-    - jsonPath: .metadata.labels.hive\.openshift\.io/cluster-type
-      name: ClusterType
-      type: string
-    - jsonPath: .spec.installed
-      name: Installed
-      type: boolean
-    - jsonPath: .spec.clusterMetadata.infraID
-      name: InfraID
-      type: string
     - jsonPath: .metadata.labels.hive\.openshift\.io/version-major-minor-patch
       name: Version
       type: string
-    - jsonPath: .status.conditions[?(@.type=='Hibernating')].reason
+    - jsonPath: .metadata.labels.hive\.openshift\.io/cluster-type
+      name: ClusterType
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Provisioned')].reason
+      name: ProvisionStatus
+      type: string
+    - jsonPath: .status.powerState
       name: PowerState
       type: string
     - jsonPath: .metadata.creationTimestamp
@@ -180,6 +180,12 @@ spec:
                   claimName:
                     description: ClaimName is the name of the ClusterClaim that claimed
                       the cluster from the pool.
+                    type: string
+                  claimedTimestamp:
+                    description: ClaimedTimestamp is the time this cluster was assigned
+                      to a ClusterClaim. This is only used for ClusterDeployments
+                      belonging to ClusterPools.
+                    format: date-time
                     type: string
                   namespace:
                     description: Namespace is the namespace where the ClusterPool
@@ -375,24 +381,6 @@ spec:
               installed:
                 description: Installed is true if the cluster has been installed
                 type: boolean
-              machineManagement:
-                description: MachineManagement contains machine management settings
-                  including the strategy that will be used when provisioning worker
-                  machines.
-                properties:
-                  central:
-                    description: Central contains settings for central machine management.
-                      If set Central indicates that central machine management will
-                      be used as opposed to management on the spoke cluster.
-                    type: object
-                  targetNamespace:
-                    description: TargetNamespace is the namespace in which we will
-                      create worker machineset resources. Resources required to create
-                      machines will be copied to the TargetNamespace. TargetNamespace
-                      is created for you and cannot be set during creation. TargetNamespace
-                      is also immutable once set.
-                    type: string
-                type: object
               manageDNS:
                 description: ManageDNS specifies whether a DNSZone should be created
                   and managed automatically for this ClusterDeployment
@@ -881,6 +869,11 @@ spec:
                       - name
                       type: object
                     type: array
+                  installerImageOverride:
+                    description: InstallerImageOverride allows specifying a URI for
+                      the installer image, normally gleaned from the metadata within
+                      the ReleaseImage.
+                    type: string
                   manifestsConfigMapRef:
                     description: ManifestsConfigMapRef is a reference to user-provided
                       manifests to add to or replace manifests that are generated
@@ -1046,6 +1039,9 @@ spec:
                         type: object
                     type: object
                 type: object
+              powerState:
+                description: PowerState indicates the powerstate of cluster
+                type: string
               provisionRef:
                 description: ProvisionRef is a reference to the last ClusterProvision
                   created for the deployment
