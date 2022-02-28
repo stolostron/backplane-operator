@@ -33,11 +33,13 @@ import (
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 
+	operatorv1 "github.com/openshift/api/operator/v1"
 	admissionregistration "k8s.io/api/admissionregistration/v1"
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"sigs.k8s.io/yaml"
 
+	configv1 "github.com/openshift/api/config/v1"
 	hiveconfig "github.com/openshift/hive/apis/hive/v1"
 	"github.com/stolostron/backplane-operator/pkg/status"
 	"github.com/stolostron/backplane-operator/pkg/version"
@@ -85,6 +87,10 @@ func init() {
 	utilruntime.Must(clustermanager.AddToScheme(scheme))
 
 	utilruntime.Must(monitoringv1.AddToScheme(scheme))
+
+	utilruntime.Must(configv1.AddToScheme(scheme))
+
+	utilruntime.Must(operatorv1.AddToScheme(scheme))
 
 	//+kubebuilder:scaffold:scheme
 }

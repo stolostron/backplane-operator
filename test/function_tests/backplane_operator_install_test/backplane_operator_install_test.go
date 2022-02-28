@@ -8,8 +8,11 @@ import (
 	"io/ioutil"
 	"time"
 
+	"github.com/Masterminds/semver"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	configv1 "github.com/openshift/api/config/v1"
+	operatorv1 "github.com/openshift/api/operator/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
@@ -115,6 +118,48 @@ var fullTestSuite = func(mce *backplane.MultiClusterEngine) {
 	Describe("Uninstallation", uninstallTests())
 }
 
+var validateMCEConsoleTests = func(existingMCE *backplane.MultiClusterEngine) {
+	clusterVersion := &configv1.ClusterVersion{}
+	clusterVersionKey := types.NamespacedName{Name: "version"}
+	Expect(k8sClient.Get(ctx, clusterVersionKey, clusterVersion)).To(Succeed())
+	version := clusterVersion.Status.History[0].Version
+	Expect(clusterVersion.Status.History[0].State).Should(Equal(configv1.CompletedUpdate), "Expected CompletedUpdate status in clusterVersion resource")
+	mceConsoleConstraint, err := semver.NewConstraint(">= 4.10.0-0")
+	Expect(err).To(BeNil(), "Error creating semver constraint")
+	semverVersion, err := semver.NewVersion(version)
+	Expect(err).To(BeNil(), "Error creating semver constraint")
+
+	if mceConsoleConstraint.Check(semverVersion) {
+		By("OCP 4.10+ cluster detected. Checking MCE Console is installed")
+		components := existingMCE.Status.Components
+		found := false
+		for _, component := range components {
+			if component.Name == "console-mce-console" {
+				found = true
+				break
+			}
+		}
+		Expect(found).To(BeTrue(), "Expected MCE Console to be found in MultiClusterEngine status")
+		console := &operatorv1.Console{}
+		consoleKey := types.NamespacedName{Name: "cluster"}
+		Expect(k8sClient.Get(ctx, consoleKey, console)).To(Succeed())
+		By("Ensuring mce plugin is enabled in openshift console")
+		pluginsList := console.Spec.Plugins
+		Expect(utils.Contains(pluginsList, "mce")).To(BeTrue(), "Expected MCE plugin to be enabled in console resource")
+	} else {
+		By("OCP cluster below 4.10 detected. Ensuring MCE Console is not installed")
+		components := existingMCE.Status.Components
+		found := false
+		for _, component := range components {
+			if component.Name == "console-mce-console" {
+				found = true
+				break
+			}
+		}
+		Expect(found).To(BeFalse(), "Expected MCE Console to not be found in MultiClusterEngine status")
+	}
+}
+
 var installTests = func() func() {
 	return func() {
 		It("should become available", func() {
@@ -127,24 +172,28 @@ var installTests = func() func() {
 		})
 
 		It("should have a healthy status", func() {
-			key := &backplane.MultiClusterEngine{}
-			Expect(k8sClient.Get(ctx, multiClusterEngine, key)).To(Succeed())
+			existingMCE := &backplane.MultiClusterEngine{}
+			Expect(k8sClient.Get(ctx, multiClusterEngine, existingMCE)).To(Succeed())
 
 			By("checking the phase", func() {
-				Expect(key.Status.Phase).To(Equal(backplane.MultiClusterEnginePhaseAvailable))
+				Expect(existingMCE.Status.Phase).To(Equal(backplane.MultiClusterEnginePhaseAvailable))
 			})
 			By("checking the components", func() {
-				Expect(len(key.Status.Components)).Should(BeNumerically(">=", 6), "Expected at least 6 components in status")
+				Expect(len(existingMCE.Status.Components)).Should(BeNumerically(">=", 6), "Expected at least 6 components in status")
+			})
+			By("Validate MCE Console", func() {
+				validateMCEConsoleTests(existingMCE)
 			})
 			By("checking the conditions", func() {
 				available := backplane.MultiClusterEngineCondition{}
-				for _, c := range key.Status.Conditions {
+				for _, c := range existingMCE.Status.Conditions {
 					if c.Type == backplane.MultiClusterEngineAvailable {
 						available = c
 					}
 				}
 				Expect(available.Status).To(Equal(metav1.ConditionTrue))
 			})
+
 		})
 	}
 }

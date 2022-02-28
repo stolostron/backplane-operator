@@ -30,6 +30,8 @@ import (
 	"github.com/stolostron/backplane-operator/pkg/status"
 	"github.com/stolostron/backplane-operator/pkg/utils"
 
+	configv1 "github.com/openshift/api/config/v1"
+	operatorv1 "github.com/openshift/api/operator/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 
 	clustermanager "open-cluster-management.io/api/operator/v1"
@@ -97,6 +99,17 @@ var _ = Describe("BackplaneConfig controller", func() {
 				Name: "openshift-monitoring",
 			},
 			Spec: corev1.NamespaceSpec{},
+		})).To(Succeed())
+		// Create ClusterVersion
+		// Attempted to Store Version in status. Unable to get it to stick.
+		Expect(k8sClient.Create(context.Background(), &configv1.ClusterVersion{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "version",
+			},
+			Spec: configv1.ClusterVersionSpec{
+				Channel:   "stable-4.9",
+				ClusterID: "12345678910",
+			},
 		})).To(Succeed())
 
 		clusterManager = &unstructured.Unstructured{}
@@ -268,6 +281,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 				filepath.Join("..", "pkg", "templates", "crds", "hive-operator"),
 				filepath.Join("..", "pkg", "templates", "crds", "foundation"),
 				filepath.Join("..", "pkg", "templates", "crds", "cluster-lifecycle"),
+				filepath.Join("..", "pkg", "templates", "crds", "discovery-operator"),
 				filepath.Join("..", "hack", "unit-test-crds"),
 			},
 			CRDInstallOptions: envtest.CRDInstallOptions{
@@ -306,7 +320,16 @@ var _ = Describe("BackplaneConfig controller", func() {
 		err = monitoringv1.AddToScheme(scheme.Scheme)
 		Expect(err).NotTo(HaveOccurred())
 
+		err = configv1.AddToScheme(scheme.Scheme)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = operatorv1.AddToScheme(scheme.Scheme)
+		Expect(err).NotTo(HaveOccurred())
+
 		err = os.Setenv("POD_NAMESPACE", "default")
+		Expect(err).NotTo(HaveOccurred())
+
+		err = os.Setenv("UNIT_TEST", "true")
 		Expect(err).NotTo(HaveOccurred())
 
 		for _, v := range utils.GetTestImages() {
@@ -410,6 +433,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 						)
 					}, timeout, interval).Should(Succeed())
 				}
+
 			})
 		})
 
@@ -526,6 +550,8 @@ var _ = Describe("BackplaneConfig controller", func() {
 		err := os.Unsetenv("OPERAND_IMAGE_TEST_IMAGE")
 		Expect(err).NotTo(HaveOccurred())
 		err = os.Unsetenv("POD_NAMESPACE")
+		Expect(err).NotTo(HaveOccurred())
+		err = os.Unsetenv("UNIT_TEST")
 		Expect(err).NotTo(HaveOccurred())
 		err = testEnv.Stop()
 		Expect(err).NotTo(HaveOccurred())

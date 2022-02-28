@@ -204,6 +204,26 @@ rules:
   verbs:
   - create
 - apiGroups:
+  - config.openshift.io
+  resources:
+  - clusterversions
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - console.openshift.io
+  resources:
+  - consoleplugins
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - coordination.k8s.io
   resources:
   - leases
@@ -363,6 +383,16 @@ rules:
   verbs:
   - patch
   - update
+- apiGroups:
+  - operator.openshift.io
+  resources:
+  - consoles
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - rbac.authorization.k8s.io
   resources:

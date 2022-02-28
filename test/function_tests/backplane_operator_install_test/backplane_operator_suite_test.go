@@ -8,6 +8,9 @@ import (
 	"flag"
 	"testing"
 
+	configv1 "github.com/openshift/api/config/v1"
+	operatorv1 "github.com/openshift/api/operator/v1"
+
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
@@ -38,6 +41,10 @@ func init() {
 	utilruntime.Must(backplane.AddToScheme(scheme))
 
 	utilruntime.Must(corev1.AddToScheme(scheme))
+
+	utilruntime.Must(configv1.AddToScheme(scheme))
+
+	utilruntime.Must(operatorv1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 

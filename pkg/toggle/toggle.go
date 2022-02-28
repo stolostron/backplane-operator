@@ -1,6 +1,6 @@
 // Copyright Contributors to the Open Cluster Management project
 
-package managedservice
+package toggle
 
 import (
 	"context"
@@ -18,8 +18,9 @@ import (
 )
 
 const (
-	managedServiceAccountChartDir = "pkg/templates/charts/toggle/managed-serviceaccount"
-	managedServiceAccountCRDPath  = "pkg/templates/managed-serviceaccount/crds"
+	ManagedServiceAccountChartDir = "pkg/templates/charts/toggle/managed-serviceaccount"
+	ConsoleMCEChartsDir           = "pkg/templates/charts/toggle/console-mce"
+	ManagedServiceAccountCRDPath  = "pkg/templates/managed-serviceaccount/crds"
 )
 
 //
@@ -27,13 +28,13 @@ func renderTemplates() ([]*unstructured.Unstructured, []error) {
 	return []*unstructured.Unstructured{}, nil
 }
 
-func ManagedServiceEnabledStatus(ns string) status.StatusReporter {
+func EnabledStatus(namespacedName types.NamespacedName) status.StatusReporter {
 	return status.DeploymentStatus{
-		NamespacedName: types.NamespacedName{Name: "managed-serviceaccount-addon-manager", Namespace: ns},
+		NamespacedName: namespacedName,
 	}
 }
 
-func ManagedServiceDisabledStatus(ns string, resourceList []*unstructured.Unstructured) status.StatusReporter {
+func DisabledStatus(namespacedName types.NamespacedName, resourceList []*unstructured.Unstructured) status.StatusReporter {
 	removals := []*unstructured.Unstructured{}
 	for _, u := range resourceList {
 		removals = append(removals, newUnstructured(
@@ -43,7 +44,7 @@ func ManagedServiceDisabledStatus(ns string, resourceList []*unstructured.Unstru
 	}
 
 	return ToggledOffStatus{
-		NamespacedName: types.NamespacedName{Name: "managedservice", Namespace: ns},
+		NamespacedName: namespacedName,
 		resources:      removals,
 	}
 }

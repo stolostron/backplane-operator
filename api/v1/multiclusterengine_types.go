@@ -68,6 +68,15 @@ type MultiClusterEngineSpec struct {
 type ComponentConfig struct {
 	// +optional
 	ManagedServiceAccount *ManagedServiceAccountConfig `json:"managedServiceAccount,omitempty"`
+
+	// +optional
+	ConsoleMCE *ConsoleMCEConfig `json:"consoleMCE,omitempty"`
+}
+
+// Console MCE contains configuration items for consoleMCE
+type ConsoleMCEConfig struct {
+	// +optional
+	Enable bool `json:"enable,omitempty"`
 }
 
 // Optional configuration items for the managed-serviceaccount component
@@ -183,6 +192,7 @@ type ComponentEnabled string
 
 const (
 	ManagedServiceAccount ComponentEnabled = "Managed-ServiceAccount"
+	ConsoleMCE            ComponentEnabled = "Console-MCE"
 )
 
 //+kubebuilder:object:root=true

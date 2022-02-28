@@ -1,0 +1,19 @@
+# Copyright Contributors to the Open Cluster Management project
+
+# Default values for console-mce-chart
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+global:
+  imageOverrides:
+    console_mce: ""
+  pullPolicy: Always
+  namespace: default
+  pullSecret: null
+hubconfig:
+  nodeSelector: null
+  proxyConfigs: {}
+  replicaCount: 1
+  tolerations: []
+  ocpVersion: ""
+org: open-cluster-management

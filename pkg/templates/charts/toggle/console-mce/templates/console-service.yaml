@@ -1,0 +1,15 @@
+# Copyright Contributors to the Open Cluster Management project
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    service.beta.openshift.io/serving-cert-secret-name: console-mce-console-certs
+  name: console-mce-console
+spec:
+  ports:
+    - port: 3000
+      targetPort: 3000
+      protocol: TCP
+      name: http
+  selector:
+    app: console-mce

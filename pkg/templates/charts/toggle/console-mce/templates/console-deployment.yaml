@@ -1,0 +1,137 @@
+# Copyright Contributors to the Open Cluster Management project
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: console-mce-console
+spec:
+  replicas: {{ .Values.hubconfig.replicaCount }}
+  selector:
+    matchLabels:
+      app: console-mce
+  template:
+    metadata:
+      labels:
+        app: console-mce
+        ocm-antiaffinity-selector: "console-mce"
+    spec:
+      hostNetwork: false
+      hostPID: false
+      hostIPC: false
+      serviceAccountName: console-mce
+      securityContext:
+        runAsNonRoot: true
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                - amd64
+                - ppc64le
+                - s390x
+                - arm64
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 70
+            podAffinityTerm:
+              topologyKey: topology.kubernetes.io/zone
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - console-mce
+                - key: component
+                  operator: In
+                  values:
+                  - console-mce
+          - weight: 35
+            podAffinityTerm:
+              topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - console-mce
+                - key: component
+                  operator: In
+                  values:
+                  - console-mce
+{{- with .Values.hubconfig.tolerations }}
+      tolerations:
+      {{- range . }}
+      - {{ if .Key }} key: {{ .Key }} {{- end }}
+        {{ if .Operator }} operator: {{ .Operator }} {{- end }}
+        {{ if .Value }} value: {{ .Value }} {{- end }}
+        {{ if .Effect }} effect: {{ .Effect }} {{- end }}
+        {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
+        {{- end }}
+{{- end }}
+      volumes:
+      - name: console-mce-console-certs
+        secret:
+          defaultMode: 420
+          secretName: console-mce-console-certs
+      - name: console-mce-console-config
+        configMap:
+          name: console-config
+      containers:
+      - name: console
+        volumeMounts:
+        - mountPath: /app/certs
+          name: console-mce-console-certs
+        - mountPath: /app/config
+          name: console-mce-console-config
+        image: {{ .Values.global.imageOverrides.console_mce }}
+        imagePullPolicy: {{ .Values.global.pullPolicy }}
+        resources:
+          requests:
+            memory: "40Mi"
+            cpu: "3m"
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+        env:
+        - name: PORT
+          value: "3000"
+        - name: CLUSTER_API_URL
+          value: https://kubernetes.default.svc:443
+        {{- if .Values.hubconfig.proxyConfigs }}
+        - name: HTTP_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
+        - name: HTTPS_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.HTTPS_PROXY }}
+        - name: NO_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
+        {{- end }}
+        ports:
+        - containerPort: 3000
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /readinessProbe
+            port: 3000
+            scheme: HTTPS
+          failureThreshold: 1
+        livenessProbe:
+          httpGet:
+            path: /livenessProbe
+            port: 3000
+            scheme: HTTPS
+          failureThreshold: 1
+          initialDelaySeconds: 10
+      {{- if .Values.global.pullSecret }}
+      imagePullSecrets:
+      - name: {{ .Values.global.pullSecret }}
+      {{- end }}
+      {{- with .Values.hubconfig.nodeSelector }}
+      nodeSelector:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
