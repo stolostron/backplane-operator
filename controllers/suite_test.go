@@ -22,11 +22,10 @@ import (
 	"context"
 	"testing"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/envtest/printer"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
@@ -36,11 +35,7 @@ import (
 
 func TestControllers(t *testing.T) {
 	RegisterFailHandler(Fail)
-
-	RunSpecsWithDefaultAndCustomReporters(t,
-		"Controller Suite",
-		[]Reporter{printer.NewlineReporter{}},
-	)
+	RunSpecs(t, "Controller Suite")
 }
 
 var signalHandlerContext context.Context
@@ -53,6 +48,4 @@ var _ = BeforeSuite(
 		// context it returns and reuse it each time we start a new
 		// manager.
 		signalHandlerContext = ctrl.SetupSignalHandler()
-	},
-	60,
-)
+	})

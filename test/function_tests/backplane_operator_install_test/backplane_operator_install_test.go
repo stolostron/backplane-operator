@@ -6,10 +6,12 @@ package backplane_install_test
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/Masterminds/semver"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	configv1 "github.com/openshift/api/config/v1"
 	operatorv1 "github.com/openshift/api/operator/v1"
@@ -149,14 +151,12 @@ var validateMCEConsoleTests = func(existingMCE *backplane.MultiClusterEngine) {
 	} else {
 		By("OCP cluster below 4.10 detected. Ensuring MCE Console is not installed")
 		components := existingMCE.Status.Components
-		found := false
 		for _, component := range components {
 			if component.Name == "console-mce-console" {
-				found = true
+				Expect(component.Type).To(Equal("NotPresent"), "Expected MCE Console to not be present")
 				break
 			}
 		}
-		Expect(found).To(BeFalse(), "Expected MCE Console to not be found in MultiClusterEngine status")
 	}
 }
 
@@ -272,6 +272,25 @@ var configurationTests = func() func() {
 			})
 		})
 
+		Context("toggled components", func() {
+			It("should disable discovery", func() {
+				key := &backplane.MultiClusterEngine{}
+
+				// retry update due to conflicts
+				Eventually(func(g Gomega) {
+					g.Expect(k8sClient.Get(ctx, multiClusterEngine, key)).To(Succeed())
+					key.Disable(backplane.Discovery)
+					g.Expect(k8sClient.Update(ctx, key)).To(Succeed())
+				}, 10*time.Second, time.Second).Should(Succeed())
+
+				targetDeploy := &appsv1.Deployment{}
+				Eventually(func(g Gomega) {
+					err := k8sClient.Get(ctx, types.NamespacedName{Name: "discovery-operator", Namespace: key.Spec.TargetNamespace}, targetDeploy)
+					g.Expect(apierrors.IsNotFound(err)).To(BeTrue(), "Expected IsNotFound error, got error:", err)
+				}, 10*time.Second, time.Second).Should(Succeed())
+			})
+		})
+
 	}
 }
 
@@ -372,6 +391,11 @@ var webhookTests = func() func() {
 			Expect(k8sClient.Get(ctx, multiClusterEngine, key)).To(Succeed())
 			ns := key.Spec.TargetNamespace
 
+			resourcesDir := os.Getenv("RESOURCE_DIR")
+			if resourcesDir == "" {
+				resourcesDir = "../resources"
+			}
+
 			blockDeletionResources := []struct {
 				Name     string
 				GVK      schema.GroupVersionKind
@@ -386,7 +410,7 @@ var webhookTests = func() func() {
 						Version: "v1alpha1",
 						Kind:    "BareMetalAsset",
 					},
-					Filepath: "../resources/baremetalassets.yaml",
+					Filepath: filepath.Join(resourcesDir, "baremetalassets.yaml"),
 					Expected: "Existing BareMetalAsset resources must first be deleted",
 				},
 				{
@@ -396,7 +420,7 @@ var webhookTests = func() func() {
 						Version: "v1",
 						Kind:    "ManagedClusterList",
 					},
-					Filepath: "../resources/managedcluster.yaml",
+					Filepath: filepath.Join(resourcesDir, "managedcluster.yaml"),
 					Expected: "Existing ManagedCluster resources must first be deleted",
 				},
 			}
@@ -440,6 +464,32 @@ var webhookTests = func() func() {
 				err := k8sClient.Update(ctx, key)
 				g.Expect(err).ShouldNot(BeNil())
 				g.Expect(err.Error()).Should(ContainSubstring("Invalid AvailabilityConfig given"))
+			}, 10*time.Second, time.Second).Should(Succeed())
+
+		})
+
+		It("Prevents disabling required components", func() {
+			Eventually(func(g Gomega) {
+				key := &backplane.MultiClusterEngine{}
+				g.Expect(k8sClient.Get(ctx, multiClusterEngine, key)).To(Succeed())
+				key.Disable("server-foundation")
+				err := k8sClient.Update(ctx, key)
+				g.Expect(err).ShouldNot(BeNil(), "webhook should not have allowed update")
+				g.Expect(err.Error()).Should(ContainSubstring("invalid component config"))
+			}, 10*time.Second, time.Second).Should(Succeed())
+		})
+
+		It("Prevents setting unknown components", func() {
+			Eventually(func(g Gomega) {
+				key := &backplane.MultiClusterEngine{}
+				g.Expect(k8sClient.Get(ctx, multiClusterEngine, key)).To(Succeed())
+				key.Spec.Components = append(key.Spec.Components, backplane.ComponentConfig{
+					Name:    "unknown",
+					Enabled: true,
+				})
+				err := k8sClient.Update(ctx, key)
+				g.Expect(err).ShouldNot(BeNil(), "webhook should not have allowed update")
+				g.Expect(err.Error()).Should(ContainSubstring("invalid component config"))
 			}, 10*time.Second, time.Second).Should(Succeed())
 
 		})
@@ -638,7 +688,7 @@ func validateResourceSpecs(namespace string, nodeSelector map[string]string, pul
 			g.Expect(componentTolerations).To(Equal(tolerations), fmt.Sprintf("Deployment %s does not have expected tolerations", deployment.Name))
 
 			// check replicas
-			if utils.Contains(availabilityList, deployment.ObjectMeta.Name) {
+			if contains(availabilityList, deployment.ObjectMeta.Name) {
 				componentReplicas := deployment.Spec.Replicas
 				if (availabilityConfig == backplane.HAHigh) || (availabilityConfig == "") {
 					g.Expect(*componentReplicas).To(Equal(int32(2)), fmt.Sprintf("Deployment %s does not have expected replicas", deployment.Name))
@@ -677,4 +727,14 @@ func validateResourceSpecs(namespace string, nodeSelector map[string]string, pul
 		}
 
 	}, time.Minute, time.Second).Should(Succeed())
+}
+
+func contains(s []string, str string) bool {
+	for _, v := range s {
+		if v == str {
+			return true
+		}
+	}
+
+	return false
 }

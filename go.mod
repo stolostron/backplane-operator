@@ -5,8 +5,8 @@ go 1.17
 require (
 	github.com/Masterminds/semver v1.5.0
 	github.com/fatih/structs v1.1.0
-	github.com/onsi/ginkgo v1.16.4
-	github.com/onsi/gomega v1.16.0
+	github.com/onsi/ginkgo/v2 v2.1.3
+	github.com/onsi/gomega v1.17.0
 	github.com/openshift/api v0.0.0-20220124143425-d74727069f6f
 	github.com/openshift/hive/apis v0.0.0-20210910175845-0756b70e6db4
 	github.com/pkg/errors v0.9.1
@@ -60,6 +60,7 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/nxadm/tail v1.4.8 // indirect
+	github.com/onsi/ginkgo v1.16.4 // indirect
 	github.com/prometheus/client_golang v1.11.0 // indirect
 	github.com/prometheus/client_model v0.2.0 // indirect
 	github.com/prometheus/common v0.26.0 // indirect

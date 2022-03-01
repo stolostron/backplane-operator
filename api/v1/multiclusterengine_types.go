@@ -61,29 +61,13 @@ type MultiClusterEngineSpec struct {
 	// Provides optional configuration for components
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Component Configuration",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	// +optional
-	ComponentConfig *ComponentConfig `json:"componentConfig,omitempty"`
+	Components []ComponentConfig `json:"components,omitempty"`
 }
 
 // ComponentConfig provides optional configuration items for individual components
 type ComponentConfig struct {
-	// +optional
-	ManagedServiceAccount *ManagedServiceAccountConfig `json:"managedServiceAccount,omitempty"`
-
-	// +optional
-	ConsoleMCE *ConsoleMCEConfig `json:"consoleMCE,omitempty"`
-}
-
-// Console MCE contains configuration items for consoleMCE
-type ConsoleMCEConfig struct {
-	// +optional
-	Enable bool `json:"enable,omitempty"`
-}
-
-// Optional configuration items for the managed-serviceaccount component
-type ManagedServiceAccountConfig struct {
-	// Enable managed-serviceaccount component (Tech Preview).
-	// +optional
-	Enable bool `json:"enable,omitempty"`
+	Name    string `json:"name"`
+	Enabled bool   `json:"enabled"`
 }
 
 // Overrides provides developer overrides for MCE installation
@@ -186,14 +170,6 @@ type MultiClusterEngineCondition struct {
 	// +required
 	Message string `json:"message,omitempty"`
 }
-
-// PhaseType is a summary of the current state of the MultiClusterEngine in its lifecycle
-type ComponentEnabled string
-
-const (
-	ManagedServiceAccount ComponentEnabled = "Managed-ServiceAccount"
-	ConsoleMCE            ComponentEnabled = "Console-MCE"
-)
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
