@@ -55,7 +55,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	//+kubebuilder:scaffold:imports
 )
@@ -504,9 +504,10 @@ var _ = Describe("BackplaneConfig controller", func() {
 					},
 					Spec: v1.MultiClusterEngineSpec{
 						TargetNamespace: DestinationNamespace,
-						ComponentConfig: &v1.ComponentConfig{
-							ManagedServiceAccount: &v1.ManagedServiceAccountConfig{
-								Enable: true,
+						Components: []v1.ComponentConfig{
+							{
+								Name:    v1.ManagedServiceAccount,
+								Enabled: true,
 							},
 						},
 					},

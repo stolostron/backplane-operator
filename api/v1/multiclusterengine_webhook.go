@@ -101,6 +101,17 @@ func (r *MultiClusterEngine) ValidateCreate() error {
 	if (r.Spec.AvailabilityConfig != HABasic) && (r.Spec.AvailabilityConfig != HAHigh) && (r.Spec.AvailabilityConfig != "") {
 		return errors.New("Invalid AvailabilityConfig given")
 	}
+
+	// Validate components
+	for _, c := range r.Spec.Components {
+		if !validComponent(c) {
+			return errors.New(fmt.Sprintf("invalid component config: %s is not a known component", c.Name))
+		}
+	}
+	if err := requiredComponentsPresentCheck(r); err != nil {
+		return err
+	}
+
 	backplaneConfigList := &MultiClusterEngineList{}
 	if err := Client.List(ctx, backplaneConfigList); err != nil {
 		return fmt.Errorf("unable to list BackplaneConfigs: %s", err)
@@ -124,7 +135,47 @@ func (r *MultiClusterEngine) ValidateUpdate(old runtime.Object) error {
 	if (r.Spec.AvailabilityConfig != HABasic) && (r.Spec.AvailabilityConfig != HAHigh) && (r.Spec.AvailabilityConfig != "") {
 		return errors.New("Invalid AvailabilityConfig given")
 	}
-	// TODO(user): fill in your validation logic upon object update.
+
+	// Validate components
+	for _, c := range r.Spec.Components {
+		if !validComponent(c) {
+			return errors.New(fmt.Sprintf("invalid component config: %s is not a known component", c.Name))
+		}
+	}
+	if err := requiredComponentsPresentCheck(r); err != nil {
+		return err
+	}
+
+	// Block disable if relevant resources present
+	if r.ComponentPresent(Discovery) && !r.Enabled(Discovery) {
+		cfg, err := config.GetConfig()
+		if err != nil {
+			return err
+		}
+
+		c, err := discovery.NewDiscoveryClientForConfig(cfg)
+		if err != nil {
+			return err
+		}
+
+		gvk := schema.GroupVersionKind{
+			Group:   "discovery.open-cluster-management.io",
+			Version: "v1",
+			Kind:    "DiscoveryConfigList",
+		}
+		list := &unstructured.UnstructuredList{}
+		list.SetGroupVersionKind(gvk)
+		err = discovery.ServerSupportsVersion(c, gvk.GroupVersion())
+		if err == nil {
+			if err := Client.List(context.TODO(), list); err != nil {
+				return fmt.Errorf("unable to list %s: %s", "DiscoveryConfig", err)
+			}
+			if len(list.Items) != 0 {
+				return fmt.Errorf("existing %s resources must first be deleted", "DiscoveryConfig")
+			}
+		}
+	}
+
 	return nil
 }
 

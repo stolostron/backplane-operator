@@ -18,50 +18,97 @@ limitations under the License.
 
 package v1
 
-const (
-	managedServiceAccountEnabledDefault = false
-	consoleMCEEnabledDefault            = false
+import (
+	"errors"
+	"fmt"
 )
 
-func (mce *MultiClusterEngine) ComponentEnabled(c ComponentEnabled) bool {
-	switch c {
-	case ManagedServiceAccount:
-		return mce.managedServiceAccountEnabled()
-	case ConsoleMCE:
-		return mce.consoleMCEEnabled()
-	default:
-		return false
-	}
+const (
+	ManagedServiceAccount string = "managed-service-account"
+	ConsoleMCE            string = "console-mce"
+	Discovery             string = "discovery"
+	Hive                  string = "hive"
+	AssistedService       string = "assisted-service"
+	ClusterLifecycle      string = "cluster-lifecycle"
+	ClusterManager        string = "cluster-manager"
+	ServerFoundation      string = "server-foundation"
+)
+
+var allComponents = []string{
+	AssistedService,
+	ClusterLifecycle,
+	ClusterManager,
+	Discovery,
+	Hive,
+	ServerFoundation,
+	ConsoleMCE,
+	ManagedServiceAccount,
 }
 
-func (mce *MultiClusterEngine) hasComponentConfig() bool {
-	return mce.Spec.ComponentConfig != nil
+var requiredComponents = []string{
+	ServerFoundation,
 }
 
-func (mce *MultiClusterEngine) hasManagedServiceAccountConfig() bool {
-	if !mce.hasComponentConfig() {
-		return false
+func (mce *MultiClusterEngine) ComponentPresent(s string) bool {
+	for _, c := range mce.Spec.Components {
+		if c.Name == s {
+			return true
+		}
 	}
-	return mce.Spec.ComponentConfig.ManagedServiceAccount != nil
+	return false
 }
 
-func (mce *MultiClusterEngine) hasConsoleMCEConfig() bool {
-	if !mce.hasComponentConfig() {
-		return false
+func (mce *MultiClusterEngine) Enabled(s string) bool {
+	for _, c := range mce.Spec.Components {
+		if c.Name == s {
+			return c.Enabled
+		}
 	}
-	return mce.Spec.ComponentConfig.ConsoleMCE != nil
+
+	return false
 }
 
-func (mce *MultiClusterEngine) managedServiceAccountEnabled() bool {
-	if !mce.hasManagedServiceAccountConfig() {
-		return managedServiceAccountEnabledDefault
+func (mce *MultiClusterEngine) Enable(s string) {
+	for i, c := range mce.Spec.Components {
+		if c.Name == s {
+			mce.Spec.Components[i].Enabled = true
+			return
+		}
 	}
-	return mce.Spec.ComponentConfig.ManagedServiceAccount.Enable
+	mce.Spec.Components = append(mce.Spec.Components, ComponentConfig{
+		Name:    s,
+		Enabled: true,
+	})
 }
 
-func (mce *MultiClusterEngine) consoleMCEEnabled() bool {
-	if !mce.hasConsoleMCEConfig() {
-		return consoleMCEEnabledDefault
+func (mce *MultiClusterEngine) Disable(s string) {
+	for i, c := range mce.Spec.Components {
+		if c.Name == s {
+			mce.Spec.Components[i].Enabled = false
+			return
+		}
 	}
-	return mce.Spec.ComponentConfig.ConsoleMCE.Enable
+	mce.Spec.Components = append(mce.Spec.Components, ComponentConfig{
+		Name:    s,
+		Enabled: false,
+	})
+}
+
+// a component is valid if its name matches a known component
+func validComponent(c ComponentConfig) bool {
+	for _, name := range allComponents {
+		if c.Name == name {
+			return true
+		}
+	}
+	return false
+}
+
+func requiredComponentsPresentCheck(mce *MultiClusterEngine) error {
+	for _, req := range requiredComponents {
+		if mce.ComponentPresent(req) && !mce.Enabled(req) {
+			return errors.New(fmt.Sprintf("invalid component config: %s can not be disabled", req))
+		}
+	}
+	return nil
 }

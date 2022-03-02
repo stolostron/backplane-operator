@@ -307,7 +307,7 @@ func (r *MultiClusterEngineReconciler) DeployAlwaysSubcomponents(ctx context.Con
 }
 
 func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	if backplaneConfig.ComponentEnabled(backplanev1.ManagedServiceAccount) {
+	if backplaneConfig.Enabled(backplanev1.ManagedServiceAccount) {
 		result, err := r.ensureManagedServiceAccount(ctx, backplaneConfig)
 		if err != nil {
 			return result, err
@@ -319,13 +319,85 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 		}
 	}
 
-	if backplaneConfig.ComponentEnabled(backplanev1.ConsoleMCE) {
+	if backplaneConfig.Enabled(backplanev1.ConsoleMCE) {
 		result, err := r.ensureConsoleMCE(ctx, backplaneConfig)
 		if err != nil {
 			return result, err
 		}
 	} else {
 		result, err := r.ensureNoConsoleMCE(ctx, backplaneConfig)
+		if result != (ctrl.Result{}) {
+			return result, err
+		}
+	}
+
+	if backplaneConfig.Enabled(backplanev1.Discovery) {
+		result, err := r.ensureDiscovery(ctx, backplaneConfig)
+		if err != nil {
+			return result, err
+		}
+	} else {
+		result, err := r.ensureNoDiscovery(ctx, backplaneConfig)
+		if result != (ctrl.Result{}) {
+			return result, err
+		}
+	}
+
+	if backplaneConfig.Enabled(backplanev1.Hive) {
+		result, err := r.ensureHive(ctx, backplaneConfig)
+		if err != nil {
+			return result, err
+		}
+	} else {
+		result, err := r.ensureNoHive(ctx, backplaneConfig)
+		if result != (ctrl.Result{}) {
+			return result, err
+		}
+	}
+
+	if backplaneConfig.Enabled(backplanev1.AssistedService) {
+		result, err := r.ensureAssistedService(ctx, backplaneConfig)
+		if err != nil {
+			return result, err
+		}
+	} else {
+		result, err := r.ensureNoAssistedService(ctx, backplaneConfig)
+		if result != (ctrl.Result{}) {
+			return result, err
+		}
+	}
+
+	if backplaneConfig.Enabled(backplanev1.ClusterLifecycle) {
+		result, err := r.ensureClusterLifecycle(ctx, backplaneConfig)
+		if err != nil {
+			return result, err
+		}
+	} else {
+		result, err := r.ensureNoClusterLifecycle(ctx, backplaneConfig)
+		if result != (ctrl.Result{}) {
+			return result, err
+		}
+	}
+
+	if backplaneConfig.Enabled(backplanev1.ClusterManager) {
+		result, err := r.ensureClusterManager(ctx, backplaneConfig)
+		if err != nil {
+			return result, err
+		}
+	} else {
+		result, err := r.ensureNoClusterManager(ctx, backplaneConfig)
+		if result != (ctrl.Result{}) {
+			return result, err
+		}
+	}
+
+	if backplaneConfig.Enabled(backplanev1.ServerFoundation) {
+		result, err := r.ensureServerFoundation(ctx, backplaneConfig)
+		if err != nil {
+			return result, err
+		}
+	} else {
+		result, err := r.ensureNoServerFoundation(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
 			return result, err
 		}
@@ -386,30 +458,6 @@ func (r *MultiClusterEngineReconciler) deleteTemplate(ctx context.Context, backp
 func (r *MultiClusterEngineReconciler) ensureCustomResources(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 
-	cmTemplate := foundation.ClusterManager(backplaneConfig, r.Images)
-	if err := ctrl.SetControllerReference(backplaneConfig, cmTemplate, r.Scheme); err != nil {
-		return ctrl.Result{}, errors.Wrapf(err, "Error setting controller reference on resource %s", cmTemplate.GetName())
-	}
-	force := true
-	err := r.Client.Patch(ctx, cmTemplate, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
-	if err != nil {
-		return ctrl.Result{}, errors.Wrapf(err, "error applying object Name: %s Kind: %s", cmTemplate.GetName(), cmTemplate.GetKind())
-	}
-
-	r.StatusManager.AddComponent(status.ClusterManagerStatus{
-		NamespacedName: types.NamespacedName{Name: "cluster-manager"},
-	})
-
-	hiveTemplate := hive.HiveConfig(backplaneConfig)
-	if err := ctrl.SetControllerReference(backplaneConfig, hiveTemplate, r.Scheme); err != nil {
-		return ctrl.Result{}, errors.Wrapf(err, "Error setting controller reference on resource %s", hiveTemplate.GetName())
-	}
-
-	result, err := r.ensureUnstructuredResource(ctx, backplaneConfig, hiveTemplate)
-	if err != nil {
-		return result, err
-	}
-
 	if foundation.CanInstallAddons(ctx, r.Client) {
 		addonTemplates, err := foundation.GetAddons()
 		if err != nil {
@@ -420,6 +468,7 @@ func (r *MultiClusterEngineReconciler) ensureCustomResources(ctx context.Context
 			if err := ctrl.SetControllerReference(backplaneConfig, addonTemplate, r.Scheme); err != nil {
 				return ctrl.Result{}, errors.Wrapf(err, "Error setting controller reference on resource %s", addonTemplate.GetName())
 			}
+			force := true
 			err := r.Client.Patch(ctx, addonTemplate, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
 			if err != nil {
 				return ctrl.Result{}, errors.Wrapf(err, "error applying object Name: %s Kind: %s", addonTemplate.GetName(), addonTemplate.GetKind())
@@ -550,6 +599,10 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 		updateNecessary = true
 	}
 
+	if utils.SetDefaultComponents(m) {
+		updateNecessary = true
+	}
+
 	// If OCP 4.10+ then set then enable the MCE console. Else ensure it is disabled
 	clusterVersion := &configv1.ClusterVersion{}
 	err := r.Client.Get(ctx, types.NamespacedName{Name: "version"}, clusterVersion)
@@ -601,26 +654,19 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 	}
 
 	if constraint.Check(currentVersion) && upgradeCompleted {
-		if m.Spec.ComponentConfig == nil {
-			m.Spec.ComponentConfig = &backplanev1.ComponentConfig{}
+		if m.Spec.Components == nil {
+			m.Spec.Components = []backplanev1.ComponentConfig{}
 		}
 		// If ConsoleMCE config already exists, then don't overwrite it
-		if m.Spec.ComponentConfig.ConsoleMCE == nil {
+		if !m.Enabled(backplanev1.ConsoleMCE) {
 			log.Info("Dynamic plugins are supported. ConsoleMCE Config is not detected. Enabling ConsoleMCE")
-			m.Spec.ComponentConfig.ConsoleMCE = &backplanev1.ConsoleMCEConfig{
-				Enable: true,
-			}
+			m.Enable(backplanev1.ConsoleMCE)
 			updateNecessary = true
 		}
 	} else {
-		if m.Spec.ComponentConfig == nil {
-			m.Spec.ComponentConfig = &backplanev1.ComponentConfig{}
-		}
-		if m.Spec.ComponentConfig.ConsoleMCE == nil || m.Spec.ComponentConfig.ConsoleMCE.Enable {
-			log.Info("Dynamic plugins are not supported. Disabling MCE console")
-			m.Spec.ComponentConfig.ConsoleMCE = &backplanev1.ConsoleMCEConfig{
-				Enable: false,
-			}
+		log.Info("Dynamic plugins are not supported. Disabling MCE console")
+		if m.Enabled(backplanev1.ConsoleMCE) {
+			m.Disable(backplanev1.ConsoleMCE)
 			updateNecessary = true
 		}
 	}

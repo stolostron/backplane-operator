@@ -13,6 +13,38 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+var onComponents = []string{
+	backplanev1.AssistedService,
+	backplanev1.ClusterLifecycle,
+	backplanev1.ClusterManager,
+	backplanev1.Discovery,
+	backplanev1.Hive,
+	backplanev1.ServerFoundation,
+	// backplanev1.ConsoleMCE, // determined by OCP version
+}
+
+var offComponents = []string{
+	backplanev1.ManagedServiceAccount,
+}
+
+// SetDefaultComponents returns true if changes are made
+func SetDefaultComponents(m *backplanev1.MultiClusterEngine) bool {
+	updated := false
+	for _, c := range onComponents {
+		if !m.ComponentPresent(c) {
+			m.Enable(c)
+			updated = true
+		}
+	}
+	for _, c := range offComponents {
+		if !m.ComponentPresent(c) {
+			m.Disable(c)
+			updated = true
+		}
+	}
+	return updated
+}
+
 // AddBackplaneConfigLabels adds BackplaneConfig Labels ...
 func AddBackplaneConfigLabels(u client.Object, name string) {
 	labels := make(map[string]string)

@@ -21,6 +21,13 @@ const (
 	ManagedServiceAccountChartDir = "pkg/templates/charts/toggle/managed-serviceaccount"
 	ConsoleMCEChartsDir           = "pkg/templates/charts/toggle/console-mce"
 	ManagedServiceAccountCRDPath  = "pkg/templates/managed-serviceaccount/crds"
+
+	DiscoveryChartDir        = "pkg/templates/charts/toggle/discovery-operator"
+	HiveChartDir             = "pkg/templates/charts/toggle/hive-operator"
+	AssistedServiceChartDir  = "pkg/templates/charts/toggle/assisted-service"
+	ClusterLifecycleChartDir = "pkg/templates/charts/toggle/cluster-lifecycle"
+	ClusterManagerChartDir   = "pkg/templates/charts/toggle/cluster-manager"
+	ServerFoundationChartDir = "pkg/templates/charts/toggle/server-foundation"
 )
 
 //
