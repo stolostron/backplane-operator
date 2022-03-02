@@ -22,7 +22,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/stolostron/backplane-operator/pkg/utils"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -147,7 +146,7 @@ var validateMCEConsoleTests = func(existingMCE *backplane.MultiClusterEngine) {
 		Expect(k8sClient.Get(ctx, consoleKey, console)).To(Succeed())
 		By("Ensuring mce plugin is enabled in openshift console")
 		pluginsList := console.Spec.Plugins
-		Expect(utils.Contains(pluginsList, "mce")).To(BeTrue(), "Expected MCE plugin to be enabled in console resource")
+		Expect(contains(pluginsList, "mce")).To(BeTrue(), "Expected MCE plugin to be enabled in console resource")
 	} else {
 		By("OCP cluster below 4.10 detected. Ensuring MCE Console is not installed")
 		components := existingMCE.Status.Components
