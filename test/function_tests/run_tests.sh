@@ -17,5 +17,5 @@ fi
 if [[ "$TEST_MODE" == "install" ]]; then
     echo "Beginning Backplane Tests ..."
     echo ""
-    ginkgo -tags functional -v --slow-spec-threshold=300s test/function_tests/backplane_operator_install_test
+    ginkgo -tags functional -v --slowSpecThreshold=500 test/function_tests/backplane_operator_install_test
 fi
