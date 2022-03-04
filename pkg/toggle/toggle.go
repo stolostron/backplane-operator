@@ -28,6 +28,7 @@ const (
 	ClusterLifecycleChartDir = "pkg/templates/charts/toggle/cluster-lifecycle"
 	ClusterManagerChartDir   = "pkg/templates/charts/toggle/cluster-manager"
 	ServerFoundationChartDir = "pkg/templates/charts/toggle/server-foundation"
+	HyperShiftChartDir       = "pkg/templates/charts/toggle/hypershift"
 )
 
 //

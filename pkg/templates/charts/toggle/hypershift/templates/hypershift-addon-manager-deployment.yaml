@@ -1,0 +1,121 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: hypershift-addon-manager
+  labels:
+    app: hypershift-addon-manager
+spec:
+  replicas: {{ .Values.hubconfig.replicaCount }}
+  selector:
+    matchLabels:
+      app: hypershift-addon-manager
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: hypershift-addon-manager
+        ocm-antiaffinity-selector: hypershift-addon-manager
+    spec:
+      {{- if .Values.global.pullSecret }}
+      imagePullSecrets:
+        - name: {{ .Values.global.pullSecret }}
+      {{- end }}
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                - amd64
+                - ppc64le
+                - s390x
+                - arm64
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 70
+            podAffinityTerm:
+              topologyKey: topology.kubernetes.io/zone
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - hypershift-addon-manager
+          - weight: 35
+            podAffinityTerm:
+              topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - hypershift-addon-manager
+      restartPolicy: Always
+      serviceAccountName: hypershift-addon-manager-sa
+      volumes:
+      - emptyDir:
+          medium: Memory
+        name: tmp-vol
+      hostNetwork: false
+      hostPID: false
+      hostIPC: false
+      securityContext:
+        runAsNonRoot: true
+        # runAsUser: 1001
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: hypershift-addon-manager
+          image: {{ .Values.global.imageOverrides.hypershift_addon_operator }}
+          volumeMounts:
+          - mountPath: /tmp
+            name: tmp-vol
+          args:
+            - ./hypershift-addon
+            - manager
+            - '--namespace={{ .Values.global.namespace }}'
+          env:
+            - name: HYPERSHIFT_OPERATOR_IMAGE_NAME
+              value: '{{ .Values.global.imageOverrides.hypershift_operator }}'
+            - name: HYPERSHIFT_ADDON_IMAGE_NAME
+              value: '{{ .Values.global.imageOverrides.hypershift_addon_operator }}'
+{{- if .Values.hubconfig.proxyConfigs }}
+
+          - name: HTTP_PROXY
+            value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
+          - name: HTTPS_PROXY
+            value: {{ .Values.hubconfig.proxyConfigs.HTTPS_PROXY }}
+          - name: NO_PROXY
+            value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
+{{- end }}
+          imagePullPolicy: "{{ .Values.global.pullPolicy }}"
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            privileged: false
+            readOnlyRootFilesystem: true
+          resources:
+            requests:
+              cpu: "2m"
+              memory: "2Mi"
+{{- if .Values.global.pullSecret }}
+      imagePullSecrets:
+      - name: {{ .Values.global.pullSecret }}
+{{- end }}
+{{- with .Values.hubconfig.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+{{- end }}
+{{- with .Values.hubconfig.tolerations }}
+      tolerations:
+      {{- range . }}
+      - {{ if .Key }} key: {{ .Key }} {{- end }}
+        {{ if .Operator }} operator: {{ .Operator }} {{- end }}
+        {{ if .Value }} value: {{ .Value }} {{- end }}
+        {{ if .Effect }} effect: {{ .Effect }} {{- end }}
+        {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
+        {{- end }}
+{{- end }}
