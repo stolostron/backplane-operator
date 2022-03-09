@@ -77,6 +77,9 @@ func ClusterManager(m *v1.MultiClusterEngine, overrides map[string]string) *unst
 				NodeSelector: m.Spec.NodeSelector,
 				Tolerations:  cmTolerations,
 			},
+			DeployOption: ocmapiv1.DeployOption{
+				Mode: "Default",
+			},
 		},
 	}
 
