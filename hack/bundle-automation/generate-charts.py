@@ -274,6 +274,11 @@ def injectHelmFlowControl(deployment):
           value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
 {{- end }}
 """
+
+        if 'replicas:' in line.strip():
+            lines[i] = """  replicas: {{ .Values.hubconfig.replicaCount }}
+"""
+
         a_file = open(deployment, "w")
         a_file.writelines(lines)
         a_file.close()
