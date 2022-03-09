@@ -1,0 +1,10 @@
+
+- repo_name: "managed-serviceaccount"
+  github_ref: "git@github.com:nathanweatherly/managed-serviceaccount.git"
+  charts:
+    - name: "managed-serviceaccount"
+      chart-path: "charts/managed-serviceaccount"
+      always-or-toggle: "toggle"
+      branch: "backplane-2.0"
+      imageMappings:
+        managed-serviceaccount: managed_serviceaccount
