@@ -1,6 +1,6 @@
 
 - repo_name: "managed-serviceaccount"
-  github_ref: "git@github.com:nathanweatherly/managed-serviceaccount.git"
+  github_ref: "git@github.com:stolostron/managed-serviceaccount.git"
   charts:
     - name: "managed-serviceaccount"
       chart-path: "charts/managed-serviceaccount"
