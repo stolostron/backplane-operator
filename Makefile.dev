@@ -27,6 +27,10 @@ regenerate-operator-bundles: ## Regenerates the operator bundles
 	pip install -r hack/bundle-automation/requirements.txt
 	python ./hack/bundle-automation/generate-bundles.py --destination pkg/templates/
 
+regenerate-charts: ## Regenerates the charts 
+	pip install -r hack/bundle-automation/chart-requirements.txt
+	python ./hack/bundle-automation/generate-charts.py --destination pkg/templates/
+
 catalog-deploy: ## Deploys backplane operator via subscription
 	IMG="${IMAGE_TAG_BASE}-catalog:v${VERSION}" yq eval -i '.spec.image = env(IMG)' hack/catalog/catalogsource.yaml
 	oc create ns backplane-operator-system --dry-run=client -o yaml | oc apply -f -

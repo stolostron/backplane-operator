@@ -10,14 +10,9 @@ spec:
   template:
     metadata:
       labels:
-        open-cluster-management.io/addon: managed-serviceaccount
         ocm-antiaffinity-selector: managed-serviceaccount
+        open-cluster-management.io/addon: managed-serviceaccount
     spec:
-      hostNetwork: false
-      hostPID: false
-      hostIPC: false
-      securityContext:
-        runAsNonRoot: true
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -39,7 +34,35 @@ spec:
                   - managed-serviceaccount
               topologyKey: kubernetes.io/hostname
             weight: 35
-      serviceAccount: managed-serviceaccount
+      containers:
+      - args:
+        - --leader-elect=true
+        - --agent-image-name={{ .Values.global.imageOverrides.managed_serviceaccount }}
+        - --agent-install-all=false
+        command:
+        - /manager
+        env:
+{{- if .Values.hubconfig.proxyConfigs }}
+        - name: HTTP_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
+        - name: HTTPS_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.HTTPS_PROXY }}
+        - name: NO_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
+{{- end }}
+        image: '{{ .Values.global.imageOverrides.managed_serviceaccount }}'
+        imagePullPolicy: '{{ .Values.global.pullPolicy }}'
+        name: manager
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          runAsNonRoot: true
+      hostIPC: false
+      hostNetwork: false
+      hostPID: false
 {{- if .Values.global.pullSecret }}
       imagePullSecrets:
       - name: {{ .Values.global.pullSecret }}
@@ -48,6 +71,9 @@ spec:
       nodeSelector:
 {{ toYaml . | indent 8 }}
 {{- end }}
+      securityContext:
+        runAsNonRoot: true
+      serviceAccount: managed-serviceaccount
 {{- with .Values.hubconfig.tolerations }}
       tolerations:
       {{- range . }}
@@ -57,30 +83,4 @@ spec:
         {{ if .Effect }} effect: {{ .Effect }} {{- end }}
         {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
         {{- end }}
-{{- end }}
-      containers:
-      - name: manager
-        image: '{{ .Values.global.imageOverrides.managed_serviceaccount }}'
-        imagePullPolicy: '{{ .Values.global.pullPolicy }}'
-        command:
-          - /manager
-        args:
-          - --leader-elect=true
-          - --agent-image-name={{ .Values.global.imageOverrides.managed_serviceaccount }}
-          - --agent-install-all=false
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-            - ALL
-          privileged: false
-          runAsNonRoot: true
-        env:
-{{- if .Values.hubconfig.proxyConfigs }}
-        - name: HTTP_PROXY
-          value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
-        - name: HTTPS_PROXY
-          value: {{ .Values.hubconfig.proxyConfigs.HTTPS_PROXY }}
-        - name: NO_PROXY
-          value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
 {{- end }}
