@@ -1,15 +1,11 @@
 global:
   imageOverrides:
     managed_serviceaccount: ''
-  pullPolicy: Always
+  namespace: default
   pullSecret: null
 hubconfig:
   nodeSelector: null
   proxyConfigs: {}
+  replicaCount: 1
   tolerations: []
-
-# Image of the managed service-account instances
-managerImage: ''
-agentImage: ''
-# Number of replicas
-replicas: 1
+org: open-cluster-management
