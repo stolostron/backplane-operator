@@ -333,7 +333,7 @@ def updateDeployments(helmChart, exclusions):
         injectHelmFlowControl(deployment)
 
 # updateRBAC adds standard configuration to the RBAC resources (clusterroles, roles, clusterrolebindings, and rolebindings)
-def updateRBAC(helmChart):
+def updateRBAC(helmChart, chartName):
     logging.info("Updating clusterroles, roles, clusterrolebindings, and rolebindings ...")
     clusterroles = findTemplatesOfType(helmChart, 'ClusterRole')
     roles = findTemplatesOfType(helmChart, 'Role')
@@ -343,19 +343,19 @@ def updateRBAC(helmChart):
     for rbacFile in clusterroles + roles + clusterrolebindings + rolebindings:
         with open(rbacFile, 'r') as f:
             rbac = yaml.safe_load(f)
-        rbac['metadata']['name'] = "{{ .Values.org }}:{{ .Chart.Name }}:" + rbac['metadata']['name']
+        rbac['metadata']['name'] = "{{ .Values.org }}:{{ .Chart.Name }}:" + chartName
         if rbac['kind'] in ['RoleBinding', 'ClusterRoleBinding']:
-            rbac['roleRef']['name'] = "{{ .Values.org }}:{{ .Chart.Name }}:" + rbac['roleRef']['name']
+            rbac['roleRef']['name'] = "{{ .Values.org }}:{{ .Chart.Name }}:" + chartName
         with open(rbacFile, 'w') as f:
             yaml.dump(rbac, f, width=float("inf"))
     logging.info("Clusterroles, roles, clusterrolebindings, and rolebindings updated. \n")
 
 
-def injectRequirements(helmChart, imageKeyMapping, exclusions):
+def injectRequirements(helmChart, chartName, imageKeyMapping, exclusions):
     logging.info("Updating Helm chart '%s' with onboarding requirements ...", helmChart)
     fixImageReferences(helmChart, imageKeyMapping)
     fixEnvVarImageReferences(helmChart, imageKeyMapping)
-    updateRBAC(helmChart)
+    updateRBAC(helmChart, chartName)
     updateDeployments(helmChart, exclusions)
     logging.info("Updated Chart '%s' successfully\n", helmChart)
 
@@ -472,7 +472,7 @@ def main():
             if not skipOverrides:
                 logging.info("Adding Overrides (set --skipOverrides=true to skip) ...")
                 exclusions = chart["exclusions"] if "exclusions" in chart else []
-                injectRequirements(destinationChartPath, chart["imageMappings"], exclusions)
+                injectRequirements(destinationChartPath, chart["name"], chart["imageMappings"], exclusions)
                 logging.info("Overrides added. \n")
 
 if __name__ == "__main__":
