@@ -62,3 +62,6 @@ rules:
 - apiGroups: [ "imageregistry.open-cluster-management.io" ]
   resources: [ "managedclusterimageregistries","managedclusterimageregistries/status" ]
   verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
+- apiGroups: ["proxy.open-cluster-management.io"]
+  resources: ["managedproxyconfigurations"]
+  verbs: ["create","get", "list", "watch", "update", "delete", "deletecollection", "patch"]

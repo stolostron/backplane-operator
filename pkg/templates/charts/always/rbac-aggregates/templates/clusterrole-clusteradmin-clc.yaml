@@ -31,3 +31,6 @@ rules:
 - apiGroups: [ "extensions.hive.openshift.io" ]
   resources: [ "agentclusterinstalls" ]
   verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
+- apiGroups: ["proxy.open-cluster-management.io"]
+  resources: ["managedproxyconfigurations"]
+  verbs: ["create","get", "list", "watch", "update", "delete", "deletecollection", "patch"]
