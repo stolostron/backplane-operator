@@ -216,3 +216,14 @@ rules:
   - get
   - create
   - update
+- apiGroups:
+    - addon.open-cluster-management.io
+  resources:
+    - managedclusteraddons
+    - managedclusteraddons/finalizers
+  verbs:
+    - get
+    - list
+    - patch
+    - update
+    - delete
