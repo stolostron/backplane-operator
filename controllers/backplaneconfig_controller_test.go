@@ -41,7 +41,6 @@ import (
 	admissionregistration "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -243,18 +242,6 @@ var _ = Describe("BackplaneConfig controller", func() {
 				Name:           "Managed-ServiceAccount ServiceAccount",
 				NamespacedName: types.NamespacedName{Name: "managed-serviceaccount", Namespace: DestinationNamespace},
 				ResourceType:   &corev1.ServiceAccount{},
-				Expected:       nil,
-			},
-			{
-				Name:           "Managed-ServiceAccount ClusterRole",
-				NamespacedName: types.NamespacedName{Name: "open-cluster-management:managed-serviceaccount:addon-manager"},
-				ResourceType:   &rbacv1.ClusterRole{},
-				Expected:       nil,
-			},
-			{
-				Name:           "Managed-ServiceAccount ClusterRoleBinding",
-				NamespacedName: types.NamespacedName{Name: "open-cluster-management:managed-serviceaccount:addon-manager"},
-				ResourceType:   &rbacv1.ClusterRoleBinding{},
 				Expected:       nil,
 			},
 			{
