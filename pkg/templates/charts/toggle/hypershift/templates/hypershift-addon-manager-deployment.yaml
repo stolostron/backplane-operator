@@ -81,7 +81,6 @@ spec:
             - name: HYPERSHIFT_ADDON_IMAGE_NAME
               value: '{{ .Values.global.imageOverrides.hypershift_addon_operator }}'
 {{- if .Values.hubconfig.proxyConfigs }}
-
           - name: HTTP_PROXY
             value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
           - name: HTTPS_PROXY
@@ -101,10 +100,6 @@ spec:
             requests:
               cpu: "2m"
               memory: "2Mi"
-{{- if .Values.global.pullSecret }}
-      imagePullSecrets:
-      - name: {{ .Values.global.pullSecret }}
-{{- end }}
 {{- with .Values.hubconfig.nodeSelector }}
       nodeSelector:
 {{ toYaml . | indent 8 }}

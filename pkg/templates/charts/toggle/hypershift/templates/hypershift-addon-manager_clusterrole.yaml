@@ -3,110 +3,32 @@ kind: ClusterRole
 metadata:
   name: {{ .Values.org }}:{{ .Chart.Name }}:hypershift-addon-manager
 rules:
-- apiGroups:
-  - ""
-  resources:
-  - secrets
-  - configmaps
-  verbs:
-  - create
-  - deletecollection
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - addon.open-cluster-management.io
-  resources:
-  - managedclusteraddons
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - addon.open-cluster-management.io
-  resources:
-  - managedclusteraddons/status
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - work.open-cluster-management.io
-  resources:
-  - manifestworks
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - config.openshift.io
-  resources:
-  - infrastructures
-  verbs:
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - certificates.k8s.io
-  resources:
-  - certificatesigningrequests
-  verbs:
-  - create
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - certificates.k8s.io
-  resources:
-  - certificatesigningrequests/approval
-  verbs:
-  - create
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - cluster.open-cluster-management.io
-  resources:
-  - managedclusters
-  verbs:
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - roles
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - rolebindings
-  verbs:
-  - get
-  - list
-  - watch
+- apiGroups: [""]
+  resources: ["secrets", "configmaps", "events"]
+  verbs: ["get", "list", "watch", "create", "update", "delete", "deletecollection", "patch"]
+- apiGroups: ["addon.open-cluster-management.io"]
+  resources: ["managedclusteraddons", "managedclusteraddons/finalizers", "managedclusteraddons/status", "clustermanagementaddons", "clustermanagementaddons/finalizers"]
+  verbs: ["create", "delete", "get", "list", "watch", "patch", "update"]
+- apiGroups: ["work.open-cluster-management.io"]
+  resources: ["manifestworks"]
+  verbs: ["create", "update", "get", "list", "watch", "delete", "deletecollection", "patch"]
+- apiGroups: ["config.openshift.io"]
+  resources: ["infrastructures"]
+  verbs: ["get", "list", "watch", "patch", "update"]
+- apiGroups: ["certificates.k8s.io"]
+  resources: ["certificatesigningrequests", "certificatesigningrequests/approval"]
+  verbs: ["create", "get", "list", "watch", "patch", "update"]
+- apiGroups: ["certificates.k8s.io"]
+  resources: ["signers"]
+  resourceNames:
+  - kubernetes.io/kube-apiserver-client
+  verbs: ["approve"]
+- apiGroups: ["cluster.open-cluster-management.io"]
+  resources: ["managedclusters"]
+  verbs: ["get", "list", "watch", "patch", "update"]
+- apiGroups: ["rbac.authorization.k8s.io"]
+  resources: ["roles", "rolebindings"]
+  verbs: ["get", "list", "watch", "create", "update", "delete"]
+- apiGroups: ["authorization.k8s.io"]
+  resources: ["subjectaccessreviews"]
+  verbs: ["get", "create"]

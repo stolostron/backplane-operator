@@ -74,3 +74,27 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - cluster.open-cluster-management.io
+  resources:
+  - managedclusters
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.open-cluster-management.io
+  resources:
+  - managedclustersets/join
+  verbs:
+  - create
+- apiGroups:
+  - register.open-cluster-management.io
+  resources:
+  - managedclusters/accept
+  verbs:
+  - update

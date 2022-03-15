@@ -1,3 +1,5 @@
+
+---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
@@ -18,12 +20,16 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
+    - description: Infrastructure type
+      jsonPath: .spec.hostedClusterSpec.platform.type
+      name: TYPE
+      type: string
     - description: Reason
       jsonPath: .status.conditions[?(@.type=="PlatformInfrastructureConfigured")].reason
       name: INFRA
       type: string
     - description: Configured
-      jsonPath: .status.conditions[?(@.type=="PlatformIAMConfigured")].status
+      jsonPath: .status.conditions[?(@.type=="PlatformInfrastructureConfigured")].status
       name: Ready
       type: string
     - description: Reason
@@ -31,7 +37,7 @@ spec:
       name: IAM
       type: string
     - description: Configured
-      jsonPath: .status.conditions[?(@.type=="PlatformInfrastructureConfigured")].status
+      jsonPath: .status.conditions[?(@.type=="PlatformIAMConfigured")].status
       name: Ready
       type: string
     - description: Reason
@@ -389,6 +395,14 @@ spec:
                     - podCIDR
                     - serviceCIDR
                     type: object
+                  pausedUntil:
+                    description: 'PausedUntil is a field that can be used to pause
+                      reconciliation on a resource. Either a date can be provided
+                      in RFC3339 format or a boolean. If a date is provided: reconciliation
+                      is paused on the resource until that date. If the boolean true
+                      is provided: reconciliation is paused on the resource until
+                      the field is removed.'
+                    type: string
                   platform:
                     description: Platform specifies the underlying infrastructure
                       provider for the cluster and is used to configure platform specific
@@ -972,7 +986,6 @@ spec:
                         type: string
                     type: object
                 required:
-                - issuerURL
                 - networking
                 - platform
                 - pullSecret
@@ -1018,6 +1031,17 @@ spec:
                             type: string
                         required:
                         - region
+                        type: object
+                      azure:
+                        properties:
+                          location:
+                            description: Region is the Azure region(location) in which
+                              the cluster resides. This configures the OCP control
+                              plane cloud integrations, and is used by NodePool to
+                              resolve the correct boot image for a given release.
+                            type: string
+                        required:
+                        - location
                         type: object
                     type: object
                 required:
@@ -1249,16 +1273,6 @@ spec:
                                         The requirements are ANDed.
                                       type: object
                                   type: object
-                                minCPUs:
-                                  description: MinCPUs specifies the minimum number
-                                    of CPU cores required.
-                                  format: int32
-                                  type: integer
-                                minMemoryMiB:
-                                  description: MinMemoryMiB specifies the minimum
-                                    amount of RAM required, in MiB.
-                                  format: int32
-                                  type: integer
                               type: object
                             aws:
                               description: AWS specifies the configuration used when
@@ -1423,6 +1437,11 @@ spec:
                               type: object
                             azure:
                               properties:
+                                diskSizeGB:
+                                  default: 120
+                                  format: int32
+                                  minimum: 16
+                                  type: integer
                                 imageID:
                                   type: string
                                 vmsize:

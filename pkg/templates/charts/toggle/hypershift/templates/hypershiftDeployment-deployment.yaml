@@ -86,11 +86,7 @@ spec:
         resources:
           requests:
             cpu: "2m"                     # Runs < 10m most of the time and idols at about 3m
-            memory: "2Mi"     
-{{- if .Values.global.pullSecret }}
-      imagePullSecrets:
-      - name: {{ .Values.global.pullSecret }}
-{{- end }}           # Runs between 25-28Mi when fully active
+            memory: "2Mi"                 # Runs between 25-28Mi when fully active
 {{- with .Values.hubconfig.nodeSelector }}
       nodeSelector:
 {{ toYaml . | indent 8 }}
