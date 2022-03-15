@@ -103,7 +103,9 @@ const (
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclustersets/join,verbs=create
 //+kubebuilder:rbac:groups=migration.k8s.io,resources=storageversionmigrations,verbs=create;get;list;update;patch;watch;delete
 //+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=create;get;list;update;patch;watch;delete
-//+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=clustermanagementaddons;clustermanagementaddons/finalizers;managedclusteraddons,verbs=create;get;list;update;patch;watch;delete
+//+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=clustermanagementaddons;clustermanagementaddons/finalizers;managedclusteraddons;managedclusteraddons/finalizers;managedclusteraddons/status,verbs=create;get;list;update;patch;watch;delete
+//+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=addonplacementscores,verbs=create;get;list;update;patch;watch;delete;deletecollection
+//+kubebuilder:rbac:groups=proxy.open-cluster-management.io,resources=managedproxyconfigurations,verbs=create;get;list;update;patch;watch;delete;deletecollection
 
 // Hive RBAC
 //+kubebuilder:rbac:groups="hive.openshift.io",resources=hiveconfigs,verbs=get;create;update;delete;list;watch
@@ -598,13 +600,14 @@ func (r *MultiClusterEngineReconciler) ensureUnstructuredResource(ctx context.Co
 }
 
 func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+	log := log.FromContext(ctx)
+	log.Info("Setting defaults")
+
 	updateNecessary := false
 	if !utils.AvailabilityConfigIsValid(m.Spec.AvailabilityConfig) {
 		m.Spec.AvailabilityConfig = backplanev1.HAHigh
 		updateNecessary = true
 	}
-	log := log.FromContext(ctx)
-	log.Info("Setting defaults")
 
 	if len(m.Spec.TargetNamespace) == 0 {
 		m.Spec.TargetNamespace = backplanev1.DefaultTargetNamespace
@@ -616,44 +619,9 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 	}
 
 	// If OCP 4.10+ then set then enable the MCE console. Else ensure it is disabled
-	clusterVersion := &configv1.ClusterVersion{}
-	err := r.Client.Get(ctx, types.NamespacedName{Name: "version"}, clusterVersion)
+	currentClusterVersion, err := r.getClusterVersion(ctx, m)
 	if err != nil {
-		log.Error(err, "Failed to detect clusterversion")
-		return ctrl.Result{}, err
-	}
-
-	// -0 allows for prerelease builds to pass the validation.
-	// If -0 is removed, developer/rc builds will not pass this check
-	constraint, err := semver.NewConstraint(">= 4.10.0-0")
-	if err != nil {
-		log.Error(err, "Failed to set constraint of minimum supported version for plugins")
-		return ctrl.Result{}, err
-	}
-
-	unitTest := false
-	if val, ok := os.LookupEnv("UNIT_TEST"); ok && val == "true" {
-		unitTest = true
-	}
-
-	if len(clusterVersion.Status.History) == 0 {
-		if !unitTest {
-			log.Error(err, "Failed to detect status in clusterversion.status.history")
-			return ctrl.Result{}, err
-		}
-	}
-
-	currentClusterVersion := ""
-	upgradeCompleted := false
-	if unitTest {
-		// If unit test pass along a version, Can't set status in unit test
-		currentClusterVersion = "4.9.0"
-		upgradeCompleted = true
-	} else {
-		currentClusterVersion = clusterVersion.Status.History[0].Version
-		if clusterVersion.Status.History[0].State == configv1.CompletedUpdate {
-			upgradeCompleted = true
-		}
+		return ctrl.Result{}, errors.Wrapf(err, "failed to detect clusterversion")
 	}
 
 	// Set OCP version as env var, so that charts can render this value
@@ -665,19 +633,24 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 		return ctrl.Result{}, err
 	}
 
-	if constraint.Check(currentVersion) && upgradeCompleted {
-		if m.Spec.Components == nil {
-			m.Spec.Components = []backplanev1.ComponentConfig{}
-		}
+	// -0 allows for prerelease builds to pass the validation.
+	// If -0 is removed, developer/rc builds will not pass this check
+	constraint, err := semver.NewConstraint(">= 4.10.0-0")
+	if err != nil {
+		log.Error(err, "Failed to set constraint of minimum supported version for plugins")
+		return ctrl.Result{}, err
+	}
+
+	if constraint.Check(currentVersion) {
 		// If ConsoleMCE config already exists, then don't overwrite it
-		if !m.Enabled(backplanev1.ConsoleMCE) {
+		if !m.ComponentPresent(backplanev1.ConsoleMCE) {
 			log.Info("Dynamic plugins are supported. ConsoleMCE Config is not detected. Enabling ConsoleMCE")
 			m.Enable(backplanev1.ConsoleMCE)
 			updateNecessary = true
 		}
 	} else {
-		log.Info("Dynamic plugins are not supported. Disabling MCE console")
 		if m.Enabled(backplanev1.ConsoleMCE) {
+			log.Info("Dynamic plugins are not supported. Disabling MCE console")
 			m.Disable(backplanev1.ConsoleMCE)
 			updateNecessary = true
 		}
@@ -762,4 +735,30 @@ func (r *MultiClusterEngineReconciler) adoptExistingSubcomponents(ctx context.Co
 		}
 	}
 	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterEngineReconciler) getClusterVersion(ctx context.Context, mce *backplanev1.MultiClusterEngine) (string, error) {
+	log := log.FromContext(ctx)
+
+	unitTest := false
+	if val, ok := os.LookupEnv("UNIT_TEST"); ok && val == "true" {
+		unitTest = true
+	}
+	if unitTest {
+		// If unit test pass along a version, Can't set status in unit test
+		return "4.9.0", nil
+	}
+
+	clusterVersion := &configv1.ClusterVersion{}
+	err := r.Client.Get(ctx, types.NamespacedName{Name: "version"}, clusterVersion)
+	if err != nil {
+		log.Error(err, "Failed to detect clusterversion")
+		return "", err
+	}
+
+	if len(clusterVersion.Status.History) == 0 {
+		log.Error(err, "Failed to detect status in clusterversion.status.history")
+		return "", err
+	}
+	return clusterVersion.Status.History[0].Version, nil
 }

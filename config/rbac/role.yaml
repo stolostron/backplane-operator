@@ -95,6 +95,8 @@ rules:
   - clustermanagementaddons
   - clustermanagementaddons/finalizers
   - managedclusteraddons
+  - managedclusteraddons/finalizers
+  - managedclusteraddons/status
   verbs:
   - create
   - delete
@@ -184,6 +186,19 @@ rules:
   - subjectaccessreviews
   verbs:
   - create
+- apiGroups:
+  - cluster.open-cluster-management.io
+  resources:
+  - addonplacementscores
+  verbs:
+  - create
+  - delete
+  - deletecollection
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - cluster.open-cluster-management.io
   resources:
@@ -388,6 +403,19 @@ rules:
   resources:
   - consoles
   verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - proxy.open-cluster-management.io
+  resources:
+  - managedproxyconfigurations
+  verbs:
+  - create
+  - delete
+  - deletecollection
   - get
   - list
   - patch

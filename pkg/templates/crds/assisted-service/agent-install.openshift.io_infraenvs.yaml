@@ -2,7 +2,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.6.2
+    controller-gen.kubebuilder.io/version: v0.4.1
   creationTimestamp: null
   name: infraenvs.agent-install.openshift.io
 spec:
@@ -204,6 +204,26 @@ spec:
                       is "In", and the values array contains only "value". The requirements
                       are ANDed.
                     type: object
+                type: object
+              bootArtifacts:
+                description: BootArtifacts specifies the URLs for each boot artifact
+                properties:
+                  initrd:
+                    description: InitrdURL specifies an HTTP/S URL that contains the
+                      initrd
+                    type: string
+                  ipxeScript:
+                    description: IpxeScriptURL specifies an HTTP/S URL that contains
+                      the iPXE script
+                    type: string
+                  kernel:
+                    description: KernelURL specifies an HTTP/S URL that contains the
+                      kernel
+                    type: string
+                  rootfs:
+                    description: RootfsURL specifies an HTTP/S URL that contains the
+                      rootfs
+                    type: string
                 type: object
               conditions:
                 items:

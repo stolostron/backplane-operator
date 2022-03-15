@@ -10,7 +10,7 @@ spec:
   template:
     metadata:
       labels:
-        ocm-antiaffinity-selector: managed-serviceaccount
+        ocm-antiaffinity-selector: managed-serviceaccount-addon-manager
         open-cluster-management.io/addon: managed-serviceaccount
     spec:
       affinity:
@@ -22,7 +22,7 @@ spec:
                 - key: ocm-antiaffinity-selector
                   operator: In
                   values:
-                  - managed-serviceaccount
+                  - managed-serviceaccount-addon-manager
               topologyKey: topology.kubernetes.io/zone
             weight: 70
           - podAffinityTerm:
@@ -31,7 +31,7 @@ spec:
                 - key: ocm-antiaffinity-selector
                   operator: In
                   values:
-                  - managed-serviceaccount
+                  - managed-serviceaccount-addon-manager
               topologyKey: kubernetes.io/hostname
             weight: 35
       containers:
@@ -39,6 +39,7 @@ spec:
         - --leader-elect=true
         - --agent-image-name={{ .Values.global.imageOverrides.managed_serviceaccount }}
         - --agent-install-all=false
+        - --feature-gates=EphemeralIdentity=true
         command:
         - /manager
         env:
@@ -59,6 +60,7 @@ spec:
             drop:
             - ALL
           privileged: false
+          readOnlyRootFilesystem: true
           runAsNonRoot: true
       hostIPC: false
       hostNetwork: false
