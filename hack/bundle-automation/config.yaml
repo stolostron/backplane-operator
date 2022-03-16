@@ -3,7 +3,7 @@
   github_ref: "https://github.com/redhat-openshift-ecosystem/community-operators-prod.git"
   operators:
     - name: "hive-operator"
-      channel: "ocm-2.5"
+      channel: "mce-2.0"
       package-yml: "operators/hive-operator/hive.package.yaml"
       imageMappings:
         hive: openshift_hive
