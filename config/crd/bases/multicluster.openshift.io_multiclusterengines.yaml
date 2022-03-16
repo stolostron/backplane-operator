@@ -51,21 +51,6 @@ spec:
                 description: 'Specifies deployment replication for improved availability.
                   Options are: Basic and High (default)'
                 type: string
-              components:
-                description: Provides optional configuration for components
-                items:
-                  description: ComponentConfig provides optional configuration items
-                    for individual components
-                  properties:
-                    enabled:
-                      type: boolean
-                    name:
-                      type: string
-                  required:
-                  - enabled
-                  - name
-                  type: object
-                type: array
               imagePullSecret:
                 description: Override pull secret for accessing MultiClusterEngine
                   operand and endpoint images
@@ -78,6 +63,21 @@ spec:
               overrides:
                 description: Developer Overrides
                 properties:
+                  components:
+                    description: Provides optional configuration for components
+                    items:
+                      description: ComponentConfig provides optional configuration
+                        items for individual components
+                      properties:
+                        enabled:
+                          type: boolean
+                        name:
+                          type: string
+                      required:
+                      - enabled
+                      - name
+                      type: object
+                    type: array
                   imagePullPolicy:
                     description: Pull policy for the MCE images
                     type: string

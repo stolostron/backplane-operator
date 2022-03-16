@@ -165,7 +165,8 @@ var installTests = func() func() {
 			Eventually(func() bool {
 				key := &backplane.MultiClusterEngine{}
 				Expect(k8sClient.Get(ctx, multiClusterEngine, key)).To(Succeed())
-				return key.Status.Phase == backplane.MultiClusterEnginePhaseAvailable
+				return key.Status.Phase == backplane.MultiClusterEnginePhaseAvailable &&
+					len(key.Status.Components) > 5
 			}, installTimeout, interval).Should(BeTrue())
 
 		})
@@ -472,22 +473,11 @@ var webhookTests = func() func() {
 
 		})
 
-		It("Prevents disabling required components", func() {
-			Eventually(func(g Gomega) {
-				key := &backplane.MultiClusterEngine{}
-				g.Expect(k8sClient.Get(ctx, multiClusterEngine, key)).To(Succeed())
-				key.Disable("server-foundation")
-				err := k8sClient.Update(ctx, key)
-				g.Expect(err).ShouldNot(BeNil(), "webhook should not have allowed update")
-				g.Expect(err.Error()).Should(ContainSubstring("invalid component config"))
-			}, 10*time.Second, time.Second).Should(Succeed())
-		})
-
 		It("Prevents setting unknown components", func() {
 			Eventually(func(g Gomega) {
 				key := &backplane.MultiClusterEngine{}
 				g.Expect(k8sClient.Get(ctx, multiClusterEngine, key)).To(Succeed())
-				key.Spec.Components = append(key.Spec.Components, backplane.ComponentConfig{
+				key.Spec.Overrides.Components = append(key.Spec.Overrides.Components, backplane.ComponentConfig{
 					Name:    "unknown",
 					Enabled: true,
 				})
