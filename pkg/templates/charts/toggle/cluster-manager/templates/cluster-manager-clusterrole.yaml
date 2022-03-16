@@ -11,7 +11,6 @@ rules:
   - serviceaccounts
   - services
   - secrets
-  - pods
   verbs:
   - create
   - get
@@ -58,7 +57,6 @@ rules:
   - apps
   resources:
   - deployments
-  - replicasets
   verbs:
   - create
   - get
@@ -161,23 +159,3 @@ rules:
   - watch
   - patch
   - delete
-- apiGroups:
-  - coordination.k8s.io
-  resources:
-  - leases
-  verbs:
-  - create
-  - get
-  - list
-  - update
-  - watch
-  - patch
-  - delete
-- apiGroups:
-  - config.openshift.io 
-  resources:
-  - infrastructures
-  verbs:
-  - get
-  - list
-  - watch
