@@ -321,6 +321,18 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 		}
 	}
 
+	if backplaneConfig.Enabled(backplanev1.HyperShift) {
+		result, err := r.ensureHyperShift(ctx, backplaneConfig)
+		if err != nil {
+			return result, err
+		}
+	} else {
+		result, err := r.ensureNoHyperShift(ctx, backplaneConfig)
+		if result != (ctrl.Result{}) {
+			return result, err
+		}
+	}
+
 	if backplaneConfig.Enabled(backplanev1.ConsoleMCE) {
 		result, err := r.ensureConsoleMCE(ctx, backplaneConfig)
 		if err != nil {

@@ -21,10 +21,12 @@ var onComponents = []string{
 	backplanev1.Hive,
 	backplanev1.ServerFoundation,
 	// backplanev1.ConsoleMCE, // determined by OCP version
+	// backplanev1.HyperShift,
 }
 
 var offComponents = []string{
 	backplanev1.ManagedServiceAccount,
+	backplanev1.HyperShift,
 }
 
 // SetDefaultComponents returns true if changes are made
@@ -102,7 +104,7 @@ func GetTestImages() []string {
 		"managedcluster_import_controller", "registration", "work", "discovery_operator", "cluster_curator_controller",
 		"clusterlifecycle_state_metrics", "clusterclaims_controller", "provider_credential_controller", "managed_serviceaccount",
 		"assisted_service", "assisted_image_service", "postgresql_12", "assisted_installer_agent", "assisted_installer_controller",
-		"assisted_installer", "console_mce"}
+		"assisted_installer", "console_mce", "hypershift_deployment_controller", "hypershift_addon_operator", "hypershift_operator"}
 }
 
 func DefaultTolerations() []corev1.Toleration {

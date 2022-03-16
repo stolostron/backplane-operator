@@ -32,6 +32,7 @@ const (
 	ClusterLifecycle      string = "cluster-lifecycle"
 	ClusterManager        string = "cluster-manager"
 	ServerFoundation      string = "server-foundation"
+	HyperShift            string = "hypershift-preview"
 )
 
 var allComponents = []string{
@@ -43,6 +44,7 @@ var allComponents = []string{
 	ServerFoundation,
 	ConsoleMCE,
 	ManagedServiceAccount,
+	HyperShift,
 }
 
 var requiredComponents = []string{

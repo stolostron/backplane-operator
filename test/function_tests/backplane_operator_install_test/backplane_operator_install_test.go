@@ -272,13 +272,14 @@ var configurationTests = func() func() {
 		})
 
 		Context("toggled components", func() {
-			It("should disable discovery", func() {
+			It("should disable discovery and enable hypershift", func() {
 				key := &backplane.MultiClusterEngine{}
 
 				// retry update due to conflicts
 				Eventually(func(g Gomega) {
 					g.Expect(k8sClient.Get(ctx, multiClusterEngine, key)).To(Succeed())
 					key.Disable(backplane.Discovery)
+					key.Enable(backplane.HyperShift)
 					g.Expect(k8sClient.Update(ctx, key)).To(Succeed())
 				}, 10*time.Second, time.Second).Should(Succeed())
 
@@ -286,6 +287,10 @@ var configurationTests = func() func() {
 				Eventually(func(g Gomega) {
 					err := k8sClient.Get(ctx, types.NamespacedName{Name: "discovery-operator", Namespace: key.Spec.TargetNamespace}, targetDeploy)
 					g.Expect(apierrors.IsNotFound(err)).To(BeTrue(), "Expected IsNotFound error, got error:", err)
+					err = k8sClient.Get(ctx, types.NamespacedName{Name: "hypershift-addon-manager", Namespace: key.Spec.TargetNamespace}, targetDeploy)
+					g.Expect(err).To(BeNil(), "Expected no error, got error:", err)
+					err = k8sClient.Get(ctx, types.NamespacedName{Name: "hypershift-deployment-controller", Namespace: key.Spec.TargetNamespace}, targetDeploy)
+					g.Expect(err).To(BeNil(), "Expected no error, got error:", err)
 				}, 10*time.Second, time.Second).Should(Succeed())
 			})
 		})

@@ -1,0 +1,13 @@
+global:
+  imageOverrides:
+    hypershift_deployment_controller: ""
+    hypershift_addon_operator: ""
+    hypershift_operator: ""
+  namespace: default
+  pullSecret: null
+hubconfig:
+  nodeSelector: null
+  proxyConfigs: {}
+  replicaCount: 1
+  tolerations: []
+org: open-cluster-management
