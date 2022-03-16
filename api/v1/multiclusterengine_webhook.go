@@ -103,13 +103,12 @@ func (r *MultiClusterEngine) ValidateCreate() error {
 	}
 
 	// Validate components
-	for _, c := range r.Spec.Components {
-		if !validComponent(c) {
-			return errors.New(fmt.Sprintf("invalid component config: %s is not a known component", c.Name))
+	if r.Spec.Overrides != nil {
+		for _, c := range r.Spec.Overrides.Components {
+			if !validComponent(c) {
+				return errors.New(fmt.Sprintf("invalid component config: %s is not a known component", c.Name))
+			}
 		}
-	}
-	if err := requiredComponentsPresentCheck(r); err != nil {
-		return err
 	}
 
 	backplaneConfigList := &MultiClusterEngineList{}
@@ -137,13 +136,12 @@ func (r *MultiClusterEngine) ValidateUpdate(old runtime.Object) error {
 	}
 
 	// Validate components
-	for _, c := range r.Spec.Components {
-		if !validComponent(c) {
-			return errors.New(fmt.Sprintf("invalid component config: %s is not a known component", c.Name))
+	if r.Spec.Overrides != nil {
+		for _, c := range r.Spec.Overrides.Components {
+			if !validComponent(c) {
+				return errors.New(fmt.Sprintf("invalid component config: %s is not a known component", c.Name))
+			}
 		}
-	}
-	if err := requiredComponentsPresentCheck(r); err != nil {
-		return err
 	}
 
 	// Block disable if relevant resources present

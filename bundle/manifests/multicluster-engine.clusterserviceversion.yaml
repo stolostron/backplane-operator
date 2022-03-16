@@ -14,7 +14,7 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    operators.operatorframework.io/builder: operator-sdk-v1.17.0
+    operators.operatorframework.io/builder: operator-sdk-v1.16.0+git
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
   name: multicluster-engine.v0.0.1
   namespace: placeholder
@@ -35,11 +35,6 @@ spec:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:select:High
         - urn:alm:descriptor:com.tectonic.ui:select:Basic
-      - description: Provides optional configuration for components
-        displayName: Component Configuration
-        path: components
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: Override pull secret for accessing MultiClusterEngine operand
           and endpoint images
         displayName: Image Pull Secret
@@ -50,6 +45,11 @@ spec:
       - description: Developer Overrides
         displayName: Developer Overrides
         path: overrides
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: Provides optional configuration for components
+        displayName: Component Configuration
+        path: overrides.components
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: Location where MCE resources will be placed
@@ -157,6 +157,8 @@ spec:
           - clustermanagementaddons
           - clustermanagementaddons/finalizers
           - managedclusteraddons
+          - managedclusteraddons/finalizers
+          - managedclusteraddons/status
           verbs:
           - create
           - delete
@@ -246,6 +248,19 @@ spec:
           - subjectaccessreviews
           verbs:
           - create
+        - apiGroups:
+          - cluster.open-cluster-management.io
+          resources:
+          - addonplacementscores
+          verbs:
+          - create
+          - delete
+          - deletecollection
+          - get
+          - list
+          - patch
+          - update
+          - watch
         - apiGroups:
           - cluster.open-cluster-management.io
           resources:
@@ -450,6 +465,19 @@ spec:
           resources:
           - consoles
           verbs:
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - proxy.open-cluster-management.io
+          resources:
+          - managedproxyconfigurations
+          verbs:
+          - create
+          - delete
+          - deletecollection
           - get
           - list
           - patch

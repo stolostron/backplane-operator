@@ -23,11 +23,6 @@ spec:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:select:High
         - urn:alm:descriptor:com.tectonic.ui:select:Basic
-      - description: Provides optional configuration for components
-        displayName: Component Configuration
-        path: components
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: Override pull secret for accessing MultiClusterEngine operand
           and endpoint images
         displayName: Image Pull Secret
@@ -38,6 +33,11 @@ spec:
       - description: Developer Overrides
         displayName: Developer Overrides
         path: overrides
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: Provides optional configuration for components
+        displayName: Component Configuration
+        path: overrides.components
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: Location where MCE resources will be placed

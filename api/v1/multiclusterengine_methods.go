@@ -18,11 +18,6 @@ limitations under the License.
 
 package v1
 
-import (
-	"errors"
-	"fmt"
-)
-
 const (
 	ManagedServiceAccount string = "managed-service-account"
 	ConsoleMCE            string = "console-mce"
@@ -47,12 +42,11 @@ var allComponents = []string{
 	HyperShift,
 }
 
-var requiredComponents = []string{
-	ServerFoundation,
-}
-
 func (mce *MultiClusterEngine) ComponentPresent(s string) bool {
-	for _, c := range mce.Spec.Components {
+	if mce.Spec.Overrides == nil {
+		return false
+	}
+	for _, c := range mce.Spec.Overrides.Components {
 		if c.Name == s {
 			return true
 		}
@@ -61,7 +55,10 @@ func (mce *MultiClusterEngine) ComponentPresent(s string) bool {
 }
 
 func (mce *MultiClusterEngine) Enabled(s string) bool {
-	for _, c := range mce.Spec.Components {
+	if mce.Spec.Overrides == nil {
+		return false
+	}
+	for _, c := range mce.Spec.Overrides.Components {
 		if c.Name == s {
 			return c.Enabled
 		}
@@ -71,26 +68,32 @@ func (mce *MultiClusterEngine) Enabled(s string) bool {
 }
 
 func (mce *MultiClusterEngine) Enable(s string) {
-	for i, c := range mce.Spec.Components {
+	if mce.Spec.Overrides == nil {
+		mce.Spec.Overrides = &Overrides{}
+	}
+	for i, c := range mce.Spec.Overrides.Components {
 		if c.Name == s {
-			mce.Spec.Components[i].Enabled = true
+			mce.Spec.Overrides.Components[i].Enabled = true
 			return
 		}
 	}
-	mce.Spec.Components = append(mce.Spec.Components, ComponentConfig{
+	mce.Spec.Overrides.Components = append(mce.Spec.Overrides.Components, ComponentConfig{
 		Name:    s,
 		Enabled: true,
 	})
 }
 
 func (mce *MultiClusterEngine) Disable(s string) {
-	for i, c := range mce.Spec.Components {
+	if mce.Spec.Overrides == nil {
+		mce.Spec.Overrides = &Overrides{}
+	}
+	for i, c := range mce.Spec.Overrides.Components {
 		if c.Name == s {
-			mce.Spec.Components[i].Enabled = false
+			mce.Spec.Overrides.Components[i].Enabled = false
 			return
 		}
 	}
-	mce.Spec.Components = append(mce.Spec.Components, ComponentConfig{
+	mce.Spec.Overrides.Components = append(mce.Spec.Overrides.Components, ComponentConfig{
 		Name:    s,
 		Enabled: false,
 	})
@@ -104,13 +107,4 @@ func validComponent(c ComponentConfig) bool {
 		}
 	}
 	return false
-}
-
-func requiredComponentsPresentCheck(mce *MultiClusterEngine) error {
-	for _, req := range requiredComponents {
-		if mce.ComponentPresent(req) && !mce.Enabled(req) {
-			return errors.New(fmt.Sprintf("invalid component config: %s can not be disabled", req))
-		}
-	}
-	return nil
 }

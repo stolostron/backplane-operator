@@ -57,11 +57,6 @@ type MultiClusterEngineSpec struct {
 	// Location where MCE resources will be placed
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Target Namespace",xDescriptors={"urn:alm:descriptor:io.kubernetes:text","urn:alm:descriptor:com.tectonic.ui:advanced"}
 	TargetNamespace string `json:"targetNamespace,omitempty"`
-
-	// Provides optional configuration for components
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Component Configuration",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
-	// +optional
-	Components []ComponentConfig `json:"components,omitempty"`
 }
 
 // ComponentConfig provides optional configuration items for individual components
@@ -74,6 +69,11 @@ type ComponentConfig struct {
 type Overrides struct {
 	// Pull policy for the MCE images
 	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
+
+	// Provides optional configuration for components
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Component Configuration",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
+	// +optional
+	Components []ComponentConfig `json:"components,omitempty"`
 }
 
 // MultiClusterEngineStatus defines the observed state of MultiClusterEngine
