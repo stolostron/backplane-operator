@@ -104,7 +104,9 @@ func GetTestImages() []string {
 		"managedcluster_import_controller", "registration", "work", "discovery_operator", "cluster_curator_controller",
 		"clusterlifecycle_state_metrics", "clusterclaims_controller", "provider_credential_controller", "managed_serviceaccount",
 		"assisted_service", "assisted_image_service", "postgresql_12", "assisted_installer_agent", "assisted_installer_controller",
-		"assisted_installer", "console_mce", "hypershift_deployment_controller", "hypershift_addon_operator", "hypershift_operator"}
+		"assisted_installer", "console_mce", "hypershift_deployment_controller", "hypershift_addon_operator", "hypershift_operator",
+		"apiserver_network_proxy", "aws_encryption_provider", "cluster_api", "cluster_api_provider_agent", "cluster_api_provider_aws",
+		"cluster_api_provider_azure", "cluster_api_provider_kubevirt"}
 }
 
 func DefaultTolerations() []corev1.Toleration {
