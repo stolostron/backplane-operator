@@ -1,0 +1,69 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hypershift-operator-imagestream
+  namespace: {{ .Values.global.namespace }}
+data:
+  imagestream: |
+    kind: ImageStream
+    apiVersion: image.openshift.io/v1
+    metadata:
+      name: hypershift-operator-imagestream
+    spec:
+      lookupPolicy:
+        local: false
+      tags:
+      - name: apiserver-network-proxy
+        annotations:
+          io.openshift.build.source-location: https://github.com/openshift/apiserver-network-proxy
+        from:
+          kind: DockerImage
+          name: {{ .Values.global.imageOverrides.apiserver_network_proxy }}
+      - name: aws-encryption-provider
+        annotations:
+          io.openshift.build.source-location: https://github.com/openshift/aws-encryption-provider
+        from:
+          kind: DockerImage
+          name: {{ .Values.global.imageOverrides.aws_encryption_provider }}
+      - name: cluster-api
+        annotations:
+          io.openshift.build.commit.id: e09ed61cc9ba8bd37b0760291c833b4da744a985
+          io.openshift.build.source-location: https://github.com/openshift/cluster-api
+        from:
+          kind: DockerImage
+          name: {{ .Values.global.imageOverrides.cluster_api }}
+      - name: cluster-api-provider-agent
+        annotations:
+          io.openshift.build.commit.id: dd6353f609dc9e7bfd0312ce4b2c8d3dac5d749e
+          io.openshift.build.source-location: https://github.com/openshift/cluster-api-provider-agent
+        from:
+          kind: DockerImage
+          name: {{ .Values.global.imageOverrides.cluster_api_provider_agent }}
+      - name: cluster-api-provider-aws
+        annotations:
+          io.openshift.build.commit.id: 0b2e34680d117b1d8146965f3123c04709d37951
+          io.openshift.build.source-location: https://github.com/openshift/cluster-api-provider-aws
+        from:
+          kind: DockerImage
+          name: {{ .Values.global.imageOverrides.cluster_api_provider_aws }}
+      - name: cluster-api-provider-azure
+        annotations:
+          io.openshift.build.commit.id: e17ba23dd8ff1b2698d80499a416917c2084a0c1
+          io.openshift.build.source-location: https://github.com/openshift/cluster-api-provider-azure
+        from:
+          kind: DockerImage
+          name: {{ .Values.global.imageOverrides.cluster_api_provider_azure }}
+      - name: cluster-api-provider-kubevirt
+        annotations:
+          io.openshift.build.commit.id: 'dbdc825088513dc962ba2103efe2c1a4eb3cf524'
+          io.openshift.build.source-location: https://github.com/openshift/cluster-api-provider-kubevirt
+        from:
+          kind: DockerImage
+          name: {{ .Values.global.imageOverrides.cluster_api_provider_kubevirt }}
+      - name: hypershift-operator
+        annotations:
+          io.openshift.build.commit.id: ''
+          io.openshift.build.source-location: https://github.com/openshift/hypershift
+        from:
+          kind: DockerImage
+          name: {{ .Values.global.imageOverrides.hypershift_operator }}
