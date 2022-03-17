@@ -13,6 +13,15 @@ rules:
   - create
 
 - apiGroups:
+  - operators.coreos.com
+  resources:
+  - subscriptions
+  verbs:
+  - get
+  - list
+  - watch
+
+- apiGroups:
   - operator.open-cluster-management.io
   resources:
   - multiclusterhubs
