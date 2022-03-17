@@ -5,7 +5,7 @@ metadata:
   labels:
     app: hypershift-addon-manager
 spec:
-  replicas: {{ .Values.hubconfig.replicaCount }}
+  replicas: 1
   selector:
     matchLabels:
       app: hypershift-addon-manager
