@@ -119,6 +119,14 @@ rules:
   - update
   - watch
 - apiGroups:
+  - agent-install.openshift.io
+  resources:
+  - agentserviceconfigs
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - agent.open-cluster-management.io
   - cluster.open-cluster-management.io
   - inventory.open-cluster-management.io
