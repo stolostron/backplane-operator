@@ -22,7 +22,7 @@ spec:
 
         To enable Dynamic Plugin:
 
-        1. In the OpenShift Container Platform webs console, switch to the
+        1. In the OpenShift Container Platform web console, switch to the
         **[Administration]{{highlight qs-nav-administration}} > Cluster
         settings**.
 
@@ -31,29 +31,30 @@ spec:
         (operator.openshift.io)** 
 
 
-        1. On the **Console plugins** tab, click **Disabled**. 
+        1. On the **Console plugins** tab, check that the status of the `mce`
+        plugin is **Enabled**.
 
 
-        1. Select **Enable** and click on **Save**.  
+        1. If you are also using Red Hat Advanced Cluster Management for Kubernetes, check that
+        the status of the `acm` plugin is also **Enabled**.
 
 
-        Please wait a few minutes to allow the enabling process to complete.
-        When you see the “Web console update is available” popover, the dynamic
-        plugin is enabled
+        1. If the applicable plugins are not already enabled, for each one:
+          
+          
+          a. Click on the **Disabled** status. In the dialog that appears, select **Enable** and click on **Save**.  
+
+
+        After a few minutes, a popover with the text “Web console update is
+        available” appears. Click the **Refresh web console** link to load the web
+        console with the plugins enabled.
       review:
         failedTaskHelp: >-
-          This task is incomplete. Try the task again, or [read
-          more](https://docs.openshift.com/container-platform/4.6/serverless/installing_serverless/installing-openshift-serverless.html)
-          about this topic.
+          This task is incomplete. Try the task again.
         instructions: |-
           Verify that the Dynamic Plugin was enabled successfully:
 
-            - In the navigation menu, click **Administration > Cluster settings >
-          Configuration > Console (operator.openshift.io) > Console plugins**.
-
-            - Does the Status column for … show **Enabled**?
-            
-            **Note:** If the …. have a status of Disabled, wait a few minutes to allow … process to complete.
+            - In the navigation menu, is the first item a menu containing **All clusters** and **local-cluster**?
       summary:
         failed: >-
           This task is incomplete. Try the task again, or read more about this
