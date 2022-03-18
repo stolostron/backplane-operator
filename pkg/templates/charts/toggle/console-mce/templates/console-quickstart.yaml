@@ -72,8 +72,7 @@ spec:
 
         To enable Feature Gate:
 
-        1. In the OpenShift Container Platform webs console, switch to the
-        **Administration > Cluster settings**
+        1. In the OpenShift Container Platform web console, switch to **Administration > Cluster settings**
 
         1. On the **Configuration** tab, click **FeatureGate**. 
 
@@ -86,7 +85,7 @@ spec:
               featureSet: TechPreviewNoUpgrade
             ```
 
-        1. Click **Create**.
+        1. Click **Save**.
       review:
         failedTaskHelp: This task isn’t verified yet. Try the task again.
         instructions: |
@@ -104,23 +103,23 @@ spec:
       title: Enable Feature Gate
     - description: >
 
-        1. From the Administrator perspective, go to the **OperatorHub** from
-        the  section of  the navigation.
+        1. From the Administrator perspective, go to **OperatorHub** from
+        the **Operators** section of the navigation.
 
-        1. In the **Filter by keyword** field, type Identity Configuration
-        Management for  Kubernetes.
+        1. In the **Filter by keyword** field, type “Identity Configuration
+        Management for Kubernetes”.
 
-        1. Click the **tile** to open the Operator details.
+        1. Click the **Identity Configuration Management for Kubernetes** tile to open the Operator details.
 
-        1. At the top of the Identity Configuration Management for Kubernetes
-        panel  that opens, click **Install**.
+        1. At the top of the **Identity Configuration Management for Kubernetes**
+        panel that opens, click **Install**.
 
         1. Fill out the Operator subscription form by selecting the channel and 
         namespace that match your OpenShift cluster, and then click Install.
 
 
-        1. On the **Installed Operators** page, wait for the  Identity
-        Configuration Management  for Kubernetes’ status to change from
+        1. On the **Installed Operators** page, wait for the status of **Identity
+        Configuration Management for Kubernetes** to change from
         **Installing** to **Succeeded**.
       review:
         failedTaskHelp: This task isn’t verified yet. Try the task again.
@@ -128,8 +127,8 @@ spec:
           Verify that the Identity Configuration Management for Kubernetes is
           installed:
 
-            - In the Status column of the Installed Operators page, is the Identity 
-            Configuration Management for Kubernetes’ status **Operator installed - Ready for use**?
+            - In the Status column of the Installed Operators page, is the status of **Identity 
+            Configuration Management for Kubernetes** **Operator installed - Ready for use**?
       summary:
         failed: ...
         success: You just installed Identity Configuration Management for Kubernetes
