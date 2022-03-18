@@ -1,0 +1,135 @@
+apiVersion: console.openshift.io/v1
+kind: ConsoleQuickStart
+metadata:
+  name: multicluster-switcher
+spec:
+  accessReviewResources:
+    - group: operators.coreos.com
+      resource: operatorgroups
+      verb: list
+    - group: packages.operators.coreos.com
+      resource: packagemanifests
+      verb: list
+  description: 'With the multicluster switcher, you can easily switch between clusters'
+  displayName: Get started with multicluster switcher
+  durationMinutes: 15
+  icon: >-
+    data:image/svg+xml;base64,PHN2ZyBlbmFibGUtYmFja2dyb3VuZD0ibmV3IDAgMCAxMDAgMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIHdpZHRoPSIxMDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0ibTY2LjcgNTUuOGM2LjYgMCAxNi4xLTEuNCAxNi4xLTkuMiAwLS42IDAtMS4yLS4yLTEuOGwtMy45LTE3Yy0uOS0zLjctMS43LTUuNC04LjMtOC43LTUuMS0yLjYtMTYuMi02LjktMTkuNS02LjktMy4xIDAtNCA0LTcuNiA0LTMuNSAwLTYuMS0yLjktOS40LTIuOS0zLjIgMC01LjIgMi4xLTYuOCA2LjYgMCAwLTQuNCAxMi41LTUgMTQuMy0uMS4zLS4xLjctLjEgMSAuMSA0LjcgMTkuMiAyMC42IDQ0LjcgMjAuNm0xNy4xLTZjLjkgNC4zLjkgNC44LjkgNS4zIDAgNy40LTguMyAxMS40LTE5LjEgMTEuNC0yNC42IDAtNDYuMS0xNC40LTQ2LjEtMjMuOSAwLTEuMy4zLTIuNi44LTMuOS04LjkuNS0yMC4zIDIuMS0yMC4zIDEyLjIgMCAxNi41IDM5LjIgMzYuOSA3MC4yIDM2LjkgMjMuOCAwIDI5LjgtMTAuNyAyOS44LTE5LjIgMC02LjctNS44LTE0LjMtMTYuMi0xOC44IiBmaWxsPSIjZWQxYzI0Ii8+PHBhdGggZD0ibTgzLjggNDkuOGMuOSA0LjMuOSA0LjguOSA1LjMgMCA3LjQtOC4zIDExLjQtMTkuMSAxMS40LTI0LjYgMC00Ni4xLTE0LjQtNDYuMS0yMy45IDAtMS4zLjMtMi42LjgtMy45bDEuOS00LjhjLS4xLjMtLjEuNy0uMSAxIDAgNC44IDE5LjEgMjAuNyA0NC43IDIwLjcgNi42IDAgMTYuMS0xLjQgMTYuMS05LjIgMC0uNiAwLTEuMi0uMi0xLjh6IiBmaWxsPSIjMDEwMTAxIi8+PC9zdmc+
+  introduction: 'With the multicluster switcher, you can easily switch between clusters.'
+  tasks:
+    - description: >
+
+
+        To enable Dynamic Plugin:
+
+        1. In the OpenShift Container Platform webs console, switch to the
+        **[Administration]{{highlight qs-nav-administration}} > Cluster
+        settings**.
+
+
+        1. On the **Configuration** tab, click **Console
+        (operator.openshift.io)** 
+
+
+        1. On the **Console plugins** tab, click **Disabled**. 
+
+
+        1. Select **Enable** and click on **Save**.  
+
+
+        Please wait a few minutes to allow the enabling process to complete.
+        When you see the “Web console update is available” popover, the dynamic
+        plugin is enabled
+      review:
+        failedTaskHelp: >-
+          This task is incomplete. Try the task again, or [read
+          more](https://docs.openshift.com/container-platform/4.6/serverless/installing_serverless/installing-openshift-serverless.html)
+          about this topic.
+        instructions: |-
+          Verify that the Dynamic Plugin was enabled successfully:
+
+            - In the navigation menu, click **Administration > Cluster settings >
+          Configuration > Console (operator.openshift.io) > Console plugins**.
+
+            - Does the Status column for … show **Enabled**?
+            
+            **Note:** If the …. have a status of Disabled, wait a few minutes to allow … process to complete.
+      summary:
+        failed: >-
+          This task is incomplete. Try the task again, or read more about this
+          topic.
+        success: >-
+          You just enabled the dynamic plugin! Next, we'll enable the Feature
+          Gate 
+      title: Enable Dynamic Plugin
+    - description: >
+
+        **Warning**: This enables Technology Preview features 
+          that are not part of the default features. Enabling this feature set 
+          cannot be undone and prevents upgrades. **This feature set is NOT 
+          recommended on production clusters**.
+
+        To enable Feature Gate:
+
+        1. In the OpenShift Container Platform webs console, switch to the
+        **Administration > Cluster settings**
+
+        1. On the **Configuration** tab, click **FeatureGate**. 
+
+        1. On the **YAML** tab, edit the cluster instance to add the following
+        specific feature sets:
+
+
+            ```
+            spec:
+              featureSet: TechPreviewNoUpgrade
+            ```
+
+        1. Click **Create**.
+      review:
+        failedTaskHelp: This task isn’t verified yet. Try the task again.
+        instructions: |
+          Verify that the Feature Gate was enabled successfully:
+
+            - In the navigation menu, click **Administration > Cluster settings > 
+            Configuration > FeatureGate > YAML**.
+
+            - Do you see **TechPreviewNoUpgrade**?  
+      summary:
+        failed: >-
+          Check your work to make sure that the Knative Service resource was
+          created.
+        success: You just created an instance of the Knative Service resource.
+      title: Enable Feature Gate
+    - description: >
+
+        1. From the Administrator perspective, go to the **OperatorHub** from
+        the  section of  the navigation.
+
+        1. In the **Filter by keyword** field, type Identity Configuration
+        Management for  Kubernetes.
+
+        1. Click the **tile** to open the Operator details.
+
+        1. At the top of the Identity Configuration Management for Kubernetes
+        panel  that opens, click **Install**.
+
+        1. Fill out the Operator subscription form by selecting the channel and 
+        namespace that match your OpenShift cluster, and then click Install.
+
+
+        1. On the **Installed Operators** page, wait for the  Identity
+        Configuration Management  for Kubernetes’ status to change from
+        **Installing** to **Succeeded**.
+      review:
+        failedTaskHelp: This task isn’t verified yet. Try the task again.
+        instructions: >
+          Verify that the Identity Configuration Management for Kubernetes is
+          installed:
+
+            - In the Status column of the Installed Operators page, is the Identity 
+            Configuration Management for Kubernetes’ status **Operator installed - Ready for use**?
+      summary:
+        failed: ...
+        success: You just installed Identity Configuration Management for Kubernetes
+      title: Install Identity Configuration Management
