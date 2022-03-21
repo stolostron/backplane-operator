@@ -70,6 +70,14 @@ var (
 				Kind:    "DiscoveryConfigList",
 			},
 		},
+		{
+			Name: "AgentServiceConfig",
+			GVK: schema.GroupVersionKind{
+				Group:   "agent-install.openshift.io",
+				Version: "v1beta1",
+				Kind:    "AgentServiceConfigList",
+			},
+		},
 	}
 )
 
