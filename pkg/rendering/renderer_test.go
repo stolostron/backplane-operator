@@ -4,21 +4,20 @@
 package renderer
 
 import (
+	"os"
+	"reflect"
+	"testing"
+
 	backplane "github.com/stolostron/backplane-operator/api/v1"
 	"github.com/stolostron/backplane-operator/pkg/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-
-	// "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"os"
-	"reflect"
-	"testing"
 )
 
 const (
-	chartsDir  = "pkg/templates/charts/always"
+	chartsDir  = "pkg/templates/charts/toggle"
 	chartsPath = "pkg/templates/charts/toggle/managed-serviceaccount"
 	crdsDir    = "pkg/templates/crds"
 )
@@ -27,17 +26,6 @@ func TestRender(t *testing.T) {
 
 	os.Setenv("DIRECTORY_OVERRIDE", "../../")
 	defer os.Unsetenv("DIRECTORY_OVERRIDE")
-	crdsDir := crdsDir
-	crds, errs := RenderCRDs(crdsDir)
-	if len(errs) > 0 {
-		for _, err := range errs {
-			t.Logf(err.Error())
-		}
-		t.Fatalf("failed to retrieve CRDs")
-	}
-	if len(crds) == 0 {
-		t.Fatalf("Unable to render CRDs")
-	}
 
 	availabilityList := []string{"clusterclaims-controller", "cluster-curator-controller", "managedcluster-import-controller-v2", "ocm-controller", "ocm-proxyserver", "ocm-webhook"}
 	backplaneNodeSelector := map[string]string{"select": "test"}
@@ -228,4 +216,37 @@ func TestRender(t *testing.T) {
 	os.Unsetenv("NO_PROXY")
 	os.Unsetenv("POD_NAMESPACE")
 
+}
+
+func TestRenderCRDs(t *testing.T) {
+	tests := []struct {
+		name   string
+		crdDir string
+		want   []error
+	}{
+		{
+			name:   "Render CRDs directory",
+			crdDir: crdsDir,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, errs := RenderCRDs(tt.crdDir)
+			if errs != nil && len(errs) > 1 {
+				t.Errorf("RenderCRDs() got = %v, want %v", errs, nil)
+			}
+
+			for _, u := range got {
+				kind := "CustomResourceDefinition"
+				apiVersion := "apiextensions.k8s.io/v1"
+				if u.GetKind() != kind {
+					t.Errorf("RenderCRDs() got Kind = %v, want Kind %v", errs, kind)
+				}
+
+				if u.GetAPIVersion() != apiVersion {
+					t.Errorf("RenderCRDs() got apiversion = %v, want apiversion %v", errs, apiVersion)
+				}
+			}
+		})
+	}
 }
