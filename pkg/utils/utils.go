@@ -99,6 +99,39 @@ func AvailabilityConfigIsValid(config backplanev1.AvailabilityType) bool {
 	}
 }
 
+// DeduplicateComponents removes duplicate componentconfigs by name, keeping the config of the last
+// componentconfig in the list. Returns true if changes are made.
+func DeduplicateComponents(m *backplanev1.MultiClusterEngine) bool {
+	config := m.Spec.Overrides.Components
+	newConfig := deduplicate(m.Spec.Overrides.Components)
+	if len(newConfig) != len(config) {
+		m.Spec.Overrides.Components = newConfig
+		return true
+	}
+	return false
+}
+
+// deduplicate removes duplicate componentconfigs by name, keeping the config of the last
+// componentconfig in the list
+func deduplicate(config []backplanev1.ComponentConfig) []backplanev1.ComponentConfig {
+	newConfig := []backplanev1.ComponentConfig{}
+	for _, cc := range config {
+		duplicate := false
+		// if name in newConfig update newConfig at existing index
+		for i, ncc := range newConfig {
+			if cc.Name == ncc.Name {
+				duplicate = true
+				newConfig[i] = cc
+				break
+			}
+		}
+		if !duplicate {
+			newConfig = append(newConfig, cc)
+		}
+	}
+	return newConfig
+}
+
 func GetTestImages() []string {
 	return []string{"registration_operator", "openshift_hive", "multicloud_manager",
 		"managedcluster_import_controller", "registration", "work", "discovery_operator", "cluster_curator_controller",

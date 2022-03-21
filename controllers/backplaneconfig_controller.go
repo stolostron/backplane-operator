@@ -619,6 +619,10 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 		updateNecessary = true
 	}
 
+	if utils.DeduplicateComponents(m) {
+		updateNecessary = true
+	}
+
 	// If OCP 4.10+ then set then enable the MCE console. Else ensure it is disabled
 	currentClusterVersion, err := r.getClusterVersion(ctx, m)
 	if err != nil {
