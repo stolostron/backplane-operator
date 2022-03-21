@@ -62,7 +62,7 @@ spec:
           topic.
         success: >-
           You just enabled the console plug-ins! Next, we'll enable the feature
-          gate 
+          gate.
       title: Enable console plug-in
     - description: >
 
@@ -71,7 +71,7 @@ spec:
           cannot be undone and prevents upgrades. **This feature set is NOT 
           recommended on production clusters**.
 
-        To enable Feature Gate:
+        To enable feature gate:
 
         1. In the OpenShift Container Platform web console, switch to **Administration > Cluster settings**
 
@@ -90,7 +90,7 @@ spec:
       review:
         failedTaskHelp: This task isn’t verified yet. Try the task again.
         instructions: |
-          Verify that the Feature Gate was enabled successfully:
+          Verify that the feature gate was enabled successfully:
 
             - In the navigation menu, click **Administration > Cluster settings > 
             Configuration > FeatureGate > YAML**.
@@ -101,7 +101,7 @@ spec:
           Check your work to make sure that the Knative Service resource was
           created.
         success: You just created an instance of the Knative Service resource.
-      title: Enable Feature Gate
+      title: Enable feature gate
     - description: >
 
         1. From the Administrator perspective, go to **OperatorHub** from
