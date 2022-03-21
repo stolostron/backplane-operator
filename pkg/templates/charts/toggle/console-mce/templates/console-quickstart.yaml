@@ -106,30 +106,30 @@ spec:
         1. From the Administrator perspective, go to **OperatorHub** from
         the **Operators** section of the navigation.
 
-        1. In the **Filter by keyword** field, type “Identity Configuration
-        Management for Kubernetes”.
+        1. In the **Filter by keyword** field, type “identity configuration
+        management for Kubernetes”.
 
-        1. Click the **Identity Configuration Management for Kubernetes** tile to open the Operator details.
+        1. Click the **identity configuration management for Kubernetes** tile to open the Operator details.
 
-        1. At the top of the **Identity Configuration Management for Kubernetes**
+        1. At the top of the **identity configuration management for Kubernetes**
         panel that opens, click **Install**.
 
         1. Fill out the Operator subscription form by selecting the channel and 
         namespace that match your OpenShift cluster, and then click Install.
 
 
-        1. On the **Installed Operators** page, wait for the status of **Identity
-        Configuration Management for Kubernetes** to change from
+        1. On the **Installed Operators** page, wait for the status of **identity
+        configuration management for Kubernetes** to change from
         **Installing** to **Succeeded**.
       review:
         failedTaskHelp: This task isn’t verified yet. Try the task again.
         instructions: >
-          Verify that the Identity Configuration Management for Kubernetes is
+          Verify that **identity configuration management for Kubernetes** is
           installed:
 
-            - In the Status column of the Installed Operators page, is the status of **Identity 
-            Configuration Management for Kubernetes** **Operator installed - Ready for use**?
+            - In the Status column of the Installed Operators page, is the status of *identity 
+            configuration management for Kubernetes** **Operator installed - Ready for use**?
       summary:
         failed: ...
-        success: You just installed Identity Configuration Management for Kubernetes
-      title: Install Identity Configuration Management
+        success: You just installed **identity configuration management for Kubernetes**
+      title: Install **identity configuration management for Kubernetes**
