@@ -533,6 +533,66 @@ var _ = Describe("BackplaneConfig controller", func() {
 
 			})
 		})
+
+		Context("and components are defined multiple times in overrides", func() {
+			It("should deduplicate the component list in the override", func() {
+				By("creating the backplane config with repeated component")
+				backplaneConfig := &v1.MultiClusterEngine{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "multicluster.openshift.io/v1",
+						Kind:       "MultiClusterEngine",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: BackplaneConfigName,
+					},
+					Spec: v1.MultiClusterEngineSpec{
+						TargetNamespace: DestinationNamespace,
+						ImagePullSecret: "testsecret",
+						Overrides: &v1.Overrides{
+							ImagePullPolicy: corev1.PullAlways,
+							Components: []v1.ComponentConfig{
+								{
+									Name:    v1.Discovery,
+									Enabled: true,
+								},
+								{
+									Name:    v1.Discovery,
+									Enabled: true,
+								},
+								{
+									Name:    v1.Discovery,
+									Enabled: false,
+								},
+							},
+						},
+					},
+				}
+				createCtx := context.Background()
+				Expect(k8sClient.Create(createCtx, backplaneConfig)).Should(Succeed())
+
+				By("ensuring component is collapsed to one, matching last config")
+				Eventually(func(g Gomega) {
+					multiClusterEngine := types.NamespacedName{
+						Name: BackplaneConfigName,
+					}
+					existingMCE := &v1.MultiClusterEngine{}
+					g.Expect(k8sClient.Get(context.TODO(), multiClusterEngine, existingMCE)).To(Succeed(), "Failed to create new MCE")
+
+					g.Expect(existingMCE.Spec.Overrides).To(Not(BeNil()))
+					componentCount := 0
+					for _, c := range existingMCE.Spec.Overrides.Components {
+						if c.Name == v1.Discovery {
+							componentCount++
+						}
+					}
+					g.Expect(componentCount).To(Equal(1), "Duplicate component still present")
+
+					g.Expect(existingMCE.Enabled(v1.Discovery)).To(BeFalse(), "Not using last defined config in components")
+
+				}, timeout, interval).Should(Succeed())
+
+			})
+		})
 	})
 
 	AfterEach(func() {
