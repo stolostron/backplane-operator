@@ -31,11 +31,6 @@ const (
 	HyperShiftChartDir       = "pkg/templates/charts/toggle/hypershift"
 )
 
-//
-func renderTemplates() ([]*unstructured.Unstructured, []error) {
-	return []*unstructured.Unstructured{}, nil
-}
-
 func EnabledStatus(namespacedName types.NamespacedName) status.StatusReporter {
 	return status.DeploymentStatus{
 		NamespacedName: namespacedName,
