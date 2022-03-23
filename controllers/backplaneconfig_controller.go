@@ -23,6 +23,7 @@ import (
 	e "errors"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	configv1 "github.com/openshift/api/config/v1"
@@ -313,114 +314,183 @@ func (r *MultiClusterEngineReconciler) DeployAlwaysSubcomponents(ctx context.Con
 }
 
 func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+	errs := map[string]error{}
+	requeue := false
+
 	if backplaneConfig.Enabled(backplanev1.ManagedServiceAccount) {
 		result, err := r.ensureManagedServiceAccount(ctx, backplaneConfig)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
 		if err != nil {
-			return result, err
+			errs[backplanev1.ManagedServiceAccount] = err
 		}
 	} else {
 		result, err := r.ensureNoManagedServiceAccount(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
-			return result, err
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.ManagedServiceAccount] = err
 		}
 	}
 
 	if backplaneConfig.Enabled(backplanev1.HyperShift) {
 		result, err := r.ensureHyperShift(ctx, backplaneConfig)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
 		if err != nil {
-			return result, err
+			errs[backplanev1.HyperShift] = err
 		}
 	} else {
 		result, err := r.ensureNoHyperShift(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
-			return result, err
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.HyperShift] = err
 		}
 	}
 
 	if backplaneConfig.Enabled(backplanev1.ConsoleMCE) {
 		result, err := r.ensureConsoleMCE(ctx, backplaneConfig)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
 		if err != nil {
-			return result, err
+			errs[backplanev1.ConsoleMCE] = err
 		}
 	} else {
 		result, err := r.ensureNoConsoleMCE(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
-			return result, err
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.ConsoleMCE] = err
 		}
 	}
 
 	if backplaneConfig.Enabled(backplanev1.Discovery) {
 		result, err := r.ensureDiscovery(ctx, backplaneConfig)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
 		if err != nil {
-			return result, err
+			errs[backplanev1.Discovery] = err
 		}
 	} else {
 		result, err := r.ensureNoDiscovery(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
-			return result, err
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.Discovery] = err
 		}
 	}
 
 	if backplaneConfig.Enabled(backplanev1.Hive) {
 		result, err := r.ensureHive(ctx, backplaneConfig)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
 		if err != nil {
-			return result, err
+			errs[backplanev1.Hive] = err
 		}
 	} else {
 		result, err := r.ensureNoHive(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
-			return result, err
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.Hive] = err
 		}
 	}
 
 	if backplaneConfig.Enabled(backplanev1.AssistedService) {
 		result, err := r.ensureAssistedService(ctx, backplaneConfig)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
 		if err != nil {
-			return result, err
+			errs[backplanev1.AssistedService] = err
 		}
 	} else {
 		result, err := r.ensureNoAssistedService(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
-			return result, err
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.AssistedService] = err
 		}
 	}
 
 	if backplaneConfig.Enabled(backplanev1.ClusterLifecycle) {
 		result, err := r.ensureClusterLifecycle(ctx, backplaneConfig)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
 		if err != nil {
-			return result, err
+			errs[backplanev1.ClusterLifecycle] = err
 		}
 	} else {
 		result, err := r.ensureNoClusterLifecycle(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
-			return result, err
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.ClusterLifecycle] = err
 		}
 	}
 
 	if backplaneConfig.Enabled(backplanev1.ClusterManager) {
 		result, err := r.ensureClusterManager(ctx, backplaneConfig)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
 		if err != nil {
-			return result, err
+			errs[backplanev1.ClusterManager] = err
 		}
 	} else {
 		result, err := r.ensureNoClusterManager(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
-			return result, err
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.ClusterManager] = err
 		}
 	}
 
 	if backplaneConfig.Enabled(backplanev1.ServerFoundation) {
 		result, err := r.ensureServerFoundation(ctx, backplaneConfig)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
 		if err != nil {
-			return result, err
+			errs[backplanev1.ServerFoundation] = err
 		}
 	} else {
 		result, err := r.ensureNoServerFoundation(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
-			return result, err
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.ServerFoundation] = err
 		}
 	}
 
+	if len(errs) > 0 {
+		errorMessages := []string{}
+		for k, v := range errs {
+			errorMessages = append(errorMessages, fmt.Sprintf("error ensuring %s: %s", k, v.Error()))
+		}
+		combinedError := fmt.Sprintf(": %s", strings.Join(errorMessages, "; "))
+		log.FromContext(ctx).Error(errors.New("Errors applying components"), combinedError)
+		return ctrl.Result{RequeueAfter: requeuePeriod}, errors.New(combinedError)
+	}
+	if requeue {
+		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+	}
 	return ctrl.Result{}, nil
 }
 
