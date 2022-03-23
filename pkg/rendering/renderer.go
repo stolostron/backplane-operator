@@ -124,6 +124,13 @@ func RenderChart(chartPath string, backplaneConfig *v1.MultiClusterEngine, image
 
 }
 
+// RenderChartWithNamespace wraps the RenderChart function, overriding the target namespace
+func RenderChartWithNamespace(chartPath string, backplaneConfig *v1.MultiClusterEngine, images map[string]string, namespace string) ([]*unstructured.Unstructured, []error) {
+	mce := backplaneConfig.DeepCopy()
+	mce.Spec.TargetNamespace = namespace
+	return RenderChart(chartPath, mce, images)
+}
+
 func renderTemplates(chartPath string, backplaneConfig *v1.MultiClusterEngine, images map[string]string) ([]*unstructured.Unstructured, []error) {
 	log := log.FromContext(context.Background())
 	var templates []*unstructured.Unstructured

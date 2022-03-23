@@ -81,6 +81,9 @@ spec:
                   imagePullPolicy:
                     description: Pull policy for the MCE images
                     type: string
+                  infrastructureCustomNamespace:
+                    description: Namespace to install Assisted Installer operator
+                    type: string
                 type: object
               targetNamespace:
                 description: Location where MCE resources will be placed

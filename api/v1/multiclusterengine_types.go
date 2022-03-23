@@ -74,6 +74,11 @@ type Overrides struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Component Configuration",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	// +optional
 	Components []ComponentConfig `json:"components,omitempty"`
+
+	// Namespace to install Assisted Installer operator
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Custom Infrastructure Operator Namespace",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
+	// +optional
+	InfrastructureCustomNamespace string `json:"infrastructureCustomNamespace,omitempty"`
 }
 
 // MultiClusterEngineStatus defines the observed state of MultiClusterEngine
