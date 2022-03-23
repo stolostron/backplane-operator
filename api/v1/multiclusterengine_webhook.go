@@ -139,6 +139,18 @@ func (r *MultiClusterEngine) ValidateUpdate(old runtime.Object) error {
 	if (r.Spec.TargetNamespace != oldMCE.Spec.TargetNamespace) && (oldMCE.Spec.TargetNamespace != "") {
 		return errors.New("changes cannot be made to target namespace")
 	}
+
+	oldNS, newNS := "", ""
+	if oldMCE.Spec.Overrides != nil {
+		oldNS = oldMCE.Spec.Overrides.InfrastructureCustomNamespace
+	}
+	if r.Spec.Overrides != nil {
+		newNS = r.Spec.Overrides.InfrastructureCustomNamespace
+	}
+	if oldNS != newNS {
+		return errors.New("changes cannot be made to InfrastructureCustomNamespace")
+	}
+
 	if (r.Spec.AvailabilityConfig != HABasic) && (r.Spec.AvailabilityConfig != HAHigh) && (r.Spec.AvailabilityConfig != "") {
 		return errors.New("Invalid AvailabilityConfig given")
 	}

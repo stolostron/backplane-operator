@@ -40,6 +40,11 @@ spec:
         path: overrides.components
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: Namespace to install Assisted Installer operator
+        displayName: Custom Infrastructure Operator Namespace
+        path: overrides.infrastructureCustomNamespace
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: Location where MCE resources will be placed
         displayName: Target Namespace
         path: targetNamespace

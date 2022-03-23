@@ -392,13 +392,18 @@ func (r *MultiClusterEngineReconciler) ensureNoHive(ctx context.Context, backpla
 }
 
 func (r *MultiClusterEngineReconciler) ensureAssistedService(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	namespacedName := types.NamespacedName{Name: "infrastructure-operator", Namespace: backplaneConfig.Spec.TargetNamespace}
+	targetNamespace := backplaneConfig.Spec.TargetNamespace
+	if backplaneConfig.Spec.Overrides != nil && backplaneConfig.Spec.Overrides.InfrastructureCustomNamespace != "" {
+		targetNamespace = backplaneConfig.Spec.Overrides.InfrastructureCustomNamespace
+	}
+
+	namespacedName := types.NamespacedName{Name: "infrastructure-operator", Namespace: targetNamespace}
 	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
 
 	log := log.FromContext(ctx)
 
-	templates, errs := renderer.RenderChart(toggle.AssistedServiceChartDir, backplaneConfig, r.Images)
+	templates, errs := renderer.RenderChartWithNamespace(toggle.AssistedServiceChartDir, backplaneConfig, r.Images, targetNamespace)
 	if len(errs) > 0 {
 		for _, err := range errs {
 			log.Info(err.Error())
@@ -418,11 +423,16 @@ func (r *MultiClusterEngineReconciler) ensureAssistedService(ctx context.Context
 }
 
 func (r *MultiClusterEngineReconciler) ensureNoAssistedService(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+	targetNamespace := backplaneConfig.Spec.TargetNamespace
+	if backplaneConfig.Spec.Overrides != nil && backplaneConfig.Spec.Overrides.InfrastructureCustomNamespace != "" {
+		targetNamespace = backplaneConfig.Spec.Overrides.InfrastructureCustomNamespace
+	}
+	namespacedName := types.NamespacedName{Name: "infrastructure-operator", Namespace: targetNamespace}
+
 	log := log.FromContext(ctx)
-	namespacedName := types.NamespacedName{Name: "infrastructure-operator", Namespace: backplaneConfig.Spec.TargetNamespace}
 
 	// Renders all templates from charts
-	templates, errs := renderer.RenderChart(toggle.AssistedServiceChartDir, backplaneConfig, r.Images)
+	templates, errs := renderer.RenderChartWithNamespace(toggle.AssistedServiceChartDir, backplaneConfig, r.Images, targetNamespace)
 	if len(errs) > 0 {
 		for _, err := range errs {
 			log.Info(err.Error())
