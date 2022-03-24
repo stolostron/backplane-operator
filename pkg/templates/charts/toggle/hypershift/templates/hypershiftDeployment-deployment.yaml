@@ -5,7 +5,7 @@ metadata:
     name: hypershift-deployment-controller
   name: hypershift-deployment-controller
 spec:
-  replicas: {{ .Values.hubconfig.replicaCount }}
+  replicas: 1
   selector:
     matchLabels:
       name: hypershift-deployment-controller
