@@ -110,13 +110,12 @@ spec:
         1. In the **Filter by keyword** field, type “identity configuration
         management for Kubernetes”.
 
-        1. Click the **identity configuration management for Kubernetes** tile to open the Operator details.
+        1. Click the **identity configuration management for Kubernetes** tile to open the Operator details. For more information, see the [documentation](https://identitatem.github.io/idp-mgmt-docs/).
 
         1. At the top of the **identity configuration management for Kubernetes**
         panel that opens, click **Install**.
 
-        1. Fill out the Operator subscription form by selecting the channel and 
-        namespace that match your OpenShift cluster, and then click Install.
+        1. Fill out the Operator subscription form then click Install. For more information on the options, see [Installing from the OperatorHub web console interface](https://identitatem.github.io/idp-mgmt-docs/install_connected.html#installing-from-the-operatorhub).
 
 
         1. On the **Installed Operators** page, wait for the status of **identity
