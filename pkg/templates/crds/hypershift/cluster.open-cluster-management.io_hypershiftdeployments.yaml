@@ -41,6 +41,10 @@ spec:
       name: Ready
       type: string
     - description: Reason
+      jsonPath: .status.conditions[?(@.type=="ManifestWorkConfigured")].reason
+      name: MANIFESTWORK
+      type: string
+    - description: Reason
       jsonPath: .status.conditions[?(@.type=="ProviderSecretConfigured")].reason
       name: PROVIDER REF
       type: string
@@ -140,6 +144,17 @@ spec:
                         format: int32
                         type: integer
                     type: object
+                  clusterID:
+                    description: ClusterID uniquely identifies this cluster. This
+                      is expected to be an RFC4122 UUID value (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+                      in hexadecimal values). As with a Kubernetes metadata.uid, this
+                      ID uniquely identifies this cluster in space and time. This
+                      value identifies the cluster in metrics pushed to telemetry
+                      and metrics produced by the control plane operators. If a value
+                      is not specified, an ID is generated. After initial creation,
+                      the value is immutable.
+                    pattern: '[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}'
+                    type: string
                   configuration:
                     description: Configuration specifies configuration for individual
                       OCP components in the cluster, represented as embedded resources
@@ -395,6 +410,17 @@ spec:
                     - podCIDR
                     - serviceCIDR
                     type: object
+                  olmCatalogPlacement:
+                    default: management
+                    description: OLMCatalogPlacement specifies the placement of OLM
+                      catalog components. By default, this is set to management and
+                      OLM catalog components are deployed onto the management cluster.
+                      If set to guest, the OLM catalog components will be deployed
+                      onto the guest cluster.
+                    enum:
+                    - management
+                    - guest
+                    type: string
                   pausedUntil:
                     description: 'PausedUntil is a field that can be used to pause
                       reconciliation on a resource. Either a date can be provided
@@ -940,6 +966,15 @@ spec:
                           description: ServicePublishingStrategy specifies how to
                             publish Service.
                           properties:
+                            loadBalancer:
+                              description: LoadBalancer configures exposing a service
+                                using a LoadBalancer.
+                              properties:
+                                hostname:
+                                  description: Hostname is the name of the DNS record
+                                    that will be created pointing to the LoadBalancer.
+                                  type: string
+                              type: object
                             nodePort:
                               description: NodePort configures exposing a service
                                 using a NodePort.
@@ -956,6 +991,15 @@ spec:
                                   type: integer
                               required:
                               - address
+                              type: object
+                            route:
+                              description: Route configures exposing a service using
+                                a Route.
+                              properties:
+                                hostname:
+                                  description: Hostname is the name of the DNS record
+                                    that will be created pointing to the Route.
+                                  type: string
                               type: object
                             type:
                               description: Type is the publishing strategy used for
@@ -1437,17 +1481,24 @@ spec:
                               type: object
                             azure:
                               properties:
+                                availabilityZone:
+                                  description: AvailabilityZone of the nodepool. Must
+                                    not be specified for clusters in a location that
+                                    does not support AvailabilityZone.
+                                  type: string
                                 diskSizeGB:
                                   default: 120
                                   format: int32
                                   minimum: 16
                                   type: integer
                                 imageID:
+                                  description: 'ImageID is the id of the image to
+                                    boot from. If unset, the default image at the
+                                    location below will be used: subscription/$subscriptionID/resourceGroups/$resourceGroupName/providers/Microsoft.Compute/images/rhcos.x86_64.vhd'
                                   type: string
                                 vmsize:
                                   type: string
                               required:
-                              - imageID
                               - vmsize
                               type: object
                             ibmcloud:
@@ -7150,10 +7201,11 @@ spec:
                 - MANIFESTWORK
                 type: string
               targetManagedCluster:
-                description: TargetManagedCluster specify which managedcluster's namespace
-                  the manifestwork would be deployed. If not specified, it uses the
-                  current namespace. The TargetManagedCluster would be the management
-                  cluster of the hostedcluster and nodepool generated by the hypershiftDeployment
+                description: 'TargetManagedCluster specify which managedcluster''s
+                  namespace the manifestwork would be deployed. Only applies when
+                  Spec.Override: MANIFESTWORK If not specified, it uses the current
+                  namespace. The TargetManagedCluster would be the management cluster
+                  of the hostedcluster and nodepool generated by the hypershiftDeployment'
                 type: string
               targetNamespace:
                 description: TargetNamespace specify the where the children resouces(hostedcluster,
