@@ -23,30 +23,29 @@ spec:
 
         To enable the console plug-in:
 
-        1. In the OpenShift Container Platform web console, switch to the
+        1. From the Administrator [perspective]{{highlight qs-perspective-switcher}} of the OpenShift Container Platform web console, navigate to the cluster settings by clicking
         **[Administration]{{highlight qs-nav-administration}} > Cluster
         settings**.
 
 
-        1. On the **Configuration** tab, click **Console
-        (operator.openshift.io)** 
+        1. Click **Console (operator.openshift.io)** from the *Configuration* tab.
 
 
-        1. On the **Console plugins** tab, check that the status of the `mce`
-        plug-in is **Enabled**.
+        1. On the *Console plugins* tab, check that the status of the `mce`
+        plug-in is enabled.
 
 
         1. If you are also using Red Hat Advanced Cluster Management for Kubernetes, check that
-        the status of the `acm` plug-in is also **Enabled**.
+        the status of the `acm` plug-in is also enabled.
 
 
-        1. If the applicable plug-ins are not already enabled, for each one:
+        1. If the applicable plug-ins are disabled, complete the following steps for each plug-in:
           
           
-          a. Click on the **Disabled** status. In the dialog that appears, select **Enable** and click on **Save**.  
+          a. Click on the **Disabled** status. Select **Enable** from the dialog box and click on **Save**.  
 
 
-        After a few minutes, a popover with the text “Web console update is
+        1. If you enabled any plug-ins, after a few moments, an alert with the text “Web console update is
         available” appears. Click the **Refresh web console** link to load the web
         console with the plug-ins enabled.
       review:
@@ -55,7 +54,7 @@ spec:
         instructions: |-
           Verify that the console plug-in was enabled successfully:
 
-            - In the navigation menu, is the first item a menu containing **All clusters** and **local-cluster**?
+            - In the navigation menu, is a cluster switcher present with the options **All clusters** and **local-cluster**? The cluster switcher should appear before the [perspective switcher]{{highlight qs-perspective-switcher}}.
       summary:
         failed: >-
           This task is incomplete. Try the task again, or read more about this
@@ -73,12 +72,11 @@ spec:
 
         To enable feature gate:
 
-        1. In the OpenShift Container Platform web console, switch to **Administration > Cluster settings**
+        1. From Administrator [perspective]{{highlight qs-perspective-switcher}} of the OpenShift Container Platform web console, navigate to the cluster settings by clicking **[Administration]{{highlight qs-nav-administration}} > Cluster settings**
 
-        1. On the **Configuration** tab, click **FeatureGate**. 
+        1. Click **FeatureGate** from the *Configuration* tab.
 
-        1. On the **YAML** tab, edit the cluster instance to add the following
-        specific feature sets:
+        1. On the *YAML* tab, edit the cluster instance to add the following specific feature sets:
 
 
             ```
@@ -104,30 +102,29 @@ spec:
       title: Enable feature gate
     - description: >
 
-        1. From the Administrator perspective, go to **OperatorHub** from
-        the **Operators** section of the navigation.
+        1. From the Administrator [perspective]{{highlight qs-perspective-switcher}}, navigate to *OperatorHub* by clicking
+        **[Operators]{{highlight qs-nav-operators}}** from the navigation menu.
 
-        1. In the **Filter by keyword** field, type “identity configuration
-        management for Kubernetes”.
+        1. Type “identity configuration management for Kubernetes” in the filter.
 
-        1. Click the **identity configuration management for Kubernetes** tile to open the Operator details. For more information, see the [documentation](https://identitatem.github.io/idp-mgmt-docs/).
+        1. Click the **identity configuration management for Kubernetes** tile to open the operator details. You may review the documentation by following the link provided.
 
-        1. At the top of the **identity configuration management for Kubernetes**
+        1. At the beginning of the **identity configuration management for Kubernetes**
         panel that opens, click **Install**.
 
-        1. Fill out the Operator subscription form then click Install. For more information on the options, see [Installing from the OperatorHub web console interface](https://identitatem.github.io/idp-mgmt-docs/install_connected.html#installing-from-the-operatorhub).
+        1. Fill out the *Install Operator* form then click **Install**. For more information on the options, see [Installing from the OperatorHub web console interface](https://identitatem.github.io/idp-mgmt-docs/install_connected.html#installing-from-the-operatorhub).
 
 
-        1. On the **Installed Operators** page, wait for the status of **identity
-        configuration management for Kubernetes** to change from
-        **Installing** to **Succeeded**.
+        1. On the *Installed Operators* page, wait for the status of *identity
+        configuration management for Kubernetes* to change from
+        *Installing* to *Succeeded*.
       review:
         failedTaskHelp: This task isn’t verified yet. Try the task again.
         instructions: >
           Verify that **identity configuration management for Kubernetes** is
           installed:
 
-            - In the Status column of the Installed Operators page, is the status of *identity 
+            - In the **Status** column of the *Installed Operators* page, is the status of *identity 
             configuration management for Kubernetes** **Operator installed - Ready for use**?
       summary:
         failed: ...
