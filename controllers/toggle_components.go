@@ -3,9 +3,7 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"os"
 
-	operatorv1 "github.com/openshift/api/operator/v1"
 	"github.com/pkg/errors"
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 	"github.com/stolostron/backplane-operator/pkg/foundation"
@@ -13,7 +11,6 @@ import (
 	renderer "github.com/stolostron/backplane-operator/pkg/rendering"
 	"github.com/stolostron/backplane-operator/pkg/status"
 	"github.com/stolostron/backplane-operator/pkg/toggle"
-	"github.com/stolostron/backplane-operator/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -48,33 +45,12 @@ func (r *MultiClusterEngineReconciler) ensureConsoleMCE(ctx context.Context, bac
 		}
 	}
 
-	components := backplaneConfig.Status.Components
-	for _, component := range components {
-		if component.Name == "console-mce-console" {
-			if component.Status == "True" && component.Type == "Available" {
-				result, err := r.addPluginToConsoleResource(ctx, backplaneConfig)
-				if err != nil {
-					return result, err
-				}
-				return ctrl.Result{}, nil
-			} else {
-				return ctrl.Result{RequeueAfter: requeuePeriod}, nil
-			}
-		}
-	}
-
-	log.Info("MCE console is not yet available. Waiting to enable console plugin")
-	return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+	return ctrl.Result{}, nil
 }
 
 func (r *MultiClusterEngineReconciler) ensureNoConsoleMCE(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 	namespacedName := types.NamespacedName{Name: "console-mce-console", Namespace: backplaneConfig.Spec.TargetNamespace}
-
-	result, err := r.removePluginFromConsoleResource(ctx, backplaneConfig)
-	if err != nil {
-		return result, err
-	}
 
 	// Renders all templates from charts
 	templates, errs := renderer.RenderChart(toggle.ConsoleMCEChartsDir, backplaneConfig, r.Images)
@@ -192,74 +168,6 @@ func (r *MultiClusterEngineReconciler) ensureNoManagedServiceAccount(ctx context
 			return result, err
 		}
 	}
-	return ctrl.Result{}, nil
-}
-
-// addPluginToConsoleResource ...
-func (r *MultiClusterEngineReconciler) addPluginToConsoleResource(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
-	console := &operatorv1.Console{}
-	// If trying to check this resource from the CLI run - `oc get consoles.operator.openshift.io cluster`.
-	// The default `console` is not the correct resource
-	err := r.Client.Get(ctx, types.NamespacedName{Name: "cluster"}, console)
-	if err != nil {
-		log.Info("Failed to find console: cluster")
-		return ctrl.Result{Requeue: true}, err
-	}
-
-	if console.Spec.Plugins == nil {
-		console.Spec.Plugins = []string{}
-	}
-
-	// Add mce to the plugins list if it is not already there
-	if !utils.Contains(console.Spec.Plugins, "mce") {
-		log.Info("Ready to add plugin")
-		console.Spec.Plugins = append(console.Spec.Plugins, "mce")
-		err = r.Client.Update(ctx, console)
-		if err != nil {
-			log.Info("Failed to add mce consoleplugin to console")
-			return ctrl.Result{Requeue: true}, err
-		} else {
-			log.Info("Added mce consoleplugin to console")
-		}
-	}
-
-	return ctrl.Result{}, nil
-}
-
-// removePluginFromConsoleResource ...
-func (r *MultiClusterEngineReconciler) removePluginFromConsoleResource(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	if val, ok := os.LookupEnv("UNIT_TEST"); ok && val == "true" {
-		return ctrl.Result{}, nil
-	}
-
-	log := log.FromContext(ctx)
-	console := &operatorv1.Console{}
-	// If trying to check this resource from the CLI run - `oc get consoles.operator.openshift.io cluster`.
-	// The default `console` is not the correct resource
-	err := r.Client.Get(ctx, types.NamespacedName{Name: "cluster"}, console)
-	if err != nil {
-		log.Info("Failed to find console: cluster")
-		return ctrl.Result{Requeue: true}, err
-	}
-
-	// If No plugins, it is already removed
-	if console.Spec.Plugins == nil {
-		return ctrl.Result{}, nil
-	}
-
-	// Remove mce to the plugins list if it is not already there
-	if utils.Contains(console.Spec.Plugins, "mce") {
-		console.Spec.Plugins = utils.Remove(console.Spec.Plugins, "mce")
-		err = r.Client.Update(ctx, console)
-		if err != nil {
-			log.Info("Failed to remove mce consoleplugin to console")
-			return ctrl.Result{Requeue: true}, err
-		} else {
-			log.Info("Removed mce consoleplugin to console")
-		}
-	}
-
 	return ctrl.Result{}, nil
 }
 

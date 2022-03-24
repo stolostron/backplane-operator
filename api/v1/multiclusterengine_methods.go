@@ -19,7 +19,7 @@ limitations under the License.
 package v1
 
 const (
-	ManagedServiceAccount string = "managed-service-account"
+	ManagedServiceAccount string = "managedserviceaccount-preview"
 	ConsoleMCE            string = "console-mce"
 	Discovery             string = "discovery"
 	Hive                  string = "hive"

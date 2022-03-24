@@ -20,11 +20,11 @@ var onComponents = []string{
 	backplanev1.Discovery,
 	backplanev1.Hive,
 	backplanev1.ServerFoundation,
-	// backplanev1.ConsoleMCE, // determined by OCP version
-	// backplanev1.HyperShift,
+	// backplanev1.ConsoleMCE, -- determined by OCP version
 }
 
 var offComponents = []string{
+	// These components are previews in 2.5
 	backplanev1.ManagedServiceAccount,
 	backplanev1.HyperShift,
 }

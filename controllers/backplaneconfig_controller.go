@@ -572,11 +572,6 @@ func (r *MultiClusterEngineReconciler) ensureCustomResources(ctx context.Context
 
 func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) error {
 	log := log.FromContext(ctx)
-	_, err := r.removePluginFromConsoleResource(ctx, backplaneConfig)
-	if err != nil {
-		log.Info("Error ensuring plugin is removed from console resource")
-		return err
-	}
 
 	clusterManager := &unstructured.Unstructured{}
 	clusterManager.SetGroupVersionKind(
@@ -587,7 +582,7 @@ func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Conte
 		},
 	)
 
-	err = r.Client.Get(ctx, types.NamespacedName{Name: "cluster-manager"}, clusterManager)
+	err := r.Client.Get(ctx, types.NamespacedName{Name: "cluster-manager"}, clusterManager)
 	if err == nil { // If resource exists, delete
 		log.Info("finalizing cluster-manager custom resource")
 		err := r.Client.Delete(ctx, clusterManager)
@@ -696,7 +691,6 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 		updateNecessary = true
 	}
 
-	// If OCP 4.10+ then set then enable the MCE console. Else ensure it is disabled
 	currentClusterVersion, err := r.getClusterVersion(ctx, m)
 	if err != nil {
 		return ctrl.Result{}, errors.Wrapf(err, "failed to detect clusterversion")
@@ -719,6 +713,7 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 		return ctrl.Result{}, err
 	}
 
+	// If OCP 4.10+ then set then enable the MCE console. Else ensure it is disabled
 	if constraint.Check(currentVersion) {
 		// If ConsoleMCE config already exists, then don't overwrite it
 		if !m.ComponentPresent(backplanev1.ConsoleMCE) {
