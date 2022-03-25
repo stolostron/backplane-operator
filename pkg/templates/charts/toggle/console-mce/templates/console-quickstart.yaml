@@ -23,8 +23,8 @@ spec:
 
         To enable the console plug-in:
 
-        1. From the Administrator [perspective]{{highlight qs-perspective-switcher}} of the OpenShift Container Platform web console, navigate to the cluster settings by clicking
-        **[Administration]{{highlight qs-nav-administration}} > Cluster
+        1. From the Administrator [perspective]{{ "{{" }}highlight qs-perspective-switcher{{ "}}" }} of the OpenShift Container Platform web console, navigate to the cluster settings by clicking
+        **[Administration]{{ "{{" }}highlight qs-nav-administration{{ "}}" }} > Cluster
         settings**.
 
 
@@ -54,7 +54,7 @@ spec:
         instructions: |-
           Verify that the console plug-in was enabled successfully:
 
-            - In the navigation menu, is a cluster switcher present with the options **All clusters** and **local-cluster**? The cluster switcher should appear before the [perspective switcher]{{highlight qs-perspective-switcher}}.
+            - In the navigation menu, is a cluster switcher present with the options **All clusters** and **local-cluster**? The cluster switcher should appear before the [perspective switcher]{{ "{{" }}highlight qs-perspective-switcher{{ "}}" }}.
       summary:
         failed: >-
           This task is incomplete. Try the task again, or read more about this
@@ -72,7 +72,7 @@ spec:
 
         To enable feature gate:
 
-        1. From Administrator [perspective]{{highlight qs-perspective-switcher}} of the OpenShift Container Platform web console, navigate to the cluster settings by clicking **[Administration]{{highlight qs-nav-administration}} > Cluster settings**
+        1. From Administrator [perspective]{{ "{{" }}highlight qs-perspective-switcher{{ "}}" }} of the OpenShift Container Platform web console, navigate to the cluster settings by clicking **[Administration]{{ "{{" }}highlight qs-nav-administration{{ "}}" }} > Cluster settings**
 
         1. Click **FeatureGate** from the *Configuration* tab.
 
@@ -102,8 +102,8 @@ spec:
       title: Enable feature gate
     - description: >
 
-        1. From the Administrator [perspective]{{highlight qs-perspective-switcher}}, navigate to *OperatorHub* by clicking
-        **[Operators]{{highlight qs-nav-operators}}** from the navigation menu.
+        1. From the Administrator [perspective]{{ "{{" }}highlight qs-perspective-switcher{{ "}}" }}, navigate to *OperatorHub* by clicking
+        **[Operators]{{ "{{" }}highlight qs-nav-operators{{ "}}" }}** from the navigation menu.
 
         1. Type “identity configuration management for Kubernetes” in the filter.
 
