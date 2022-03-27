@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: console-config
+  name: console-mce-config
 data:
   LOG_LEVEL: info
   ansibleIntegration: disabled

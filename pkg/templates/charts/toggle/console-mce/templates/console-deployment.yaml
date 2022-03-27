@@ -75,16 +75,16 @@ spec:
         secret:
           defaultMode: 420
           secretName: console-mce-console-certs
-      - name: console-mce-console-config
+      - name: console-mce-console-mce-config
         configMap:
-          name: console-config
+          name: console-mce-config
       containers:
       - name: console
         volumeMounts:
         - mountPath: /app/certs
           name: console-mce-console-certs
         - mountPath: /app/config
-          name: console-mce-console-config
+          name: console-mce-console-mce-config
         image: {{ .Values.global.imageOverrides.console_mce }}
         imagePullPolicy: {{ .Values.global.pullPolicy }}
         resources:
