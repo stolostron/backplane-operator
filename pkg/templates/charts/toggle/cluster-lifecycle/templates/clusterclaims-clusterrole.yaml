@@ -15,16 +15,16 @@ rules:
 
 - apiGroups:
   - "cluster.open-cluster-management.io"
-  - "agent.open-cluster-management.io"
   resources:
   - managedclusters
-  - klusterletaddonconfigs
   verbs:
   - get
   - list
   - create
   - delete
   - watch
+  - update
+  - patch
 
 - apiGroups:
   - "register.open-cluster-management.io"
