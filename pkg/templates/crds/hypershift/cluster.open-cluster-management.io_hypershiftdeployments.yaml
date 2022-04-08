@@ -99,6 +99,16 @@ spec:
                 description: HostedCluster that will be applied to the ManagementCluster
                   by ACM, if omitted, it will be generated
                 properties:
+                  additionalTrustBundle:
+                    description: AdditionalTrustBundle is a reference to a ConfigMap
+                      containing a PEM-encoded X.509 certificate bundle that will
+                      be added to the hosted controlplane and nodes
+                    properties:
+                      name:
+                        description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                          TODO: Add other useful fields. apiVersion, kind, uid?'
+                        type: string
+                    type: object
                   auditWebhook:
                     description: "AuditWebhook contains metadata for configuring an
                       audit webhook endpoint for a cluster to process cluster audit
@@ -7208,12 +7218,12 @@ spec:
                 type: array
               override:
                 description: InfrastructureOverride allows support for special cases   OverrideDestroy
-                  = "ORPHAN"   InfraConfigureOnly = "INFRA-ONLY"   ConfigureWithManifest
-                  = "MANIFESTWORK"
+                  = "ORPHAN"   InfraConfigureOnly = "INFRA-ONLY"   DeleteHostingNamespace
+                  = "DELETE-HOSTING-NAMESPACE"
                 enum:
                 - ORPHAN
                 - INFRA-ONLY
-                - MANIFESTWORK
+                - DELETE-HOSTING-NAMESPACE
                 type: string
             required:
             - infrastructure
