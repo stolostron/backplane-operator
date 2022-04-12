@@ -54,7 +54,11 @@ spec:
       type: string
     - description: Reason
       jsonPath: .status.conditions[?(@.type=="HostedClusterProgress")].reason
-      name: HOSTING
+      name: PROGRESS
+      type: string
+    - description: Available
+      jsonPath: .status.conditions[?(@.type=="HostedClusterAvailable")].status
+      name: AVAILABLE
       type: string
     name: v1alpha1
     schema:
