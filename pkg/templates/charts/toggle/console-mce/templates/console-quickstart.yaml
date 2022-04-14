@@ -152,7 +152,7 @@ spec:
         Configure an identity provider (like GitHub, LDAP, or OpenID) by following the instructions in the [Getting started](https://identitatem.github.io/idp-mgmt-docs/quick_start.html) documentation.
 
         - Most types of `Secret` that you may require for your configuration can be created in the console by selecting **local-cluster** in the cluster switcher, then navigating to **[Workloads]{{ "{{" }}highlight qs-nav-workloads{{ "}}" }} > Secrets** and using the **Create** dropdown.
-        - Your `AuthRealm` resource can be created in the console by clicking the **[Import]{{ "{{" }}highlight qa-masthead-import{{ "}}" }}** button.
+        - Your `AuthRealm` resource can be created in the console by clicking the **[Import]{{ "{{" }}highlight qs-masthead-import{{ "}}" }}** button.
         
       review:
         instructions: |-
