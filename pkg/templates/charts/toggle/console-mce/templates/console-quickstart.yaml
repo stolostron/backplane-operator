@@ -113,40 +113,57 @@ spec:
           installed:
 
             - In the **Status** column of the *Installed Operators* page, is the status of **identity configuration management for Kubernetes** **Succeeded - Up to date**?
-            - Click on **identity configuration management for Kubernetes**. An alert with the text *IDPConfig required* should *not* be present.
+            - Click on **identity configuration management for Kubernetes**. Do you observe that an alert with the text *IDPConfig required* is *not* be present?
     - title: Select clusters to use with **identity configuration management for Kubernetes**
       description: |-
         1. Choose a namespace where you will define your identity management or go to **[Home]{{ "{{" }}highlight qs-nav-home{{ "}}" }} > Projects** to create a new project.
         1. Add managed clusters to a cluster set:
             1. Select **All Clusters** from the cluster switcher and click on the *Cluster sets* tab to view cluster sets.
             1. Choose an existing cluster set or click the **Create cluster set** button to create a new one.
-            1. Use the **Manage resource assignments** on your chosen cluster set to add managed clusters.
+            1. Use the **Manage resource assignments** action on your chosen cluster set to add managed clusters.
             1. Use the **Edit namespace bindings** action to bind the cluster set to your chosen namespace.
         1. Create a placement to select clusters from the set for identity management:
-            1. Click the **Import**{{ "{{" }}highlight qa-masthead-import{{ "}}" }} button.
+            1. Click the **[Import]{{ "{{" }}highlight qs-masthead-import{{ "}}" }}** button.
             1. Select your chosen namespace from the **Project** menu.
             1. Copy and paste the following YAML, then click **Create**.
-              ```
-              apiVersion: cluster.open-cluster-management.io/v1beta1
-              kind: Placement
-              metadata:
-                name: identity-management
-              spec: {}
-              ```
-              An empty `spec` will select all clusters from cluster sets that are bound to the namespace.
+            
+                ```
+                apiVersion: cluster.open-cluster-management.io/v1beta1
+                kind: Placement
+                metadata:
+                  name: identity-placement
+                spec: {}
+                ```
+
+              An empty `spec` will select all clusters from cluster sets that are bound to the namespace. For more information on selecting clusters based on labels and other criteria, see [Using ManagedClusterSets with Placement](https://access.redhat.com/documentation/en-us/red_hat_advanced_cluster_management_for_kubernetes/2.5/html/clusters/managing-your-clusters#placement-managed).
 
       review:
         instructions: |-
-          Todo
+          Verify that the desired clusters are selected:
+
+            1. Select **local-cluster** from the cluster switcher.
+            1. Navigate to **[Home]{{ "{{" }}highlight qs-nav-home{{ "}}" }} > Search**. Search for `PlacementDecision` resources in the namespace you chose for identity management, and enter the **Label** `cluster.open-cluster-management.io/placement=identity-placement` editing it to match the name you used for your placement, if different from the example.
+            1. Click on the placement decision in the results then click on the *YAML* tab.
+
+          In the `spec.decisions` section of the YAML, do you see an entry for each cluster that you want to use with identity management?
         failedTaskHelp: This task is incomplete. Try the task again.
     - title: Configure an identity provider
       description: |-
         Configure an identity provider (like GitHub, LDAP, or OpenID) by following the instructions in the [Getting started](https://identitatem.github.io/idp-mgmt-docs/quick_start.html) documentation.
 
-        - Your `AuthRealm` resource can be created in the console by clicking the **Import**{{ "{{" }}highlight qa-masthead-import{{ "}}" }} button.
-        - Most types of `Secret` that you may require for your configuration can be created in the console by selecting **local-cluster** in the cluster switcher, then navigating to **Workloads{{ "{{" }}highlight qs-nav-workloads{{ "}}" }} > Secrets** and using the **Create** dropdown.
+        - Most types of `Secret` that you may require for your configuration can be created in the console by selecting **local-cluster** in the cluster switcher, then navigating to **[Workloads]{{ "{{" }}highlight qs-nav-workloads{{ "}}" }} > Secrets** and using the **Create** dropdown.
+        - Your `AuthRealm` resource can be created in the console by clicking the **[Import]{{ "{{" }}highlight qa-masthead-import{{ "}}" }}** button.
+        
       review:
         instructions: |-
-          Todo
-        failedTaskHelp: This task is incomplete. Try the task again.
+          Verify the identity provider has been configured:
+          
+            1. Select a managed cluster that you chose for identity management from the cluster switcher.
+            1. If you were already logged in to the managed cluster:
+                1. Log out.
+                1. Log in to the hub cluster again.
+                1. Select the managed cluster from the cluster switcher.
+
+          Are you presented with a dialog with the text **Log in with** and a button corresponding to the name of the `AuthRealm` that you created?
+        failedTaskHelp: This task is incomplete. See [New login option specified in AuthRealm is not appearing on the managed cluster](https://identitatem.github.io/idp-mgmt-docs/troubleshooting.html#login-button-missing) for troubleshooting steps.
     
