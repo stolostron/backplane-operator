@@ -156,7 +156,7 @@ spec:
         
       review:
         instructions: |-
-          Verify the identity provider has been configured:
+          Verify the identity provider has been configured. It can take about 5 minutes for the changes to take effect.
           
             1. Select a managed cluster that you chose for identity management from the cluster switcher.
             1. If you were already logged in to the managed cluster:
