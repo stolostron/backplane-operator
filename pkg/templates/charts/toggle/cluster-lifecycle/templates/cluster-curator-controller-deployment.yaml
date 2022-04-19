@@ -59,8 +59,9 @@ spec:
       securityContext:
         runAsNonRoot: true
       containers:
-      - command: ["/bin/sh","-c"]
-        args: ["./cluster-curator-controller || ./manager -enable-leader-election"]
+      - command:
+          - "./manager"
+          - "-enable-leader-election"
         image: "{{ .Values.global.imageOverrides.cluster_curator_controller }}"
         env:
         - name: POD_NAME
