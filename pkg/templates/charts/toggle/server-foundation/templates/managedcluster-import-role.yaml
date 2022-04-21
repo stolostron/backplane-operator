@@ -192,15 +192,6 @@ rules:
   - watch
   - escalate
 - apiGroups:
-    - imageregistry.open-cluster-management.io
-  resources:
-    - managedclusterimageregistries
-    - managedclusterimageregistries/status
-  verbs:
-    - get
-    - list
-    - watch
-- apiGroups:
     - agent-install.openshift.io
   resources:
     - infraenvs
@@ -224,6 +215,7 @@ rules:
   verbs:
     - get
     - list
+    - watch
     - patch
     - update
     - delete
