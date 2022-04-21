@@ -10,13 +10,13 @@ spec:
     - group: packages.operators.coreos.com
       resource: packagemanifests
       verb: list
-  description: 'With the multicluster switcher, you can easily switch between clusters'
-  displayName: Get started with multicluster switcher
+  description: 'With the multicluster switcher, you can easily work with your managed clusters from a single console and change between them quickly'
+  displayName: Get started with the multicluster switcher
   conclusion: Congratulations! Multicluster switcher is ready to use.
   durationMinutes: 20
   icon: >-
     data:image/svg+xml;base64,PHN2ZyBlbmFibGUtYmFja2dyb3VuZD0ibmV3IDAgMCAxMDAgMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIHdpZHRoPSIxMDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0ibTY2LjcgNTUuOGM2LjYgMCAxNi4xLTEuNCAxNi4xLTkuMiAwLS42IDAtMS4yLS4yLTEuOGwtMy45LTE3Yy0uOS0zLjctMS43LTUuNC04LjMtOC43LTUuMS0yLjYtMTYuMi02LjktMTkuNS02LjktMy4xIDAtNCA0LTcuNiA0LTMuNSAwLTYuMS0yLjktOS40LTIuOS0zLjIgMC01LjIgMi4xLTYuOCA2LjYgMCAwLTQuNCAxMi41LTUgMTQuMy0uMS4zLS4xLjctLjEgMSAuMSA0LjcgMTkuMiAyMC42IDQ0LjcgMjAuNm0xNy4xLTZjLjkgNC4zLjkgNC44LjkgNS4zIDAgNy40LTguMyAxMS40LTE5LjEgMTEuNC0yNC42IDAtNDYuMS0xNC40LTQ2LjEtMjMuOSAwLTEuMy4zLTIuNi44LTMuOS04LjkuNS0yMC4zIDIuMS0yMC4zIDEyLjIgMCAxNi41IDM5LjIgMzYuOSA3MC4yIDM2LjkgMjMuOCAwIDI5LjgtMTAuNyAyOS44LTE5LjIgMC02LjctNS44LTE0LjMtMTYuMi0xOC44IiBmaWxsPSIjZWQxYzI0Ii8+PHBhdGggZD0ibTgzLjggNDkuOGMuOSA0LjMuOSA0LjguOSA1LjMgMCA3LjQtOC4zIDExLjQtMTkuMSAxMS40LTI0LjYgMC00Ni4xLTE0LjQtNDYuMS0yMy45IDAtMS4zLjMtMi42LjgtMy45bDEuOS00LjhjLS4xLjMtLjEuNy0uMSAxIDAgNC44IDE5LjEgMjAuNyA0NC43IDIwLjcgNi42IDAgMTYuMS0xLjQgMTYuMS05LjIgMC0uNiAwLTEuMi0uMi0xLjh6IiBmaWxsPSIjMDEwMTAxIi8+PC9zdmc+
-  introduction: 'With the multicluster switcher, you can easily switch between clusters.'
+  introduction: 'With the multicluster switcher, you can easily work with your managed clusters from a single console and change between them quickly.'
   tasks:
     - title: Enable console plug-in
       description: |-
@@ -135,7 +135,7 @@ spec:
                 spec: {}
                 ```
 
-              An empty `spec` will select all clusters from cluster sets that are bound to the namespace. For more information on selecting clusters based on labels and other criteria, see [Using ManagedClusterSets with Placement](https://access.redhat.com/documentation/en-us/red_hat_advanced_cluster_management_for_kubernetes/2.5/html/clusters/managing-your-clusters#placement-managed).
+              An empty `spec` selects all clusters from cluster sets that are bound to the namespace. For more information on selecting clusters based on labels and other criteria, see [Using ManagedClusterSets with Placement](https://access.redhat.com/documentation/en-us/red_hat_advanced_cluster_management_for_kubernetes/2.5/html/clusters/managing-your-clusters#placement-managed).
 
       review:
         instructions: |-
@@ -156,7 +156,7 @@ spec:
         
       review:
         instructions: |-
-          Verify the identity provider has been configured. It can take about 5 minutes for the changes to take effect.
+          Verify the identity provider is configured. It can take about 5 minutes for the changes to take effect.
           
             1. Select a managed cluster that you chose for identity management from the cluster switcher.
             1. If you were already logged in to the managed cluster:
