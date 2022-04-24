@@ -219,3 +219,4 @@ rules:
     - patch
     - update
     - delete
+    - deletecollection
