@@ -241,6 +241,7 @@ rules:
   - console.openshift.io
   resources:
   - consoleplugins
+  - consolequickstarts
   verbs:
   - create
   - delete

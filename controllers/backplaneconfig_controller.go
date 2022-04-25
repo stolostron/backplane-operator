@@ -83,7 +83,7 @@ const (
 //+kubebuilder:rbac:groups="discovery.open-cluster-management.io",resources=discoveryconfigs,verbs=list
 //+kubebuilder:rbac:groups="discovery.open-cluster-management.io",resources=discoveryconfigs;discoveredclusters,verbs=create;get;list;watch;update;delete;deletecollection;patch;approve;escalate;bind
 //+kubebuilder:rbac:groups=config.openshift.io,resources=clusterversions,verbs=get;list;watch;
-//+kubebuilder:rbac:groups=console.openshift.io,resources=consoleplugins,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=console.openshift.io,resources=consoleplugins;consolequickstarts,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=operator.openshift.io,resources=consoles,verbs=get;list;watch;update;patch
 
 // AgentServiceConfig webhook delete check
