@@ -1,0 +1,169 @@
+apiVersion: console.openshift.io/v1
+kind: ConsoleQuickStart
+metadata:
+  name: multicluster-switcher
+spec:
+  accessReviewResources:
+    - group: operators.coreos.com
+      resource: operatorgroups
+      verb: list
+    - group: packages.operators.coreos.com
+      resource: packagemanifests
+      verb: list
+  description: 'With the multicluster switcher, you can work with your managed clusters from a single console and change between them quickly'
+  displayName: Get started with the multicluster switcher
+  conclusion: Congratulations! Multicluster switcher is ready to use.
+  durationMinutes: 20
+  icon: >-
+    data:image/svg+xml;base64,PHN2ZyBlbmFibGUtYmFja2dyb3VuZD0ibmV3IDAgMCAxMDAgMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIHdpZHRoPSIxMDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0ibTY2LjcgNTUuOGM2LjYgMCAxNi4xLTEuNCAxNi4xLTkuMiAwLS42IDAtMS4yLS4yLTEuOGwtMy45LTE3Yy0uOS0zLjctMS43LTUuNC04LjMtOC43LTUuMS0yLjYtMTYuMi02LjktMTkuNS02LjktMy4xIDAtNCA0LTcuNiA0LTMuNSAwLTYuMS0yLjktOS40LTIuOS0zLjIgMC01LjIgMi4xLTYuOCA2LjYgMCAwLTQuNCAxMi41LTUgMTQuMy0uMS4zLS4xLjctLjEgMSAuMSA0LjcgMTkuMiAyMC42IDQ0LjcgMjAuNm0xNy4xLTZjLjkgNC4zLjkgNC44LjkgNS4zIDAgNy40LTguMyAxMS40LTE5LjEgMTEuNC0yNC42IDAtNDYuMS0xNC40LTQ2LjEtMjMuOSAwLTEuMy4zLTIuNi44LTMuOS04LjkuNS0yMC4zIDIuMS0yMC4zIDEyLjIgMCAxNi41IDM5LjIgMzYuOSA3MC4yIDM2LjkgMjMuOCAwIDI5LjgtMTAuNyAyOS44LTE5LjIgMC02LjctNS44LTE0LjMtMTYuMi0xOC44IiBmaWxsPSIjZWQxYzI0Ii8+PHBhdGggZD0ibTgzLjggNDkuOGMuOSA0LjMuOSA0LjguOSA1LjMgMCA3LjQtOC4zIDExLjQtMTkuMSAxMS40LTI0LjYgMC00Ni4xLTE0LjQtNDYuMS0yMy45IDAtMS4zLjMtMi42LjgtMy45bDEuOS00LjhjLS4xLjMtLjEuNy0uMSAxIDAgNC44IDE5LjEgMjAuNyA0NC43IDIwLjcgNi42IDAgMTYuMS0xLjQgMTYuMS05LjIgMC0uNiAwLTEuMi0uMi0xLjh6IiBmaWxsPSIjMDEwMTAxIi8+PC9zdmc+
+  introduction: 'With the multicluster switcher, you can work with your managed clusters from a single console and change between them quickly.'
+  tasks:
+    - title: Enable console plug-in
+      description: |-
+        1. From the Administrator [perspective]{{ "{{" }}highlight qs-perspective-switcher{{ "}}" }} of the OpenShift Container Platform web console, navigate to the cluster settings by clicking
+        **[Administration]{{ "{{" }}highlight qs-nav-administration{{ "}}" }} > Cluster
+        settings**.
+
+        1. Click **Console (operator.openshift.io)** from the *Configuration* tab.
+
+        1. On the *Console plugins* tab, check that the status of the `mce`
+        plug-in is enabled.
+
+        1. If you are also using Red Hat Advanced Cluster Management for Kubernetes, check that
+        the status of the `acm` plug-in is also enabled.
+
+        1. If the applicable plug-ins are disabled, complete the following steps for each plug-in:
+          
+            1. Click on the **Disabled** status.
+         
+            1. Select **Enable** from the dialog box.
+         
+            1. Click on **Save**.  
+
+        1. If you enabled any plug-ins, after a few moments, an alert with the text “Web console update is
+        available” appears. Click the **Refresh web console** link to load the web
+        console with the plug-ins enabled.
+      review:
+        failedTaskHelp: This task is incomplete. Try the task again.
+        instructions: |-
+          Verify that the console plug-in is enabled:
+
+            - In the navigation menu, is a cluster switcher present with the options **All Clusters** and **local-cluster**? The cluster switcher should appear before the [perspective switcher]{{ "{{" }}highlight qs-perspective-switcher{{ "}}" }}.
+    - title: Understand feature gates  
+      description: |-
+        The remaining steps require you to use feature gates to activate the `TechPreviewNoUpgrade` feature set.
+
+        **Warning**: Using the `TechPreviewNoUpgrade` feature set enables Technology Preview features 
+            that are not part of the default features. Enabling this feature set 
+            cannot be undone and prevents upgrades. **This feature set is NOT 
+            recommended on production clusters**.
+
+        For more information, see [Enabling OpenShift Container Platform features using FeatureGates](https://docs.openshift.com/container-platform/4.10/nodes/clusters/nodes-cluster-enabling-features.html).
+      review:
+        instructions: |
+          Do you acknowledge that enabling the feature gate is irreversible and not recommended for production clusters?
+        failedTaskHelp: Do not proceed with the remaining steps.
+    - title: Enable feature gate 
+      description: |-
+        1. From Administrator [perspective]{{ "{{" }}highlight qs-perspective-switcher{{ "}}" }} of the OpenShift Container Platform web console, navigate to the cluster settings by clicking **[Administration]{{ "{{" }}highlight qs-nav-administration{{ "}}" }} > Cluster settings**
+
+        1. Click **FeatureGate** from the *Configuration* tab.
+
+        1. On the *YAML* tab, edit the cluster instance to add the following specific feature sets:
+
+            ```
+            spec:
+              featureSet: TechPreviewNoUpgrade
+            ```
+
+        1. Click **Save**.
+      review:
+        failedTaskHelp: This task is incomplete. Try the task again.
+        instructions: |
+          Verify that the feature gate is enabled:
+
+            - In the navigation menu, click **Administration > Cluster settings**. Do you see a warning stating that the cluster cannot be updated because of the `TechPreviewNoUpgrade` feature set?
+            - If you have any managed clusters that were previously imported or created, do they appear in the cluster switcher after a few minutes?
+    - title: Install **identity configuration management for Kubernetes** 
+      description: |-
+        **identity configuration management for Kubernetes** will be used to automatically configure OAuth authentication on your managed clusters.
+
+        To install the operator: 
+        1. From the Administrator [perspective]{{ "{{" }}highlight qs-perspective-switcher{{ "}}" }}, navigate to **OperatorHub** by clicking
+        **[Operators]{{ "{{" }}highlight qs-nav-operators{{ "}}" }}** from the navigation menu.
+
+        1. Type “identity configuration management for Kubernetes” in the filter.
+
+        1. Click the **identity configuration management for Kubernetes** tile to open the operator details. You may review the documentation by following the link provided.
+
+        1. At the beginning of the **identity configuration management for Kubernetes**
+        panel that opens, click **Install**.
+
+        1. Fill out the *Install Operator* form then click **Install**. For more information on the options, see [Installing from the OperatorHub web console interface](https://identitatem.github.io/idp-mgmt-docs/install_connected.html#installing-from-the-operatorhub).
+
+        1. Wait for the **Installed operator - operand required** message to appear then click **Create IDPConfig**. Make any necessary edits or accept the defaults and click **Create**.
+
+        1. On the *Installed Operators* page, wait for the status of **identity
+        configuration management for Kubernetes** to change from
+        *Installing* to *Succeeded*.
+      review:
+        failedTaskHelp: This task is incomplete. Try the task again.
+        instructions: |-
+          Verify that **identity configuration management for Kubernetes** is
+          installed:
+
+            - In the **Status** column of the *Installed Operators* page, is the status of **identity configuration management for Kubernetes** **Succeeded - Up to date**?
+            - Click on **identity configuration management for Kubernetes**. Do you observe that an alert with the text *IDPConfig required* is *not* be present?
+    - title: Select clusters to use with **identity configuration management for Kubernetes**
+      description: |-
+        1. Choose a namespace where you will define your identity management or go to **[Home]{{ "{{" }}highlight qs-nav-home{{ "}}" }} > Projects** to create a new project.
+        1. Add managed clusters to a cluster set:
+            1. Select **All Clusters** from the cluster switcher and click on the *Cluster sets* tab to view cluster sets.
+            1. Choose an existing cluster set or click the **Create cluster set** button to create a new one.
+            1. Use the **Manage resource assignments** action on your chosen cluster set to add managed clusters.
+            1. Use the **Edit namespace bindings** action to bind the cluster set to your chosen namespace.
+        1. Create a placement to select clusters from the set for identity management:
+            1. Click the **[Import]{{ "{{" }}highlight qs-masthead-import{{ "}}" }}** button.
+            1. Select your chosen namespace from the **Project** menu.
+            1. Copy and paste the following YAML, then click **Create**.
+            
+                ```
+                apiVersion: cluster.open-cluster-management.io/v1beta1
+                kind: Placement
+                metadata:
+                  name: identity-placement
+                spec: {}
+                ```
+
+              An empty `spec` selects all clusters from cluster sets that are bound to the namespace. For more information on selecting clusters based on labels and other criteria, see [Using ManagedClusterSets with Placement](https://access.redhat.com/documentation/en-us/red_hat_advanced_cluster_management_for_kubernetes/2.5/html/clusters/managing-your-clusters#placement-managed).
+
+      review:
+        instructions: |-
+          Verify that the desired clusters are selected:
+
+            1. Select **local-cluster** from the cluster switcher.
+            1. Navigate to **[Home]{{ "{{" }}highlight qs-nav-home{{ "}}" }} > Search**. Search for `PlacementDecision` resources in the namespace you chose for identity management, and enter the **Label** `cluster.open-cluster-management.io/placement=identity-placement` editing it to match the name you used for your placement, if different from the example.
+            1. Click on the placement decision in the results then click on the *YAML* tab.
+
+          In the `spec.decisions` section of the YAML, do you see an entry for each cluster that you want to use with identity management?
+        failedTaskHelp: This task is incomplete. Try the task again.
+    - title: Configure an identity provider
+      description: |-
+        Configure an identity provider (like GitHub, LDAP, or OpenID) by following the instructions in the [Getting started](https://identitatem.github.io/idp-mgmt-docs/quick_start.html) documentation.
+
+        - Most types of `Secret` that you may require for your configuration can be created in the console by selecting **local-cluster** in the cluster switcher, then navigating to **[Workloads]{{ "{{" }}highlight qs-nav-workloads{{ "}}" }} > Secrets** and using the **Create** dropdown.
+        - Your `AuthRealm` resource can be created in the console by clicking the **[Import]{{ "{{" }}highlight qs-masthead-import{{ "}}" }}** button.
+        
+      review:
+        instructions: |-
+          Verify that the identity provider is configured. It can take about 5 minutes for the changes to take effect.
+          
+            1. Select a managed cluster that you chose for identity management from the cluster switcher.
+            1. If you were already logged in to the managed cluster:
+                1. Log out.
+                1. Log in to the hub cluster again.
+                1. Select the managed cluster from the cluster switcher.
+
+          Are you presented with a dialog with the text **Log in with** and a button corresponding to the name of the `AuthRealm` that you created?
+        failedTaskHelp: This task is incomplete. See [New login option specified in AuthRealm is not appearing on the managed cluster](https://identitatem.github.io/idp-mgmt-docs/troubleshooting.html#login-button-missing) for troubleshooting steps.
+    
