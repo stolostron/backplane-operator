@@ -593,6 +593,111 @@ var _ = Describe("BackplaneConfig controller", func() {
 
 			})
 		})
+
+		Context("and images are overriden using annotations", func() {
+			It("should deploy images with a custom image repository", func() {
+				imageRepo := "quay.io/testrepo"
+				By("creating the backplane config with the image repository annotation")
+				backplaneConfig := &v1.MultiClusterEngine{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "multicluster.openshift.io/v1",
+						Kind:       "MultiClusterEngine",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: BackplaneConfigName,
+						Annotations: map[string]string{
+							"imageRepository": imageRepo,
+						},
+					},
+					Spec: v1.MultiClusterEngineSpec{
+						TargetNamespace: DestinationNamespace,
+						ImagePullSecret: "testsecret",
+					},
+				}
+				createCtx := context.Background()
+				Expect(k8sClient.Create(createCtx, backplaneConfig)).Should(Succeed())
+
+				By("ensuring each deployment and config is created")
+				for _, test := range tests {
+					By(fmt.Sprintf("ensuring %s is created", test.Name))
+					Eventually(func() bool {
+						ctx := context.Background()
+						err := k8sClient.Get(ctx, test.NamespacedName, test.ResourceType)
+						return err == test.Expected
+					}, timeout, interval).Should(BeTrue())
+				}
+
+				By("ensuring each deployment has its image repository overridden")
+				for _, test := range tests {
+					res, ok := test.ResourceType.(*appsv1.Deployment)
+					if !ok {
+						continue // only deployments will have an image pull policy
+					}
+					By(fmt.Sprintf("ensuring %s has its image using %s", test.Name, imageRepo))
+					Eventually(func(g Gomega) {
+						ctx := context.Background()
+						g.Expect(k8sClient.Get(ctx, test.NamespacedName, res)).To(Succeed())
+						g.Expect(res.Spec.Template.Spec.Containers[0].Image).To(
+							HavePrefix(imageRepo),
+							fmt.Sprintf("Image does not have expected repository"),
+						)
+					}, timeout, interval).Should(Succeed())
+				}
+			})
+
+			It("should replace images as defined in a configmap", func() {
+				By("creating a configmap with an image override")
+				testCM := &corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test",
+						Namespace: BackplaneOperatorNamespace,
+					},
+					Data: map[string]string{
+						"overrides.json": `[
+						{
+							"image-name": "discovery-operator",
+							"image-remote": "quay.io/stolostron",
+							"image-digest": "sha256:9dc4d072dcd06eda3fda19a15f4b84677fbbbde2a476b4817272cde4724f02cc",
+							"image-key": "discovery_operator"
+							}
+					]`,
+					},
+				}
+				Expect(k8sClient.Create(context.TODO(), testCM)).To(Succeed())
+
+				By("creating the backplane config with the configmap override annotation")
+				backplaneConfig := &v1.MultiClusterEngine{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "multicluster.openshift.io/v1",
+						Kind:       "MultiClusterEngine",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: BackplaneConfigName,
+						Annotations: map[string]string{
+							"imageOverridesCM": "test",
+						},
+					},
+					Spec: v1.MultiClusterEngineSpec{
+						TargetNamespace: DestinationNamespace,
+						ImagePullSecret: "testsecret",
+					},
+				}
+				createCtx := context.Background()
+				Expect(k8sClient.Create(createCtx, backplaneConfig)).Should(Succeed())
+
+				By("ensuring the deployment image is overridden")
+				Eventually(func(g Gomega) {
+					ctx := context.Background()
+					discoveryNN := types.NamespacedName{Name: "discovery-operator", Namespace: DestinationNamespace}
+					res := &appsv1.Deployment{}
+					g.Expect(k8sClient.Get(ctx, discoveryNN, res)).To(Succeed())
+					g.Expect(res.Spec.Template.Spec.Containers[0].Image).To(
+						Equal("quay.io/stolostron/discovery-operator@sha256:9dc4d072dcd06eda3fda19a15f4b84677fbbbde2a476b4817272cde4724f02cc"),
+						fmt.Sprintf("Image does not match that defined in configmap"),
+					)
+				}, timeout, interval).Should(Succeed())
+			})
+		})
 	})
 
 	AfterEach(func() {
