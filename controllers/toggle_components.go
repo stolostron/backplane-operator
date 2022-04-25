@@ -14,6 +14,7 @@ import (
 	"github.com/stolostron/backplane-operator/pkg/status"
 	"github.com/stolostron/backplane-operator/pkg/toggle"
 	"github.com/stolostron/backplane-operator/pkg/utils"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -48,18 +49,16 @@ func (r *MultiClusterEngineReconciler) ensureConsoleMCE(ctx context.Context, bac
 		}
 	}
 
-	components := backplaneConfig.Status.Components
-	for _, component := range components {
-		if component.Name == "console-mce-console" {
-			if component.Status == "True" && component.Type == "Available" {
-				result, err := r.addPluginToConsoleResource(ctx, backplaneConfig)
-				if err != nil {
-					return result, err
-				}
-				return ctrl.Result{}, nil
-			} else {
-				return ctrl.Result{RequeueAfter: requeuePeriod}, nil
-			}
+	// Check console-mce deployment health before adding plugin
+	consoleDeployment := &appsv1.Deployment{}
+	err := r.Client.Get(ctx, namespacedName, consoleDeployment)
+	if err != nil {
+		log.Info("Failed to get console-mce deployment for addon. Requeuing.")
+		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+	}
+	for _, dc := range consoleDeployment.Status.Conditions {
+		if dc.Type == appsv1.DeploymentAvailable && dc.Status == corev1.ConditionTrue {
+			return r.addPluginToConsoleResource(ctx, backplaneConfig)
 		}
 	}
 
