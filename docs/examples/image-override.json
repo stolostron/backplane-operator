@@ -1,0 +1,13 @@
+[
+  {
+    "image-name": "discovery-operator",
+    "image-version": "0.2",
+    "image-tag": "0.2-5bf12929112cdb5d94856a847583f84718c2033e",
+    "git-sha256": "5bf12929112cdb5d94856a847583f84718c2033e",
+    "git-repository": "stolostron/discovery",
+    "image-remote": "quay.io/stolostron",
+    "image-remote-src": "registry.ci.openshift.org/stolostron",
+    "image-digest": "sha256:9dc4d072dcd06eda3fda19a15f4b84677fbbbde2a476b4817272cde4724f02cc",
+    "image-key": "discovery_operator"
+  }
+  ]

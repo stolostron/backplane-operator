@@ -132,6 +132,14 @@ func deduplicate(config []backplanev1.ComponentConfig) []backplanev1.ComponentCo
 	return newConfig
 }
 
+//GetImagePullPolicy returns either pull policy from CR overrides or default of Always
+func GetImagePullPolicy(m *backplanev1.MultiClusterEngine) corev1.PullPolicy {
+	if m.Spec.Overrides == nil || m.Spec.Overrides.ImagePullPolicy == "" {
+		return corev1.PullIfNotPresent
+	}
+	return m.Spec.Overrides.ImagePullPolicy
+}
+
 func GetTestImages() []string {
 	return []string{"registration_operator", "openshift_hive", "multicloud_manager",
 		"managedcluster_import_controller", "registration", "work", "discovery_operator", "cluster_curator_controller",
@@ -174,4 +182,12 @@ func Remove(s []string, str string) []string {
 		}
 	}
 	return s
+}
+
+func OperatorNamespace() string {
+	deploymentNamespace, ok := os.LookupEnv("POD_NAMESPACE")
+	if !ok {
+		panic("Missing POD_NAMESPACE variable")
+	}
+	return deploymentNamespace
 }

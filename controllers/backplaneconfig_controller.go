@@ -55,6 +55,7 @@ import (
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 	"github.com/stolostron/backplane-operator/pkg/foundation"
 	"github.com/stolostron/backplane-operator/pkg/hive"
+	"github.com/stolostron/backplane-operator/pkg/images"
 	renderer "github.com/stolostron/backplane-operator/pkg/rendering"
 	"github.com/stolostron/backplane-operator/pkg/status"
 
@@ -208,13 +209,18 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return ctrl.Result{Requeue: true}, err
 	}
 
-	// Read image overrides from environmental variables
-	r.Images = utils.GetImageOverrides(backplaneConfig)
-	if len(r.Images) == 0 {
-		// If imageoverrides are not set from environmental variables, fail
+	// Read images from environmental variables
+	imgs, err := images.GetImagesWithOverrides(r.Client, backplaneConfig)
+	if err != nil {
+		r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing, metav1.ConditionFalse, status.RequirementsNotMetReason, fmt.Sprintf("Issue building image references: %s", err.Error())))
+		return ctrl.Result{}, err
+	}
+	if len(imgs) == 0 {
+		// If images are not set from environmental variables, fail
 		r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing, metav1.ConditionFalse, status.RequirementsNotMetReason, "No image references defined in deployment"))
 		return ctrl.Result{RequeueAfter: requeuePeriod}, e.New("no image references exist. images must be defined as environment variables")
 	}
+	r.Images = imgs
 
 	// Do not reconcile objects if this instance of mce is labeled "paused"
 	if utils.IsPaused(backplaneConfig) {
@@ -675,7 +681,6 @@ func (r *MultiClusterEngineReconciler) ensureUnstructuredResource(ctx context.Co
 
 func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
-	log.Info("Setting defaults")
 
 	updateNecessary := false
 	if !utils.AvailabilityConfigIsValid(m.Spec.AvailabilityConfig) {
@@ -736,6 +741,7 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 
 	// Apply defaults to server
 	if updateNecessary {
+		log.Info("Setting defaults")
 		err = r.Client.Update(ctx, m)
 		if err != nil {
 			log.Error(err, "Failed to update MultiClusterEngine")
@@ -744,7 +750,6 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 		log.Info("MultiClusterEngine successfully updated")
 		return ctrl.Result{Requeue: true}, nil
 	} else {
-		log.Info("No updates to defaults detected")
 		return ctrl.Result{}, nil
 	}
 
@@ -782,7 +787,6 @@ func (r *MultiClusterEngineReconciler) validateNamespace(ctx context.Context, m 
 func (r *MultiClusterEngineReconciler) adoptExistingSubcomponents(ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 
 	log := log.FromContext(ctx)
-	log.Info("Checking for existing subcomponents")
 
 	cmTemplate := foundation.ClusterManager(mce, r.Images)
 	hiveTemplate := hive.HiveConfig(mce)
