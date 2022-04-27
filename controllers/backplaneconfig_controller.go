@@ -20,18 +20,25 @@ package controllers
 
 import (
 	"context"
-	e "errors"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
 	"time"
 
-	configv1 "github.com/openshift/api/config/v1"
-	"k8s.io/client-go/util/workqueue"
+	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
+	"github.com/stolostron/backplane-operator/pkg/foundation"
+	"github.com/stolostron/backplane-operator/pkg/hive"
+	"github.com/stolostron/backplane-operator/pkg/images"
+	renderer "github.com/stolostron/backplane-operator/pkg/rendering"
+	"github.com/stolostron/backplane-operator/pkg/status"
+	"github.com/stolostron/backplane-operator/pkg/utils"
+
 	clustermanager "open-cluster-management.io/api/operator/v1"
 
+	configv1 "github.com/openshift/api/config/v1"
 	hiveconfig "github.com/openshift/hive/apis/hive/v1"
-	"github.com/pkg/errors"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -40,6 +47,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -52,14 +60,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	semver "github.com/Masterminds/semver"
-	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
-	"github.com/stolostron/backplane-operator/pkg/foundation"
-	"github.com/stolostron/backplane-operator/pkg/hive"
-	"github.com/stolostron/backplane-operator/pkg/images"
-	renderer "github.com/stolostron/backplane-operator/pkg/rendering"
-	"github.com/stolostron/backplane-operator/pkg/status"
-
-	"github.com/stolostron/backplane-operator/pkg/utils"
+	pkgerrors "github.com/pkg/errors"
+	monitorv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 )
 
 // MultiClusterEngineReconciler reconciles a MultiClusterEngine object
@@ -145,7 +147,7 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 	// reset status manager if req is a new MCE
 	uid := string(backplaneConfig.UID)
 	if uid == "" {
-		return ctrl.Result{RequeueAfter: 5 * time.Second}, e.New("Resource missing UID")
+		return ctrl.Result{RequeueAfter: 5 * time.Second}, errors.New("Resource missing UID")
 	}
 	if r.StatusManager.UID == "" || r.StatusManager.UID != string(backplaneConfig.UID) {
 		log.Info("Setting status manager to track new MCE", "UID", string(backplaneConfig.UID))
@@ -218,7 +220,7 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 	if len(imgs) == 0 {
 		// If images are not set from environmental variables, fail
 		r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing, metav1.ConditionFalse, status.RequirementsNotMetReason, "No image references defined in deployment"))
-		return ctrl.Result{RequeueAfter: requeuePeriod}, e.New("no image references exist. images must be defined as environment variables")
+		return ctrl.Result{RequeueAfter: requeuePeriod}, errors.New("no image references exist. images must be defined as environment variables")
 	}
 	r.Images = imgs
 
@@ -279,6 +281,16 @@ func (r *MultiClusterEngineReconciler) SetupWithManager(mgr ctrl.Manager) error 
 				q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
 					Name: labels["backplaneconfig.name"],
 				}})
+			},
+		}, builder.WithPredicates(predicate.LabelChangedPredicate{})).
+		Watches(&source.Kind{Type: &monitorv1.ServiceMonitor{}}, &handler.Funcs{
+			DeleteFunc: func(e event.DeleteEvent, q workqueue.RateLimitingInterface) {
+				labels := e.Object.GetLabels()
+				if label, ok := labels["backplaneconfig.name"]; ok {
+					q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
+						Name: label,
+					}})
+				}
 			},
 		}, builder.WithPredicates(predicate.LabelChangedPredicate{})).
 		Complete(r)
@@ -504,7 +516,7 @@ func (r *MultiClusterEngineReconciler) applyTemplate(ctx context.Context, backpl
 	// Set owner reference.
 	err := ctrl.SetControllerReference(backplaneConfig, template, r.Scheme)
 	if err != nil {
-		return ctrl.Result{}, errors.Wrapf(err, "Error setting controller reference on resource %s", template.GetName())
+		return ctrl.Result{}, pkgerrors.Wrapf(err, "Error setting controller reference on resource %s", template.GetName())
 	}
 
 	if template.GetKind() == "APIService" {
@@ -517,7 +529,7 @@ func (r *MultiClusterEngineReconciler) applyTemplate(ctx context.Context, backpl
 		force := true
 		err = r.Client.Patch(ctx, template, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
 		if err != nil {
-			return ctrl.Result{}, errors.Wrapf(err, "error applying object Name: %s Kind: %s", template.GetName(), template.GetKind())
+			return ctrl.Result{}, pkgerrors.Wrapf(err, "error applying object Name: %s Kind: %s", template.GetName(), template.GetKind())
 		}
 	}
 	return ctrl.Result{}, nil
@@ -560,12 +572,12 @@ func (r *MultiClusterEngineReconciler) ensureCustomResources(ctx context.Context
 		for _, addonTemplate := range addonTemplates {
 			addonTemplate.SetNamespace(backplaneConfig.Spec.TargetNamespace)
 			if err := ctrl.SetControllerReference(backplaneConfig, addonTemplate, r.Scheme); err != nil {
-				return ctrl.Result{}, errors.Wrapf(err, "Error setting controller reference on resource %s", addonTemplate.GetName())
+				return ctrl.Result{}, pkgerrors.Wrapf(err, "Error setting controller reference on resource %s", addonTemplate.GetName())
 			}
 			force := true
 			err := r.Client.Patch(ctx, addonTemplate, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
 			if err != nil {
-				return ctrl.Result{}, errors.Wrapf(err, "error applying object Name: %s Kind: %s", addonTemplate.GetName(), addonTemplate.GetKind())
+				return ctrl.Result{}, pkgerrors.Wrapf(err, "error applying object Name: %s Kind: %s", addonTemplate.GetName(), addonTemplate.GetKind())
 			}
 		}
 	} else {
@@ -704,7 +716,7 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 	// If OCP 4.10+ then set then enable the MCE console. Else ensure it is disabled
 	currentClusterVersion, err := r.getClusterVersion(ctx, m)
 	if err != nil {
-		return ctrl.Result{}, errors.Wrapf(err, "failed to detect clusterversion")
+		return ctrl.Result{}, pkgerrors.Wrapf(err, "failed to detect clusterversion")
 	}
 
 	// Set OCP version as env var, so that charts can render this value
@@ -766,7 +778,7 @@ func (r *MultiClusterEngineReconciler) validateNamespace(ctx context.Context, m 
 	err := r.Client.Get(context.TODO(), types.NamespacedName{Name: m.Spec.TargetNamespace}, checkNs)
 	if err != nil && apierrors.IsNotFound(err) {
 		if err := ctrl.SetControllerReference(m, newNs, r.Scheme); err != nil {
-			return ctrl.Result{}, errors.Wrapf(err, "Error setting controller reference on resource %s", m.Spec.TargetNamespace)
+			return ctrl.Result{}, pkgerrors.Wrapf(err, "Error setting controller reference on resource %s", m.Spec.TargetNamespace)
 		}
 		err = r.Client.Create(context.TODO(), newNs)
 		if err != nil {
@@ -807,7 +819,7 @@ func (r *MultiClusterEngineReconciler) adoptExistingSubcomponents(ctx context.Co
 		}
 
 		if err := ctrl.SetControllerReference(mce, existingResource, r.Scheme); err != nil {
-			return ctrl.Result{}, errors.Wrapf(err, "Error setting controller reference on resource %s", existingResource.GetName())
+			return ctrl.Result{}, pkgerrors.Wrapf(err, "Error setting controller reference on resource %s", existingResource.GetName())
 		}
 
 		err = r.Update(ctx, existingResource)
