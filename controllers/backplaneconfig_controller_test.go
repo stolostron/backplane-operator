@@ -421,6 +421,29 @@ var _ = Describe("BackplaneConfig controller", func() {
 					}, timeout, interval).Should(Succeed())
 				}
 
+				By("ensuring the ServiceMonitor resource is recreated if deleted")
+				Eventually(func() error {
+					ctx := context.Background()
+					u := &unstructured.Unstructured{}
+					u.SetName("clusterlifecycle-state-metrics-v2")
+					u.SetNamespace("openshift-monitoring")
+					u.SetGroupVersionKind(schema.GroupVersionKind{
+						Group:   "monitoring.coreos.com",
+						Kind:    "ServiceMonitor",
+						Version: "v1",
+					})
+					return k8sClient.Delete(ctx, u)
+				}, timeout, interval).Should(Succeed())
+				Eventually(func() error {
+					ctx := context.Background()
+					namespacedName := types.NamespacedName{
+						Name:      "clusterlifecycle-state-metrics-v2",
+						Namespace: "openshift-monitoring",
+					}
+					resourceType := &monitoringv1.ServiceMonitor{}
+					return k8sClient.Get(ctx, namespacedName, resourceType)
+				}, timeout, interval).Should(Succeed())
+
 			})
 		})
 
