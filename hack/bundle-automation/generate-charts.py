@@ -279,6 +279,13 @@ def injectHelmFlowControl(deployment):
             lines[i] = """  replicas: {{ .Values.hubconfig.replicaCount }}
 """
 
+        if 'args:' in line.strip():
+            lines[i] = """      - args:
+{{- if .Values.global.pullSecret }}
+        - --agent-image-pull-secret={{ .Values.global.pullSecret }}
+{{- end }}
+"""
+
         a_file = open(deployment, "w")
         a_file.writelines(lines)
         a_file.close()
