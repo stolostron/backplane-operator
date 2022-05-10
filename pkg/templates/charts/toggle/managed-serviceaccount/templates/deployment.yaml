@@ -43,6 +43,10 @@ spec:
         command:
         - /manager
         env:
+{{- if .Values.global.pullSecret }}
+        - name: AGENT_IMAGE_PULL_SECRET
+          value: {{ .Values.global.pullSecret }}
+{{- end }}
 {{- if .Values.hubconfig.proxyConfigs }}
         - name: HTTP_PROXY
           value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}

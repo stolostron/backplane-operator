@@ -278,14 +278,36 @@ def injectHelmFlowControl(deployment):
         if 'replicas:' in line.strip():
             lines[i] = """  replicas: {{ .Values.hubconfig.replicaCount }}
 """
-
         a_file = open(deployment, "w")
         a_file.writelines(lines)
         a_file.close()
     logging.info("Added Helm flow control for NodeSelector and Proxy Overrides.\n")
 
+def addManagedServiceAccountDeploymentConfig(deployment):
+    deploy = open(deployment, "r")
+    lines = deploy.readlines()
+    for i, line in enumerate(lines):
+        if line.strip() == "env:" or line.strip() == "env: {}":
+            logging.info("Adding image pull secret environment variable to managed-serviceaccount deployment")
+            lines[i] = """        env:
+{{- if .Values.global.pullSecret }}
+        - name: AGENT_IMAGE_PULL_SECRET
+          value: {{ .Values.global.pullSecret }}
+{{- end }}
+"""
+        a_file = open(deployment, "w")
+        a_file.writelines(lines)
+        a_file.close()
+
+def addChartSpecificDeployment(chartName, deployment):
+    logging.info("Adding chart-specific deployment configurations for {} ...".format(chartName))
+    if chartName == "managed-serviceaccount":
+        addManagedServiceAccountDeploymentConfig(deployment)
+    # add other charts here, as necessary
+
+
 # updateDeployments adds standard configuration to the deployments (antiaffinity, security policies, and tolerations)
-def updateDeployments(helmChart, exclusions):
+def updateDeployments(chartName, helmChart, exclusions):
     logging.info("Updating deployments with antiaffinity, security policies, and tolerations ...")
     deploySpecYaml = os.path.join(os.path.dirname(os.path.realpath(__file__)), "chart-templates/templates/deploymentspec.yaml")
     with open(deploySpecYaml, 'r') as f:
@@ -331,6 +353,7 @@ def updateDeployments(helmChart, exclusions):
         logging.info("Deployments updated with antiaffinity, security policies, and tolerations successfully. \n")
 
         injectHelmFlowControl(deployment)
+        addChartSpecificDeployment(chartName, deployment)
 
 # updateRBAC adds standard configuration to the RBAC resources (clusterroles, roles, clusterrolebindings, and rolebindings)
 def updateRBAC(helmChart, chartName):
@@ -356,7 +379,7 @@ def injectRequirements(helmChart, chartName, imageKeyMapping, exclusions):
     fixImageReferences(helmChart, imageKeyMapping)
     fixEnvVarImageReferences(helmChart, imageKeyMapping)
     updateRBAC(helmChart, chartName)
-    updateDeployments(helmChart, exclusions)
+    updateDeployments(chartName, helmChart, exclusions)
     logging.info("Updated Chart '%s' successfully\n", helmChart)
 
 def split_at(the_str, the_delim, favor_right=True):
