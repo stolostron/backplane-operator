@@ -4,3 +4,4 @@ tag: tag
 agentInstallAll: false
 featureGates:
   ephemeralIdentity: true
+agentImagePullSecret: ""

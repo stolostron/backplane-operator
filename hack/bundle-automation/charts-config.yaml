@@ -8,3 +8,5 @@
       branch: "backplane-2.0"
       imageMappings:
         managed-serviceaccount: managed_serviceaccount
+      inclusions:
+        - "pullSecretOverride"
