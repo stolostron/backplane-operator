@@ -9,4 +9,3 @@ hubconfig:
   replicaCount: 1
   tolerations: []
 org: open-cluster-management
-agentImagePullSecret: ""
