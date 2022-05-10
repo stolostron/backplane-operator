@@ -99,6 +99,17 @@ spec:
                     - nodePoolManagementARN
                     type: object
                 type: object
+              hostedClusterReference:
+                description: Reference to a HostedCluster on the HyperShift deployment
+                  namespace that will be applied to the ManagementCluster by ACM,
+                  if omitted, it will be generated required if InfraSpec.Configure
+                  is false
+                properties:
+                  name:
+                    description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      TODO: Add other useful fields. apiVersion, kind, uid?'
+                    type: string
+                type: object
               hostedClusterSpec:
                 description: HostedCluster that will be applied to the ManagementCluster
                   by ACM, if omitted, it will be generated
@@ -1269,6 +1280,20 @@ spec:
                 - cloudProvider
                 - configure
                 type: object
+              nodePoolReferences:
+                description: Reference to an array of NodePool resources on the HyperShift
+                  deployment namespace that will be applied to the ManagementCluster
+                  by ACM, required if InfraSpec.Configure is false
+                items:
+                  description: LocalObjectReference contains enough information to
+                    let you locate the referenced object inside the same namespace.
+                  properties:
+                    name:
+                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                        TODO: Add other useful fields. apiVersion, kind, uid?'
+                      type: string
+                  type: object
+                type: array
               nodePools:
                 description: NodePools is an array of NodePool resources that will
                   be applied to the ManagementCluster by ACM, if omitted, a default
