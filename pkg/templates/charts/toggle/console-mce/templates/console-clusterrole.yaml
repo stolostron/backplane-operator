@@ -166,6 +166,7 @@ rules:
   resources:
   - agents
   - infraenvs
+  - nmstateconfigs
 
 - verbs:
   - list
