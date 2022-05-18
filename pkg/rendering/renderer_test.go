@@ -250,3 +250,53 @@ func TestRenderCRDs(t *testing.T) {
 		})
 	}
 }
+
+// func TestRBAC(t *testing.T) {
+// 	os.Setenv("DIRECTORY_OVERRIDE", "../../")
+// 	defer os.Unsetenv("DIRECTORY_OVERRIDE")
+
+// 	testBackplane := &backplane.MultiClusterEngine{
+// 		ObjectMeta: metav1.ObjectMeta{
+// 			Name: "testBackplane",
+// 		},
+// 	}
+
+// 	testImages := map[string]string{}
+// 	for _, v := range utils.GetTestImages() {
+// 		testImages[v] = "quay.io/test/test:Test"
+// 	}
+// 	chartsDir := chartsDir
+// 	templates, errs := RenderCharts(chartsDir, testBackplane, testImages)
+// 	if len(errs) > 0 {
+// 		for _, err := range errs {
+// 			t.Logf(err.Error())
+// 		}
+// 		t.Fatalf("failed to retrieve templates")
+// 		if len(templates) == 0 {
+// 			t.Fatalf("Unable to render templates")
+// 		}
+// 	}
+// 	if len(templates) == 0 {
+// 		t.Fatalf("No templates rendered")
+// 	}
+
+// 	var sb strings.Builder
+// 	for _, template := range templates {
+// 		if template.GetKind() == "ClusterRole" {
+// 			clusterrole := &rbacv1.ClusterRole{}
+// 			err := runtime.DefaultUnstructuredConverter.FromUnstructured(template.Object, clusterrole)
+// 			if err != nil {
+// 				t.Fatalf(err.Error())
+// 			}
+
+// 			for _, rule := range clusterrole.Rules {
+// 				apiGroups := strings.Join(rule.APIGroups, ";")
+// 				resources := strings.Join(rule.Resources, ";")
+// 				verbs := strings.Join(rule.Verbs, ";")
+// 				line := fmt.Sprintf("//+kubebuilder:rbac:groups=%s,resources=%s,verbs=%s\n", apiGroups, resources, verbs)
+// 				sb.WriteString(line)
+// 			}
+// 		}
+// 	}
+// 	t.Log(sb.String())
+// }
