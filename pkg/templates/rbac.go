@@ -6,6 +6,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 	"text/template"
 
@@ -147,6 +148,8 @@ func main() {
 			}
 		}
 	}
+
+	sort.Strings(lines)
 
 	packageTemplate.Execute(f, struct {
 		Markers []string
