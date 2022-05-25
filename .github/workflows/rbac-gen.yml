@@ -38,14 +38,13 @@ jobs:
         make fmt
         git diff --exit-code
 
-    - name: Set up Go - ${{ matrix.go }}
-      uses: actions/setup-go@v2
+    - name: Set up controller-gen
       run: |
         go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.8.0
         
     - name: Generate RBAC file
       run: |
-        go run pkg/templates/gen.go
+        go generate
         
     - name: Regenerate role
       run: |
