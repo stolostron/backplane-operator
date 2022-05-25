@@ -52,5 +52,6 @@ jobs:
       
     - name: Check if files have changed
       run:  |
+        git diff
         FILES_CHANGED=$(git diff --name-only | wc -l)
         if [ "$FILES_CHANGED" != "0" ]; then echo "Remember to run go generate to update rbac"; exit 1; fi;
