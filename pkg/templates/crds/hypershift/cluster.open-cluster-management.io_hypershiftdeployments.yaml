@@ -215,6 +215,7 @@ spec:
                         type: array
                     type: object
                   controllerAvailabilityPolicy:
+                    default: SingleReplica
                     description: ControllerAvailabilityPolicy specifies the availability
                       policy applied to critical control plane components. The default
                       value is SingleReplica.
@@ -370,9 +371,10 @@ spec:
                       with the HostedCluster and its associated NodePools.
                     type: string
                   infrastructureAvailabilityPolicy:
+                    default: SingleReplica
                     description: InfrastructureAvailabilityPolicy specifies the availability
                       policy applied to infrastructure services which run on cluster
-                      nodes. The default value is HighlyAvailable.
+                      nodes. The default value is SingleReplica.
                     type: string
                   issuerURL:
                     default: https://kubernetes.default.svc
@@ -1943,6 +1945,7 @@ spec:
                 - DELETE-HOSTING-NAMESPACE
                 type: string
             required:
+            - hostingCluster
             - infrastructure
             type: object
           status:
