@@ -3,7 +3,7 @@ apiVersion: v1
 appVersion: "2.0.0"
 description: Helm chart for console plugin for multicluster engine for Kubernetes
 name: console-mce
-version: 2.1.0
+version: 2.0.0
 category: "Development"
 kubeVersion: ">=1.10.0-0"
 keywords:
