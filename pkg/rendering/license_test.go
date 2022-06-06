@@ -20,6 +20,7 @@ var poundScanner = regexp.MustCompile(`\# Copyright Contributors to the Open Clu
 var skip = map[string]bool{
 	"../api/v1/zz_generated.deepcopy.go": true, // Generated file
 	"../testbin":                         true,
+	"../templates/rbac_gen.go":           true, // Generated file
 }
 
 func TestLicense(t *testing.T) {
