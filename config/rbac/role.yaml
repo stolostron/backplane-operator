@@ -670,7 +670,20 @@ rules:
   - argoproj.io
   - policy.open-cluster-management.io
   resources:
-  - '*'
+  - applications
+  - applicationsets
+  - appprojects
+  - argocds
+  - channels
+  - gitopsclusters
+  - helmreleases
+  - placementbindings
+  - placementruless
+  - policies
+  - policyautomations
+  - policysets
+  - subscriptionreports
+  - subscriptions
   verbs:
   - list
   - watch
