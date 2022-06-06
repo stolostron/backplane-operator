@@ -214,7 +214,7 @@ package main
 //+kubebuilder:rbac:groups=operator.open-cluster-management.io,resources=klusterlets,verbs=create;delete;deletecollection;get;list;patch;update;watch;escalate
 //+kubebuilder:rbac:groups=operator.open-cluster-management.io,resources=multiclusterhubs,verbs=get;list;watch
 //+kubebuilder:rbac:groups=operators.coreos.com,resources=subscriptions,verbs=get;list;watch
-//+kubebuilder:rbac:groups=policy.open-cluster-management.io;app.k8s.io;apps.open-cluster-management.io;argoproj.io,resources=*,verbs=list;watch
+//+kubebuilder:rbac:groups=policy.open-cluster-management.io;app.k8s.io;apps.open-cluster-management.io;argoproj.io,resources=applications;applicationsets;appprojects;argocds;channels;gitopsclusters;helmreleases;placementruless;placementbindings;policies;policyautomations;policysets;subscriptions;subscriptionreports,verbs=list;watch
 //+kubebuilder:rbac:groups=proxy.open-cluster-management.io,resources=clusterstatuses/aggregator,verbs=get;create
 //+kubebuilder:rbac:groups=proxy.open-cluster-management.io,resources=clusterstatuses/aggregator,verbs=get;create
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterrolebindings,verbs=create;delete;get;list;patch;update;watch

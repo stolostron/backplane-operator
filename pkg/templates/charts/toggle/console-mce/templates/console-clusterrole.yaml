@@ -182,7 +182,20 @@ rules:
   - apps.open-cluster-management.io
   - argoproj.io
   resources:
-  - '*'
+  - applications
+  - applicationsets
+  - appprojects
+  - argocds
+  - channels
+  - gitopsclusters
+  - helmreleases
+  - placementruless
+  - placementbindings
+  - policies
+  - policyautomations
+  - policysets
+  - subscriptions
+  - subscriptionreports
   verbs:
   - list
   - watch
