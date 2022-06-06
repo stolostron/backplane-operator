@@ -19,7 +19,7 @@
         assisted-image-service: assisted_image_service
 - repo_name: registration-operator
   github_ref: "https://github.com/stolostron/registration-operator.git"
-  branch: "backplane-2.0"
+  branch: "backplane-2.1"
   operators:
     - name: cluster-manager
       bundlePath: "deploy/cluster-manager/olm-catalog/cluster-manager/manifests/"
@@ -29,7 +29,7 @@
         - readOnlyRootFilesystem
 - repo_name: discovery-operator
   github_ref: "https://github.com/stolostron/discovery.git"
-  branch: "backplane-2.0"
+  branch: "backplane-2.1"
   operators:
     - name: discovery-operator
       bundlePath: "bundle/manifests/"
