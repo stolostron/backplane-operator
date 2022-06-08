@@ -8,6 +8,7 @@
 *.pyc
 testbin/*
 .DS_STORE
+.vscode/*
 
 bin/
 

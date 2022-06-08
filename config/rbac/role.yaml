@@ -5,9 +5,9 @@ metadata:
   creationTimestamp: null
   name: multicluster-engine-operator-role
 rules:
-- verbs:
-  - get
-- resources:
+- apiGroups:
+  - ""
+  resources:
   - configmaps
   verbs:
   - create
@@ -34,7 +34,9 @@ rules:
   - patch
   - update
   - watch
-- resources:
+- apiGroups:
+  - ""
+  resources:
   - configmaps
   - endpoints
   - events
@@ -48,7 +50,9 @@ rules:
   - services/finalizers
   verbs:
   - '*'
-- resources:
+- apiGroups:
+  - ""
+  resources:
   - configmaps
   - events
   - namespaces
@@ -64,7 +68,9 @@ rules:
   - patch
   - update
   - watch
-- resources:
+- apiGroups:
+  - ""
+  resources:
   - configmaps
   - events
   - secrets
@@ -77,7 +83,9 @@ rules:
   - patch
   - update
   - watch
-- resources:
+- apiGroups:
+  - ""
+  resources:
   - configmaps
   - jobs
   - namespaces
@@ -86,7 +94,9 @@ rules:
   verbs:
   - list
   - watch
-- resources:
+- apiGroups:
+  - ""
+  resources:
   - configmaps
   - namespaces
   - secrets
@@ -100,7 +110,9 @@ rules:
   - patch
   - update
   - watch
-- resources:
+- apiGroups:
+  - ""
+  resources:
   - configmaps
   - secrets
   verbs:
@@ -119,7 +131,9 @@ rules:
   - patch
   - update
   - watch
-- resources:
+- apiGroups:
+  - ""
+  resources:
   - configmaps/status
   verbs:
   - get
@@ -134,7 +148,9 @@ rules:
   - get
   - list
   - watch
-- resources:
+- apiGroups:
+  - ""
+  resources:
   - endpoints
   - nodes
   - pods
@@ -144,7 +160,9 @@ rules:
   - get
   - list
   - watch
-- resources:
+- apiGroups:
+  - ""
+  resources:
   - endpoints
   - pods
   - services
@@ -152,12 +170,16 @@ rules:
   - get
   - list
   - watch
-- resources:
+- apiGroups:
+  - ""
+  resources:
   - events
   verbs:
   - create
   - patch
-- resources:
+- apiGroups:
+  - ""
+  resources:
   - events
   - secrets
   verbs:
@@ -167,14 +189,18 @@ rules:
   - patch
   - update
   - watch
-- resources:
+- apiGroups:
+  - ""
+  resources:
   - namespaces
   verbs:
   - delete
   - get
   - list
   - watch
-- resources:
+- apiGroups:
+  - ""
+  resources:
   - namespaces
   - secrets
   verbs:
@@ -182,20 +208,26 @@ rules:
   - get
   - list
   - watch
-- resources:
+- apiGroups:
+  - ""
+  resources:
   - nodes
   verbs:
   - get
   - list
   - watch
-- resources:
+- apiGroups:
+  - ""
+  resources:
   - nodes
   - pods
   verbs:
   - get
   - list
   - watch
-- resources:
+- apiGroups:
+  - ""
+  resources:
   - persistentvolumeclaims
   verbs:
   - create
@@ -205,18 +237,24 @@ rules:
   - patch
   - update
   - watch
-- resources:
+- apiGroups:
+  - ""
+  resources:
   - pods
   verbs:
   - list
-- resources:
+- apiGroups:
+  - ""
+  resources:
   - pods
   - pods/log
   verbs:
   - get
   - list
   - watch
-- resources:
+- apiGroups:
+  - ""
+  resources:
   - secrets
   verbs:
   - create
@@ -227,7 +265,9 @@ rules:
   - patch
   - update
   - watch
-- resources:
+- apiGroups:
+  - ""
+  resources:
   - serviceaccounts
   verbs:
   - create
@@ -237,7 +277,9 @@ rules:
   - patch
   - update
   - watch
-- resources:
+- apiGroups:
+  - ""
+  resources:
   - services
   verbs:
   - create
@@ -266,6 +308,19 @@ rules:
 - apiGroups:
   - ""
   - batch
+  - hive.openshift.io
+  - tower.ansible.com
+  resources:
+  - ansiblejobs
+  - clusterdeployments
+  - jobs
+  - machinepools
+  - serviceaccounts
+  verbs:
+  - get
+- apiGroups:
+  - ""
+  - batch
   - tower.ansible.com
   resources:
   - ansiblejobs
@@ -288,15 +343,7 @@ rules:
   - create
 - apiGroups:
   - ""
-  - events.k8s.io
-  resources:
-  - events
-  verbs:
-  - create
-  - patch
-  - update
-- apiGroups:
-  - ;coordination.k8s.io
+  - coordination.k8s.io
   resources:
   - configmaps
   - leases
@@ -309,7 +356,8 @@ rules:
   - update
   - watch
 - apiGroups:
-  - ;events.k8s.io
+  - ""
+  - events.k8s.io
   resources:
   - configmaps
   - endpoints
@@ -326,13 +374,32 @@ rules:
   - update
   - watch
 - apiGroups:
-  - ;events.k8s.io
+  - ""
+  - events.k8s.io
   resources:
   - events
   verbs:
   - create
   - patch
   - update
+- apiGroups:
+  - ""
+  - internal.open-cluster-management.io
+  resources:
+  - managedclusterinfos
+  - pods
+  - secrets
+  verbs:
+  - get
+- apiGroups:
+  - ""
+  - rbac.authorization.k8s.io
+  resources:
+  - rolebindings
+  - roles
+  verbs:
+  - create
+  - get
 - apiGroups:
   - action.open-cluster-management.io
   resources:
@@ -824,28 +891,6 @@ rules:
   - patch
   - update
   - watch
-- apiGroups:
-  - batch
-  - hive.openshift.io
-  - tower.ansible.com
-  resources:
-  - ansiblejobs
-  - clusterdeployments
-  - jobs
-  - machinepools
-  - serviceaccounts
-  verbs:
-  - get
-- apiGroups:
-  - batch
-  - tower.ansible.com
-  resources:
-  - ansiblejobs
-  - jobs
-  - secrets
-  - serviceaccounts
-  verbs:
-  - create
 - apiGroups:
   - certificates.k8s.io
   resources:
@@ -1404,14 +1449,6 @@ rules:
   - patch
   - update
   - watch
-- apiGroups:
-  - internal.open-cluster-management.io
-  resources:
-  - managedclusterinfos
-  - pods
-  - secrets
-  verbs:
-  - get
 - apiGroups:
   - internal.open-cluster-management.io
   resources:
