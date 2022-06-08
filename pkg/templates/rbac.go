@@ -113,6 +113,14 @@ func main() {
 			}
 
 			for _, rule := range clusterrole.Rules {
+				if len(rule.Resources) == 0 {
+					continue
+				}
+				for i, group := range rule.APIGroups {
+					if group == "" {
+						rule.APIGroups[i] = "\"\""
+					}
+				}
 				apiGroups := strings.Join(rule.APIGroups, ";")
 				resources := strings.Join(rule.Resources, ";")
 				verbs := strings.Join(rule.Verbs, ";")
@@ -127,6 +135,14 @@ func main() {
 			}
 
 			for _, rule := range role.Rules {
+				if len(rule.Resources) == 0 {
+					continue
+				}
+				for i, group := range rule.APIGroups {
+					if group == "" {
+						rule.APIGroups[i] = "\"\""
+					}
+				}
 				apiGroups := strings.Join(rule.APIGroups, ";")
 				resources := strings.Join(rule.Resources, ";")
 				verbs := strings.Join(rule.Verbs, ";")
