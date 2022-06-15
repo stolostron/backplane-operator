@@ -1267,7 +1267,6 @@ spec:
                         type: object
                     type: object
                 required:
-                - cloudProvider
                 - configure
                 type: object
               nodePoolReferences:
