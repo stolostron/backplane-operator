@@ -1249,6 +1249,13 @@ spec:
                               integrations, and is used by NodePool to resolve the
                               correct boot AMI for a given release.
                             type: string
+                          zones:
+                            description: Zones are availability zones in the AWS region. 
+                              NodePool resource is created in each zone and the NodePool 
+                              name is suffixed by the zone name.
+                            type: array
+                            items:
+                              type: string
                         required:
                         - region
                         type: object
