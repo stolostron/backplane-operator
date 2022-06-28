@@ -1,5 +1,5 @@
 # Build the backplane-operator binary
-FROM golang:1.17 as builder
+FROM golang:1.18 as builder
 
 ARG LDFLAGS
 
