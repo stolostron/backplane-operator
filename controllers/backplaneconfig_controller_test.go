@@ -34,6 +34,7 @@ import (
 	operatorv1 "github.com/openshift/api/operator/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	clustermanager "open-cluster-management.io/api/operator/v1"
 
 	hiveconfig "github.com/openshift/hive/apis/hive/v1"
@@ -99,6 +100,13 @@ var _ = Describe("BackplaneConfig controller", func() {
 			},
 			Spec: corev1.NamespaceSpec{},
 		})).To(Succeed())
+		// Create target namespace
+		Expect(k8sClient.Create(context.Background(), &corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: DestinationNamespace,
+			},
+			Spec: corev1.NamespaceSpec{},
+		})).To(Succeed())
 		// Create ClusterVersion
 		// Attempted to Store Version in status. Unable to get it to stick.
 		Expect(k8sClient.Create(context.Background(), &configv1.ClusterVersion{
@@ -110,6 +118,21 @@ var _ = Describe("BackplaneConfig controller", func() {
 				ClusterID: "12345678910",
 			},
 		})).To(Succeed())
+
+		// Create test secret in target namespace
+		testsecret := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "testsecret",
+				Namespace: DestinationNamespace,
+			},
+		}
+		Eventually(func() error {
+			err := k8sClient.Create(context.TODO(), testsecret)
+			if apierrors.IsAlreadyExists(err) {
+				return nil
+			}
+			return err
+		}, timeout, interval).Should(Succeed())
 
 		clusterManager = &unstructured.Unstructured{}
 		clusterManager.SetGroupVersionKind(schema.GroupVersionKind{
@@ -357,6 +380,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 	When("creating a new BackplaneConfig", func() {
 		Context("and no image pull policy is specified", func() {
 			It("should deploy sub components", func() {
+				createCtx := context.Background()
 				By("creating the backplane config")
 				backplaneConfig := &v1.MultiClusterEngine{
 					TypeMeta: metav1.TypeMeta{
@@ -371,7 +395,6 @@ var _ = Describe("BackplaneConfig controller", func() {
 						ImagePullSecret: "testsecret",
 					},
 				}
-				createCtx := context.Background()
 				Expect(k8sClient.Create(createCtx, backplaneConfig)).Should(Succeed())
 
 				By("ensuring each deployment and config is created")
@@ -719,6 +742,39 @@ var _ = Describe("BackplaneConfig controller", func() {
 						fmt.Sprintf("Image does not match that defined in configmap"),
 					)
 				}, timeout, interval).Should(Succeed())
+			})
+		})
+
+		Context("and imagePullSecret is missing", func() {
+			It("should error due to missing secret", func() {
+				By("creating the backplane config with nonexistant secret")
+				backplaneConfig := &v1.MultiClusterEngine{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "multicluster.openshift.io/v1",
+						Kind:       "MultiClusterEngine",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: BackplaneConfigName,
+					},
+					Spec: v1.MultiClusterEngineSpec{
+						TargetNamespace: DestinationNamespace,
+						ImagePullSecret: "nonexistant",
+					},
+				}
+				createCtx := context.Background()
+				Expect(k8sClient.Create(createCtx, backplaneConfig)).Should(Succeed())
+
+				By("ensuring MCE reports error in Phase")
+				Eventually(func(g Gomega) {
+					multiClusterEngine := types.NamespacedName{
+						Name: BackplaneConfigName,
+					}
+					existingMCE := &v1.MultiClusterEngine{}
+					g.Expect(k8sClient.Get(context.TODO(), multiClusterEngine, existingMCE)).To(Succeed(), "Failed to get MCE")
+
+					g.Expect(existingMCE.Status.Phase).To(Equal(v1.MultiClusterEnginePhaseError))
+				}, timeout, interval).Should(Succeed())
+
 			})
 		})
 	})

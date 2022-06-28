@@ -243,6 +243,53 @@ var configurationTests = func() func() {
 
 		})
 
+		Context("customized imagePullSecret", func() {
+			backplanePullSecret := "test"
+
+			It("should error due to missing secret", func() {
+				key := &backplane.MultiClusterEngine{}
+				Expect(k8sClient.Get(ctx, multiClusterEngine, key)).To(Succeed())
+
+				// Delete secret if it already exists
+				secretNN := types.NamespacedName{Name: backplanePullSecret, Namespace: key.Spec.TargetNamespace}
+				targetSecret := &corev1.Secret{}
+				err := k8sClient.Get(ctx, secretNN, targetSecret)
+				if err == nil {
+					Expect(k8sClient.Delete(ctx, targetSecret)).To(Succeed())
+				}
+
+				Eventually(func(g Gomega) {
+					g.Expect(k8sClient.Get(ctx, multiClusterEngine, key)).To(Succeed())
+					key.Spec.ImagePullSecret = backplanePullSecret
+					g.Expect(k8sClient.Update(ctx, key)).To(Succeed())
+				}, 10*time.Second, time.Second).Should(Succeed())
+
+				Eventually(func(g Gomega) {
+					g.Expect(k8sClient.Get(ctx, multiClusterEngine, key)).To(Succeed())
+					g.Expect(key.Status.Phase).To(Equal(backplane.MultiClusterEnginePhaseError))
+				}, 15*time.Second, interval).Should(Succeed())
+			})
+
+			It("should resolve error by adding missing secret", func() {
+				key := &backplane.MultiClusterEngine{}
+				Expect(k8sClient.Get(ctx, multiClusterEngine, key)).To(Succeed())
+				ns := key.Spec.TargetNamespace
+
+				secret := &corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      backplanePullSecret,
+						Namespace: ns,
+					},
+				}
+				Expect(k8sClient.Create(ctx, secret)).Should(Succeed())
+
+				Eventually(func(g Gomega) {
+					g.Expect(k8sClient.Get(ctx, multiClusterEngine, key)).To(Succeed())
+					g.Expect(key.Status.Phase).To(Equal(backplane.MultiClusterEnginePhaseProgressing))
+				}, 30*time.Second, interval).Should(Succeed())
+			})
+		})
+
 		Context("customized spec", func() {
 			backplaneAvailabilityConfig := backplane.HABasic
 			backplaneNodeSelector := map[string]string{"beta.kubernetes.io/os": "linux"}

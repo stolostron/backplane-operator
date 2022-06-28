@@ -211,6 +211,14 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return ctrl.Result{Requeue: true}, err
 	}
 
+	result, err = r.validateImagePullSecret(ctx, backplaneConfig)
+	if result != (ctrl.Result{}) {
+		return ctrl.Result{}, err
+	}
+	if err != nil {
+		return ctrl.Result{Requeue: true}, err
+	}
+
 	// Read images from environmental variables
 	imgs, err := images.GetImagesWithOverrides(r.Client, backplaneConfig)
 	if err != nil {
@@ -791,6 +799,30 @@ func (r *MultiClusterEngineReconciler) validateNamespace(ctx context.Context, m 
 	if err != nil && !apierrors.IsNotFound(err) {
 		return ctrl.Result{Requeue: true}, err
 	}
+	return ctrl.Result{}, nil
+}
+
+// validateImagePullSecret returns an error if the namespace in spec.targetNamespace does not have a secret
+// with the name in spec.imagePullSecret.
+func (r *MultiClusterEngineReconciler) validateImagePullSecret(ctx context.Context, m *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+	if m.Spec.ImagePullSecret == "" {
+		return ctrl.Result{}, nil
+	}
+
+	pullSecret := &corev1.Secret{}
+	err := r.Client.Get(context.TODO(), types.NamespacedName{
+		Name:      m.Spec.ImagePullSecret,
+		Namespace: m.Spec.TargetNamespace,
+	}, pullSecret)
+	if apierrors.IsNotFound(err) {
+		missingPullSecret := status.NewCondition(backplanev1.MultiClusterEngineConditionType(backplanev1.MultiClusterEngineProgressing), metav1.ConditionFalse, status.RequirementsNotMetReason, fmt.Sprintf("Could not find imagePullSecret %s in namespace %s", m.Spec.ImagePullSecret, m.Spec.TargetNamespace))
+		r.StatusManager.AddCondition(missingPullSecret)
+		return ctrl.Result{RequeueAfter: requeuePeriod}, err
+	}
+	if err != nil {
+		return ctrl.Result{Requeue: true}, err
+	}
+
 	return ctrl.Result{}, nil
 }
 
