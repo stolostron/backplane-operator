@@ -8,7 +8,7 @@
       imageMappings:
         hive: openshift_hive
     - name: "assisted-service"
-      channel: "ocm-2.5"
+      channel: "ocm-2.6"
       package-yml: "operators/assisted-service-operator/assisted-service.package.yaml"
       imageMappings:
         assisted-service: assisted_service
