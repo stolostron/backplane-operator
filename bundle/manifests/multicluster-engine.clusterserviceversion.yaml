@@ -260,12 +260,29 @@ spec:
         - apiGroups:
           - ""
           resources:
+          - events
+          - serviceaccounts
+          - services
+          verbs:
+          - '*'
+        - apiGroups:
+          - ""
+          resources:
           - namespaces
           verbs:
           - delete
           - get
           - list
           - watch
+        - apiGroups:
+          - ""
+          resources:
+          - namespaces
+          - pods
+          - pods/portforward
+          - secrets
+          verbs:
+          - '*'
         - apiGroups:
           - ""
           resources:
@@ -344,6 +361,15 @@ spec:
           - list
           - patch
           - update
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - serviceaccounts
+          - services
+          verbs:
+          - get
+          - list
           - watch
         - apiGroups:
           - ""
@@ -516,6 +542,16 @@ spec:
           resources:
           - clustermanagementaddons
           - clustermanagementaddons/finalizers
+          - clustermanagementaddons/status
+          - managedclusteraddons
+          - managedclusteraddons/status
+          verbs:
+          - '*'
+        - apiGroups:
+          - addon.open-cluster-management.io
+          resources:
+          - clustermanagementaddons
+          - clustermanagementaddons/finalizers
           - managedclusteraddons
           - managedclusteraddons/finalizers
           - managedclusteraddons/status
@@ -586,6 +622,7 @@ spec:
           resources:
           - managedclusteraddons/finalizers
           verbs:
+          - '*'
           - update
         - apiGroups:
           - addon.open-cluster-management.io
@@ -854,6 +891,13 @@ spec:
           - apps
           resources:
           - deployments
+          - deployments/scale
+          verbs:
+          - '*'
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
           - replicasets
           verbs:
           - create
@@ -869,6 +913,12 @@ spec:
           - deployments/finalizers
           verbs:
           - update
+        - apiGroups:
+          - apps
+          resources:
+          - replicasets
+          verbs:
+          - get
         - apiGroups:
           - apps
           resources:
@@ -1483,6 +1533,14 @@ spec:
           - imageregistry.open-cluster-management.io
           resources:
           - managedclusterimageregistries
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - imageregistry.open-cluster-management.io
+          resources:
+          - managedclusterimageregistries
           - managedclusterimageregistries/status
           verbs:
           - approve
@@ -1700,6 +1758,14 @@ spec:
           - patch
           - update
           - watch
+        - apiGroups:
+          - proxy.open-cluster-management.io
+          resources:
+          - managedproxyconfigurations
+          - managedproxyconfigurations/finalizers
+          - managedproxyconfigurations/status
+          verbs:
+          - '*'
         - apiGroups:
           - rbac.authorization.k8s.io
           resources:

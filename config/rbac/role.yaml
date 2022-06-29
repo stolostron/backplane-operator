@@ -192,12 +192,29 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - events
+  - serviceaccounts
+  - services
+  verbs:
+  - '*'
+- apiGroups:
+  - ""
+  resources:
   - namespaces
   verbs:
   - delete
   - get
   - list
   - watch
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  - pods
+  - pods/portforward
+  - secrets
+  verbs:
+  - '*'
 - apiGroups:
   - ""
   resources:
@@ -276,6 +293,15 @@ rules:
   - list
   - patch
   - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - list
   - watch
 - apiGroups:
   - ""
@@ -448,6 +474,16 @@ rules:
   resources:
   - clustermanagementaddons
   - clustermanagementaddons/finalizers
+  - clustermanagementaddons/status
+  - managedclusteraddons
+  - managedclusteraddons/status
+  verbs:
+  - '*'
+- apiGroups:
+  - addon.open-cluster-management.io
+  resources:
+  - clustermanagementaddons
+  - clustermanagementaddons/finalizers
   - managedclusteraddons
   - managedclusteraddons/finalizers
   - managedclusteraddons/status
@@ -518,6 +554,7 @@ rules:
   resources:
   - managedclusteraddons/finalizers
   verbs:
+  - '*'
   - update
 - apiGroups:
   - addon.open-cluster-management.io
@@ -786,6 +823,13 @@ rules:
   - apps
   resources:
   - deployments
+  - deployments/scale
+  verbs:
+  - '*'
+- apiGroups:
+  - apps
+  resources:
+  - deployments
   - replicasets
   verbs:
   - create
@@ -801,6 +845,12 @@ rules:
   - deployments/finalizers
   verbs:
   - update
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - apps
   resources:
@@ -1415,6 +1465,14 @@ rules:
   - imageregistry.open-cluster-management.io
   resources:
   - managedclusterimageregistries
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - imageregistry.open-cluster-management.io
+  resources:
+  - managedclusterimageregistries
   - managedclusterimageregistries/status
   verbs:
   - approve
@@ -1632,6 +1690,14 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - proxy.open-cluster-management.io
+  resources:
+  - managedproxyconfigurations
+  - managedproxyconfigurations/finalizers
+  - managedproxyconfigurations/status
+  verbs:
+  - '*'
 - apiGroups:
   - rbac.authorization.k8s.io
   resources:

@@ -37,6 +37,10 @@ const (
 //+kubebuilder:rbac:groups=console.openshift.io,resources=consoleplugins;consolequickstarts,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=monitoring.coreos.com,resources=servicemonitors,verbs=get;create;update;list;watch;delete;patch
 
+// cluster-proxy-addon
+//+kubebuilder:rbac:groups=route.openshift.io,resources=routes,verbs=get;create;update;list;watch;delete;patch
+//+kubebuilder:rbac:groups=proxy.open-cluster-management.io,resources=managedproxyconfigurations,verbs=get;create;update;list;watch;delete;patch
+
 var resources = []string{
 	"APIService",
 	"ClusterManagementAddOn",
@@ -47,9 +51,11 @@ var resources = []string{
 	"ConsoleQuickStart",
 	"CustomResourceDefinition",
 	"Deployment",
+	"ManagedProxyConfiguration",
 	"MutatingWebhookConfiguration",
 	"Role",
 	"RoleBinding",
+	"Route",
 	"Service",
 	"ServiceAccount",
 	"ServiceMonitor",
