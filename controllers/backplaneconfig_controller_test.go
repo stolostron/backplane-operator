@@ -252,6 +252,12 @@ var _ = Describe("BackplaneConfig controller", func() {
 				ResourceType:   clusterManagementAddon,
 				Expected:       nil,
 			},
+			{
+				Name:           "Cluster Proxy Addon Deployment",
+				NamespacedName: types.NamespacedName{Name: "cluster-proxy-addon"},
+				ResourceType:   &appsv1.Deployment{},
+				Expected:       nil,
+			},
 		}
 
 		msaTests = testList{
@@ -292,6 +298,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 				filepath.Join("..", "pkg", "templates", "crds", "foundation"),
 				filepath.Join("..", "pkg", "templates", "crds", "cluster-lifecycle"),
 				filepath.Join("..", "pkg", "templates", "crds", "discovery-operator"),
+				filepath.Join("..", "pkg", "templates", "crds", "cluster-proxy-addon"),
 				filepath.Join("..", "hack", "unit-test-crds"),
 			},
 			CRDInstallOptions: envtest.CRDInstallOptions{

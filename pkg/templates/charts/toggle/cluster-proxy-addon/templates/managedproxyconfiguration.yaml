@@ -1,0 +1,40 @@
+apiVersion: proxy.open-cluster-management.io/v1alpha1
+kind: ManagedProxyConfiguration
+metadata:
+  name: cluster-proxy
+spec:
+  authentication:
+    dump:
+      secrets: {}
+    signer:
+      type: SelfSigned
+  proxyServer:
+    image: '{{ .Values.global.imageOverrides.cluster_proxy_addon }}'
+    namespace: '{{ .Values.global.namespace }}'
+    replicas: 3
+    entrypoint:
+      type: Hostname
+      hostname:
+        value: cluster-proxy-anp.apps.
+      port: 443
+    additionalArgs:
+      - "--keepalive-time=30s" # Use this to keep connection from proxy-agent stay alive
+    nodePlacement:
+      tolerations:
+          - key: dedicated
+            operator: Exists
+            effect: NoSchedule
+          - effect: NoSchedule 
+            key: node-role.kubernetes.io/infra 
+            operator: Exists
+      {{- with .Values.hubconfig.nodeSelector }}
+      nodeSelector:
+  {{ toYaml . | indent 8 }}
+      {{- end }}
+  proxyAgent:
+    image: '{{ .Values.global.imageOverrides.cluster_proxy_addon }}'
+    replicas: 3
+    {{- if .Values.global.pullSecret }}
+    imagePullSecrets:
+    - "{{ .Values.global.pullSecret }}"
+    {{- end }}
