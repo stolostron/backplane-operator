@@ -505,6 +505,24 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 		}
 	}
 
+	if backplaneConfig.Enabled(backplanev1.ClusterProxyAddon) {
+		result, err := r.ensureClusterProxyAddon(ctx, backplaneConfig)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.ClusterProxyAddon] = err
+		}
+	} else {
+		result, err := r.ensureNoClusterProxyAddon(ctx, backplaneConfig)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.ClusterProxyAddon] = err
+		}
+	}
+
 	if len(errs) > 0 {
 		errorMessages := []string{}
 		for k, v := range errs {

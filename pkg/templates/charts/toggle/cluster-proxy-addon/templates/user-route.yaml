@@ -1,0 +1,20 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: cluster-proxy-addon-user
+  labels:
+    chart: cluster-proxy-addon-2.1.0
+    component: cluster-proxy-addon-user
+  annotations:
+      openshift.io/host.generated: "true"
+spec:
+  host: cluster-proxy-user.apps.
+  port:
+    targetPort: user-port
+  tls:
+    termination: reencrypt
+    insecureEdgeTerminationPolicy: Redirect
+  to:
+    kind: Service
+    name: cluster-proxy-addon-user
+

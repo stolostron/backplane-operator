@@ -28,6 +28,7 @@ const (
 	ClusterManager        string = "cluster-manager"
 	ServerFoundation      string = "server-foundation"
 	HyperShift            string = "hypershift-preview"
+	ClusterProxyAddon     string = "cluster-proxy-addon"
 )
 
 var allComponents = []string{
@@ -40,6 +41,7 @@ var allComponents = []string{
 	ConsoleMCE,
 	ManagedServiceAccount,
 	HyperShift,
+	ClusterProxyAddon,
 }
 
 func (mce *MultiClusterEngine) ComponentPresent(s string) bool {

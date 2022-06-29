@@ -20,6 +20,7 @@ var onComponents = []string{
 	backplanev1.Discovery,
 	backplanev1.Hive,
 	backplanev1.ServerFoundation,
+	backplanev1.ClusterProxyAddon,
 	// backplanev1.ConsoleMCE, // determined by OCP version
 	// backplanev1.HyperShift,
 }
@@ -147,7 +148,7 @@ func GetTestImages() []string {
 		"assisted_service", "assisted_image_service", "postgresql_12", "assisted_installer_agent", "assisted_installer_controller",
 		"assisted_installer", "console_mce", "hypershift_deployment_controller", "hypershift_addon_operator", "hypershift_operator",
 		"apiserver_network_proxy", "aws_encryption_provider", "cluster_api", "cluster_api_provider_agent", "cluster_api_provider_aws",
-		"cluster_api_provider_azure", "cluster_api_provider_kubevirt"}
+		"cluster_api_provider_azure", "cluster_api_provider_kubevirt", "cluster_proxy_addon", "cluster_proxy"}
 }
 
 func DefaultTolerations() []corev1.Toleration {
