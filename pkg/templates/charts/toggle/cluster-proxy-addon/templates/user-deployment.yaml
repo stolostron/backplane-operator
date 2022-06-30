@@ -1,7 +1,8 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: cpa-chart-cluster-proxy-addon-user
+  namespace: '{{ .Values.global.namespace }}'
+  name: cluster-proxy-addon-user
   labels:
     component: cluster-proxy-addon-user
     chart: cluster-proxy-addon-2.1.0
