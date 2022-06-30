@@ -41,11 +41,12 @@ type Global struct {
 }
 
 type HubConfig struct {
-	NodeSelector map[string]string   `yaml:"nodeSelector" structs:"nodeSelector"`
-	ProxyConfigs map[string]string   `yaml:"proxyConfigs" structs:"proxyConfigs"`
-	ReplicaCount int                 `yaml:"replicaCount" structs:"replicaCount"`
-	Tolerations  []corev1.Toleration `yaml:"tolerations" structs:"tolerations"`
-	OCPVersion   string              `yaml:"ocpVersion" structs:"ocpVersion"`
+	NodeSelector         map[string]string   `yaml:"nodeSelector" structs:"nodeSelector"`
+	ProxyConfigs         map[string]string   `yaml:"proxyConfigs" structs:"proxyConfigs"`
+	ReplicaCount         int                 `yaml:"replicaCount" structs:"replicaCount"`
+	Tolerations          []corev1.Toleration `yaml:"tolerations" structs:"tolerations"`
+	OCPVersion           string              `yaml:"ocpVersion" structs:"ocpVersion"`
+	ClusterIngressDomain string              `yaml:"clusterIngressDomain" structs:"clusterIngressDomain"`
 }
 
 func RenderCRDs(crdDir string) ([]*unstructured.Unstructured, []error) {
@@ -163,7 +164,7 @@ func renderTemplates(chartPath string, backplaneConfig *v1.MultiClusterEngine, i
 
 		// Add namespace to namespaced resources
 		switch unstructured.GetKind() {
-		case "Deployment", "ServiceAccount", "Role", "RoleBinding", "Service", "ConfigMap":
+		case "Deployment", "ServiceAccount", "Role", "RoleBinding", "Service", "ConfigMap", "Route":
 			unstructured.SetNamespace(backplaneConfig.Spec.TargetNamespace)
 		}
 		templates = append(templates, unstructured)
@@ -195,6 +196,8 @@ func injectValuesOverrides(values *Values, backplaneConfig *v1.MultiClusterEngin
 	values.Org = "open-cluster-management"
 
 	values.HubConfig.OCPVersion = os.Getenv("ACM_HUB_OCP_VERSION")
+
+	values.HubConfig.ClusterIngressDomain = os.Getenv("ACM_CLUSTER_INGRESS_DOMAIN")
 
 	if utils.ProxyEnvVarsAreSet() {
 		proxyVar := map[string]string{}

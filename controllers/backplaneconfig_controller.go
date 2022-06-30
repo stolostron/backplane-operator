@@ -739,6 +739,15 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 		updateNecessary = true
 	}
 
+	// Set and store cluster Ingress domain for use later
+	clusterIngressDomain, err := r.getClusterIngressDomain(ctx, m)
+	if err != nil {
+		return ctrl.Result{}, pkgerrors.Wrapf(err, "failed to detect cluster ingress domain")
+	}
+
+	// Set OCP version as env var, so that charts can render this value
+	os.Setenv("ACM_CLUSTER_INGRESS_DOMAIN", clusterIngressDomain)
+
 	// If OCP 4.10+ then set then enable the MCE console. Else ensure it is disabled
 	currentClusterVersion, err := r.getClusterVersion(ctx, m)
 	if err != nil {
@@ -883,13 +892,8 @@ func (r *MultiClusterEngineReconciler) adoptExistingSubcomponents(ctx context.Co
 
 func (r *MultiClusterEngineReconciler) getClusterVersion(ctx context.Context, mce *backplanev1.MultiClusterEngine) (string, error) {
 	log := log.FromContext(ctx)
-
-	unitTest := false
+	// If Unit test
 	if val, ok := os.LookupEnv("UNIT_TEST"); ok && val == "true" {
-		unitTest = true
-	}
-	if unitTest {
-		// If unit test pass along a version, Can't set status in unit test
 		return "4.9.0", nil
 	}
 
@@ -905,4 +909,25 @@ func (r *MultiClusterEngineReconciler) getClusterVersion(ctx context.Context, mc
 		return "", err
 	}
 	return clusterVersion.Status.History[0].Version, nil
+}
+
+func (r *MultiClusterEngineReconciler) getClusterIngressDomain(ctx context.Context, mce *backplanev1.MultiClusterEngine) (string, error) {
+	log := log.FromContext(ctx)
+	// If Unit test
+	if val, ok := os.LookupEnv("UNIT_TEST"); ok && val == "true" {
+		return "apps.installer-test-cluster.dev00.red-chesterfield.com", nil
+	}
+
+	clusterIngress := &configv1.Ingress{}
+	err := r.Client.Get(ctx, types.NamespacedName{Name: "cluster"}, clusterIngress)
+	if err != nil {
+		log.Error(err, "Failed to detect cluster ingress")
+		return "", err
+	}
+
+	if clusterIngress.Spec.Domain == "" {
+		log.Error(err, "Domain not found or empty in Ingress")
+		return "", fmt.Errorf("Domain not found or empty in Ingress")
+	}
+	return clusterIngress.Spec.Domain, nil
 }

@@ -9,7 +9,7 @@ metadata:
       haproxy.router.openshift.io/timeout: 60s
       haproxy.router.openshift.io/balance: roundrobin
 spec:
-  host: cluster-proxy-anp.apps.
+  host: cluster-proxy-anp.{{ .Values.hubconfig.clusterIngressDomain }}
   port:
     targetPort: anp-port
   tls:
