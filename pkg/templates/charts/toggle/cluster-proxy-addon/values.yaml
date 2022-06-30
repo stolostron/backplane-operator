@@ -1,41 +1,16 @@
-imagePullPolicy: Always
-
-# Number of replicas
-replicas: 1
-
-spokeAddonNamespace: "open-cluster-management-cluster-proxy"
-
-proxyServer:
-  entrypointLoadBalancer: false
-  entrypointAddress: "" # not used in OCP
-
-# Copy from cluster-proxy-addon
-org: stolostron
-
 global:
   pullPolicy: Always
-  imagePullSecret: open-cluster-management-image-pull-credentials
+  namespace: default
+  pullSecret: null
   imageOverrides:
     cluster_proxy_addon: ""
     cluster_proxy: ""
-
-arch:
-  - amd64
-  - ppc64le
-  - s390x
-  - arm64
-
-pullSecret: null
 
 hubconfig:
   nodeSelector: null
   replicaCount: 1
   proxyConfigs: {}
+  tolerations: []
+  ocpVersion: ""
+org: open-cluster-management
 
-cluster_basedomain: ""
-
-anp_route:
-  name: cluster-proxy-anp
-
-user_route:
-  name: cluster-proxy-user

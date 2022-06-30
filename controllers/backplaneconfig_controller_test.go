@@ -254,7 +254,13 @@ var _ = Describe("BackplaneConfig controller", func() {
 			},
 			{
 				Name:           "Cluster Proxy Addon Manager",
-				NamespacedName: types.NamespacedName{Name: "cluster-proxy-addon-manager"},
+				NamespacedName: types.NamespacedName{Name: "cluster-proxy-addon-manager", Namespace: DestinationNamespace},
+				ResourceType:   &appsv1.Deployment{},
+				Expected:       nil,
+			},
+			{
+				Name:           "Cluster Proxy Addon User",
+				NamespacedName: types.NamespacedName{Name: "cluster-proxy-addon-user", Namespace: DestinationNamespace},
 				ResourceType:   &appsv1.Deployment{},
 				Expected:       nil,
 			},
