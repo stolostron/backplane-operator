@@ -119,6 +119,17 @@ var _ = Describe("BackplaneConfig controller", func() {
 			},
 		})).To(Succeed())
 
+		// Create ClusterIngress
+		// Attempted to Store Version in status. Unable to get it to stick.
+		Expect(k8sClient.Create(context.Background(), &configv1.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "cluster",
+			},
+			Spec: configv1.IngressSpec{
+				Domain: "apps.installer-test-cluster.dev00.red-chesterfield.com",
+			},
+		})).To(Succeed())
+
 		// Create test secret in target namespace
 		testsecret := &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{

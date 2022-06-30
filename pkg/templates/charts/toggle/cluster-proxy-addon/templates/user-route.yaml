@@ -8,7 +8,7 @@ metadata:
   annotations:
       openshift.io/host.generated: "true"
 spec:
-  host: cluster-proxy-user.apps.
+  host: cluster-proxy-user.{{ .Values.hubconfig.clusterIngressDomain }}
   port:
     targetPort: user-port
   tls:

@@ -1,7 +1,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: open-cluster-management:cluster-proxy:addon-manager
+  name: open-cluster-management:cluster-proxy-addon:addon-manager
   namespace: '{{ .Values.global.namespace }}'
 rules:
   - apiGroups:

@@ -10,8 +10,7 @@ spec:
   replicas: {{ .Values.hubconfig.replicaCount }}
   selector:
     matchLabels:
-      app: cluster-proxy-addon
-      release: cpa-chart
+      chart: cluster-proxy-addon-2.1.0
       component: cluster-proxy-addon-manager
   template:
     metadata:
