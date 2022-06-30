@@ -21,39 +21,26 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"os"
-	"path/filepath"
-	"strings"
 	"time"
 
-	v1 "github.com/stolostron/backplane-operator/api/v1"
-	"github.com/stolostron/backplane-operator/pkg/status"
-	"github.com/stolostron/backplane-operator/pkg/utils"
+	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
 	configv1 "github.com/openshift/api/config/v1"
-	operatorv1 "github.com/openshift/api/operator/v1"
+
+	v1 "github.com/stolostron/backplane-operator/api/v1"
+
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	clustermanager "open-cluster-management.io/api/operator/v1"
-
-	hiveconfig "github.com/openshift/hive/apis/hive/v1"
-
-	admissionregistration "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/rest"
-	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/envtest"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -82,9 +69,6 @@ type testList []struct {
 
 var _ = Describe("BackplaneConfig controller", func() {
 	var (
-		testEnv                *envtest.Environment
-		clientConfig           *rest.Config
-		k8sClient              client.Client
 		clusterManager         *unstructured.Unstructured
 		hiveConfig             *unstructured.Unstructured
 		clusterManagementAddon *unstructured.Unstructured
@@ -92,21 +76,57 @@ var _ = Describe("BackplaneConfig controller", func() {
 		msaTests               testList
 	)
 
-	JustBeforeEach(func() {
+	AfterEach(func() {
+		Expect(k8sClient.Delete(context.Background(), &v1.MultiClusterEngine{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: BackplaneConfigName,
+			},
+		})).To(Succeed())
+		Eventually(func() bool {
+			foundMCE := &v1.MultiClusterEngine{}
+			err := k8sClient.Get(context.TODO(), types.NamespacedName{Name: BackplaneConfigName}, foundMCE)
+			return apierrors.IsNotFound(err)
+		}, timeout, interval).Should(BeTrue())
+		Expect(k8sClient.Delete(context.Background(), &configv1.ClusterVersion{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "version",
+			},
+		})).To(Succeed())
+		Expect(k8sClient.Delete(context.Background(), &configv1.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "cluster",
+			},
+		})).To(Succeed())
+		Expect(k8sClient.Delete(context.Background(), &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "testsecret",
+				Namespace: DestinationNamespace,
+			},
+		})).To(Succeed())
+	})
+
+	BeforeEach(func() {
 		// Create openshift-monitoring namespace because metrics stands up prometheus endpoint here
-		Expect(k8sClient.Create(context.Background(), &corev1.Namespace{
+		err := k8sClient.Create(context.Background(), &corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "openshift-monitoring",
 			},
 			Spec: corev1.NamespaceSpec{},
-		})).To(Succeed())
+		})
+		if err != nil && !errors.IsAlreadyExists(err) {
+			Expect(err).To(BeNil())
+		}
+
 		// Create target namespace
-		Expect(k8sClient.Create(context.Background(), &corev1.Namespace{
+		err = k8sClient.Create(context.Background(), &corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: DestinationNamespace,
 			},
 			Spec: corev1.NamespaceSpec{},
-		})).To(Succeed())
+		})
+		if err != nil && !errors.IsAlreadyExists(err) {
+			Expect(err).To(BeNil())
+		}
 		// Create ClusterVersion
 		// Attempted to Store Version in status. Unable to get it to stick.
 		Expect(k8sClient.Create(context.Background(), &configv1.ClusterVersion{
@@ -303,102 +323,6 @@ var _ = Describe("BackplaneConfig controller", func() {
 				Expected:       nil,
 			},
 		}
-	})
-
-	BeforeEach(func() {
-		By("bootstrap test environment")
-		testEnv = &envtest.Environment{
-			CRDDirectoryPaths: []string{
-				filepath.Join("..", "config", "crd", "bases"),
-				filepath.Join("..", "pkg", "templates", "crds", "cluster-manager"),
-				filepath.Join("..", "pkg", "templates", "crds", "hive-operator"),
-				filepath.Join("..", "pkg", "templates", "crds", "foundation"),
-				filepath.Join("..", "pkg", "templates", "crds", "cluster-lifecycle"),
-				filepath.Join("..", "pkg", "templates", "crds", "discovery-operator"),
-				filepath.Join("..", "pkg", "templates", "crds", "cluster-proxy-addon"),
-				filepath.Join("..", "hack", "unit-test-crds"),
-			},
-			CRDInstallOptions: envtest.CRDInstallOptions{
-				CleanUpAfterUse: true,
-			},
-			ErrorIfCRDPathMissing: true,
-		}
-		var err error
-		Eventually(func() error {
-			clientConfig, err = testEnv.Start()
-			return err
-		}, timeout, interval).Should(Succeed())
-		Expect(clientConfig).NotTo(BeNil())
-
-		err = v1.AddToScheme(scheme.Scheme)
-		Expect(err).NotTo(HaveOccurred())
-
-		err = scheme.AddToScheme(scheme.Scheme)
-		Expect(err).NotTo(HaveOccurred())
-
-		err = apiregistrationv1.AddToScheme(scheme.Scheme)
-		Expect(err).NotTo(HaveOccurred())
-
-		err = admissionregistration.AddToScheme(scheme.Scheme)
-		Expect(err).NotTo(HaveOccurred())
-
-		err = apixv1.AddToScheme(scheme.Scheme)
-		Expect(err).NotTo(HaveOccurred())
-
-		err = hiveconfig.AddToScheme(scheme.Scheme)
-		Expect(err).NotTo(HaveOccurred())
-
-		err = clustermanager.AddToScheme(scheme.Scheme)
-		Expect(err).NotTo(HaveOccurred())
-
-		err = monitoringv1.AddToScheme(scheme.Scheme)
-		Expect(err).NotTo(HaveOccurred())
-
-		err = configv1.AddToScheme(scheme.Scheme)
-		Expect(err).NotTo(HaveOccurred())
-
-		err = operatorv1.AddToScheme(scheme.Scheme)
-		Expect(err).NotTo(HaveOccurred())
-
-		err = os.Setenv("POD_NAMESPACE", "default")
-		Expect(err).NotTo(HaveOccurred())
-
-		err = os.Setenv("UNIT_TEST", "true")
-		Expect(err).NotTo(HaveOccurred())
-
-		for _, v := range utils.GetTestImages() {
-			key := fmt.Sprintf("OPERAND_IMAGE_%s", strings.ToUpper(v))
-			err := os.Setenv(key, "quay.io/test/test:test")
-			Expect(err).NotTo(HaveOccurred())
-		}
-		//+kubebuilder:scaffold:scheme
-
-		k8sClient, err = client.New(clientConfig, client.Options{Scheme: scheme.Scheme})
-		Expect(err).NotTo(HaveOccurred())
-		Expect(k8sClient).NotTo(BeNil())
-
-		k8sManager, err := ctrl.NewManager(clientConfig, ctrl.Options{
-			Scheme:                 scheme.Scheme,
-			MetricsBindAddress:     "0",
-			HealthProbeBindAddress: "0",
-		})
-		Expect(err).ToNot(HaveOccurred())
-
-		reconciler := &MultiClusterEngineReconciler{
-			Client:        k8sManager.GetClient(),
-			Scheme:        k8sManager.GetScheme(),
-			StatusManager: &status.StatusTracker{Client: k8sManager.GetClient()},
-		}
-		err = reconciler.SetupWithManager(k8sManager)
-		Expect(err).ToNot(HaveOccurred())
-
-		go func() {
-			// For explanation of GinkgoRecover in a go routine, see
-			// https://onsi.github.io/ginkgo/#mental-model-how-ginkgo-handles-failure
-			defer GinkgoRecover()
-			err := k8sManager.Start(signalHandlerContext)
-			Expect(err).ToNot(HaveOccurred())
-		}()
 	})
 
 	When("creating a new BackplaneConfig", func() {
@@ -724,13 +648,13 @@ var _ = Describe("BackplaneConfig controller", func() {
 					},
 					Data: map[string]string{
 						"overrides.json": `[
-						{
-							"image-name": "discovery-operator",
-							"image-remote": "quay.io/stolostron",
-							"image-digest": "sha256:9dc4d072dcd06eda3fda19a15f4b84677fbbbde2a476b4817272cde4724f02cc",
-							"image-key": "discovery_operator"
-							}
-					]`,
+							{
+								"image-name": "discovery-operator",
+								"image-remote": "quay.io/stolostron",
+								"image-digest": "sha256:9dc4d072dcd06eda3fda19a15f4b84677fbbbde2a476b4817272cde4724f02cc",
+								"image-key": "discovery_operator"
+								}
+						]`,
 					},
 				}
 				Expect(k8sClient.Create(context.TODO(), testCM)).To(Succeed())
@@ -803,15 +727,4 @@ var _ = Describe("BackplaneConfig controller", func() {
 		})
 	})
 
-	AfterEach(func() {
-		By("tearing down the test environment")
-		err := os.Unsetenv("OPERAND_IMAGE_TEST_IMAGE")
-		Expect(err).NotTo(HaveOccurred())
-		err = os.Unsetenv("POD_NAMESPACE")
-		Expect(err).NotTo(HaveOccurred())
-		err = os.Unsetenv("UNIT_TEST")
-		Expect(err).NotTo(HaveOccurred())
-		err = testEnv.Stop()
-		Expect(err).NotTo(HaveOccurred())
-	})
 })

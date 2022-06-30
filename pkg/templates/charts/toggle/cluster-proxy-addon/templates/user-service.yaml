@@ -11,6 +11,7 @@ spec:
   ports:
   - name: user-port
     port: 9092
+    protocol: TCP
   selector:
     app: cluster-proxy-addon
     component: cluster-proxy-addon-user

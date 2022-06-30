@@ -61,6 +61,7 @@ spec:
         ports:
         - containerPort: 8080
           name: metrics
+          protocol: TCP
         readinessProbe:
           httpGet:
             path: /readyz
