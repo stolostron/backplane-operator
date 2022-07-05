@@ -33,7 +33,6 @@ import (
 	renderer "github.com/stolostron/backplane-operator/pkg/rendering"
 	"github.com/stolostron/backplane-operator/pkg/status"
 	"github.com/stolostron/backplane-operator/pkg/utils"
-
 	clustermanager "open-cluster-management.io/api/operator/v1"
 
 	configv1 "github.com/openshift/api/config/v1"
@@ -75,6 +74,9 @@ type MultiClusterEngineReconciler struct {
 const (
 	requeuePeriod      = 15 * time.Second
 	backplaneFinalizer = "finalizer.multicluster.openshift.io"
+
+	trustBundleNameEnvVar  = "TRUSTED_CA_BUNDLE"
+	defaultTrustBundleName = "trusted-ca-bundle"
 )
 
 //+kubebuilder:rbac:groups=multicluster.openshift.io,resources=multiclusterengines,verbs=get;list;watch;create;update;patch;delete
@@ -147,7 +149,7 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 	// reset status manager if req is a new MCE
 	uid := string(backplaneConfig.UID)
 	if uid == "" {
-		return ctrl.Result{RequeueAfter: 5 * time.Second}, errors.New("Resource missing UID")
+		return ctrl.Result{RequeueAfter: requeuePeriod}, errors.New("Resource missing UID")
 	}
 	if r.StatusManager.UID == "" || r.StatusManager.UID != string(backplaneConfig.UID) {
 		log.Info("Setting status manager to track new MCE", "UID", string(backplaneConfig.UID))
@@ -159,7 +161,7 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		backplaneConfig.Status = r.StatusManager.ReportStatus(*backplaneConfig)
 		err := r.Client.Status().Update(ctx, backplaneConfig)
 		if backplaneConfig.Status.Phase != backplanev1.MultiClusterEnginePhaseAvailable && !utils.IsPaused(backplaneConfig) {
-			retRes = ctrl.Result{RequeueAfter: 10 * time.Second}
+			retRes = ctrl.Result{RequeueAfter: requeuePeriod}
 		}
 		if err != nil {
 			retErr = err
@@ -256,6 +258,11 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return result, err
 	}
 
+	result, err = r.createTrustBundleConfigmap(ctx, backplaneConfig)
+	if err != nil {
+		return result, err
+	}
+
 	r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing, metav1.ConditionTrue, status.DeploySuccessReason, "All components deployed"))
 
 	return ctrl.Result{}, nil
@@ -302,6 +309,62 @@ func (r *MultiClusterEngineReconciler) SetupWithManager(mgr ctrl.Manager) error 
 			},
 		}, builder.WithPredicates(predicate.LabelChangedPredicate{})).
 		Complete(r)
+}
+
+// createCAconfigmap creates a configmap that will be injected with the
+// trusted CA bundle for use with the OCP cluster wide proxy
+func (r *MultiClusterEngineReconciler) createTrustBundleConfigmap(ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+	log := log.FromContext(ctx)
+
+	// Get Trusted Bundle configmap name
+	trustBundleName := defaultTrustBundleName
+	trustBundleNamespace := mce.Spec.TargetNamespace
+	if name, ok := os.LookupEnv(trustBundleNameEnvVar); ok && name != "" {
+		trustBundleName = name
+	}
+	namespacedName := types.NamespacedName{
+		Name:      trustBundleName,
+		Namespace: trustBundleNamespace,
+	}
+	log.Info("using trust bundle configmap %s/%s", trustBundleNamespace, trustBundleName)
+
+	// Check if configmap exists
+	cm := &corev1.ConfigMap{}
+	err := r.Client.Get(ctx, namespacedName, cm)
+	if err != nil && !apierrors.IsNotFound(err) {
+		// Unknown error. Requeue
+		log.Info(fmt.Sprintf("error while getting trust bundle configmap %s: %s", trustBundleName, err))
+		return ctrl.Result{RequeueAfter: requeuePeriod}, err
+	} else if err == nil {
+		// configmap exists
+		return ctrl.Result{}, nil
+	}
+
+	// Create configmap
+	cm = &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      trustBundleName,
+			Namespace: trustBundleNamespace,
+			Labels: map[string]string{
+				"config.openshift.io/inject-trusted-cabundle": "true",
+			},
+		},
+	}
+	err = ctrl.SetControllerReference(mce, cm, r.Scheme)
+	if err != nil {
+		return ctrl.Result{}, pkgerrors.Wrapf(
+			err, "Error setting controller reference on trust bundle configmap %s",
+			trustBundleName,
+		)
+	}
+	err = r.Client.Create(ctx, cm)
+	if err != nil {
+		// Error creating configmap
+		log.Info(fmt.Sprintf("error creating trust bundle configmap %s: %s", trustBundleName, err))
+		return ctrl.Result{RequeueAfter: requeuePeriod}, err
+	}
+	// Configmap created successfully
+	return ctrl.Result{}, nil
 }
 
 // DeployAlwaysSubcomponents ensures all subcomponents exist
@@ -732,7 +795,7 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 
 	currentVersion, err := semver.NewVersion(currentClusterVersion)
 	if err != nil {
-		log.Error(err, "Failed to convert currentVersion of cluster to semver compatible value for comparison")
+		log.Error(err, fmt.Sprintf("Failed to convert currentClusterVersion %s to semver compatible value for comparison", currentClusterVersion))
 		return ctrl.Result{}, err
 	}
 
