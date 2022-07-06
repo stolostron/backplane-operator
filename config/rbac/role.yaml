@@ -1069,6 +1069,25 @@ rules:
 - apiGroups:
   - cluster.open-cluster-management.io
   resources:
+  - managedclustersetbindings
+  verbs:
+  - create
+  - delete
+  - deletecollection
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.open-cluster-management.io
+  resources:
+  - managedclustersets/bind
+  verbs:
+  - create
+- apiGroups:
+  - cluster.open-cluster-management.io
+  resources:
   - managedclustersets/join
   verbs:
   - create
