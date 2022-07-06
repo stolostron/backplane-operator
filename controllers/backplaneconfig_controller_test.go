@@ -415,6 +415,16 @@ var _ = Describe("BackplaneConfig controller", func() {
 					return k8sClient.Get(ctx, namespacedName, resourceType)
 				}, timeout, interval).Should(Succeed())
 
+				By("ensuring the trusted-ca-bundle ConfigMap is created")
+				Eventually(func(g Gomega) {
+					ctx := context.Background()
+					namespacedName := types.NamespacedName{
+						Name:      defaultTrustBundleName,
+						Namespace: DestinationNamespace,
+					}
+					res := &corev1.ConfigMap{}
+					g.Expect(k8sClient.Get(ctx, namespacedName, res)).To(Succeed())
+				}, timeout, interval).Should(Succeed())
 			})
 		})
 
