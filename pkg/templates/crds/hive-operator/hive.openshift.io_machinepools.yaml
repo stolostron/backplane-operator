@@ -85,6 +85,39 @@ spec:
                 description: Platform is configuration for machine pool specific to
                   the platform.
                 properties:
+                  alibabacloud:
+                    description: AlibabaCloud is the configuration used when installing
+                      on Alibaba Cloud.
+                    properties:
+                      imageID:
+                        description: ImageID is the Image ID that should be used to
+                          create ECS instance. If set, the ImageID should belong to
+                          the same region as the cluster.
+                        type: string
+                      instanceType:
+                        description: InstanceType defines the ECS instance type. eg.
+                          ecs.g6.large
+                        type: string
+                      systemDiskCategory:
+                        description: SystemDiskCategory defines the category of the
+                          system disk.
+                        enum:
+                        - ""
+                        - cloud_efficiency
+                        - cloud_essd
+                        type: string
+                      systemDiskSize:
+                        description: SystemDiskSize defines the size of the system
+                          disk in gibibytes (GiB).
+                        minimum: 120
+                        type: integer
+                      zones:
+                        description: Zones is list of availability zones that can
+                          be used. eg. ["cn-hangzhou-i", "cn-hangzhou-h", "cn-hangzhou-j"]
+                        items:
+                          type: string
+                        type: array
+                    type: object
                   aws:
                     description: AWS is the configuration used when installing on
                       AWS.
@@ -107,7 +140,6 @@ spec:
                             description: Type defines the type of the storage.
                             type: string
                         required:
-                        - iops
                         - size
                         - type
                         type: object
@@ -150,12 +182,63 @@ spec:
                       osDisk:
                         description: OSDisk defines the storage for instance.
                         properties:
+                          diskEncryptionSet:
+                            description: DiskEncryptionSet defines a disk encryption
+                              set.
+                            properties:
+                              name:
+                                description: Name is the name of the disk encryption
+                                  set.
+                                type: string
+                              resourceGroup:
+                                description: ResourceGroup defines the Azure resource
+                                  group used by the disk encryption set.
+                                type: string
+                              subscriptionId:
+                                description: SubscriptionID defines the Azure subscription
+                                  the disk encryption set is in.
+                                type: string
+                            required:
+                            - name
+                            - resourceGroup
+                            type: object
                           diskSizeGB:
                             description: DiskSizeGB defines the size of disk in GB.
                             format: int32
+                            minimum: 0
                             type: integer
+                          diskType:
+                            description: DiskType defines the type of disk. For control
+                              plane nodes, the valid values are Premium_LRS and StandardSSD_LRS.
+                              Default is Premium_LRS.
+                            enum:
+                            - Standard_LRS
+                            - Premium_LRS
+                            - StandardSSD_LRS
+                            type: string
                         required:
                         - diskSizeGB
+                        type: object
+                      osImage:
+                        description: OSImage defines the image to use for the OS.
+                        properties:
+                          offer:
+                            description: Offer is the offer of the image.
+                            type: string
+                          publisher:
+                            description: Publisher is the publisher of the image.
+                            type: string
+                          sku:
+                            description: SKU is the SKU of the image.
+                            type: string
+                          version:
+                            description: Version is the version of the image.
+                            type: string
+                        required:
+                        - offer
+                        - publisher
+                        - sku
+                        - version
                         type: object
                       type:
                         description: InstanceType defines the azure instance type.
@@ -245,6 +328,50 @@ spec:
                         type: array
                     required:
                     - type
+                    type: object
+                  ibmcloud:
+                    description: IBMCloud is the configuration used when installing
+                      on IBM Cloud.
+                    properties:
+                      bootVolume:
+                        description: BootVolume is the configuration for the machine's
+                          boot volume.
+                        properties:
+                          encryptionKey:
+                            description: EncryptionKey is the CRN referencing a Key
+                              Protect or Hyper Protect Crypto Services key to use
+                              for volume encryption. If not specified, a provider
+                              managed encryption key will be used.
+                            type: string
+                        type: object
+                      dedicatedHosts:
+                        description: DedicatedHosts is the configuration for the machine's
+                          dedicated host and profile.
+                        items:
+                          description: DedicatedHost stores the configuration for
+                            the machine's dedicated host platform.
+                          properties:
+                            name:
+                              description: Name is the name of the dedicated host
+                                to provision the machine on. If specified, machines
+                                will be created on pre-existing dedicated host.
+                              type: string
+                            profile:
+                              description: Profile is the profile ID for the dedicated
+                                host. If specified, new dedicated host will be created
+                                for machines.
+                              type: string
+                          type: object
+                        type: array
+                      type:
+                        description: InstanceType is the VSI machine profile.
+                        type: string
+                      zones:
+                        description: Zones is the list of availability zones used
+                          for machines in the pool.
+                        items:
+                          type: string
+                        type: array
                     type: object
                   openstack:
                     description: OpenStack is the configuration used when installing
