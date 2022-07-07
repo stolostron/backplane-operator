@@ -4,8 +4,20 @@ package version
 
 import (
 	"fmt"
+	"os"
 	"runtime"
 )
+
+// Version is the semver version the operator is reconciling towards
+var Version string
+
+func init() {
+	if value, exists := os.LookupEnv("OPERATOR_VERSION"); exists {
+		Version = value
+	} else {
+		Version = "9.9.9"
+	}
+}
 
 // Info contains versioning information.
 type Info struct {

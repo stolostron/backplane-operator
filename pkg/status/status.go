@@ -3,6 +3,7 @@ package status
 
 import (
 	bpv1 "github.com/stolostron/backplane-operator/api/v1"
+	"github.com/stolostron/backplane-operator/pkg/version"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -64,10 +65,17 @@ func (sm *StatusTracker) ReportStatus(mce bpv1.MultiClusterEngine) bpv1.MultiClu
 	conditions := sm.reportConditions()
 	phase := sm.reportPhase(mce, components, conditions)
 
+	currentVersion := mce.Status.CurrentVersion
+	if phase == bpv1.MultiClusterEnginePhaseAvailable {
+		currentVersion = version.Version
+	}
+
 	return bpv1.MultiClusterEngineStatus{
-		Components: components,
-		Conditions: conditions,
-		Phase:      phase,
+		Components:     components,
+		Conditions:     conditions,
+		Phase:          phase,
+		DesiredVersion: version.Version,
+		CurrentVersion: currentVersion,
 	}
 }
 

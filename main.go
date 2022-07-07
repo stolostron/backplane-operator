@@ -74,6 +74,10 @@ var (
 )
 
 func init() {
+	if _, exists := os.LookupEnv("OPERATOR_VERSION"); !exists {
+		panic("OPERATOR_VERSION not defined")
+	}
+
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(backplanev1.AddToScheme(scheme))
