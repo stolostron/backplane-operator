@@ -89,6 +89,12 @@ type MultiClusterEngineStatus struct {
 	Components []ComponentCondition `json:"components,omitempty"`
 
 	Conditions []MultiClusterEngineCondition `json:"conditions,omitempty"`
+
+	// CurrentVersion is the most recent version successfully installed
+	CurrentVersion string `json:"currentVersion,omitempty"`
+
+	// DesiredVersion is the version the operator is reconciling towards
+	DesiredVersion string `json:"desiredVersion,omitempty"`
 }
 
 // ComponentCondition contains condition information for tracked components
