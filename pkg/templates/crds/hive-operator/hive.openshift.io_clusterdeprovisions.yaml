@@ -54,6 +54,11 @@ spec:
                 description: ClusterID is a globally unique identifier for the cluster
                   to deprovision. It will be used if specified.
                 type: string
+              clusterName:
+                description: ClusterName is the friendly name of the cluster. It is
+                  used for subdomains, some resource tagging, and other instances
+                  where a friendly name for the cluster is useful.
+                type: string
               infraID:
                 description: InfraID is the identifier generated during installation
                   for a cluster. It is used for tagging/naming resources in cloud
@@ -63,6 +68,30 @@ spec:
                 description: Platform contains platform-specific configuration for
                   a ClusterDeprovision
                 properties:
+                  alibabacloud:
+                    description: AlibabaCloud contains Alibaba Cloud specific deprovision
+                      settings
+                    properties:
+                      baseDomain:
+                        description: BaseDomain is the DNS base domain
+                        type: string
+                      credentialsSecretRef:
+                        description: CredentialsSecretRef is the Alibaba account credentials
+                          to use for deprovisioning the cluster
+                        properties:
+                          name:
+                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                              TODO: Add other useful fields. apiVersion, kind, uid?'
+                            type: string
+                        type: object
+                      region:
+                        description: Region is the Alibaba region for this deprovision
+                        type: string
+                    required:
+                    - baseDomain
+                    - credentialsSecretRef
+                    - region
+                    type: object
                   aws:
                     description: AWS contains AWS-specific deprovision settings
                     properties:
@@ -136,6 +165,30 @@ spec:
                         description: Region is the GCP region for this deprovision
                         type: string
                     required:
+                    - region
+                    type: object
+                  ibmcloud:
+                    description: IBMCloud contains IBM Cloud specific deprovision
+                      settings
+                    properties:
+                      baseDomain:
+                        description: BaseDomain is the DNS base domain
+                        type: string
+                      credentialsSecretRef:
+                        description: CredentialsSecretRef is the IBM Cloud credentials
+                          to use for deprovisioning the cluster
+                        properties:
+                          name:
+                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                              TODO: Add other useful fields. apiVersion, kind, uid?'
+                            type: string
+                        type: object
+                      region:
+                        description: Region specifies the IBM Cloud region
+                        type: string
+                    required:
+                    - baseDomain
+                    - credentialsSecretRef
                     - region
                     type: object
                   openstack:
