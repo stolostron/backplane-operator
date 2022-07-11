@@ -49,7 +49,13 @@ rules:
   - services
   - services/finalizers
   verbs:
-  - '*'
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - ""
   resources:
@@ -593,6 +599,18 @@ rules:
   - admissionregistration.k8s.io
   resources:
   - mutatingwebhookconfigurations
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - admissionregistration.k8s.io
+  resources:
+  - mutatingwebhookconfigurations
   - validatingwebhookconfigurations
   verbs:
   - create
@@ -614,6 +632,32 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - agent-install.openshift.io
+  resources:
+  - agentclassifications
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - agent-install.openshift.io
+  resources:
+  - agentclassifications/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - agent-install.openshift.io
+  resources:
+  - agentclassifications/status
+  verbs:
+  - get
+  - patch
+  - update
 - apiGroups:
   - agent-install.openshift.io
   resources:
@@ -1119,6 +1163,25 @@ rules:
 - apiGroups:
   - cluster.open-cluster-management.io
   resources:
+  - managedclustersetbindings
+  verbs:
+  - create
+  - delete
+  - deletecollection
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.open-cluster-management.io
+  resources:
+  - managedclustersets/bind
+  verbs:
+  - create
+- apiGroups:
+  - cluster.open-cluster-management.io
+  resources:
   - managedclustersets/join
   verbs:
   - create
@@ -1135,6 +1198,14 @@ rules:
   - config.openshift.io
   resources:
   - apiservers
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - config.openshift.io
+  resources:
+  - clusteroperators
   verbs:
   - get
   - list
@@ -1548,6 +1619,32 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - metal3.io
+  resources:
+  - preprovisioningimages
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - metal3.io
+  resources:
+  - preprovisioningimages/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - metal3.io
+  resources:
+  - provisionings
+  verbs:
+  - get
 - apiGroups:
   - migration.k8s.io
   resources:

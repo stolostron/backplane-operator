@@ -228,6 +228,27 @@ spec:
                     required:
                     - agentSelector
                     type: object
+                  alibabacloud:
+                    description: AlibabaCloud is the configuration used when installing
+                      on Alibaba Cloud
+                    properties:
+                      credentialsSecretRef:
+                        description: CredentialsSecretRef refers to a secret that
+                          contains Alibaba Cloud account access credentials.
+                        properties:
+                          name:
+                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                              TODO: Add other useful fields. apiVersion, kind, uid?'
+                            type: string
+                        type: object
+                      region:
+                        description: Region specifies the Alibaba Cloud region where
+                          the cluster will be created.
+                        type: string
+                    required:
+                    - credentialsSecretRef
+                    - region
+                    type: object
                   aws:
                     description: AWS is the configuration used when installing on
                       AWS.
@@ -352,6 +373,38 @@ spec:
                       region:
                         description: Region specifies the GCP region where the cluster
                           will be created.
+                        type: string
+                    required:
+                    - credentialsSecretRef
+                    - region
+                    type: object
+                  ibmcloud:
+                    description: IBMCloud is the configuration used when installing
+                      on IBM Cloud
+                    properties:
+                      accountID:
+                        description: AccountID is the IBM Cloud Account ID. AccountID
+                          is DEPRECATED and is gathered via the IBM Cloud API for
+                          the provided credentials. This field will be ignored.
+                        type: string
+                      cisInstanceCRN:
+                        description: CISInstanceCRN is the IBM Cloud Internet Services
+                          Instance CRN CISInstanceCRN is DEPRECATED and gathered via
+                          the IBM Cloud API for the provided credentials and cluster
+                          deployment base domain. This field will be ignored.
+                        type: string
+                      credentialsSecretRef:
+                        description: CredentialsSecretRef refers to a secret that
+                          contains IBM Cloud account access credentials.
+                        properties:
+                          name:
+                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                              TODO: Add other useful fields. apiVersion, kind, uid?'
+                            type: string
+                        type: object
+                      region:
+                        description: Region specifies the IBM Cloud region where the
+                          cluster will be created.
                         type: string
                     required:
                     - credentialsSecretRef

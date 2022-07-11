@@ -192,6 +192,14 @@ spec:
                       type: string
                   type: object
                 type: array
+              currentVersion:
+                description: CurrentVersion is the most recent version successfully
+                  installed
+                type: string
+              desiredVersion:
+                description: DesiredVersion is the version the operator is reconciling
+                  towards
+                type: string
               phase:
                 description: Latest observed overall state
                 type: string
