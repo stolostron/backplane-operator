@@ -583,14 +583,66 @@ def main():
     # Loop through each repo in the config.yaml
     for repo in config:
         csvPath = ""
-        logging.info("Cloning: %s", repo["repo_name"])
-        repo_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "tmp/" + repo["repo_name"]) # Path to clone repo to
-        if os.path.exists(repo_path): # If path exists, remove and re-clone
-            shutil.rmtree(repo_path)
-        repository = Repo.clone_from(repo["github_ref"], repo_path) # Clone repo to above path
-        if 'branch' in repo:
-            repository.git.checkout(repo['branch']) # If a branch is specified, checkout that branch
-        
+        # We support two ways of getting bundle input:
+
+        # - Pikcing up already generated input from a Github repo
+        #
+        #   Entries for this approach include a "github_ref" property specifying the
+        #   Git repo we clone.  Such a repo can supply input for multiple operators
+        #   (eg: community-poerators) so the per-operator properties are configured
+        #   via the "operators" list.
+        #
+        # - Generating the input using a budnle-gen tool.
+        #
+        #   Entries for this approach include a "gen_command" property specifying
+        #   the command to run.  Since we expect that bundle-gen tool is going to gen
+        #   the input for only a single operator, the per-operator properties are
+        #   structured as singletons rather than being in a list.
+        #
+        #   We assume the bundle-gen tool knows which repos and such it needs to use
+        #   to do its job, but needs to be told a branch-name or Git SHA to use
+        #   to obtain bundle input info.
+
+        if "github_ref" in repo:
+            logging.info("Cloning: %s", repo["repo_name"])
+            repo_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "tmp/" + repo["repo_name"]) # Path to clone repo to
+            if os.path.exists(repo_path): # If path exists, remove and re-clone
+                shutil.rmtree(repo_path)
+            repository = Repo.clone_from(repo["github_ref"], repo_path) # Clone repo to above path
+            if 'branch' in repo:
+                repository.git.checkout(repo['branch']) # If a branch is specified, checkout that branch
+
+        elif "gen_command" in repo:
+            try:
+                # repo.brnach specifies the branch or SHA the tool should use for input.
+                # repo.bundlePath specifies the directory into which the bundle manifest
+
+                # should be generated, and where they are fetched from for chartifying.
+
+                branch = repo["branch"]
+                bundlePath = repo["bundlePath"]
+            except KeyError:
+                logging.critical("branch and bundlePath are required for tool-generated bundles")
+                exit(1)
+            cmd = "%s %s %s" % (repo["gen_command"], branch, bundlePath)
+            logging.info("Running bundle-gen tool: %s", cmd)
+            rc = os.system(cmd)
+            if rc != 0:
+                logging.critical("Bundle-generation script exited with errors.")
+                exit(1)
+
+            # Convert the repo entry  to the format used for Github-sourced bundles
+            # so we can use a common path for both below.
+            op = {
+               "name": repo["name"],
+               "imageMappings": repo["imageMappings"],
+               "bundlePath": bundlePath
+            }
+            repo["operators"] = [op]
+
+        else:
+            logging.critical("Config entry doesn't specify either a Git repo or a generation command")
+            exit(1)
 
         # Loop through each operator in the repo identified by the config
         for operator in repo["operators"]:
