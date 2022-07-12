@@ -1,2 +1,4 @@
 pyyaml
 gitpython
+requests
+urllib3
