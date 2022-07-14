@@ -746,11 +746,11 @@ func (r *MultiClusterEngineReconciler) ensureClusterProxyAddon(ctx context.Conte
 	log := log.FromContext(ctx)
 
 	namespacedName := types.NamespacedName{Name: "cluster-proxy-addon-manager", Namespace: backplaneConfig.Spec.TargetNamespace}
-	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
-	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
+	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
+	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 	namespacedName = types.NamespacedName{Name: "cluster-proxy-addon-user", Namespace: backplaneConfig.Spec.TargetNamespace}
-	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
-	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
+	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
+	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 
 	templates, errs := renderer.RenderChart(toggle.ClusterProxyAddonDir, backplaneConfig, r.Images)
 	if len(errs) > 0 {
