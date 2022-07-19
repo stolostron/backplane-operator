@@ -1564,6 +1564,14 @@ rules:
 - apiGroups:
   - metal3.io
   resources:
+  - baremetalhosts
+  - provisionings
+  verbs:
+  - list
+  - watch
+- apiGroups:
+  - metal3.io
+  resources:
   - preprovisioningimages
   verbs:
   - create
