@@ -1,0 +1,11 @@
+# Copyright (c) 2021 Red Hat, Inc.
+apiVersion: v1
+appVersion: "1.0.0"
+description:  helm chart for ACM cluster-proxy-addon
+name: cluster-proxy-addon
+version: 2.1.0
+category: "Development"
+verified: "RHACM"
+keywords:
+  - acm
+  - cluster-proxy

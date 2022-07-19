@@ -1,0 +1,16 @@
+global:
+  pullPolicy: Always
+  namespace: default
+  pullSecret: null
+  imageOverrides:
+    cluster_proxy_addon: ""
+    cluster_proxy: ""
+
+hubconfig:
+  nodeSelector: null
+  replicaCount: 1
+  proxyConfigs: {}
+  tolerations: []
+  ocpVersion: ""
+org: open-cluster-management
+

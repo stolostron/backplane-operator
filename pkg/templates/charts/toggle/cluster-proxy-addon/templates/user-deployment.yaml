@@ -1,0 +1,140 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: '{{ .Values.global.namespace }}'
+  name: cluster-proxy-addon-user
+  labels:
+    component: cluster-proxy-addon-user
+    chart: cluster-proxy-addon-2.1.0
+spec:
+  # fixed replicas to 1, the kubectl-ui does not support multiple replicas
+  replicas: {{ .Values.hubconfig.replicaCount }}
+  selector:
+    matchLabels:
+      component: cluster-proxy-addon-user
+      chart: cluster-proxy-addon-2.1.0
+  template:
+    metadata:
+      labels:
+        component: cluster-proxy-addon-user
+        chart: cluster-proxy-addon-2.1.0
+        ocm-antiaffinity-selector: cluster-proxy-addon-user
+    spec:
+      serviceAccountName: cluster-proxy
+      hostNetwork: false
+      hostPID: false
+      hostIPC: false
+      securityContext:
+        runAsNonRoot: true
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                - amd64
+                - ppc64le
+                - s390x
+                - arm64
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 70
+            podAffinityTerm:
+              topologyKey: topology.kubernetes.io/zone
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - cluster-proxy-addon-user
+          - weight: 35
+            podAffinityTerm:
+              topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - cluster-proxy-addon-user
+      containers:
+      - name: kubectl-ui
+        image: '{{ .Values.global.imageOverrides.cluster_proxy_addon }}'
+        imagePullPolicy: '{{ .Values.global.pullPolicy }}'
+        command:
+          - "/cluster-proxy"
+        args:
+          - "user-server"
+          - "--host=proxy-entrypoint.default"
+          - "--port=8090"
+          - "--proxy-ca-cert=/proxy-ca/ca.crt"
+          - "--proxy-cert=/proxy-client-tls/tls.crt"
+          - "--proxy-key=/proxy-client-tls/tls.key"
+          - "--server-port=9092"
+          - "--server-key=/user-tls/tls.key"
+          - "--server-cert=/user-tls/tls.crt"
+        env:
+        {{- if .Values.hubconfig.proxyConfigs }}
+        - name: HTTP_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
+        - name: HTTPS_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.HTTPS_PROXY }}
+        - name: NO_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
+        {{- end }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            scheme: HTTP
+            port: 8000
+          initialDelaySeconds: 2
+          periodSeconds: 10
+        volumeMounts:
+          - name: user-tls-vol
+            mountPath: /user-tls
+            readOnly: true
+          - name: proxy-server-ca
+            mountPath: /proxy-ca
+            readOnly: true
+          - name: proxy-client-cert
+            mountPath: /proxy-client-tls
+            readOnly: true
+        ports:
+          - name: userport
+            containerPort: 9092
+            protocol: TCP
+      volumes:
+        - name: user-tls-vol
+          secret:
+            secretName: cluster-proxy-user-serving-cert
+        - name: proxy-server-ca
+          secret:
+            secretName: proxy-server-ca
+        - name: proxy-client-cert
+          secret:
+            secretName: proxy-client
+      {{- if .Values.global.pullSecret }}
+      imagePullSecrets:
+      - name: {{ .Values.global.pullSecret }}
+      {{- end }}
+      {{- with .Values.hubconfig.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+      {{- end }}
+      {{- with .Values.hubconfig.tolerations }}
+      tolerations:
+      {{- range . }}
+      - {{ if .Key }} key: {{ .Key }} {{- end }}
+        {{ if .Operator }} operator: {{ .Operator }} {{- end }}
+        {{ if .Value }} value: {{ .Value }} {{- end }}
+        {{ if .Effect }} effect: {{ .Effect }} {{- end }}
+        {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
+        {{- end }}
+{{- end }}
