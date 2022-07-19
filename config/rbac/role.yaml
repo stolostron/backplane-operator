@@ -1220,6 +1220,14 @@ rules:
   - update
   - watch
 - apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - discovery.open-cluster-management.io
   resources:
   - discoveredclusters
@@ -1560,6 +1568,14 @@ rules:
   - list
   - patch
   - update
+  - watch
+- apiGroups:
+  - metal3.io
+  resources:
+  - baremetalhosts
+  - provisionings
+  verbs:
+  - list
   - watch
 - apiGroups:
   - metal3.io
