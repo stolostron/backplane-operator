@@ -1230,6 +1230,14 @@ rules:
   - watch
 - apiGroups:
   - config.openshift.io
+  resources:
+  - ingresses
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - config.openshift.io
   - console.openshift.io
   - project.openshift.io
   - tower.ansible.com

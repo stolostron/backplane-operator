@@ -976,6 +976,8 @@ func (r *MultiClusterEngineReconciler) getClusterVersion(ctx context.Context, mc
 	return clusterVersion.Status.History[0].Version, nil
 }
 
+//+kubebuilder:rbac:groups="config.openshift.io",resources="ingresses",verbs=get;list;watch
+
 func (r *MultiClusterEngineReconciler) getClusterIngressDomain(ctx context.Context, mce *backplanev1.MultiClusterEngine) (string, error) {
 	log := log.FromContext(ctx)
 	// If Unit test
