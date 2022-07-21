@@ -3,6 +3,8 @@ apiVersion: console.openshift.io/v1alpha1
 kind: ConsolePlugin
 metadata:
   name: mce
+  annotations:
+    console.openshift.io/use-i18n: "true"
 spec:
   displayName: Red Hat MultiCluster Engine
   proxy:
