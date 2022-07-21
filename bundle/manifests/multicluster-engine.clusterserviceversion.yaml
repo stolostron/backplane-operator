@@ -1213,6 +1213,18 @@ spec:
           - cluster.open-cluster-management.io
           resources:
           - managedclusters
+          - managedclustersetbindings
+          - managedclustersets
+          verbs:
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - cluster.open-cluster-management.io
+          resources:
+          - managedclusters
           - managedclustersets
           - placementdecisions
           - placementdecisions/status
