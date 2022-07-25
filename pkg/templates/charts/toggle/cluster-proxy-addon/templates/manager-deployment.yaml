@@ -79,7 +79,7 @@ spec:
           args:
             - --leader-elect=true
             - --signer-secret-namespace={{ .Values.global.namespace }}
-            - --agent-image-name={{ .Values.global.imageOverrides.cluster_proxy_addon }}
+            - --agent-image-name={{ .Values.global.imageOverrides.cluster_proxy }}
         {{- if .Values.global.pullSecret }}
       imagePullSecrets:
       - name: {{ .Values.global.pullSecret }}
