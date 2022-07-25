@@ -52,6 +52,7 @@ package main
 //+kubebuilder:rbac:groups="",resources=secrets;namespaces,verbs=list;get;watch;delete
 //+kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=create;delete;get;list;patch;update;watch
+//+kubebuilder:rbac:groups="",resources=serviceaccounts/token,verbs=create
 //+kubebuilder:rbac:groups="",resources=serviceaccounts;serviceaccounts/finalizers;secrets;secrets/finalizers;services;services/finalizers;endpoints;events;configmaps;namespaces;persistentvolumeclaims,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=serviceaccounts;services,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",resources=services,verbs=create;delete;get;list;patch;update;watch
@@ -117,6 +118,7 @@ package main
 //+kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=apps.open-cluster-management.io,resources=deployables;deployables/status,verbs=get;list;watch;update;patch
 //+kubebuilder:rbac:groups=apps.openshift.io,resources=deploymentconfigs,verbs=get;list;watch
+//+kubebuilder:rbac:groups=authentication.k8s.io,resources=tokenrequests,verbs=create
 //+kubebuilder:rbac:groups=authentication.k8s.io,resources=tokenreviews,verbs=create
 //+kubebuilder:rbac:groups=authentication.k8s.io,resources=tokenreviews,verbs=create
 //+kubebuilder:rbac:groups=authentication.open-cluster-management.io,resources=managedserviceaccounts;managedserviceaccounts/status,verbs=get;list;watch;update;patch;delete

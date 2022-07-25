@@ -220,3 +220,15 @@ rules:
     - update
     - delete
     - deletecollection
+- apiGroups:
+    - ""
+  resources:
+    - serviceaccounts/token
+  verbs:
+    - create
+- apiGroups:
+    - authentication.k8s.io
+  resources:
+    - tokenrequests
+  verbs:
+    - create

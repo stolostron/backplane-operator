@@ -312,6 +312,12 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - serviceaccounts/token
+  verbs:
+  - create
+- apiGroups:
+  - ""
+  resources:
   - services
   verbs:
   - create
@@ -926,6 +932,12 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenrequests
+  verbs:
+  - create
 - apiGroups:
   - authentication.k8s.io
   resources:
