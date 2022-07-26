@@ -11,7 +11,7 @@ spec:
   proxyServer:
     image: '{{ .Values.global.imageOverrides.cluster_proxy_addon }}'
     namespace: '{{ .Values.global.namespace }}'
-    replicas: 3
+    replicas: {{ .Values.hubconfig.replicaCount }}
     entrypoint:
       type: Hostname
       hostname:
@@ -20,20 +20,23 @@ spec:
     additionalArgs:
       - "--keepalive-time=30s" # Use this to keep connection from proxy-agent stay alive
     nodePlacement:
+      {{- with .Values.hubconfig.tolerations }}
       tolerations:
-          - key: dedicated
-            operator: Exists
-            effect: NoSchedule
-          - effect: NoSchedule 
-            key: node-role.kubernetes.io/infra 
-            operator: Exists
+      {{- range . }}
+      - {{ if .Key }} key: {{ .Key }} {{- end }}
+        {{ if .Operator }} operator: {{ .Operator }} {{- end }}
+        {{ if .Value }} value: {{ .Value }} {{- end }}
+        {{ if .Effect }} effect: {{ .Effect }} {{- end }}
+        {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
+        {{- end }}
+      {{- end }}
       {{- with .Values.hubconfig.nodeSelector }}
       nodeSelector:
   {{ toYaml . | indent 8 }}
       {{- end }}
   proxyAgent:
     image: '{{ .Values.global.imageOverrides.cluster_proxy_addon }}'
-    replicas: 3
+    replicas: {{ .Values.hubconfig.replicaCount }}
     {{- if .Values.global.pullSecret }}
     imagePullSecrets:
     - "{{ .Values.global.pullSecret }}"
