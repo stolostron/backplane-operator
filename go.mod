@@ -8,7 +8,7 @@ require (
 	github.com/onsi/ginkgo/v2 v2.1.4
 	github.com/onsi/gomega v1.20.0
 	github.com/openshift/api v0.0.0-20220531073726-6c4f186339a7
-	github.com/openshift/hive/apis v0.0.0-20220726120844-e78dfd39116d
+	github.com/openshift/hive/apis v0.0.0-20220726195603-d294bfc10087
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.58.0
 	helm.sh/helm/v3 v3.9.2

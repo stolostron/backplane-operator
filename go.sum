@@ -470,8 +470,8 @@ github.com/onsi/gomega v1.20.0/go.mod h1:DtrZpjmvpn2mPm4YWQa0/ALMDj9v4YxLgojwPeR
 github.com/openshift/api v0.0.0-20220531073726-6c4f186339a7 h1:bkBOsI/Yd+cBT+/aXkbbNo+imvq4VKRusoCluIGOBBg=
 github.com/openshift/api v0.0.0-20220531073726-6c4f186339a7/go.mod h1:LEnw1IVscIxyDnltE3Wi7bQb/QzIM8BfPNKoGA1Qlxw=
 github.com/openshift/build-machinery-go v0.0.0-20211213093930-7e33a7eb4ce3/go.mod h1:b1BuldmJlbA/xYtdZvKi+7j5YGB44qJUJDZ9zwiNCfE=
-github.com/openshift/hive/apis v0.0.0-20220726120844-e78dfd39116d h1:IePF0Xi/yLRN7bLXex12mLzWptYlE9HnQVoh2tVwkW0=
-github.com/openshift/hive/apis v0.0.0-20220726120844-e78dfd39116d/go.mod h1:XWo9dsulk75E9xkfxS/GNpJrL5UHgn3wuSyPeO39NME=
+github.com/openshift/hive/apis v0.0.0-20220726195603-d294bfc10087 h1:beV1LhqSQteUS8Pugvegi5o0ustgxCgY0xBXLDVbbBY=
+github.com/openshift/hive/apis v0.0.0-20220726195603-d294bfc10087/go.mod h1:XWo9dsulk75E9xkfxS/GNpJrL5UHgn3wuSyPeO39NME=
 github.com/opentracing/opentracing-go v1.1.0/go.mod h1:UkNAQd3GIcIGf0SeVgPpRdFStlNbqXla1AfSYxPUl2o=
 github.com/pascaldekloe/goe v0.0.0-20180627143212-57f6aae5913c/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=
 github.com/pelletier/go-toml v1.2.0/go.mod h1:5z9KED0ma1S8pY6P1sdut58dfprrGBbd/94hg7ilaic=
