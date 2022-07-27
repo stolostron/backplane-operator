@@ -3,6 +3,7 @@
 package utils
 
 import (
+	"os"
 	"reflect"
 	"testing"
 
@@ -45,5 +46,52 @@ func Test_deduplicate(t *testing.T) {
 				t.Errorf("deduplicate() = %v, want %v", got, tt.want)
 			}
 		})
+	}
+	m := &backplanev1.MultiClusterEngine{}
+	yes := SetDefaultComponents(m)
+	if !yes {
+		t.Error("Setting default did not work")
+	}
+
+	yes = DeduplicateComponents(m)
+	if yes {
+		t.Error("Unexpected duplicates")
+	}
+
+	os.Setenv("NO_PROXY", "test")
+	yes = ProxyEnvVarsAreSet()
+	if !yes {
+		t.Error("Unexpected proxy failure")
+	}
+	os.Unsetenv("NO_PROXY")
+	yes = ProxyEnvVarsAreSet()
+	if yes {
+		t.Error("Unexpected proxy success")
+	}
+
+	var sample backplanev1.AvailabilityType
+	sample = backplanev1.HAHigh
+
+	yes = AvailabilityConfigIsValid(sample)
+	if !yes {
+		t.Error("Unexpected availabilitty config failure")
+	}
+
+	sample = "test"
+	yes = AvailabilityConfigIsValid(sample)
+	if yes {
+		t.Error("Unexpected availabilitty config successs")
+	}
+
+	stringList := []string{"test1", "test2"}
+	stringRemoveList := []string{"test2"}
+
+	yes = Contains(stringList, "test1")
+	if !yes {
+		t.Error("Contains did not work")
+	}
+	attemptedRemove := Remove(stringList, "test1")
+	if len(attemptedRemove) != len(stringRemoveList) {
+		t.Error("Removes did not work")
 	}
 }
