@@ -74,6 +74,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 		clusterManagementAddon *unstructured.Unstructured
 		tests                  testList
 		msaTests               testList
+		secondTests            testList
 	)
 
 	AfterEach(func() {
@@ -323,9 +324,30 @@ var _ = Describe("BackplaneConfig controller", func() {
 				Expected:       nil,
 			},
 		}
+		secondTests = testList{
+			{
+				Name:           BackplaneConfigTestName,
+				NamespacedName: types.NamespacedName{Name: BackplaneConfigName},
+				ResourceType:   &v1.MultiClusterEngine{},
+				Expected:       nil,
+			},
+			{
+				Name:           "HyperShift",
+				NamespacedName: types.NamespacedName{Name: "hypershift-deployment-controller", Namespace: DestinationNamespace},
+				ResourceType:   &appsv1.Deployment{},
+				Expected:       nil,
+			},
+			// {
+			// 	Name:           "MCEConsole",
+			// 	NamespacedName: types.NamespacedName{Name: "console-mce-console", Namespace: DestinationNamespace},
+			// 	ResourceType:   &appsv1.Deployment{},
+			// 	Expected:       nil,
+			// },
+		}
 	})
 
 	When("creating a new BackplaneConfig", func() {
+
 		Context("and no image pull policy is specified", func() {
 			It("should deploy sub components", func() {
 				createCtx := context.Background()
@@ -425,6 +447,70 @@ var _ = Describe("BackplaneConfig controller", func() {
 					res := &corev1.ConfigMap{}
 					g.Expect(k8sClient.Get(ctx, namespacedName, res)).To(Succeed())
 				}, timeout, interval).Should(Succeed())
+			})
+		})
+
+		Context("2nd attempt", func() {
+			It("should deploy sub components", func() {
+				createCtx := context.Background()
+				By("creating the backplane config")
+				backplaneConfig := &v1.MultiClusterEngine{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "multicluster.openshift.io/v1",
+						Kind:       "MultiClusterEngine",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: BackplaneConfigName,
+					},
+					Spec: v1.MultiClusterEngineSpec{
+						TargetNamespace: DestinationNamespace,
+						ImagePullSecret: "testsecret",
+						Overrides: &v1.Overrides{
+							Components: []v1.ComponentConfig{
+								{
+									Name:    v1.ConsoleMCE,
+									Enabled: true,
+								},
+								{
+									Name:    v1.ServerFoundation,
+									Enabled: true,
+								},
+								{
+									Name:    v1.HyperShift,
+									Enabled: true,
+								},
+								{
+									Name:    v1.Hive,
+									Enabled: false,
+								},
+								{
+									Name:    v1.ClusterManager,
+									Enabled: false,
+								},
+								{
+									Name:    v1.ClusterLifecycle,
+									Enabled: false,
+								},
+								{
+									Name:    v1.ManagedServiceAccount,
+									Enabled: false,
+								},
+							},
+						},
+					},
+				}
+				Expect(k8sClient.Create(createCtx, backplaneConfig)).Should(Succeed())
+
+				By("ensuring each deployment and config is created")
+				for _, test := range secondTests {
+					By(fmt.Sprintf("ensuring %s is created", test.Name))
+					Eventually(func() bool {
+						ctx := context.Background()
+						err := k8sClient.Get(ctx, test.NamespacedName, test.ResourceType)
+						return err == test.Expected
+					}, timeout, interval).Should(BeTrue())
+				}
+
 			})
 		})
 
@@ -735,6 +821,6 @@ var _ = Describe("BackplaneConfig controller", func() {
 
 			})
 		})
-	})
 
+	})
 })

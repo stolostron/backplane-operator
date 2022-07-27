@@ -4,6 +4,7 @@
 package foundation
 
 import (
+	"os"
 	"testing"
 
 	v1 "github.com/stolostron/backplane-operator/api/v1"
@@ -50,6 +51,13 @@ func TestClusterManager(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			c := ClusterManager(test.mce, test.imageOverrides)
+
+			os.Setenv("DIRECTORY_OVERRIDE", "../../")
+
+			_, err := GetAddons()
+			if err != nil {
+				t.Errorf("expected cluster manager add-ons not found")
+			}
 
 			registrationImage, found, err := unstructured.NestedString(c.Object, "spec", "registrationImagePullSpec")
 			if err != nil || !found {
