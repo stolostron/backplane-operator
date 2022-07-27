@@ -81,6 +81,9 @@ spec:
             - ALL
           privileged: false
           readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /etc/pki/ca-trust/extracted/pem/
+          name: trusted-ca-bundle
       hostIPC: false
       hostNetwork: false
       hostPID: false
@@ -106,3 +109,12 @@ spec:
         {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
         {{- end }}
 {{- end }}
+      volumes:
+      - configMap:
+          defaultMode: 440
+          items:
+          - key: ca-bundle.crt
+            path: tsl-ca-bundle.pem
+          name: trusted-ca-bundle
+          optional: true
+        name: trusted-ca-bundle
