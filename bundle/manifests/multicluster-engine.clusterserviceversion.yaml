@@ -1054,6 +1054,13 @@ spec:
           - update
           - watch
         - apiGroups:
+          - capi-provider.agent-install.openshift.io
+          resources:
+          - agentmachines
+          verbs:
+          - list
+          - watch
+        - apiGroups:
           - certificates.k8s.io
           resources:
           - certificatesigningrequests

@@ -104,6 +104,7 @@ package main
 //+kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=create;get;list;update;watch;patch;delete
 //+kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=get;create;update;patch
 //+kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=list;watch
 //+kubebuilder:rbac:groups=apiregistration.k8s.io,resources=apiservices,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=apiregistration.k8s.io,resources=apiservices,verbs=create;get;list;update;watch;patch;delete
 //+kubebuilder:rbac:groups=apiregistration.k8s.io,resources=apiservices;apiservices/finalizers,verbs=get;list;watch;create;update;patch;delete
@@ -132,6 +133,7 @@ package main
 //+kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;watch;list;delete;create
 //+kubebuilder:rbac:groups=batch;hive.openshift.io;tower.ansible.com;"",resources=ansiblejobs;jobs;clusterdeployments;serviceaccounts;machinepools,verbs=get
+//+kubebuilder:rbac:groups=capi-provider.agent-install.openshift.io,resources=agentmachines,verbs=list;watch
 //+kubebuilder:rbac:groups=certificates.k8s.io,resources=certificatesigningrequests,verbs=create;get;list;watch
 //+kubebuilder:rbac:groups=certificates.k8s.io,resources=certificatesigningrequests,verbs=list;watch
 //+kubebuilder:rbac:groups=certificates.k8s.io,resources=certificatesigningrequests/approval,verbs=update
@@ -217,6 +219,7 @@ package main
 //+kubebuilder:rbac:groups=hiveinternal.openshift.io,resources=*,verbs=*
 //+kubebuilder:rbac:groups=hiveinternal.openshift.io,resources=clustersyncs,verbs=get;list;watch
 //+kubebuilder:rbac:groups=hypershift.openshift.io,resources=hostedclusters;nodepools,verbs=create;delete;get;list;patch;update;watch
+//+kubebuilder:rbac:groups=hypershift.openshift.io,resources=hostedclusters;nodepools,verbs=list;watch
 //+kubebuilder:rbac:groups=imageregistry.open-cluster-management.io,resources=managedclusterimageregistries;managedclusterimageregistries,verbs=get;list;watch
 //+kubebuilder:rbac:groups=imageregistry.open-cluster-management.io,resources=managedclusterimageregistries;managedclusterimageregistries/status,verbs=get;list;watch;update
 //+kubebuilder:rbac:groups=internal.open-cluster-management.io,resources=managedclusterinfos,verbs=get;list;watch
