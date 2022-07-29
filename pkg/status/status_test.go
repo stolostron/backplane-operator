@@ -233,3 +233,33 @@ func TestStatusTracker_ReportStatus(t *testing.T) {
 		})
 	}
 }
+
+func TestStatusTracker_Reset(t *testing.T) {
+	t.Run("Reset status tracker", func(t *testing.T) {
+		tracker := StatusTracker{Client: fake.NewClientBuilder().Build()}
+		tracker.AddComponent(MockStatus{
+			NamespacedName: types.NamespacedName{Name: "mock-name", Namespace: "mock-ns"},
+			statusFunc: func() bpv1.ComponentCondition {
+				return bpv1.ComponentCondition{
+					Name:               "mock-name",
+					Kind:               "Deployment",
+					Type:               "Pending",
+					Status:             metav1.ConditionStatus("true"),
+					LastUpdateTime:     metav1.Now(),
+					LastTransitionTime: metav1.Now(),
+					Reason:             "NotRunning",
+					Message:            "Mock is not running",
+					Available:          false,
+				}
+			},
+		})
+
+		if len(tracker.Components) != 1 {
+			t.Errorf("StatusTracker should have 1 component")
+		}
+		tracker.Reset("123")
+		if len(tracker.Components) != 0 {
+			t.Errorf("StatusTracker should have 0 component")
+		}
+	})
+}
