@@ -726,6 +726,17 @@ func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Conte
 		return err
 	}
 
+	globalSetNamespace := &corev1.Namespace{}
+	err = r.Client.Get(ctx, types.NamespacedName{Name: "open-cluster-management-global-set"}, globalSetNamespace)
+	if err == nil {
+		err := r.Client.Delete(ctx, globalSetNamespace)
+		if err != nil {
+			return err
+		}
+	} else if err != nil && !apierrors.IsNotFound(err) {
+		return err
+	}
+
 	return nil
 }
 
