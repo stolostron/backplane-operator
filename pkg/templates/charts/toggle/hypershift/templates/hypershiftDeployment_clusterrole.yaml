@@ -78,6 +78,8 @@ rules:
   - cluster.open-cluster-management.io
   resources:
   - managedclusters
+  - managedclustersets
+  - managedclustersetbindings
   verbs:
   - create
   - delete
