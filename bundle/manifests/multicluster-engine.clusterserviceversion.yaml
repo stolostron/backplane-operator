@@ -14,7 +14,7 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    operators.operatorframework.io/builder: operator-sdk-v1.16.0+git
+    operators.operatorframework.io/builder: operator-sdk-v1.22.2
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
   name: multicluster-engine.v0.0.1
   namespace: placeholder
@@ -377,6 +377,12 @@ spec:
           - get
           - list
           - watch
+        - apiGroups:
+          - ""
+          resources:
+          - serviceaccounts/token
+          verbs:
+          - create
         - apiGroups:
           - ""
           resources:
@@ -997,6 +1003,12 @@ spec:
         - apiGroups:
           - authentication.k8s.io
           resources:
+          - tokenrequests
+          verbs:
+          - create
+        - apiGroups:
+          - authentication.k8s.io
+          resources:
           - tokenreviews
           verbs:
           - create
@@ -1223,6 +1235,8 @@ spec:
           - managedclustersetbindings
           - managedclustersets
           verbs:
+          - create
+          - delete
           - get
           - list
           - patch
@@ -1363,14 +1377,6 @@ spec:
           - list
           - patch
           - update
-          - watch
-        - apiGroups:
-          - ""
-          resources:
-          - secrets
-          verbs:
-          - get
-          - list
           - watch
         - apiGroups:
           - discovery.open-cluster-management.io
@@ -2119,7 +2125,9 @@ spec:
           - watch
         serviceAccountName: multicluster-engine-operator
       deployments:
-      - name: multicluster-engine-operator
+      - label:
+          control-plane: backplane-operator
+        name: multicluster-engine-operator
         spec:
           replicas: 2
           selector:
