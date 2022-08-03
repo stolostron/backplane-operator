@@ -1167,6 +1167,8 @@ rules:
   - managedclustersetbindings
   - managedclustersets
   verbs:
+  - create
+  - delete
   - get
   - list
   - patch
