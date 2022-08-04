@@ -34,3 +34,6 @@ rules:
 - apiGroups: ["proxy.open-cluster-management.io"]
   resources: ["managedproxyconfigurations"]
   verbs: ["create","get", "list", "watch", "update", "delete", "deletecollection", "patch"]
+- apiGroups: ["argoproj.io"]
+  resources: [ "applications", "applications/status", "applicationsets"]
+  verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
