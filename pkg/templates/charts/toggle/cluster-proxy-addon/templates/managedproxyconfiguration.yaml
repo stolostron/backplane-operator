@@ -39,5 +39,5 @@ spec:
     replicas: {{ .Values.hubconfig.replicaCount }}
     {{- if .Values.global.pullSecret }}
     imagePullSecrets:
-    - "{{ .Values.global.pullSecret }}"
+    - "open-cluster-management-image-pull-credentials"
     {{- end }}
