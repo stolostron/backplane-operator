@@ -13,7 +13,7 @@ spec:
     port: 9092
     protocol: TCP
   selector:
-    app: cluster-proxy-addon
-    component: cluster-proxy-addon-user
-    release: cpa-chart
+    matchLabels:
+      component: cluster-proxy-addon-user
+      chart: cluster-proxy-addon-2.1.0
 

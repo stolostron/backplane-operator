@@ -107,7 +107,7 @@ spec:
             mountPath: /proxy-client-tls
             readOnly: true
         ports:
-          - name: userport
+          - name: user-port
             containerPort: 9092
             protocol: TCP
       volumes:
