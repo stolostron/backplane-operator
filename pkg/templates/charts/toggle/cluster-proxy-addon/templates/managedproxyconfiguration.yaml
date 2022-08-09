@@ -15,7 +15,7 @@ spec:
     entrypoint:
       type: Hostname
       hostname:
-        value: cluster-proxy-anp.apps.
+        value: cluster-proxy-anp.{{ .Values.hubconfig.clusterIngressDomain }}
       port: 443
     additionalArgs:
       - "--keepalive-time=30s" # Use this to keep connection from proxy-agent stay alive
