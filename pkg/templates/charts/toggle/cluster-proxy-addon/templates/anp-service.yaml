@@ -9,8 +9,6 @@ spec:
   ports:
   - name: anp-port
     port: 8091
-    targetPort: 8443
     protocol: TCP
   selector:
     proxy.open-cluster-management.io/component-name: proxy-server
-
