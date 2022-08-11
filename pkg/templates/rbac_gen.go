@@ -241,6 +241,7 @@ package main
 //+kubebuilder:rbac:groups=monitoring.coreos.com,resources=prometheusrules;servicemonitors,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=monitoring.coreos.com,resources=servicemonitors,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=monitoring.coreos.com,resources=servicemonitors,verbs=get;create
+//+kubebuilder:rbac:groups=multicluster.openshift.io,resources=multiclusterengines,verbs=list;watch
 //+kubebuilder:rbac:groups=operator.open-cluster-management.io,resources=clustermanagers,verbs=get;list;watch;update;delete
 //+kubebuilder:rbac:groups=operator.open-cluster-management.io,resources=clustermanagers/status,verbs=update;patch
 //+kubebuilder:rbac:groups=operator.open-cluster-management.io,resources=klusterlets,verbs=create;delete;deletecollection;get;list;patch;update;watch;escalate
