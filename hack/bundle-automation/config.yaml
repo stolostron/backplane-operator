@@ -10,7 +10,7 @@
   github_ref: "https://github.com/redhat-openshift-ecosystem/community-operators-prod.git"
   operators:
     - name: "assisted-service"
-      channel: "ocm-2.6"
+      channel: "ocm-2.7"
       package-yml: "operators/assisted-service-operator/assisted-service.package.yaml"
       imageMappings:
         assisted-service: assisted_service
@@ -21,7 +21,7 @@
         assisted-image-service: assisted_image_service
 - repo_name: registration-operator
   github_ref: "https://github.com/stolostron/registration-operator.git"
-  branch: "backplane-2.1"
+  branch: "backplane-2.2"
   operators:
     - name: cluster-manager
       bundlePath: "deploy/cluster-manager/olm-catalog/cluster-manager/manifests/"
@@ -31,7 +31,7 @@
         - readOnlyRootFilesystem
 - repo_name: discovery-operator
   github_ref: "https://github.com/stolostron/discovery.git"
-  branch: "backplane-2.1"
+  branch: "backplane-2.2"
   operators:
     - name: discovery-operator
       bundlePath: "bundle/manifests/"
