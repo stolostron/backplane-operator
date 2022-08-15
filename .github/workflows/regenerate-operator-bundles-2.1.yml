@@ -1,6 +1,6 @@
 # This is a basic workflow to help you get started with Actions
 
-name: Regenerate 2.0 Operator Bundles
+name: Regenerate 2.1 Operator Bundles
 
 # Controls when the action will run. 
 on:
