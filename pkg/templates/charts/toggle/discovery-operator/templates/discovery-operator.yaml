@@ -114,7 +114,7 @@ spec:
           defaultMode: 440
           items:
           - key: ca-bundle.crt
-            path: tls-ca-bundle.pem
+            path: tsl-ca-bundle.pem
           name: trusted-ca-bundle
           optional: true
         name: trusted-ca-bundle
