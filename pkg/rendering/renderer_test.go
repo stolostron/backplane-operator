@@ -4,6 +4,7 @@
 package renderer
 
 import (
+	"fmt"
 	"os"
 	"reflect"
 	"testing"
@@ -37,6 +38,31 @@ func TestRender(t *testing.T) {
 			Key:      "dedicated",
 			Operator: "Exists",
 			Effect:   "NoSchedule",
+			Value:    "test",
+		},
+		{
+			Key:      "node.ocs.openshift.io/storage",
+			Operator: "Equal",
+			Value:    "true",
+			Effect:   "NoSchedule",
+		},
+		{
+			Key:      "false",
+			Operator: "false",
+			Value:    "true",
+			Effect:   "true",
+		},
+		{
+			Key:      "22",
+			Operator: "23",
+			Value:    "24",
+			Effect:   "25",
+		},
+		{
+			Key:      "22.0",
+			Operator: "23.1",
+			Value:    "24.2",
+			Effect:   "25.3",
 		},
 	}
 	testBackplane := &backplane.MultiClusterEngine{
@@ -83,6 +109,7 @@ func TestRender(t *testing.T) {
 			deployment := &appsv1.Deployment{}
 			err := runtime.DefaultUnstructuredConverter.FromUnstructured(template.Object, deployment)
 			if err != nil {
+				fmt.Println("KV Pair: ", template)
 				t.Fatalf(err.Error())
 			}
 
