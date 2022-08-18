@@ -8,7 +8,7 @@ Here is an example multiclusterengine with the annotation
 apiVersion: multicluster.openshift.io/v1
 kind: MultiClusterEngine
 metadata:
-  name: multiclusterengine-sample
+  name: multiclusterengine
   annotations:
     "imageRepository": "quay.io/stolostron"
 ```
