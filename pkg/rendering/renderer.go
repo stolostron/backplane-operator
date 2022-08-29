@@ -74,16 +74,13 @@ func convertTolerations(tols []corev1.Toleration) []Toleration {
 }
 
 func (u *Toleration) MarshalJSON() ([]byte, error) {
-
 	v := reflect.ValueOf(u)
 	values := make([]string, reflect.Indirect(v).NumField())
 	var operator corev1.TolerationOperator = u.Operator
 	var effect corev1.TaintEffect = u.Effect
 
+	//Marshal all Toleration fields that are a number or true/false into a string
 	for i := 0; i < reflect.Indirect(v).NumField(); i++ {
-		fmt.Println(reflect.Indirect(v).Field(i).Kind())
-		fmt.Println(reflect.Indirect(v).Field(i).Type())
-		fmt.Println(reflect.Indirect(v).Field(i).Interface())
 		switch reflect.Indirect(v).Field(i).Kind() {
 		case reflect.String:
 			if str, ok := reflect.Indirect(v).Field(i).Interface().(string); ok {
@@ -105,8 +102,6 @@ func (u *Toleration) MarshalJSON() ([]byte, error) {
 					operator = corev1.TolerationOperator(fmt.Sprintf("'%s'", str))
 				} else if _, err := strconv.ParseBool(str); err == nil {
 					operator = corev1.TolerationOperator(fmt.Sprintf("'%s'", str))
-				} else {
-					values[i] = str
 				}
 			}
 			if eff, ok := reflect.Indirect(v).Field(i).Interface().(corev1.TaintEffect); ok {
@@ -117,8 +112,6 @@ func (u *Toleration) MarshalJSON() ([]byte, error) {
 					effect = corev1.TaintEffect(fmt.Sprintf("'%s'", str))
 				} else if _, err := strconv.ParseBool(str); err == nil {
 					effect = corev1.TaintEffect(fmt.Sprintf("'%s'", str))
-				} else {
-					values[i] = str
 				}
 			}
 		}
@@ -140,10 +133,16 @@ func (u *Toleration) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (val *Values) ToValues() chartutil.Values {
-	inrec, _ := json.Marshal(val)
-	vals, _ := chartutil.ReadValues(inrec)
-	return vals
+func (val *Values) ToValues() (chartutil.Values, error) {
+	inrec, err := json.Marshal(val)
+	if err != nil {
+		return nil, err
+	}
+	vals, err := chartutil.ReadValues(inrec)
+	if err != nil {
+		return vals, err
+	}
+	return vals, nil
 }
 
 func RenderCRDs(crdDir string) ([]*unstructured.Unstructured, []error) {
@@ -245,7 +244,14 @@ func renderTemplates(chartPath string, backplaneConfig *v1.MultiClusterEngine, i
 		Strict:   true,
 		LintMode: false,
 	}
-	rawTemplates, err := helmEngine.Render(chart, chartutil.Values{"Values": valuesYaml.ToValues().AsMap()})
+
+	vals, err := valuesYaml.ToValues()
+	if err != nil {
+		log.Info(fmt.Sprintf("error rendering chart: %s", chart.Name()))
+		return nil, append(errs, err)
+	}
+
+	rawTemplates, err := helmEngine.Render(chart, chartutil.Values{"Values": vals.AsMap()})
 	// rawTemplates, err := helmEngine.Render(chart, valuesYaml.ToValues())
 
 	if err != nil {
