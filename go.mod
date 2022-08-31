@@ -4,7 +4,6 @@ go 1.18
 
 require (
 	github.com/Masterminds/semver v1.5.0
-	github.com/fatih/structs v1.1.0
 	github.com/onsi/ginkgo/v2 v2.1.4
 	github.com/onsi/gomega v1.20.0
 	github.com/openshift/api v0.0.0-20220531073726-6c4f186339a7
