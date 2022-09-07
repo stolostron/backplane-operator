@@ -350,7 +350,6 @@ spec:
           verbs:
           - create
           - delete
-          - deletecollection
           - get
           - list
           - patch
@@ -1179,32 +1178,6 @@ spec:
         - apiGroups:
           - cluster.open-cluster-management.io
           resources:
-          - hypershiftdeployments
-          verbs:
-          - create
-          - delete
-          - get
-          - list
-          - patch
-          - update
-          - watch
-        - apiGroups:
-          - cluster.open-cluster-management.io
-          resources:
-          - hypershiftdeployments/finalizers
-          verbs:
-          - update
-        - apiGroups:
-          - cluster.open-cluster-management.io
-          resources:
-          - hypershiftdeployments/status
-          verbs:
-          - get
-          - patch
-          - update
-        - apiGroups:
-          - cluster.open-cluster-management.io
-          resources:
           - managedclusters
           verbs:
           - create
@@ -1235,8 +1208,6 @@ spec:
           - managedclustersetbindings
           - managedclustersets
           verbs:
-          - create
-          - delete
           - get
           - list
           - patch
@@ -1634,12 +1605,7 @@ spec:
           - hostedclusters
           - nodepools
           verbs:
-          - create
-          - delete
-          - get
           - list
-          - patch
-          - update
           - watch
         - apiGroups:
           - imageregistry.open-cluster-management.io

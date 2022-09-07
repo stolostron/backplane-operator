@@ -331,12 +331,6 @@ var _ = Describe("BackplaneConfig controller", func() {
 				ResourceType:   &v1.MultiClusterEngine{},
 				Expected:       nil,
 			},
-			{
-				Name:           "HyperShift",
-				NamespacedName: types.NamespacedName{Name: "hypershift-deployment-controller", Namespace: DestinationNamespace},
-				ResourceType:   &appsv1.Deployment{},
-				Expected:       nil,
-			},
 			// {
 			// 	Name:           "MCEConsole",
 			// 	NamespacedName: types.NamespacedName{Name: "console-mce-console", Namespace: DestinationNamespace},
