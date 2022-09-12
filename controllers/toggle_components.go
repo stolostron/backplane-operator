@@ -689,9 +689,6 @@ func (r *MultiClusterEngineReconciler) ensureHyperShift(ctx context.Context, bac
 	namespacedName := types.NamespacedName{Name: "hypershift-addon-manager", Namespace: backplaneConfig.Spec.TargetNamespace}
 	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
-	namespacedName = types.NamespacedName{Name: "hypershift-deployment-controller", Namespace: backplaneConfig.Spec.TargetNamespace}
-	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
-	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
 
 	log := log.FromContext(ctx)
 
@@ -717,9 +714,6 @@ func (r *MultiClusterEngineReconciler) ensureHyperShift(ctx context.Context, bac
 func (r *MultiClusterEngineReconciler) ensureNoHyperShift(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 	namespacedName := types.NamespacedName{Name: "hypershift-addon-manager", Namespace: backplaneConfig.Spec.TargetNamespace}
-	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
-	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
-	namespacedName = types.NamespacedName{Name: "hypershift-deployment-controller", Namespace: backplaneConfig.Spec.TargetNamespace}
 	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
 	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 	// Renders all templates from charts
