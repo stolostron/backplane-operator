@@ -52,10 +52,10 @@ func (sm *StatusTracker) AddCondition(c bpv1.MultiClusterEngineCondition) {
 }
 
 func (sm *StatusTracker) ReportStatus(mce bpv1.MultiClusterEngine) bpv1.MultiClusterEngineStatus {
-	components := sm.reportComponents()
+	components := sm.ReportComponents()
 
 	// Infer available condition from component health
-	if allComponentsReady(components) {
+	if AllComponentsReady(components) {
 		sm.AddCondition(NewCondition(bpv1.MultiClusterEngineAvailable, metav1.ConditionTrue, ComponentsAvailableReason, ""))
 
 	} else {
@@ -79,7 +79,7 @@ func (sm *StatusTracker) ReportStatus(mce bpv1.MultiClusterEngine) bpv1.MultiClu
 	}
 }
 
-func (sm *StatusTracker) reportComponents() []bpv1.ComponentCondition {
+func (sm *StatusTracker) ReportComponents() []bpv1.ComponentCondition {
 	components := []bpv1.ComponentCondition{}
 	for _, c := range sm.Components {
 		components = append(components, c.Status(sm.Client))
@@ -92,7 +92,7 @@ func (sm *StatusTracker) reportConditions() []bpv1.MultiClusterEngineCondition {
 }
 
 func (sm *StatusTracker) reportPhase(mce bpv1.MultiClusterEngine, components []bpv1.ComponentCondition, conditions []bpv1.MultiClusterEngineCondition) bpv1.PhaseType {
-	progress := getCondition(conditions, bpv1.MultiClusterEngineProgressing)
+	progress := GetCondition(conditions, bpv1.MultiClusterEngineProgressing)
 
 	// If operator isn't progressing show error phase
 	if progress != nil && progress.Status == metav1.ConditionFalse {
@@ -110,14 +110,14 @@ func (sm *StatusTracker) reportPhase(mce bpv1.MultiClusterEngine, components []b
 	}
 
 	// If a component isn't ready show progressing phase
-	if !allComponentsReady(components) {
+	if !AllComponentsReady(components) {
 		return bpv1.MultiClusterEnginePhaseProgressing
 	}
 
 	return bpv1.MultiClusterEnginePhaseAvailable
 }
 
-func allComponentsReady(components []bpv1.ComponentCondition) bool {
+func AllComponentsReady(components []bpv1.ComponentCondition) bool {
 	if len(components) == 0 {
 		return false
 	}
