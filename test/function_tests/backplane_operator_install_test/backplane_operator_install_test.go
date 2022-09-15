@@ -525,14 +525,8 @@ var configurationTests = func() func() {
 							Name:      "hypershift-addon-manager",
 							Namespace: namespace,
 						}
-						hyperCtrlNN := types.NamespacedName{
-							Name:      "hypershift-deployment-controller",
-							Namespace: namespace,
-						}
 						Eventually(func(g Gomega) {
 							err := k8sClient.Get(ctx, hyperAddonNN, deploy)
-							g.Expect(err).To(BeNil(), "Expected no error, got error:", err)
-							err = k8sClient.Get(ctx, hyperCtrlNN, deploy)
 							g.Expect(err).To(BeNil(), "Expected no error, got error:", err)
 						}, duration, interval).Should(Succeed())
 					})
