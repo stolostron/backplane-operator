@@ -150,12 +150,12 @@ var _ = BeforeSuite(func() {
 		HealthProbeBindAddress: "0",
 	})
 	Expect(err).ToNot(HaveOccurred())
-
-	err = (&MultiClusterEngineReconciler{
+	reconciler := &MultiClusterEngineReconciler{
 		Client:        k8sManager.GetClient(),
 		Scheme:        k8sManager.GetScheme(),
 		StatusManager: &status.StatusTracker{Client: k8sManager.GetClient()},
-	}).SetupWithManager(k8sManager)
+	}
+	err = (reconciler).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 
 	go func() {

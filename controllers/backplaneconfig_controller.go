@@ -268,6 +268,13 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return result, err
 	}
 
+	if status.AllComponentsReady(r.StatusManager.ReportComponents()) {
+		result, err = r.ensureRemovalsGone(backplaneConfig)
+		if err != nil {
+			return result, err
+		}
+	}
+
 	r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing, metav1.ConditionTrue, status.DeploySuccessReason, "All components deployed"))
 
 	return ctrl.Result{}, nil
