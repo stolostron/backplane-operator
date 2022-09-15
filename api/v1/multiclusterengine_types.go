@@ -64,6 +64,10 @@ type MultiClusterEngineSpec struct {
 	// Location where MCE resources will be placed
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Target Namespace",xDescriptors={"urn:alm:descriptor:io.kubernetes:text","urn:alm:descriptor:com.tectonic.ui:advanced"}
 	TargetNamespace string `json:"targetNamespace,omitempty"`
+
+	// Disable Local Cluster Import
+	//+operator-sdk:csv:customresouredefinitions:type=spec,displayName="Disable Local Cluster Import",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
+	DisableHubSelfManagement bool `json:"disableHubSelfManagement,omitempty"`
 }
 
 // ComponentConfig provides optional configuration items for individual components

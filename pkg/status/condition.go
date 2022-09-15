@@ -22,6 +22,12 @@ const (
 	DeleteTimestampReason = "DeletionTimestampPresent"
 	// WaitingForResourceReason means the reconciler is waiting on a resource before it can progress
 	WaitingForResourceReason = "WaitingForResource"
+	// ManagedClusterTerminatingReason is added when a managed cluster has been deleted and
+	// is waiting to be finalized
+	ManagedClusterTerminatingReason = "ManagedClusterTerminating"
+	// NamespaceTerminatingReason is added when a managed cluster's namespace has been deleted and
+	// is waiting to be finalized
+	NamespaceTerminatingReason = "ManagedClusterNamespaceTerminating"
 	// PausedReason is added when the multiclusterengine is paused
 	PausedReason = "Paused"
 )
