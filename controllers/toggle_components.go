@@ -2,11 +2,10 @@ package controllers
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 
-	operatorv1 "github.com/openshift/api/operator/v1"
-	"github.com/pkg/errors"
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 	"github.com/stolostron/backplane-operator/pkg/foundation"
 	"github.com/stolostron/backplane-operator/pkg/hive"
@@ -14,16 +13,29 @@ import (
 	"github.com/stolostron/backplane-operator/pkg/status"
 	"github.com/stolostron/backplane-operator/pkg/toggle"
 	"github.com/stolostron/backplane-operator/pkg/utils"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
-
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+
+	operatorv1 "github.com/openshift/api/operator/v1"
+
+	"github.com/pkg/errors"
+)
+
+const (
+	// LocalClusterName name of the hub cluster managedcluster resource
+	LocalClusterName = "local-cluster"
+
+	// AnnotationNodeSelector key name of nodeSelector annotation synced from mch
+	AnnotationNodeSelector = "open-cluster-management/nodeSelector"
 )
 
 func (r *MultiClusterEngineReconciler) ensureConsoleMCE(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
@@ -791,4 +803,169 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterProxyAddon(ctx context.Con
 		}
 	}
 	return ctrl.Result{}, nil
+}
+
+func newManagedCluster() *unstructured.Unstructured {
+	managedCluster := &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"apiVersion": "cluster.open-cluster-management.io/v1",
+			"kind":       "ManagedCluster",
+			"metadata": map[string]interface{}{
+				"name": LocalClusterName,
+				"labels": map[string]interface{}{
+					"local-cluster":                 "true",
+					"cloud":                         "auto-detect",
+					"vendor":                        "auto-detect",
+					"velero.io/exclude-from-backup": "true",
+				},
+			},
+			"spec": map[string]interface{}{
+				"hubAcceptsClient": true,
+			},
+		},
+	}
+	return managedCluster
+}
+
+func newLocalNamespace() *corev1.Namespace {
+	return &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: LocalClusterName,
+		},
+	}
+}
+
+func (r *MultiClusterEngineReconciler) ensureLocalCluster(ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+	log := log.FromContext(ctx)
+
+	if utils.IsUnitTest() {
+		log.Info("skipping local cluster creation in unit tests")
+		return ctrl.Result{}, nil
+	}
+
+	log.Info("Check if ManagedCluster CR exists")
+	managedCluster := newManagedCluster()
+	err := r.Client.Get(ctx, types.NamespacedName{Name: LocalClusterName}, managedCluster)
+	if apierrors.IsNotFound(err) {
+		log.Info("ManagedCluster CR does not exist, need to create it")
+		log.Info("Check if local cluster namespace %q exists", LocalClusterName)
+		localNS := newLocalNamespace()
+		err := r.Client.Get(ctx, types.NamespacedName{Name: localNS.GetName()}, localNS)
+		if err == nil {
+			log.Info("Waiting on local cluster namespace to be removed before creating ManagedCluster CR", "Namespace", localNS.GetName())
+			return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+		} else if apierrors.IsNotFound(err) {
+			log.Info("Local cluster namespace does not exist. Creating ManagedCluster CR")
+			managedCluster = newManagedCluster()
+			err := r.Client.Create(ctx, managedCluster)
+			if err != nil {
+				log.Error(err, "Failed to create ManagedCluster CR")
+				return ctrl.Result{}, err
+			}
+			log.Info("Created ManagedCluster CR")
+		} else {
+			log.Error(err, "Failed to get local cluster namespace")
+			return ctrl.Result{}, err
+		}
+	} else if err != nil {
+		log.Error(err, "Failed to get ManagedCluster CR")
+		return ctrl.Result{RequeueAfter: requeuePeriod}, err
+	}
+
+	log.Info("Setting annotations on ManagedCluster CR")
+	annotations := managedCluster.GetAnnotations()
+	if len(mce.Spec.NodeSelector) > 0 {
+		log.Info("Adding NodeSelector annotation")
+		nodeSelector, err := json.Marshal(mce.Spec.NodeSelector)
+		if err != nil {
+			log.Error(err, "Failed to json marshal MCE NodeSelector")
+			return ctrl.Result{}, err
+		}
+		annotations[AnnotationNodeSelector] = string(nodeSelector)
+	} else {
+		log.Info("Removing NodeSelector annotation")
+		delete(annotations, AnnotationNodeSelector)
+	}
+	managedCluster.SetAnnotations(annotations)
+
+	log.Info("Updating ManagedCluster CR")
+	err = r.Client.Update(ctx, managedCluster)
+	if err != nil {
+		log.Error(err, "Failed to update ManagedCluster CR")
+		return ctrl.Result{}, err
+	}
+
+	return ctrl.Result{}, err
+}
+
+func (r *MultiClusterEngineReconciler) ensureNoLocalCluster(ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+	log := log.FromContext(ctx)
+
+	if utils.IsUnitTest() {
+		log.Info("skipping local cluster removal in unit tests")
+		return ctrl.Result{}, nil
+	}
+
+	log.Info("Check if ManagedCluster CR exists")
+	managedCluster := newManagedCluster()
+	err := r.Client.Get(ctx, types.NamespacedName{Name: LocalClusterName}, managedCluster)
+	if apierrors.IsNotFound(err) {
+		log.Info("ManagedCluster CR has been removed")
+	} else if err != nil {
+		log.Error(err, "Failed to get ManagedCluster CR")
+		return ctrl.Result{RequeueAfter: requeuePeriod}, err
+	} else {
+		log.Info("Deleting ManagedCluster CR")
+		managedCluster = newManagedCluster()
+		utils.AddBackplaneConfigLabels(managedCluster, mce.GetName())
+		err = r.Client.Delete(ctx, managedCluster)
+		if err != nil && !apierrors.IsNotFound(err) {
+			log.Error(err, "Error deleting ManagedCluster CR")
+			return ctrl.Result{}, err
+		}
+		log.Info("ManagedCluster CR has been deleted")
+
+		msg := "Waiting for local managed cluster to terminate."
+		condition := status.NewCondition(
+			backplanev1.MultiClusterEngineProgressing,
+			metav1.ConditionTrue,
+			status.ManagedClusterTerminatingReason,
+			msg,
+		)
+		r.StatusManager.AddCondition(condition)
+		log.Info(msg)
+		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+	}
+
+	log.Info("Check if managed cluster namespace exists")
+	ns := newLocalNamespace()
+	err = r.Client.Get(ctx, types.NamespacedName{Name: ns.GetName()}, ns)
+	if apierrors.IsNotFound(err) {
+		log.Info("Managed cluster namespace has been removed")
+		return ctrl.Result{}, nil
+	} else if err != nil {
+		log.Error(err, "Failed to get managed cluster namespace")
+		return ctrl.Result{RequeueAfter: requeuePeriod}, err
+	}
+	log.Info("Managed cluster namespace still exists")
+
+	log.Info("Deleting managed cluster namespace")
+	ns = newLocalNamespace()
+	err = r.Client.Delete(ctx, ns)
+	if err != nil && !apierrors.IsNotFound(err) {
+		log.Error(err, "Error deleting managed cluster ns")
+		return ctrl.Result{}, err
+	}
+
+	log.Info("Managed cluster namespace has been deleted")
+	msg := "Waiting for local managed cluster namespace to terminate."
+	condition := status.NewCondition(
+		backplanev1.MultiClusterEngineProgressing,
+		metav1.ConditionTrue,
+		status.NamespaceTerminatingReason,
+		msg,
+	)
+	r.StatusManager.AddCondition(condition)
+	log.Info(msg)
+	return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 }
