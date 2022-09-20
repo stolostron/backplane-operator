@@ -2,10 +2,6 @@
 package status
 
 import (
-	"errors"
-	"fmt"
-	"strings"
-
 	bpv1 "github.com/stolostron/backplane-operator/api/v1"
 	"github.com/stolostron/backplane-operator/pkg/version"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -81,26 +77,6 @@ func (sm *StatusTracker) ReportStatus(mce bpv1.MultiClusterEngine) bpv1.MultiClu
 		DesiredVersion: version.Version,
 		CurrentVersion: currentVersion,
 	}
-}
-
-func (st *StatusTracker) AllComponentsReady() error {
-	components := st.reportComponents()
-
-	if len(components) == 0 {
-		return errors.New("component statuses have been reported yet")
-	}
-
-	notReady := make([]string, 0, len(components))
-	for _, component := range components {
-		if !component.Available {
-			notReady = append(notReady, component.Name)
-		}
-	}
-	if len(notReady) > 0 {
-		return fmt.Errorf("components not ready: %s", strings.Join(notReady, ", "))
-	}
-
-	return nil
 }
 
 func (sm *StatusTracker) reportComponents() []bpv1.ComponentCondition {

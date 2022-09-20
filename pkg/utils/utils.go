@@ -25,6 +25,7 @@ var onComponents = []string{
 	backplanev1.Hive,
 	backplanev1.ServerFoundation,
 	backplanev1.ClusterProxyAddon,
+	backplanev1.LocalCluster,
 	// backplanev1.ConsoleMCE, // determined by OCP version
 	// backplanev1.HyperShift,
 }

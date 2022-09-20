@@ -278,11 +278,14 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return result, err
 	}
 
+<<<<<<< HEAD
 	result, err = r.ensureRemovalsGone(backplaneConfig)
 	if err != nil {
 		return result, err
 	}
 
+=======
+>>>>>>> 46b337b (Add local cluster import to MCE)
 	r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing, metav1.ConditionTrue, status.DeploySuccessReason, "All components deployed"))
 
 	return ctrl.Result{}, nil
@@ -616,6 +619,24 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 		}
 		if err != nil {
 			errs[backplanev1.ClusterProxyAddon] = err
+		}
+	}
+
+	if backplaneConfig.Enabled(backplanev1.LocalCluster) {
+		result, err := r.ensureLocalCluster(ctx, backplaneConfig)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.LocalCluster] = err
+		}
+	} else {
+		result, err := r.ensureNoLocalCluster(ctx, backplaneConfig)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.LocalCluster] = err
 		}
 	}
 
