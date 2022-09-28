@@ -737,6 +737,26 @@ rules:
 - apiGroups:
   - agent-install.openshift.io
   resources:
+  - hypershiftagentserviceconfigs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - agent-install.openshift.io
+  resources:
+  - hypershiftagentserviceconfigs/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - agent-install.openshift.io
+  resources:
   - infraenvs
   verbs:
   - create
@@ -792,6 +812,13 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions/status
+  verbs:
+  - patch
+  - update
 - apiGroups:
   - apiregistration.k8s.io
   resources:
