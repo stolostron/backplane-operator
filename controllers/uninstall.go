@@ -9,6 +9,7 @@ import (
 
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 	"github.com/stolostron/backplane-operator/pkg/status"
+	"github.com/stolostron/backplane-operator/pkg/toggle"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -68,6 +69,10 @@ func newUnstructured(nn types.NamespacedName, gvk schema.GroupVersionKind) *unst
 // ensureRemovalsGone validates successful removal of everything in the uninstallList. Return on first error encounter.
 func (r *MultiClusterEngineReconciler) ensureRemovalsGone(backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 	removals := uninstallList(backplaneConfig)
+
+	namespacedName := types.NamespacedName{Name: "hypershift-removals", Namespace: backplaneConfig.Spec.TargetNamespace}
+	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, removals))
+
 	allResourcesDeleted := true
 	for i := range removals {
 		gone, err := r.uninstall(backplaneConfig, removals[i])
