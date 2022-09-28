@@ -26,11 +26,16 @@ import (
 // AvailabilityType ...
 type AvailabilityType string
 
+// DeploymentMode
+type DeploymentMode string
+
 const (
 	// HABasic stands up most app subscriptions with a replicaCount of 1
 	HABasic AvailabilityType = "Basic"
 	// HAHigh stands up most app subscriptions with a replicaCount of 2
 	HAHigh AvailabilityType = "High"
+	// ModeHosted deploys the MCE on a hosted virtual cluster
+	ModeHosted = "Hosted"
 )
 
 // MultiClusterEngineSpec defines the desired state of MultiClusterEngine
@@ -39,6 +44,8 @@ type MultiClusterEngineSpec struct {
 	// Specifies deployment replication for improved availability. Options are: Basic and High (default)
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Availability Configuration",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:select:High","urn:alm:descriptor:com.tectonic.ui:select:Basic"}
 	AvailabilityConfig AvailabilityType `json:"availabilityConfig,omitempty"`
+
+	DeploymentMode DeploymentMode `json:"deploymentMode,omitempty"`
 
 	// Set the nodeselectors
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
