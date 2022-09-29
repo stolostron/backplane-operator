@@ -35,7 +35,9 @@ const (
 	// HAHigh stands up most app subscriptions with a replicaCount of 2
 	HAHigh AvailabilityType = "High"
 	// ModeHosted deploys the MCE on a hosted virtual cluster
-	ModeHosted = "Hosted"
+	ModeHosted DeploymentMode = "Hosted"
+	// ModeStandalone deployos the MCE in the default manner
+	ModeStandalone DeploymentMode = "Standalone"
 )
 
 // MultiClusterEngineSpec defines the desired state of MultiClusterEngine

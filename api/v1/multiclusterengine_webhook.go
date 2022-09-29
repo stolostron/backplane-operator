@@ -109,6 +109,9 @@ func (r *MultiClusterEngine) ValidateCreate() error {
 	if (r.Spec.AvailabilityConfig != HABasic) && (r.Spec.AvailabilityConfig != HAHigh) && (r.Spec.AvailabilityConfig != "") {
 		return errors.New("Invalid AvailabilityConfig given")
 	}
+	if (r.Spec.DeploymentMode != ModeHosted) && (r.Spec.DeploymentMode != ModeStandalone) && (r.Spec.DeploymentMode != "") {
+		return errors.New("Invalid DeploymentMode given")
+	}
 
 	// Validate components
 	if r.Spec.Overrides != nil {
@@ -119,15 +122,26 @@ func (r *MultiClusterEngine) ValidateCreate() error {
 		}
 	}
 
-	backplaneConfigList := &MultiClusterEngineList{}
-	if err := Client.List(ctx, backplaneConfigList); err != nil {
+	mceList := &MultiClusterEngineList{}
+	if err := Client.List(ctx, mceList); err != nil {
 		return fmt.Errorf("unable to list BackplaneConfigs: %s", err)
 	}
-	if len(backplaneConfigList.Items) == 0 {
-		return nil
+
+	targetNS := r.Spec.TargetNamespace
+	if targetNS == "" {
+		targetNS = DefaultTargetNamespace
 	}
-	// TODO(user): fill in your validation logic upon object creation.
-	return errors.New("only 1 backplaneconfig resource may exist")
+	mode := r.Spec.DeploymentMode
+
+	for _, mce := range mceList.Items {
+		if mce.Spec.TargetNamespace == targetNS {
+			return errors.New(fmt.Sprintf("MultiClusterEngine with targetNamespace already exists: `%s`", mce.Name))
+		}
+		if mode == ModeStandalone && mce.Spec.DeploymentMode == ModeStandalone {
+			return errors.New(fmt.Sprintf("MultiClusterEngine in Standalone mode already exists: `%s`. Only one resource may exist in Standalone mode.", mce.Name))
+		}
+	}
+	return nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
@@ -138,6 +152,9 @@ func (r *MultiClusterEngine) ValidateUpdate(old runtime.Object) error {
 	backplaneconfiglog.Info(oldMCE.Spec.TargetNamespace)
 	if (r.Spec.TargetNamespace != oldMCE.Spec.TargetNamespace) && (oldMCE.Spec.TargetNamespace != "") {
 		return errors.New("changes cannot be made to target namespace")
+	}
+	if r.Spec.DeploymentMode != oldMCE.Spec.DeploymentMode {
+		return errors.New("changes cannot be made to DeploymentMode")
 	}
 
 	oldNS, newNS := "", ""
@@ -153,6 +170,9 @@ func (r *MultiClusterEngine) ValidateUpdate(old runtime.Object) error {
 
 	if (r.Spec.AvailabilityConfig != HABasic) && (r.Spec.AvailabilityConfig != HAHigh) && (r.Spec.AvailabilityConfig != "") {
 		return errors.New("Invalid AvailabilityConfig given")
+	}
+	if (r.Spec.DeploymentMode != ModeHosted) && (r.Spec.DeploymentMode != ModeStandalone) && (r.Spec.DeploymentMode != "") {
+		return errors.New("Invalid DeploymentMode given")
 	}
 
 	// Validate components
