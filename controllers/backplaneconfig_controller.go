@@ -151,14 +151,22 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return ctrl.Result{}, nil
 	}
 
-	// reset status manager if req is a new MCE
-	uid := string(backplaneConfig.UID)
-	if uid == "" {
-		return ctrl.Result{RequeueAfter: requeuePeriod}, errors.New("Resource missing UID")
+	// reset status manager
+	r.StatusManager.Reset("")
+	for _, c := range backplaneConfig.Status.Conditions {
+		r.StatusManager.AddCondition(c)
 	}
-	if r.StatusManager.UID == "" || r.StatusManager.UID != string(backplaneConfig.UID) {
-		log.Info("Setting status manager to track new MCE", "UID", string(backplaneConfig.UID))
-		r.StatusManager.Reset(string(backplaneConfig.UID))
+
+	// Do not preform any further action on a hosted-mode MCE
+	if backplaneConfig.Spec.DeploymentMode == backplanev1.ModeHosted {
+		backplaneConfig.Status = backplanev1.MultiClusterEngineStatus{
+			Phase: backplanev1.MultiClusterEnginePhaseUnimplemented,
+		}
+		err := r.Client.Status().Update(ctx, backplaneConfig)
+		if err != nil {
+			return ctrl.Result{RequeueAfter: requeuePeriod}, err
+		}
+		return ctrl.Result{}, nil
 	}
 
 	defer func() {

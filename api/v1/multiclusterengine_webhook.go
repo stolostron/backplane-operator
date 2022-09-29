@@ -97,6 +97,9 @@ func (r *MultiClusterEngine) Default() {
 	if r.Spec.TargetNamespace == "" {
 		r.Spec.TargetNamespace = DefaultTargetNamespace
 	}
+	if r.Spec.DeploymentMode == "" {
+		r.Spec.DeploymentMode = ModeStandalone
+	}
 }
 
 var _ webhook.Validator = &MultiClusterEngine{}
@@ -132,12 +135,15 @@ func (r *MultiClusterEngine) ValidateCreate() error {
 		targetNS = DefaultTargetNamespace
 	}
 	mode := r.Spec.DeploymentMode
+	if mode == "" {
+		mode = ModeStandalone
+	}
 
 	for _, mce := range mceList.Items {
 		if mce.Spec.TargetNamespace == targetNS {
 			return errors.New(fmt.Sprintf("MultiClusterEngine with targetNamespace already exists: `%s`", mce.Name))
 		}
-		if mode == ModeStandalone && mce.Spec.DeploymentMode == ModeStandalone {
+		if mode == ModeStandalone && (mce.Spec.DeploymentMode == ModeStandalone || mce.Spec.DeploymentMode == "") {
 			return errors.New(fmt.Sprintf("MultiClusterEngine in Standalone mode already exists: `%s`. Only one resource may exist in Standalone mode.", mce.Name))
 		}
 	}

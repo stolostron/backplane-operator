@@ -816,5 +816,39 @@ var _ = Describe("BackplaneConfig controller", func() {
 			})
 		})
 
+		Context("and deploymentMode is Hosted", func() {
+			It("should not deploy resources in regular fashion", func() {
+				By("creating the hosted backplane config")
+				backplaneConfig := &v1.MultiClusterEngine{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "multicluster.openshift.io/v1",
+						Kind:       "MultiClusterEngine",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: BackplaneConfigName,
+					},
+					Spec: v1.MultiClusterEngineSpec{
+						TargetNamespace: DestinationNamespace,
+						ImagePullSecret: "testsecret",
+						DeploymentMode:  v1.ModeHosted,
+					},
+				}
+				createCtx := context.Background()
+				Expect(k8sClient.Create(createCtx, backplaneConfig)).Should(Succeed())
+
+				By("ensuring MCE reports phase as Unimplemented")
+				Eventually(func(g Gomega) {
+					multiClusterEngine := types.NamespacedName{
+						Name: BackplaneConfigName,
+					}
+					existingMCE := &v1.MultiClusterEngine{}
+					g.Expect(k8sClient.Get(context.TODO(), multiClusterEngine, existingMCE)).To(Succeed(), "Failed to get MCE")
+
+					g.Expect(existingMCE.Status.Phase).To(Equal(v1.MultiClusterEnginePhaseUnimplemented))
+				}, timeout, interval).Should(Succeed())
+
+			})
+		})
+
 	})
 })
