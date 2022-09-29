@@ -5,14 +5,11 @@ package controllers
 
 import (
 	"context"
-	"fmt"
 
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
-	"github.com/stolostron/backplane-operator/pkg/status"
 	"github.com/stolostron/backplane-operator/pkg/toggle"
 
 	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -88,14 +85,6 @@ func (r *MultiClusterEngineReconciler) ensureRemovalsGone(backplaneConfig *backp
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
 
-	// Emit hubcondition once pruning complete if other pruning condition present
-	progressingCondition := status.GetCondition(r.StatusManager.Conditions, backplanev1.MultiClusterEngineProgressing)
-	if progressingCondition != nil {
-		if progressingCondition.Reason == status.OldComponentRemovedReason || progressingCondition.Reason == status.OldComponentNotRemovedReason {
-			r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing, metav1.ConditionTrue, status.AllOldComponentsRemovedReason, "All old resources pruned"))
-		}
-	}
-
 	return ctrl.Result{}, nil
 }
 
@@ -120,16 +109,13 @@ func (r *MultiClusterEngineReconciler) uninstall(backplaneConfig *backplanev1.Mu
 
 	// If resource has deletionTimestamp then re-reconcile and don't try deleting
 	if u.GetDeletionTimestamp() != nil {
-		r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing, metav1.ConditionUnknown, status.OldComponentNotRemovedReason, fmt.Sprintf("Resource %s/%s finalizing", u.GetKind(), u.GetName())))
 		return false, nil
 	}
 
 	// Attempt deleting resource. No error does not necessarily mean the resource is gone.
 	err = r.Client.Delete(context.TODO(), u)
 	if err != nil {
-		r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing, metav1.ConditionUnknown, status.OldComponentNotRemovedReason, fmt.Sprintf("Failed to remove resource %s/%s", u.GetKind(), u.GetName())))
 		return false, err
 	}
-	r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing, metav1.ConditionUnknown, status.OldComponentRemovedReason, "Removed old resource"))
 	return false, nil
 }

@@ -21,30 +21,13 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"os"
-	"path/filepath"
-	"strings"
 
-	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes/scheme"
-	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
-	clustermanager "open-cluster-management.io/api/operator/v1"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/envtest"
 
 	configv1 "github.com/openshift/api/config/v1"
-	operatorv1 "github.com/openshift/api/operator/v1"
-	hiveconfig "github.com/openshift/hive/apis/hive/v1"
-	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	v1 "github.com/stolostron/backplane-operator/api/v1"
-	"github.com/stolostron/backplane-operator/pkg/status"
-	"github.com/stolostron/backplane-operator/pkg/utils"
 
-	admissionregistration "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -146,19 +129,12 @@ var _ = Describe("BackplaneConfig controller", func() {
 			return err
 		}, timeout, interval).Should(Succeed())
 
-		tests = testList{
-			{
-				Name:           "OCM Webhook",
-				NamespacedName: types.NamespacedName{Name: "hypershift-deployment", Namespace: DestinationNamespace},
-				ResourceType:   &corev1.ServiceAccount{},
-			},
-		}
 	})
 
 	When("creating a new BackplaneConfig", func() {
 
 		Context("and no image pull policy is specified", func() {
-			It("should deploy sub components", func() {
+			It("should remove old components", func() {
 				// createCtx := context.Background()
 				By("creating the backplane config")
 				backplaneConfig := &v1.MultiClusterEngine{
@@ -174,93 +150,10 @@ var _ = Describe("BackplaneConfig controller", func() {
 						ImagePullSecret: "testsecret",
 					},
 				}
-				testEnv = &envtest.Environment{
-					CRDDirectoryPaths: []string{
-						filepath.Join("..", "config", "crd", "bases"),
-						filepath.Join("..", "pkg", "templates", "crds", "cluster-manager"),
-						filepath.Join("..", "pkg", "templates", "crds", "hive-operator"),
-						filepath.Join("..", "pkg", "templates", "crds", "foundation"),
-						filepath.Join("..", "pkg", "templates", "crds", "cluster-lifecycle"),
-						filepath.Join("..", "pkg", "templates", "crds", "discovery-operator"),
-						filepath.Join("..", "pkg", "templates", "crds", "cluster-proxy-addon"),
-						filepath.Join("..", "hack", "unit-test-crds"),
-					},
-					CRDInstallOptions: envtest.CRDInstallOptions{
-						CleanUpAfterUse: true,
-					},
-					ErrorIfCRDPathMissing: true,
-				}
 
-				cfg, err := testEnv.Start()
-				Expect(err).NotTo(HaveOccurred())
-				Expect(cfg).NotTo(BeNil())
-
-				err = v1.AddToScheme(scheme.Scheme)
-				Expect(err).NotTo(HaveOccurred())
-
-				err = scheme.AddToScheme(scheme.Scheme)
-				Expect(err).NotTo(HaveOccurred())
-
-				err = apiregistrationv1.AddToScheme(scheme.Scheme)
-				Expect(err).NotTo(HaveOccurred())
-
-				err = admissionregistration.AddToScheme(scheme.Scheme)
-				Expect(err).NotTo(HaveOccurred())
-
-				err = apixv1.AddToScheme(scheme.Scheme)
-				Expect(err).NotTo(HaveOccurred())
-
-				err = hiveconfig.AddToScheme(scheme.Scheme)
-				Expect(err).NotTo(HaveOccurred())
-
-				err = clustermanager.AddToScheme(scheme.Scheme)
-				Expect(err).NotTo(HaveOccurred())
-
-				err = monitoringv1.AddToScheme(scheme.Scheme)
-				Expect(err).NotTo(HaveOccurred())
-
-				err = configv1.AddToScheme(scheme.Scheme)
-				Expect(err).NotTo(HaveOccurred())
-
-				err = operatorv1.AddToScheme(scheme.Scheme)
-				Expect(err).NotTo(HaveOccurred())
-
-				err = os.Setenv("POD_NAMESPACE", "default")
-				Expect(err).NotTo(HaveOccurred())
-
-				err = os.Setenv("DIRECTORY_OVERRIDE", "../")
-				Expect(err).NotTo(HaveOccurred())
-
-				err = os.Setenv("UNIT_TEST", "true")
-				Expect(err).NotTo(HaveOccurred())
-
-				for _, v := range utils.GetTestImages() {
-					key := fmt.Sprintf("OPERAND_IMAGE_%s", strings.ToUpper(v))
-					err := os.Setenv(key, "quay.io/test/test:test")
-					Expect(err).NotTo(HaveOccurred())
-				}
-				//+kubebuilder:scaffold:scheme
-
-				k8sClient, err := client.New(cfg, client.Options{Scheme: scheme.Scheme})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(k8sClient).NotTo(BeNil())
-
-				k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
-					Scheme:                 scheme.Scheme,
-					MetricsBindAddress:     "0",
-					HealthProbeBindAddress: "0",
-				})
-				Expect(err).ToNot(HaveOccurred())
-				reconciler := &MultiClusterEngineReconciler{
-					Client:        k8sManager.GetClient(),
-					Scheme:        k8sManager.GetScheme(),
-					StatusManager: &status.StatusTracker{Client: k8sManager.GetClient()},
-				}
-				err = (reconciler).SetupWithManager(k8sManager)
-				Expect(err).ToNot(HaveOccurred())
-				_, _ = reconciler.ensureRemovalsGone(backplaneConfig)
+				reconciler.ensureRemovalsGone(backplaneConfig)
 				for _, test := range tests {
-					By(fmt.Sprintf("ensuring %s is created", test.Name))
+					By(fmt.Sprintf("ensuring %s is creatremoved", test.Name))
 					Eventually(func() bool {
 						ctx := context.Background()
 						err := k8sClient.Get(ctx, test.NamespacedName, test.ResourceType)

@@ -63,6 +63,7 @@ var cfg *rest.Config
 var k8sClient client.Client
 var testEnv *envtest.Environment
 var signalHandlerContext context.Context
+var reconciler MultiClusterEngineReconciler
 
 var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
@@ -150,7 +151,7 @@ var _ = BeforeSuite(func() {
 		HealthProbeBindAddress: "0",
 	})
 	Expect(err).ToNot(HaveOccurred())
-	reconciler := &MultiClusterEngineReconciler{
+	reconciler = MultiClusterEngineReconciler{
 		Client:        k8sManager.GetClient(),
 		Scheme:        k8sManager.GetScheme(),
 		StatusManager: &status.StatusTracker{Client: k8sManager.GetClient()},
