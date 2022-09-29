@@ -125,7 +125,7 @@ func Test_AddCondition(t *testing.T) {
 			t.Errorf("Expected two conditions. Got %v", len(cond))
 		}
 
-		c := GetCondition(cond, bpv1.MultiClusterEngineAvailable)
+		c := getCondition(cond, bpv1.MultiClusterEngineAvailable)
 		if c.Status != metav1.ConditionFalse {
 			t.Errorf("Condition was not updated. Expected %v to equal %v.", c.Status, metav1.ConditionFalse)
 		}

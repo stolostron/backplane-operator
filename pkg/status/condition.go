@@ -15,12 +15,6 @@ const (
 	DeployFailedReason = "FailedDeployingComponent"
 	// DeploySuccessReason is when all component have been deployed
 	DeploySuccessReason = "ComponentsDeployed"
-	// OldComponentRemovedReason is added when the hub calls delete on an old resource
-	OldComponentRemovedReason = "OldResourceDeleted"
-	// OldComponentNotRemovedReason is added when a component the hub is trying to delete has not been removed successfully
-	OldComponentNotRemovedReason = "OldResourceDeleteFailed"
-	// AllOldComponentsRemovedReason is added when the hub successfully prunes all old resources
-	AllOldComponentsRemovedReason = "AllOldResourcesDeleted"
 	// RequirementsNotMetReason is when there is something missing or misconfigured
 	// that is preventing progress
 	RequirementsNotMetReason = "RequirementsNotMet"
@@ -46,7 +40,7 @@ func NewCondition(condType v1.MultiClusterEngineConditionType, status metav1.Con
 
 // SetCondition sets the status condition. It either overwrites the existing one or creates a new one.
 func setCondition(conditions []v1.MultiClusterEngineCondition, c v1.MultiClusterEngineCondition) []v1.MultiClusterEngineCondition {
-	currentCond := GetCondition(conditions, c.Type)
+	currentCond := getCondition(conditions, c.Type)
 	if currentCond != nil && currentCond.Status == c.Status && currentCond.Reason == c.Reason {
 		// Condition already present
 		return conditions
@@ -62,7 +56,7 @@ func setCondition(conditions []v1.MultiClusterEngineCondition, c v1.MultiCluster
 }
 
 // GetCondition returns the condition you're looking for by type
-func GetCondition(conditions []v1.MultiClusterEngineCondition, condType v1.MultiClusterEngineConditionType) *v1.MultiClusterEngineCondition {
+func getCondition(conditions []v1.MultiClusterEngineCondition, condType v1.MultiClusterEngineConditionType) *v1.MultiClusterEngineCondition {
 	for i := range conditions {
 		c := conditions[i]
 		if c.Type == condType {
