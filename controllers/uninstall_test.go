@@ -30,6 +30,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -129,13 +130,21 @@ var _ = Describe("BackplaneConfig controller", func() {
 			return err
 		}, timeout, interval).Should(Succeed())
 
+		tests = testList{
+			{
+				Name:           "hypershift service account",
+				NamespacedName: types.NamespacedName{Name: "hypershift-deployment", Namespace: DestinationNamespace},
+				ResourceType:   &corev1.ServiceAccount{},
+			},
+		}
+
 	})
 
 	When("creating a new BackplaneConfig", func() {
 
 		Context("and no image pull policy is specified", func() {
 			It("should remove old components", func() {
-				// createCtx := context.Background()
+				createCtx := context.Background()
 				By("creating the backplane config")
 				backplaneConfig := &v1.MultiClusterEngine{
 					TypeMeta: metav1.TypeMeta{
@@ -151,9 +160,10 @@ var _ = Describe("BackplaneConfig controller", func() {
 					},
 				}
 
-				reconciler.ensureRemovalsGone(backplaneConfig)
+				// reconciler.ensureRemovalsGone(backplaneConfig)
+				Expect(k8sClient.Create(createCtx, backplaneConfig)).Should(Succeed())
 				for _, test := range tests {
-					By(fmt.Sprintf("ensuring %s is creatremoved", test.Name))
+					By(fmt.Sprintf("ensuring %s is removed", test.Name))
 					Eventually(func() bool {
 						ctx := context.Background()
 						err := k8sClient.Get(ctx, test.NamespacedName, test.ResourceType)
