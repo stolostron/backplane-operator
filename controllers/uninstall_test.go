@@ -45,6 +45,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 	)
 
 	AfterEach(func() {
+
 		Expect(k8sClient.Delete(context.Background(), &configv1.ClusterVersion{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "version",
@@ -170,6 +171,12 @@ var _ = Describe("BackplaneConfig controller", func() {
 						return errors.IsNotFound(err)
 					}, timeout, interval).Should(BeTrue())
 				}
+
+				Expect(k8sClient.Delete(context.Background(), &v1.MultiClusterEngine{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: BackplaneConfigName,
+					},
+				})).To(Succeed())
 
 			})
 		})
