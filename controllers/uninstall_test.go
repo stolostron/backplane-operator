@@ -178,6 +178,12 @@ var _ = Describe("BackplaneConfig controller", func() {
 					},
 				})).To(Succeed())
 
+				Eventually(func() bool {
+					ctx := context.Background()
+					err := k8sClient.Get(ctx, types.NamespacedName{Name: BackplaneConfigName}, &v1.MultiClusterEngine{})
+					return errors.IsNotFound(err)
+				}, timeout, interval).Should(BeTrue())
+
 			})
 		})
 
