@@ -38,10 +38,6 @@ var (
 				schema.GroupVersionKind{Group: "rbac.authorization.k8s.io", Kind: "RoleBinding", Version: "v1"},
 			),
 			newUnstructured(
-				types.NamespacedName{Name: "hypershiftdeployments.cluster.open-cluster-management.io"},
-				schema.GroupVersionKind{Group: "apiextensions.k8s.io", Kind: "CustomResourceDefinition", Version: "v1"},
-			),
-			newUnstructured(
 				types.NamespacedName{Name: "open-cluster-management:hypershift-preview:hypershift-deployment-controller"},
 				schema.GroupVersionKind{Group: "rbac.authorization.k8s.io", Kind: "ClusterRole", Version: "v1"},
 			),
