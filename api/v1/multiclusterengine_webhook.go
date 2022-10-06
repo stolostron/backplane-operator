@@ -136,6 +136,7 @@ func (r *MultiClusterEngine) ValidateCreate() error {
 	}
 
 	for _, mce := range mceList.Items {
+		mce := mce
 		if mce.Spec.TargetNamespace == targetNS || (targetNS == DefaultTargetNamespace && mce.Spec.TargetNamespace == "") {
 			return fmt.Errorf("%w: MultiClusterEngine with targetNamespace already exists: '%s'", ErrInvalidNamespace, mce.Name)
 		}
