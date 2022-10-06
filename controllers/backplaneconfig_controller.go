@@ -158,7 +158,7 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}
 
 	// Do not preform any further action on a hosted-mode MCE
-	if backplaneConfig.Spec.DeploymentMode == backplanev1.ModeHosted {
+	if backplanev1.IsInHostedMode(backplaneConfig) {
 		backplaneConfig.Status = backplanev1.MultiClusterEngineStatus{
 			Phase: backplanev1.MultiClusterEnginePhaseUnimplemented,
 		}

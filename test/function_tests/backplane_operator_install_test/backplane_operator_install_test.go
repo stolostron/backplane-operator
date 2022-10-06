@@ -763,10 +763,10 @@ var webhookTests = func() func() {
 			Eventually(func(g Gomega) {
 				mce := &backplane.MultiClusterEngine{}
 				g.Expect(k8sClient.Get(ctx, multiClusterEngine, mce)).To(Succeed())
-				if mce.Spec.DeploymentMode == backplane.ModeHosted {
-					mce.Spec.DeploymentMode = backplane.ModeStandalone
+				if backplane.IsInHostedMode(mce) {
+					mce.SetAnnotations(map[string]string{})
 				} else {
-					mce.Spec.DeploymentMode = backplane.ModeHosted
+					mce.SetAnnotations(map[string]string{"deploymentmode": string(backplane.ModeHosted)})
 				}
 				err := k8sClient.Update(ctx, mce)
 				g.Expect(err).ShouldNot(BeNil())
@@ -782,7 +782,6 @@ var webhookTests = func() func() {
 				mce.Spec.AvailabilityConfig = "shouldnotexist"
 				err := k8sClient.Update(ctx, mce)
 				g.Expect(err).ShouldNot(BeNil())
-				g.Expect(err.Error()).Should(ContainSubstring("Invalid AvailabilityConfig given"))
 			}, duration, interval).Should(Succeed())
 
 		})

@@ -825,12 +825,12 @@ var _ = Describe("BackplaneConfig controller", func() {
 						Kind:       "MultiClusterEngine",
 					},
 					ObjectMeta: metav1.ObjectMeta{
-						Name: BackplaneConfigName,
+						Name:        BackplaneConfigName,
+						Annotations: map[string]string{"deploymentmode": string(v1.ModeHosted)},
 					},
 					Spec: v1.MultiClusterEngineSpec{
 						TargetNamespace: DestinationNamespace,
 						ImagePullSecret: "testsecret",
-						DeploymentMode:  v1.ModeHosted,
 					},
 				}
 				createCtx := context.Background()

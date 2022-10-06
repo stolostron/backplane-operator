@@ -47,8 +47,6 @@ type MultiClusterEngineSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Availability Configuration",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:select:High","urn:alm:descriptor:com.tectonic.ui:select:Basic"}
 	AvailabilityConfig AvailabilityType `json:"availabilityConfig,omitempty"`
 
-	DeploymentMode DeploymentMode `json:"deploymentMode,omitempty"`
-
 	// Set the nodeselectors
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 
