@@ -151,9 +151,9 @@ package main
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclusters,verbs=get;list;watch
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclusters,verbs=get;list;watch
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclusters,verbs=get;list;watch
-//+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclusters,verbs=get;list;watch
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclusters/status,verbs=patch;update
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclusters;managedclusters/status;managedclusters/finalizers,verbs=create;delete;get;list;patch;update;watch
+//+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclusters;managedclustersets,verbs=get;list;watch
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclusters;managedclustersets;managedclustersetbindings,verbs=get;list;watch;patch;update
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclusters;managedclustersets;managedclustersetbindings;clustercurators;placements;placementdecisions,verbs=list;watch
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclusters;managedclustersets;placementdecisions;placementdecisions/status,verbs=get;list;watch;update
@@ -242,7 +242,7 @@ package main
 //+kubebuilder:rbac:groups=policy.open-cluster-management.io;app.k8s.io;apps.open-cluster-management.io;argoproj.io,resources=applications;applicationsets;appprojects;argocds;channels;gitopsclusters;helmreleases;placementruless;placementbindings;policies;policyautomations;policysets;subscriptions;subscriptionreports,verbs=list;watch
 //+kubebuilder:rbac:groups=proxy.open-cluster-management.io,resources=clusterstatuses/aggregator,verbs=get;create
 //+kubebuilder:rbac:groups=proxy.open-cluster-management.io,resources=clusterstatuses/aggregator,verbs=get;create
-//+kubebuilder:rbac:groups=proxy.open-cluster-management.io,resources=managedproxyconfigurations;managedproxyconfigurations/status;managedproxyconfigurations/finalizers,verbs=*
+//+kubebuilder:rbac:groups=proxy.open-cluster-management.io,resources=managedproxyconfigurations;managedproxyconfigurations/status;managedproxyconfigurations/finalizers;managedproxyserviceresolvers;managedproxyserviceresolvers/status;managedproxyserviceresolvers/finalizers,verbs=*
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterrolebindings,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterrolebindings;rolebindings,verbs=create;get;list;update;watch;patch;delete
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles,verbs=create;delete;get;list;patch;update;watch

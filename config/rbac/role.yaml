@@ -1177,6 +1177,15 @@ rules:
   resources:
   - managedclusters
   - managedclustersets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - cluster.open-cluster-management.io
+  resources:
+  - managedclusters
+  - managedclustersets
   - placementdecisions
   - placementdecisions/status
   verbs:
@@ -1835,8 +1844,24 @@ rules:
   - managedproxyconfigurations
   - managedproxyconfigurations/finalizers
   - managedproxyconfigurations/status
+  - managedproxyserviceresolvers
+  - managedproxyserviceresolvers/finalizers
+  - managedproxyserviceresolvers/status
   verbs:
   - '*'
+- apiGroups:
+  - proxy.open-cluster-management.io
+  resources:
+  - managedproxyconfigurations
+  - managedproxyserviceresolvers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - rbac.authorization.k8s.io
   resources:
