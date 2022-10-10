@@ -42,6 +42,12 @@ var (
 	backplaneconfiglog = logf.Log.WithName("backplaneconfig-resource")
 	Client             cl.Client
 
+	ErrInvalidComponent    = errors.New("invalid component config")
+	ErrInvalidNamespace    = errors.New("invalid TargetNamespace")
+	ErrInvalidDeployMode   = errors.New("invalid DeploymentMode")
+	ErrInvalidAvailability = errors.New("invalid AvailabilityConfig")
+	ErrInvalidInfraNS      = errors.New("invalid InfrastructureCustomNamespace")
+
 	blockDeletionResources = []struct {
 		Name string
 		GVK  schema.GroupVersionKind
@@ -107,27 +113,38 @@ func (r *MultiClusterEngine) ValidateCreate() error {
 	backplaneconfiglog.Info("validate create", "name", r.Name)
 
 	if (r.Spec.AvailabilityConfig != HABasic) && (r.Spec.AvailabilityConfig != HAHigh) && (r.Spec.AvailabilityConfig != "") {
-		return errors.New("Invalid AvailabilityConfig given")
+		return ErrInvalidAvailability
 	}
 
 	// Validate components
 	if r.Spec.Overrides != nil {
 		for _, c := range r.Spec.Overrides.Components {
 			if !validComponent(c) {
-				return errors.New(fmt.Sprintf("invalid component config: %s is not a known component", c.Name))
+				return fmt.Errorf("%w: %s is not a known component", ErrInvalidComponent, c.Name)
 			}
 		}
 	}
 
-	backplaneConfigList := &MultiClusterEngineList{}
-	if err := Client.List(ctx, backplaneConfigList); err != nil {
+	mceList := &MultiClusterEngineList{}
+	if err := Client.List(ctx, mceList); err != nil {
 		return fmt.Errorf("unable to list BackplaneConfigs: %s", err)
 	}
-	if len(backplaneConfigList.Items) == 0 {
-		return nil
+
+	targetNS := r.Spec.TargetNamespace
+	if targetNS == "" {
+		targetNS = DefaultTargetNamespace
 	}
-	// TODO(user): fill in your validation logic upon object creation.
-	return errors.New("only 1 backplaneconfig resource may exist")
+
+	for _, mce := range mceList.Items {
+		mce := mce
+		if mce.Spec.TargetNamespace == targetNS || (targetNS == DefaultTargetNamespace && mce.Spec.TargetNamespace == "") {
+			return fmt.Errorf("%w: MultiClusterEngine with targetNamespace already exists: '%s'", ErrInvalidNamespace, mce.Name)
+		}
+		if !IsInHostedMode(r) && !IsInHostedMode(&mce) {
+			return fmt.Errorf("%w: MultiClusterEngine in Standalone mode already exists: `%s`. Only one resource may exist in Standalone mode.", ErrInvalidDeployMode, mce.Name)
+		}
+	}
+	return nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
@@ -137,7 +154,10 @@ func (r *MultiClusterEngine) ValidateUpdate(old runtime.Object) error {
 	oldMCE := old.(*MultiClusterEngine)
 	backplaneconfiglog.Info(oldMCE.Spec.TargetNamespace)
 	if (r.Spec.TargetNamespace != oldMCE.Spec.TargetNamespace) && (oldMCE.Spec.TargetNamespace != "") {
-		return errors.New("changes cannot be made to target namespace")
+		return fmt.Errorf("%w: changes cannot be made to target namespace", ErrInvalidNamespace)
+	}
+	if IsInHostedMode(r) != IsInHostedMode(oldMCE) {
+		return fmt.Errorf("%w: changes cannot be made to DeploymentMode", ErrInvalidDeployMode)
 	}
 
 	oldNS, newNS := "", ""
@@ -148,18 +168,19 @@ func (r *MultiClusterEngine) ValidateUpdate(old runtime.Object) error {
 		newNS = r.Spec.Overrides.InfrastructureCustomNamespace
 	}
 	if oldNS != newNS {
-		return errors.New("changes cannot be made to InfrastructureCustomNamespace")
+		return fmt.Errorf("%w: changes cannot be made to InfrastructureCustomNamespace", ErrInvalidInfraNS)
 	}
 
 	if (r.Spec.AvailabilityConfig != HABasic) && (r.Spec.AvailabilityConfig != HAHigh) && (r.Spec.AvailabilityConfig != "") {
-		return errors.New("Invalid AvailabilityConfig given")
+		return ErrInvalidAvailability
+
 	}
 
 	// Validate components
 	if r.Spec.Overrides != nil {
 		for _, c := range r.Spec.Overrides.Components {
 			if !validComponent(c) {
-				return errors.New(fmt.Sprintf("invalid component config: %s is not a known component", c.Name))
+				return fmt.Errorf("%w: %s is not a known component", ErrInvalidComponent, c.Name)
 			}
 		}
 	}

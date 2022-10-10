@@ -26,11 +26,18 @@ import (
 // AvailabilityType ...
 type AvailabilityType string
 
+// DeploymentMode
+type DeploymentMode string
+
 const (
 	// HABasic stands up most app subscriptions with a replicaCount of 1
 	HABasic AvailabilityType = "Basic"
 	// HAHigh stands up most app subscriptions with a replicaCount of 2
 	HAHigh AvailabilityType = "High"
+	// ModeHosted deploys the MCE on a hosted virtual cluster
+	ModeHosted DeploymentMode = "Hosted"
+	// ModeStandalone deployos the MCE in the default manner
+	ModeStandalone DeploymentMode = "Standalone"
 )
 
 // MultiClusterEngineSpec defines the desired state of MultiClusterEngine
@@ -135,10 +142,11 @@ type ComponentCondition struct {
 type PhaseType string
 
 const (
-	MultiClusterEnginePhaseProgressing  PhaseType = "Progressing"
-	MultiClusterEnginePhaseAvailable    PhaseType = "Available"
-	MultiClusterEnginePhaseUninstalling PhaseType = "Uninstalling"
-	MultiClusterEnginePhaseError        PhaseType = "Error"
+	MultiClusterEnginePhaseProgressing   PhaseType = "Progressing"
+	MultiClusterEnginePhaseAvailable     PhaseType = "Available"
+	MultiClusterEnginePhaseUninstalling  PhaseType = "Uninstalling"
+	MultiClusterEnginePhaseError         PhaseType = "Error"
+	MultiClusterEnginePhaseUnimplemented PhaseType = "Unimplemented"
 )
 
 type MultiClusterEngineConditionType string

@@ -178,4 +178,8 @@ var _ = AfterSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	err = os.Unsetenv("DIRECTORY_OVERRIDE")
 	Expect(err).NotTo(HaveOccurred())
+
+	By("tearing down the test environment")
+	err = testEnv.Stop()
+	Expect(err).NotTo(HaveOccurred())
 })

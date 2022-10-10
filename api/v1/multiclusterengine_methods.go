@@ -110,3 +110,14 @@ func validComponent(c ComponentConfig) bool {
 	}
 	return false
 }
+
+func IsInHostedMode(mce *MultiClusterEngine) bool {
+	a := mce.GetAnnotations()
+	if a == nil {
+		return false
+	}
+	if a["deploymentmode"] == string(ModeHosted) {
+		return true
+	}
+	return false
+}

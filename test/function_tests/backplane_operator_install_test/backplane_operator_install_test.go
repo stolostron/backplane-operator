@@ -735,6 +735,18 @@ var webhookTests = func() func() {
 			}
 		})
 
+		It("blocks creation if targetNamespace in use", func() {
+			mce := &backplane.MultiClusterEngine{}
+			Eventually(func(g Gomega) {
+				g.Expect(k8sClient.Get(ctx, multiClusterEngine, mce)).To(Succeed())
+			}, duration, interval).Should(Succeed())
+
+			newMCE := defaultMultiClusterEngine()
+			newMCE.Name = "newName"
+			newMCE.Spec.TargetNamespace = mce.Spec.TargetNamespace
+			Expect(k8sClient.Create(ctx, mce)).ToNot(BeNil())
+		})
+
 		It("prevents modifications of the targetNamespace", func() {
 			Eventually(func(g Gomega) {
 				mce := &backplane.MultiClusterEngine{}
@@ -747,6 +759,22 @@ var webhookTests = func() func() {
 
 		})
 
+		It("prevents modifications of the deploymentMode", func() {
+			Eventually(func(g Gomega) {
+				mce := &backplane.MultiClusterEngine{}
+				g.Expect(k8sClient.Get(ctx, multiClusterEngine, mce)).To(Succeed())
+				if backplane.IsInHostedMode(mce) {
+					mce.SetAnnotations(map[string]string{})
+				} else {
+					mce.SetAnnotations(map[string]string{"deploymentmode": string(backplane.ModeHosted)})
+				}
+				err := k8sClient.Update(ctx, mce)
+				g.Expect(err).ShouldNot(BeNil())
+				g.Expect(err.Error()).Should(ContainSubstring("changes cannot be made to DeploymentMode"))
+			}, duration, interval).Should(Succeed())
+
+		})
+
 		It("prevents illegal modifications of the availabilityConfig", func() {
 			Eventually(func(g Gomega) {
 				mce := &backplane.MultiClusterEngine{}
@@ -754,7 +782,6 @@ var webhookTests = func() func() {
 				mce.Spec.AvailabilityConfig = "shouldnotexist"
 				err := k8sClient.Update(ctx, mce)
 				g.Expect(err).ShouldNot(BeNil())
-				g.Expect(err.Error()).Should(ContainSubstring("Invalid AvailabilityConfig given"))
 			}, duration, interval).Should(Succeed())
 
 		})

@@ -233,13 +233,14 @@ catalog-push: ## Push a catalog image.
 
 -include Makefile.dev 
 
+##@ Functional Tests
 
-# Create a test image and use it to run functional tests
-
-## Build the BP functional test image
-test-image: 
+test-image: ## Build a functional test image
 	@echo "Building $(REGISTRY)/backplane-operator-test:$(VERSION)"
 	docker build . -f Dockerfile.test.prow -t $(REGISTRY)/backplane-operator-test:$(VERSION)
 
-ft-install:
+ft-install: ## Docker run the functional test image
 	docker run --env TEST_MODE="install" --volume ~/.kube/config:/opt/.kube/config $(REGISTRY)/backplane-operator-test:$(VERSION)
+
+functional-tests: ## Run ginkgo functional tests directly.
+	ginkgo -tags functional -v --slowSpecThreshold=600 test/function_tests/backplane_operator_install_test
