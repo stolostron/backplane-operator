@@ -159,8 +159,9 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 
 	// Do not preform any further action on a hosted-mode MCE
 	if backplanev1.IsInHostedMode(backplaneConfig) {
-		backplaneConfig.Status = backplanev1.MultiClusterEngineStatus{
-			Phase: backplanev1.MultiClusterEnginePhaseUnimplemented,
+		err = r.HostedReconcile(ctx, backplaneConfig)
+		if err != nil {
+			log.Error(err, "failed reconciling hosted MCE", "Name", backplaneConfig.Name)
 		}
 		err := r.Client.Status().Update(ctx, backplaneConfig)
 		if err != nil {

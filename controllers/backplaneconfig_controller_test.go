@@ -844,7 +844,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 					existingMCE := &v1.MultiClusterEngine{}
 					g.Expect(k8sClient.Get(context.TODO(), multiClusterEngine, existingMCE)).To(Succeed(), "Failed to get MCE")
 
-					g.Expect(existingMCE.Status.Phase).To(Equal(v1.MultiClusterEnginePhaseUnimplemented))
+					g.Expect(existingMCE.Status.Phase).To(Equal(v1.MultiClusterEnginePhaseError), "MCE should fail getting a kubeconfig secret")
 				}, timeout, interval).Should(Succeed())
 
 			})
