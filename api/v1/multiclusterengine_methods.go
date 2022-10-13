@@ -29,6 +29,7 @@ const (
 	ServerFoundation      = "server-foundation"
 	HyperShift            = "hypershift-preview"
 	ClusterProxyAddon     = "cluster-proxy-addon"
+	LocalHosting          = "local-hosting"
 	LocalCluster          = "local-cluster"
 )
 
@@ -42,6 +43,7 @@ var allComponents = []string{
 	ConsoleMCE,
 	ManagedServiceAccount,
 	HyperShift,
+	LocalHosting,
 	ClusterProxyAddon,
 	LocalCluster,
 }
