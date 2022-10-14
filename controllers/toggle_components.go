@@ -782,6 +782,7 @@ func (r *MultiClusterEngineReconciler) reconcileLocalHosting(ctx context.Context
 			Kind:           addon.GetKind(),
 			Condition: backplanev1.ComponentCondition{
 				Type:      "Available",
+				Name:      addon.GetName(),
 				Status:    metav1.ConditionFalse,
 				Reason:    status.WaitingForResourceReason,
 				Kind:      addon.GetKind(),
