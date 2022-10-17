@@ -81,6 +81,7 @@ spec:
             - --signer-secret-namespace={{ .Values.global.namespace }}
             - --agent-image-name={{ .Values.global.imageOverrides.cluster_proxy }}
             - --agent-install-namespace=open-cluster-management-agent-addon
+            - --agent-install-all=true
         {{- if .Values.global.pullSecret }}
       imagePullSecrets:
       - name: {{ .Values.global.pullSecret }}
