@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 var (
@@ -17,6 +18,9 @@ var (
 	AnnotationImageRepo = "imageRepository"
 	// AnnotationImageOverridesCM identifies a configmap name containing an image override mapping
 	AnnotationImageOverridesCM = "imageOverridesCM"
+
+	// AnnotationKubeconfig is the secret name residing in targetcontaining the kubeconfig to access the remote cluster
+	AnnotationKubeconfig = "mce-kubeconfig"
 )
 
 // IsPaused returns true if the multiclusterengine instance is labeled as paused, and false otherwise
@@ -64,4 +68,18 @@ func OverrideImageRepository(imageOverrides map[string]string, imageRepo string)
 // GetImageOverridesConfigmap returns the images override configmap annotation, or an empty string if not set
 func GetImageOverridesConfigmap(instance *backplanev1.MultiClusterEngine) string {
 	return getAnnotation(instance, AnnotationImageOverridesCM)
+}
+
+func GetHostedCredentialsSecret(mce *backplanev1.MultiClusterEngine) (types.NamespacedName, error) {
+	nn := types.NamespacedName{}
+	if mce.Annotations == nil || mce.Annotations[AnnotationKubeconfig] == "" {
+		return nn, fmt.Errorf("no kubeconfig secret annotation defined in %s", mce.Name)
+	}
+	nn.Name = mce.Annotations[AnnotationKubeconfig]
+
+	nn.Namespace = mce.Spec.TargetNamespace
+	if mce.Spec.TargetNamespace == "" {
+		nn.Namespace = backplanev1.DefaultTargetNamespace
+	}
+	return nn, nil
 }
