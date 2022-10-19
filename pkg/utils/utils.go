@@ -95,7 +95,7 @@ func DefaultReplicaCount(mce *backplanev1.MultiClusterEngine) int {
 	return 2
 }
 
-//AvailabilityConfigIsValid ...
+// AvailabilityConfigIsValid ...
 func AvailabilityConfigIsValid(config backplanev1.AvailabilityType) bool {
 	switch config {
 	case backplanev1.HAHigh, backplanev1.HABasic:
@@ -138,7 +138,7 @@ func deduplicate(config []backplanev1.ComponentConfig) []backplanev1.ComponentCo
 	return newConfig
 }
 
-//GetImagePullPolicy returns either pull policy from CR overrides or default of Always
+// GetImagePullPolicy returns either pull policy from CR overrides or default of Always
 func GetImagePullPolicy(m *backplanev1.MultiClusterEngine) corev1.PullPolicy {
 	if m.Spec.Overrides == nil || m.Spec.Overrides.ImagePullPolicy == "" {
 		return corev1.PullIfNotPresent

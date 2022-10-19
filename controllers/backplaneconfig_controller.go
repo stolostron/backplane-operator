@@ -251,19 +251,37 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 	// Do not reconcile objects if this instance of mce is labeled "paused"
 	if utils.IsPaused(backplaneConfig) {
 		log.Info("MultiClusterEngine reconciliation is paused. Nothing more to do.")
-		r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing, metav1.ConditionUnknown, status.PausedReason, "Multiclusterengine is paused"))
+		cond := status.NewCondition(
+			backplanev1.MultiClusterEngineProgressing,
+			metav1.ConditionUnknown,
+			status.PausedReason,
+			"Multiclusterengine is paused",
+		)
+		r.StatusManager.AddCondition(cond)
 		return ctrl.Result{}, nil
 	}
 
 	result, err = r.adoptExistingSubcomponents(ctx, backplaneConfig)
 	if err != nil {
-		r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing, metav1.ConditionUnknown, status.DeployFailedReason, err.Error()))
+		cond := status.NewCondition(
+			backplanev1.MultiClusterEngineProgressing,
+			metav1.ConditionUnknown,
+			status.DeployFailedReason,
+			err.Error(),
+		)
+		r.StatusManager.AddCondition(cond)
 		return result, err
 	}
 
 	result, err = r.DeployAlwaysSubcomponents(ctx, backplaneConfig)
 	if err != nil {
-		r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing, metav1.ConditionUnknown, status.DeployFailedReason, err.Error()))
+		cond := status.NewCondition(
+			backplanev1.MultiClusterEngineProgressing,
+			metav1.ConditionUnknown,
+			status.DeployFailedReason,
+			err.Error(),
+		)
+		r.StatusManager.AddCondition(cond)
 		return result, err
 	}
 
@@ -277,14 +295,11 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return result, err
 	}
 
-<<<<<<< HEAD
 	result, err = r.ensureRemovalsGone(backplaneConfig)
 	if err != nil {
 		return result, err
 	}
 
-=======
->>>>>>> 46b337b (Add local cluster import to MCE)
 	r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing, metav1.ConditionTrue, status.DeploySuccessReason, "All components deployed"))
 
 	return ctrl.Result{}, nil
@@ -333,7 +348,7 @@ func (r *MultiClusterEngineReconciler) SetupWithManager(mgr ctrl.Manager) error 
 		Complete(r)
 }
 
-// createCAconfigmap creates a configmap that will be injected with the
+// createTrustBundleConfigmap creates a configmap that will be injected with the
 // trusted CA bundle for use with the OCP cluster wide proxy
 func (r *MultiClusterEngineReconciler) createTrustBundleConfigmap(ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
