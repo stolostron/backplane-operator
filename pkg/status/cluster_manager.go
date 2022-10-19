@@ -13,7 +13,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// DeploymentStatus fulfills the StatusReporter interface for deployments
+// ClusterManagerStatus fulfills the StatusReporter interface for
+// the cluster manager
 type ClusterManagerStatus struct {
 	types.NamespacedName
 }
