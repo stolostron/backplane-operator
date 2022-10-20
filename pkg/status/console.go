@@ -22,8 +22,8 @@ func (cs ConsoleUnavailableStatus) GetName() string {
 	return cs.Name
 }
 
-func (cms ConsoleUnavailableStatus) GetNamespace() string {
-	return ""
+func (cs ConsoleUnavailableStatus) GetNamespace() string {
+	return cs.Namespace
 }
 
 func (cms ConsoleUnavailableStatus) GetKind() string {

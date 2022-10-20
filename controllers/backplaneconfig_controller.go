@@ -1004,6 +1004,9 @@ func (r *MultiClusterEngineReconciler) getClusterVersion(ctx context.Context) (s
 	log := log.FromContext(ctx)
 	// If Unit test
 	if val, ok := os.LookupEnv("UNIT_TEST"); ok && val == "true" {
+		if _, exists := os.LookupEnv("ACM_HUB_OCP_VERSION"); exists {
+			return os.Getenv("ACM_HUB_OCP_VERSION"), nil
+		}
 		return "4.9.0", nil
 	}
 
