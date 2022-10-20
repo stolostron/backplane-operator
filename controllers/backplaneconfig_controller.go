@@ -183,10 +183,15 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		}
 	}()
 
+	ocpConsole, err := r.CheckConsole(ctx)
+	if err != nil {
+		return ctrl.Result{RequeueAfter: requeuePeriod}, err
+	}
+
 	// If deletion detected, finalize backplane config
 	if backplaneConfig.GetDeletionTimestamp() != nil {
 		if controllerutil.ContainsFinalizer(backplaneConfig, backplaneFinalizer) {
-			err := r.finalizeBackplaneConfig(ctx, backplaneConfig) // returns all errors
+			err := r.finalizeBackplaneConfig(ctx, backplaneConfig, ocpConsole) // returns all errors
 			if err != nil {
 				log.Info(err.Error())
 				return ctrl.Result{RequeueAfter: 5 * time.Second}, nil
@@ -268,7 +273,7 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return result, err
 	}
 
-	result, err = r.ensureToggleableComponents(ctx, backplaneConfig)
+	result, err = r.ensureToggleableComponents(ctx, backplaneConfig, ocpConsole)
 	if err != nil {
 		return result, err
 	}
@@ -326,6 +331,14 @@ func (r *MultiClusterEngineReconciler) SetupWithManager(mgr ctrl.Manager) error 
 						Name: label,
 					}})
 				}
+			},
+		}, builder.WithPredicates(predicate.LabelChangedPredicate{})).
+		Watches(&source.Kind{Type: &configv1.ClusterVersion{}}, &handler.Funcs{
+			UpdateFunc: func(e event.UpdateEvent, q workqueue.RateLimitingInterface) {
+				labels := e.ObjectOld.GetLabels()
+				q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
+					Name: labels["backplaneconfig.name"],
+				}})
 			},
 		}, builder.WithPredicates(predicate.LabelChangedPredicate{})).
 		Complete(r)
@@ -422,7 +435,7 @@ func (r *MultiClusterEngineReconciler) DeployAlwaysSubcomponents(ctx context.Con
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine, ocpConsole bool) (ctrl.Result, error) {
 	errs := map[string]error{}
 	requeue := false
 
@@ -462,7 +475,7 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 		}
 	}
 
-	if backplaneConfig.Enabled(backplanev1.ConsoleMCE) {
+	if backplaneConfig.Enabled(backplanev1.ConsoleMCE) && ocpConsole {
 		result, err := r.ensureConsoleMCE(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
 			requeue = true
@@ -471,7 +484,7 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 			errs[backplanev1.ConsoleMCE] = err
 		}
 	} else {
-		result, err := r.ensureNoConsoleMCE(ctx, backplaneConfig)
+		result, err := r.ensureNoConsoleMCE(ctx, backplaneConfig, ocpConsole)
 		if result != (ctrl.Result{}) {
 			requeue = true
 		}
@@ -697,12 +710,15 @@ func (r *MultiClusterEngineReconciler) ensureCustomResources(ctx context.Context
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) error {
+func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine, ocpConsole bool) error {
 	log := log.FromContext(ctx)
-	_, err := r.removePluginFromConsoleResource(ctx, backplaneConfig)
-	if err != nil {
-		log.Info("Error ensuring plugin is removed from console resource")
-		return err
+	var err error
+	if ocpConsole {
+		_, err = r.removePluginFromConsoleResource(ctx, backplaneConfig)
+		if err != nil {
+			log.Info("Error ensuring plugin is removed from console resource")
+			return err
+		}
 	}
 
 	clusterManager := &unstructured.Unstructured{}
@@ -843,7 +859,7 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 	os.Setenv("ACM_CLUSTER_INGRESS_DOMAIN", clusterIngressDomain)
 
 	// If OCP 4.10+ then set then enable the MCE console. Else ensure it is disabled
-	currentClusterVersion, err := r.getClusterVersion(ctx, m)
+	currentClusterVersion, err := r.getClusterVersion(ctx)
 	if err != nil {
 		return ctrl.Result{}, pkgerrors.Wrapf(err, "failed to detect clusterversion")
 	}
@@ -984,7 +1000,7 @@ func (r *MultiClusterEngineReconciler) adoptExistingSubcomponents(ctx context.Co
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterEngineReconciler) getClusterVersion(ctx context.Context, mce *backplanev1.MultiClusterEngine) (string, error) {
+func (r *MultiClusterEngineReconciler) getClusterVersion(ctx context.Context) (string, error) {
 	log := log.FromContext(ctx)
 	// If Unit test
 	if val, ok := os.LookupEnv("UNIT_TEST"); ok && val == "true" {
