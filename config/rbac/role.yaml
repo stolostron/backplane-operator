@@ -1948,12 +1948,36 @@ rules:
   - rbac.authorization.k8s.io
   resources:
   - rolebindings
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - rolebindings
   - roles
   verbs:
   - bind
   - create
   - delete
   - escalate
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - roles
+  verbs:
+  - create
+  - delete
   - get
   - list
   - patch

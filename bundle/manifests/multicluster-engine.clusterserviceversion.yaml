@@ -881,6 +881,13 @@ spec:
           - update
           - watch
         - apiGroups:
+          - apiextensions.k8s.io
+          resources:
+          - customresourcedefinitions/status
+          verbs:
+          - patch
+          - update
+        - apiGroups:
           - apiregistration.k8s.io
           resources:
           - apiservices
@@ -1232,6 +1239,15 @@ spec:
           - list
           - patch
           - update
+          - watch
+        - apiGroups:
+          - cluster.open-cluster-management.io
+          resources:
+          - managedclusters
+          - managedclustersets
+          verbs:
+          - get
+          - list
           - watch
         - apiGroups:
           - cluster.open-cluster-management.io
@@ -1896,9 +1912,25 @@ spec:
           - managedproxyconfigurations
           - managedproxyconfigurations/finalizers
           - managedproxyconfigurations/status
+          - managedproxyserviceresolvers
+          - managedproxyserviceresolvers/finalizers
+          - managedproxyserviceresolvers/status
           verbs:
           - '*'
         - apiGroups:
+          - proxy.open-cluster-management.io
+          resources:
+          - managedproxyconfigurations
+          - managedproxyserviceresolvers
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
           - rbac.authorization.k8s.io
           resources:
           - clusterrolebindings
@@ -1984,12 +2016,36 @@ spec:
           - rbac.authorization.k8s.io
           resources:
           - rolebindings
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          resources:
+          - rolebindings
           - roles
           verbs:
           - bind
           - create
           - delete
           - escalate
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          resources:
+          - roles
+          verbs:
+          - create
+          - delete
           - get
           - list
           - patch
