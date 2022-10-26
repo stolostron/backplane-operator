@@ -77,7 +77,7 @@ func Test_mapConsoleDeployment(t *testing.T) {
 				Status:    metav1.ConditionFalse,
 				Reason:    "OCP Console missing",
 				Message:   "The OCP Console must be enabled before using ACM Console",
-				Available: false,
+				Available: true,
 			},
 		},
 		{

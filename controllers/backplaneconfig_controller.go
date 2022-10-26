@@ -183,15 +183,10 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		}
 	}()
 
-	ocpConsole, err := r.CheckConsole(ctx)
-	if err != nil {
-		return ctrl.Result{RequeueAfter: requeuePeriod}, err
-	}
-
 	// If deletion detected, finalize backplane config
 	if backplaneConfig.GetDeletionTimestamp() != nil {
 		if controllerutil.ContainsFinalizer(backplaneConfig, backplaneFinalizer) {
-			err := r.finalizeBackplaneConfig(ctx, backplaneConfig, ocpConsole) // returns all errors
+			err := r.finalizeBackplaneConfig(ctx, backplaneConfig) // returns all errors
 			if err != nil {
 				log.Info(err.Error())
 				return ctrl.Result{RequeueAfter: 5 * time.Second}, nil
@@ -273,7 +268,7 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return result, err
 	}
 
-	result, err = r.ensureToggleableComponents(ctx, backplaneConfig, ocpConsole)
+	result, err = r.ensureToggleableComponents(ctx, backplaneConfig)
 	if err != nil {
 		return result, err
 	}
@@ -435,7 +430,7 @@ func (r *MultiClusterEngineReconciler) DeployAlwaysSubcomponents(ctx context.Con
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine, ocpConsole bool) (ctrl.Result, error) {
+func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 	errs := map[string]error{}
 	requeue := false
 
@@ -473,6 +468,11 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 		if err != nil {
 			errs[backplanev1.HyperShift] = err
 		}
+	}
+
+	ocpConsole, err := r.CheckConsole(ctx)
+	if err != nil {
+		return ctrl.Result{RequeueAfter: requeuePeriod}, err
 	}
 
 	if backplaneConfig.Enabled(backplanev1.ConsoleMCE) && ocpConsole {
@@ -710,15 +710,12 @@ func (r *MultiClusterEngineReconciler) ensureCustomResources(ctx context.Context
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine, ocpConsole bool) error {
+func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) error {
 	log := log.FromContext(ctx)
-	var err error
-	if ocpConsole {
-		_, err = r.removePluginFromConsoleResource(ctx, backplaneConfig)
-		if err != nil {
-			log.Info("Error ensuring plugin is removed from console resource")
-			return err
-		}
+	_, err := r.removePluginFromConsoleResource(ctx, backplaneConfig)
+	if err != nil {
+		log.Info("Error ensuring plugin is removed from console resource")
+		return err
 	}
 
 	clusterManager := &unstructured.Unstructured{}

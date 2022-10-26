@@ -48,24 +48,18 @@ func mapConsoleDeployment(ds *appsv1.Deployment) bpv1.ComponentCondition {
 	if len(ds.Status.Conditions) < 1 {
 		return unknownStatus(ds.Name, ds.Kind)
 	}
-	if successfulDeploy(ds) {
-		return consoleUnavailableStatus(ds.Name, ds.Kind, true)
-	}
 
-	return consoleUnavailableStatus(ds.Name, ds.Kind, false)
-
-}
-
-func consoleUnavailableStatus(name, kind string, available bool) bpv1.ComponentCondition {
-	return bpv1.ComponentCondition{
-		Name:               name,
-		Kind:               kind,
+	ret := bpv1.ComponentCondition{
+		Name:               ds.Name,
+		Kind:               "Deployment",
 		Type:               string(appsv1.DeploymentAvailable),
 		Status:             metav1.ConditionFalse,
 		LastUpdateTime:     metav1.Now(),
 		LastTransitionTime: metav1.Now(),
 		Reason:             "OCP Console missing",
 		Message:            "The OCP Console must be enabled before using ACM Console",
-		Available:          available,
+		Available:          true,
 	}
+
+	return ret
 }
