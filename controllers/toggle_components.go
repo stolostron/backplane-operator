@@ -880,6 +880,14 @@ func (r *MultiClusterEngineReconciler) ensureLocalCluster(ctx context.Context, m
 		return ctrl.Result{}, nil
 	}
 
+	nsn := types.NamespacedName{Name: "local-cluster", Namespace: mce.Spec.TargetNamespace}
+	lcs := status.LocalClusterStatus{
+		NamespacedName: nsn,
+		Enabled:        true,
+	}
+	r.StatusManager.RemoveComponent(lcs)
+	r.StatusManager.AddComponent(lcs)
+
 	log.Info("Check if ManagedCluster CR exists")
 	managedCluster := utils.NewManagedCluster()
 	err := r.Client.Get(ctx, types.NamespacedName{Name: utils.LocalClusterName}, managedCluster)
@@ -942,6 +950,14 @@ func (r *MultiClusterEngineReconciler) ensureNoLocalCluster(ctx context.Context,
 		log.Info("skipping local cluster removal in unit tests")
 		return ctrl.Result{}, nil
 	}
+
+	nsn := types.NamespacedName{Name: "local-cluster", Namespace: mce.Spec.TargetNamespace}
+	lcs := status.LocalClusterStatus{
+		NamespacedName: nsn,
+		Enabled:        false,
+	}
+	r.StatusManager.RemoveComponent(lcs)
+	r.StatusManager.AddComponent(lcs)
 
 	log.Info("Check if ManagedCluster CR exists")
 	managedCluster := utils.NewManagedCluster()
