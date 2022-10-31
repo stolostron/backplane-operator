@@ -21,6 +21,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -441,6 +442,39 @@ var _ = Describe("BackplaneConfig controller", func() {
 					res := &corev1.ConfigMap{}
 					g.Expect(k8sClient.Get(ctx, namespacedName, res)).To(Succeed())
 				}, timeout, interval).Should(Succeed())
+			})
+		})
+
+		Context("and OCP Console is disabled", func() {
+			It("should deploy sub components", func() {
+				os.Setenv("ACM_HUB_OCP_VERSION", "4.12.0")
+				defer os.Unsetenv("ACM_HUB_OCP_VERSION")
+				createCtx := context.Background()
+				By("creating the backplane config")
+				backplaneConfig := &v1.MultiClusterEngine{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "multicluster.openshift.io/v1",
+						Kind:       "MultiClusterEngine",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: BackplaneConfigName,
+					},
+					Spec: v1.MultiClusterEngineSpec{
+						TargetNamespace: DestinationNamespace,
+						ImagePullSecret: "testsecret",
+					},
+				}
+				Expect(k8sClient.Create(createCtx, backplaneConfig)).Should(Succeed())
+
+				By("ensuring each deployment and config is created")
+				for _, test := range tests {
+					By(fmt.Sprintf("ensuring %s is created", test.Name))
+					Eventually(func() bool {
+						ctx := context.Background()
+						err := k8sClient.Get(ctx, test.NamespacedName, test.ResourceType)
+						return err == test.Expected
+					}, timeout, interval).Should(BeTrue())
+				}
 			})
 		})
 
