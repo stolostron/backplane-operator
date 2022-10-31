@@ -312,6 +312,14 @@ func (r *MultiClusterEngineReconciler) SetupWithManager(mgr ctrl.Manager) error 
 				}
 			},
 		}, builder.WithPredicates(predicate.LabelChangedPredicate{})).
+		Watches(&source.Kind{Type: &configv1.ClusterVersion{}}, &handler.Funcs{
+			UpdateFunc: func(e event.UpdateEvent, q workqueue.RateLimitingInterface) {
+				labels := e.ObjectOld.GetLabels()
+				q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
+					Name: labels["backplaneconfig.name"],
+				}})
+			},
+		}, builder.WithPredicates(predicate.LabelChangedPredicate{})).
 		Complete(r)
 }
 
@@ -446,7 +454,12 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 		}
 	}
 
-	if backplaneConfig.Enabled(backplanev1.ConsoleMCE) {
+	ocpConsole, err := r.CheckConsole(ctx)
+	if err != nil {
+		return ctrl.Result{RequeueAfter: requeuePeriod}, err
+	}
+
+	if backplaneConfig.Enabled(backplanev1.ConsoleMCE) && ocpConsole {
 		result, err := r.ensureConsoleMCE(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
 			requeue = true
@@ -455,7 +468,7 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 			errs[backplanev1.ConsoleMCE] = err
 		}
 	} else {
-		result, err := r.ensureNoConsoleMCE(ctx, backplaneConfig)
+		result, err := r.ensureNoConsoleMCE(ctx, backplaneConfig, ocpConsole)
 		if result != (ctrl.Result{}) {
 			requeue = true
 		}
@@ -827,7 +840,7 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 	os.Setenv("ACM_CLUSTER_INGRESS_DOMAIN", clusterIngressDomain)
 
 	// If OCP 4.10+ then set then enable the MCE console. Else ensure it is disabled
-	currentClusterVersion, err := r.getClusterVersion(ctx, m)
+	currentClusterVersion, err := r.getClusterVersion(ctx)
 	if err != nil {
 		return ctrl.Result{}, pkgerrors.Wrapf(err, "failed to detect clusterversion")
 	}
@@ -968,10 +981,13 @@ func (r *MultiClusterEngineReconciler) adoptExistingSubcomponents(ctx context.Co
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterEngineReconciler) getClusterVersion(ctx context.Context, mce *backplanev1.MultiClusterEngine) (string, error) {
+func (r *MultiClusterEngineReconciler) getClusterVersion(ctx context.Context) (string, error) {
 	log := log.FromContext(ctx)
 	// If Unit test
 	if val, ok := os.LookupEnv("UNIT_TEST"); ok && val == "true" {
+		if _, exists := os.LookupEnv("ACM_HUB_OCP_VERSION"); exists {
+			return os.Getenv("ACM_HUB_OCP_VERSION"), nil
+		}
 		return "4.9.0", nil
 	}
 
