@@ -190,7 +190,7 @@ rules:
   - channels
   - gitopsclusters
   - helmreleases
-  - placementruless
+  - placementrules
   - placementbindings
   - policies
   - policyautomations
@@ -200,7 +200,15 @@ rules:
   verbs:
   - list
   - watch
-  
+
+- verbs:
+  - list
+  - watch
+  apiGroups:
+  - console.open-cluster-management.io
+  resources:
+  - userpreferences
+
 - verbs:
   - list
   - watch
