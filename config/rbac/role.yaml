@@ -866,7 +866,7 @@ rules:
   - gitopsclusters
   - helmreleases
   - placementbindings
-  - placementruless
+  - placementrules
   - policies
   - policyautomations
   - policysets
@@ -1297,6 +1297,13 @@ rules:
   - projects
   verbs:
   - get
+  - list
+  - watch
+- apiGroups:
+  - console.open-cluster-management.io
+  resources:
+  - userpreferences
+  verbs:
   - list
   - watch
 - apiGroups:
