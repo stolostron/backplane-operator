@@ -754,6 +754,27 @@ func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Conte
 		return err
 	}
 
+	localCluster := &unstructured.Unstructured{}
+	localCluster.SetGroupVersionKind(
+		schema.GroupVersionKind{
+			Group:   "cluster.open-cluster-management.io",
+			Version: "v1",
+			Kind:    "ManagedCluster",
+		},
+	)
+	err = r.Client.Get(ctx, types.NamespacedName{Name: "local-cluster"}, localCluster)
+	if err == nil { // If resource exists, delete
+		log.Info("finalizing local-cluster custom resource")
+		err := r.Client.Delete(ctx, localCluster)
+		if err != nil {
+			log.Error(err, "error deleting local-cluster ManagedCluster CR")
+			return err
+		}
+	} else if err != nil && !apierrors.IsNotFound(err) { // Return error, if error is not not found error
+		log.Error(err, "error while looking for local-cluster ManagedCluster CR")
+		return err
+	}
+
 	clusterManager := &unstructured.Unstructured{}
 	clusterManager.SetGroupVersionKind(
 		schema.GroupVersionKind{
