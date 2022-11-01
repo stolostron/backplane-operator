@@ -805,8 +805,8 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterProxyAddon(ctx context.Con
 	return ctrl.Result{}, nil
 }
 
-//Checks if OCP Console is enabled and return true if so. If <OCP v4.12, always return true
-//Otherwise check in the EnabledCapabilities spec for OCP console
+// Checks if OCP Console is enabled and return true if so. If <OCP v4.12, always return true
+// Otherwise check in the EnabledCapabilities spec for OCP console
 func (r *MultiClusterEngineReconciler) CheckConsole(ctx context.Context) (bool, error) {
 	versionStatus := &configv1.ClusterVersion{}
 	err := r.Client.Get(ctx, types.NamespacedName{Name: "version"}, versionStatus)
@@ -848,7 +848,7 @@ func newManagedCluster() *unstructured.Unstructured {
 			"apiVersion": "cluster.open-cluster-management.io/v1",
 			"kind":       "ManagedCluster",
 			"metadata": map[string]interface{}{
-				"name": LocalClusterName,
+				"name": utils.LocalClusterName,
 				"labels": map[string]interface{}{
 					"local-cluster":                 "true",
 					"cloud":                         "auto-detect",
@@ -867,7 +867,7 @@ func newManagedCluster() *unstructured.Unstructured {
 func newLocalNamespace() *corev1.Namespace {
 	return &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: LocalClusterName,
+			Name: utils.LocalClusterName,
 		},
 	}
 }
