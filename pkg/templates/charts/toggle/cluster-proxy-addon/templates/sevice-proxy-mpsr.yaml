@@ -1,0 +1,14 @@
+apiVersion: proxy.open-cluster-management.io/v1alpha1
+kind: ManagedProxyServiceResolver
+metadata:
+  name: service-proxy
+spec:
+  managedClusterSelector:
+    managedClusterSet:
+      name: global # Using global managedClusterSet because create a another "global" clusterset is forbidden.
+    type: ManagedClusterSet
+  serviceSelector:
+    serviceRef:
+      name: cluster-proxy-service-proxy
+      namespace: open-cluster-management-agent-addon
+    type: ServiceRef
