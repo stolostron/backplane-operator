@@ -4,6 +4,7 @@ package foundation
 
 import (
 	"context"
+	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -14,6 +15,10 @@ import (
 	ocmapiv1 "open-cluster-management.io/api/operator/v1"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
+
+func hostedName(m *v1.MultiClusterEngine) string {
+	return fmt.Sprintf("%s-cluster-manager", m.Name)
+}
 
 // HostedClusterManager returns the ClusterManager in hosted mode
 func HostedClusterManager(m *v1.MultiClusterEngine, overrides map[string]string) *unstructured.Unstructured {
@@ -32,7 +37,7 @@ func HostedClusterManager(m *v1.MultiClusterEngine, overrides map[string]string)
 			Kind:       "ClusterManager",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "hosted-cluster-manager",
+			Name: hostedName(m),
 		},
 		Spec: ocmapiv1.ClusterManagerSpec{
 			RegistrationImagePullSpec: RegistrationImage(overrides),
