@@ -11,9 +11,7 @@ import (
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 	"github.com/stolostron/backplane-operator/pkg/foundation"
 	"github.com/stolostron/backplane-operator/pkg/images"
-	renderer "github.com/stolostron/backplane-operator/pkg/rendering"
 	"github.com/stolostron/backplane-operator/pkg/status"
-	"github.com/stolostron/backplane-operator/pkg/toggle"
 	"github.com/stolostron/backplane-operator/pkg/utils"
 
 	corev1 "k8s.io/api/core/v1"
@@ -120,26 +118,33 @@ func (r *MultiClusterEngineReconciler) HostedReconcile(ctx context.Context, mce 
 	}
 
 	hostedClient, err := r.GetHostedClient(ctx, mce)
+	if err != nil {
+		r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing, metav1.ConditionFalse, status.RequirementsNotMetReason, fmt.Sprintf("couldn't connect to hosted environment: %s", err.Error())))
+		return ctrl.Result{RequeueAfter: requeuePeriod}, err
+	}
+
+	err = hostedClient.Create(ctx, &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{Name: mce.Spec.TargetNamespace},
+	})
+	if err != nil && !apierrors.IsAlreadyExists(err) {
+		r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing, metav1.ConditionFalse, status.RequirementsNotMetReason, err.Error()))
+		return ctrl.Result{RequeueAfter: requeuePeriod}, err
+	}
 
 	// Create hosted ClusterManager
-	if !mce.Enabled(backplanev1.ClusterManager) {
-		result, err := r.ensureHostedClusterManager(ctx, hostedClient, mce)
+	if mce.Enabled(backplanev1.ClusterManager) {
+		result, err := r.ensureHostedClusterManager(ctx, mce)
 		if result != (ctrl.Result{}) {
-			requeue = true
-		}
-		if err != nil {
-			errs[backplanev1.ClusterManager] = err
+			return result, err
 		}
 	} else {
-		result, err := r.ensureNoHostedClusterManager(ctx, hostedClient, mce)
+		result, err := r.ensureNoHostedClusterManager(ctx, mce)
 		if result != (ctrl.Result{}) {
-			requeue = true
-		}
-		if err != nil {
-			errs[backplanev1.ClusterManager] = err
+			return result, err
 		}
 	}
 
+	r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing, metav1.ConditionTrue, status.DeploySuccessReason, "All components deployed"))
 	return ctrl.Result{}, nil
 }
 
@@ -147,12 +152,6 @@ func (r *MultiClusterEngineReconciler) GetHostedClient(ctx context.Context, mce 
 	secretNN, err := utils.GetHostedCredentialsSecret(mce)
 	if err != nil {
 		return nil, err
-		// mce.Status = backplanev1.MultiClusterEngineStatus{
-		// 	Conditions: []backplanev1.MultiClusterEngineCondition{
-		// 		status.NewCondition(backplanev1.MultiClusterEngineFailure, metav1.ConditionTrue, status.RequirementsNotMetReason, err.Error()),
-		// 	},
-		// 	Phase: backplanev1.MultiClusterEnginePhaseError,
-		// }
 	}
 
 	// Parse Kube credentials from secret
@@ -162,43 +161,17 @@ func (r *MultiClusterEngineReconciler) GetHostedClient(ctx context.Context, mce 
 			if err != nil {
 				return nil, err
 			}
-			// mce.Status = backplanev1.MultiClusterEngineStatus{
-			// 	Conditions: []backplanev1.MultiClusterEngineCondition{
-			// 		status.NewCondition(backplanev1.MultiClusterEngineFailure, metav1.ConditionTrue, status.RequirementsNotMetReason, err.Error()),
-			// 	},
-			// 	Phase: backplanev1.MultiClusterEnginePhaseError,
-			// }
-			// return err
 		}
 	}
 	kubeconfig, err := parseKubeCreds(kubeConfigSecret)
 	if err != nil {
 		return nil, err
 	}
-	// if err != nil {
-	// 	err = fmt.Errorf("error parsing kubeconfig from secret `%s/%s`: %w", kubeConfigSecret.Namespace, kubeConfigSecret.Name, err)
-	// 	mce.Status = backplanev1.MultiClusterEngineStatus{
-	// 		Conditions: []backplanev1.MultiClusterEngineCondition{
-	// 			status.NewCondition(backplanev1.MultiClusterEngineFailure, metav1.ConditionTrue, status.RequirementsNotMetReason, err.Error()),
-	// 		},
-	// 		Phase: backplanev1.MultiClusterEnginePhaseError,
-	// 	}
-	// 	return err
-	// }
 
 	restconfig, err := clientcmd.RESTConfigFromKubeConfig(kubeconfig)
 	if err != nil {
 		return nil, err
 	}
-	// if err != nil {
-	// 	mce.Status = backplanev1.MultiClusterEngineStatus{
-	// 		Conditions: []backplanev1.MultiClusterEngineCondition{
-	// 			status.NewCondition(backplanev1.MultiClusterEngineFailure, metav1.ConditionTrue, status.RequirementsNotMetReason, err.Error()),
-	// 		},
-	// 		Phase: backplanev1.MultiClusterEnginePhaseError,
-	// 	}
-	// 	return err
-	// }
 
 	uncachedClient, err := client.New(restconfig, client.Options{
 		Scheme: r.Client.Scheme(),
@@ -206,38 +179,8 @@ func (r *MultiClusterEngineReconciler) GetHostedClient(ctx context.Context, mce 
 	if err != nil {
 		return nil, err
 	}
-	// if err != nil {
-	// 	mce.Status = backplanev1.MultiClusterEngineStatus{
-	// 		Conditions: []backplanev1.MultiClusterEngineCondition{
-	// 			status.NewCondition(backplanev1.MultiClusterEngineFailure, metav1.ConditionTrue, status.RequirementsNotMetReason, err.Error()),
-	// 		},
-	// 		Phase: backplanev1.MultiClusterEnginePhaseError,
-	// 	}
-	// 	return err
-	// }
 
 	return uncachedClient, nil
-
-	// err = uncachedClient.Create(ctx, &corev1.Namespace{
-	// 	ObjectMeta: metav1.ObjectMeta{Name: mce.Spec.TargetNamespace},
-	// })
-	// if err != nil && !apierrors.IsAlreadyExists(err) {
-	// 	mce.Status = backplanev1.MultiClusterEngineStatus{
-	// 		Conditions: []backplanev1.MultiClusterEngineCondition{
-	// 			status.NewCondition(backplanev1.MultiClusterEngineFailure, metav1.ConditionTrue, status.RequirementsNotMetReason, err.Error()),
-	// 		},
-	// 		Phase: backplanev1.MultiClusterEnginePhaseError,
-	// 	}
-	// 	return err
-	// }
-
-	// mce.Status = backplanev1.MultiClusterEngineStatus{
-	// 	Conditions: []backplanev1.MultiClusterEngineCondition{
-	// 		status.NewCondition(backplanev1.MultiClusterEngineAvailable, metav1.ConditionTrue, status.DeploySuccessReason, "Hosted reconcile completed successfully."),
-	// 	},
-	// 	Phase: backplanev1.MultiClusterEnginePhaseAvailable,
-	// }
-	// return nil
 }
 
 // parseKubeCreds takes a secret cotaining credentials and returns the stored Kubeconfig.
@@ -249,14 +192,13 @@ func parseKubeCreds(secret *corev1.Secret) ([]byte, error) {
 	return kubeconfig, nil
 }
 
-func (r *MultiClusterEngineReconciler) ensureHostedClusterManager(ctx context.Context, c client.Client, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+func (r *MultiClusterEngineReconciler) ensureHostedClusterManager(ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
+	cmName := fmt.Sprintf("%s-cluster-manager", mce.Name)
 
 	r.StatusManager.AddComponent(status.ClusterManagerStatus{
-		NamespacedName: types.NamespacedName{Name: "hosted-cluster-manager"},
+		NamespacedName: types.NamespacedName{Name: cmName},
 	})
-
-	cmName := fmt.Sprintf("%s-cluster-manager", mce.Name)
 
 	// Apply namespace
 	newNs := &corev1.Namespace{
@@ -325,23 +267,11 @@ func (r *MultiClusterEngineReconciler) ensureHostedClusterManager(ctx context.Co
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterEngineReconciler) ensureNoHostedClusterManager(ctx context.Context, c client.Client, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
-	namespacedName := types.NamespacedName{Name: "cluster-manager", Namespace: backplaneConfig.Spec.TargetNamespace}
+func (r *MultiClusterEngineReconciler) ensureNoHostedClusterManager(ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+	cmName := fmt.Sprintf("%s-cluster-manager", mce.Name)
 
-	// Renders all templates from charts
-	templates, errs := renderer.RenderChart(toggle.ClusterManagerChartDir, backplaneConfig, r.Images)
-	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
-	}
-
-	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
-	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 	r.StatusManager.RemoveComponent(status.ClusterManagerStatus{
-		NamespacedName: types.NamespacedName{Name: "cluster-manager"},
+		NamespacedName: types.NamespacedName{Name: cmName},
 	})
 
 	// Delete clustermanager
@@ -353,7 +283,7 @@ func (r *MultiClusterEngineReconciler) ensureNoHostedClusterManager(ctx context.
 			Kind:    "ClusterManager",
 		},
 	)
-	err := r.Client.Get(ctx, types.NamespacedName{Name: "cluster-manager"}, clusterManager)
+	err := r.Client.Get(ctx, types.NamespacedName{Name: cmName}, clusterManager)
 	if err == nil { // If resource exists, delete
 		err := r.Client.Delete(ctx, clusterManager)
 		if err != nil {
@@ -364,23 +294,15 @@ func (r *MultiClusterEngineReconciler) ensureNoHostedClusterManager(ctx context.
 	}
 
 	// Verify clustermanager namespace deleted
-	ocmHubNamespace := &corev1.Namespace{}
-	err = r.Client.Get(ctx, types.NamespacedName{Name: "open-cluster-management-hub"}, ocmHubNamespace)
+	checkNs := &corev1.Namespace{}
+	err = r.Client.Get(context.TODO(), types.NamespacedName{Name: cmName}, checkNs)
 	if err == nil {
-		return ctrl.Result{RequeueAfter: requeuePeriod}, fmt.Errorf("waiting for 'open-cluster-management-hub' namespace to be terminated before proceeding with clustermanager cleanup")
+		return ctrl.Result{RequeueAfter: requeuePeriod}, fmt.Errorf("waiting for hosted-clustermanager namespace to be terminated before proceeding with clustermanager cleanup")
 	}
 	if err != nil && !apierrors.IsNotFound(err) { // Return error, if error is not not found error
 		return ctrl.Result{RequeueAfter: requeuePeriod}, err
 	}
 
-	// Deletes all templates
-	for _, template := range templates {
-		result, err := r.deleteTemplate(ctx, backplaneConfig, template)
-		if err != nil {
-			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
-			return result, err
-		}
-	}
 	return ctrl.Result{}, nil
 }
 
@@ -422,50 +344,10 @@ func (r *MultiClusterEngineReconciler) setHostedDefaults(ctx context.Context, m 
 	}
 }
 
-func (r *MultiClusterEngineReconciler) finalizeHostedBackplaneConfig(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) error {
-	log := log.FromContext(ctx)
-	_, err := r.removePluginFromConsoleResource(ctx, backplaneConfig)
+func (r *MultiClusterEngineReconciler) finalizeHostedBackplaneConfig(ctx context.Context, mce *backplanev1.MultiClusterEngine) error {
+	_, err := r.ensureNoHostedClusterManager(ctx, mce)
 	if err != nil {
-		log.Info("Error ensuring plugin is removed from console resource")
 		return err
 	}
-
-	clusterManager := &unstructured.Unstructured{}
-	clusterManager.SetGroupVersionKind(
-		schema.GroupVersionKind{
-			Group:   "operator.open-cluster-management.io",
-			Version: "v1",
-			Kind:    "ClusterManager",
-		},
-	)
-
-	err = r.Client.Get(ctx, types.NamespacedName{Name: "cluster-manager"}, clusterManager)
-	if err == nil { // If resource exists, delete
-		log.Info("finalizing cluster-manager custom resource")
-		err := r.Client.Delete(ctx, clusterManager)
-		if err != nil {
-			return err
-		}
-	} else if err != nil && !apierrors.IsNotFound(err) { // Return error, if error is not not found error
-		return err
-	}
-
-	ocmHubNamespace := &corev1.Namespace{}
-	err = r.Client.Get(ctx, types.NamespacedName{Name: "open-cluster-management-hub"}, ocmHubNamespace)
-	if err == nil {
-		// If wait time exceeds expected then uninstall may not be able to progress
-		if time.Since(backplaneConfig.DeletionTimestamp.Time) < 5*time.Minute {
-			terminatingCondition := status.NewCondition(backplanev1.MultiClusterEngineConditionType(backplanev1.MultiClusterEngineProgressing), metav1.ConditionTrue, status.WaitingForResourceReason, "Waiting for namespace open-cluster-management-hub to terminate.")
-			r.StatusManager.AddCondition(terminatingCondition)
-		} else {
-			terminatingCondition := status.NewCondition(backplanev1.MultiClusterEngineConditionType(backplanev1.MultiClusterEngineProgressing), metav1.ConditionFalse, status.WaitingForResourceReason, "Namespace open-cluster-management-hub still exists.")
-			r.StatusManager.AddCondition(terminatingCondition)
-		}
-
-		return fmt.Errorf("waiting for 'open-cluster-management-hub' namespace to be terminated before proceeding with uninstallation")
-	} else if err != nil && !apierrors.IsNotFound(err) { // Return error, if error is not not found error
-		return err
-	}
-
 	return nil
 }
