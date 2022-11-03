@@ -7,7 +7,6 @@ metadata:
     component: cluster-proxy-addon-user
     chart: cluster-proxy-addon-2.1.0
 spec:
-  # fixed replicas to 1, the kubectl-ui does not support multiple replicas
   replicas: {{ .Values.hubconfig.replicaCount }}
   selector:
     matchLabels:
@@ -59,7 +58,32 @@ spec:
                   values:
                   - cluster-proxy-addon-user
       containers:
-      - name: kubectl-ui
+      - name: controllers
+        image: {{ .Values.global.imageOverrides.cluster_proxy_addon }}
+        imagePullPolicy: {{ .Values.global.pullPolicy }}
+        command:
+          - "/cluster-proxy"
+        args:
+          - "controllers"
+          - "--certificates-namespace={{ .Values.global.namespace }}" # keep the same with the values in manager-deployment.yaml
+          - "--signer-secret-namespace={{ .Values.global.namespace }}"
+          - "--agent-image={{ .Values.global.imageOverrides.cluster_proxy_addon }}"
+        env:
+        {{- if .Values.hubconfig.proxyConfigs }}
+          - name: HTTP_PROXY
+            value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
+          - name: HTTPS_PROXY
+            value: {{ .Values.hubconfig.proxyConfigs.HTTPS_PROXY }}
+          - name: NO_PROXY
+            value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
+        {{- end }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+      - name: user-server
         image: '{{ .Values.global.imageOverrides.cluster_proxy_addon }}'
         imagePullPolicy: '{{ .Values.global.pullPolicy }}'
         command:
@@ -74,6 +98,8 @@ spec:
           - "--server-port=9092"
           - "--server-key=/user-tls/tls.key"
           - "--server-cert=/user-tls/tls.crt"
+          - "--service-proxy-ca-cert=/proxy-ca/ca.crt" # service-proxy is also sign by the singer ca of cluster-proxy. So here we use the same CA cert.
+          - "--agent-install-namespace=open-cluster-management-agent-addon"
         env:
         {{- if .Values.hubconfig.proxyConfigs }}
         - name: HTTP_PROXY
@@ -120,6 +146,9 @@ spec:
         - name: proxy-client-cert
           secret:
             secretName: proxy-client
+        - name: signer-ca
+          secret:
+            secretName: cluster-proxy-signer
       {{- if .Values.global.pullSecret }}
       imagePullSecrets:
       - name: {{ .Values.global.pullSecret }}
