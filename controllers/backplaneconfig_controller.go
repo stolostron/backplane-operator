@@ -345,7 +345,7 @@ func (r *MultiClusterEngineReconciler) SetupWithManager(mgr ctrl.Manager) error 
 					Name: labels["backplaneconfig.name"],
 				}})
 			},
-		}, builder.WithPredicates(predicate.LabelChangedPredicate{})).
+		}).
 		Complete(r)
 }
 

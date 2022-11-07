@@ -90,13 +90,13 @@ func (r *MultiClusterEngineReconciler) ensureNoConsoleMCE(ctx context.Context, b
 		}
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
-
 	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
-	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 	if !ocpConsole {
 		r.StatusManager.AddComponent(status.ConsoleUnavailableStatus{
 			NamespacedName: types.NamespacedName{Name: "console-mce-console", Namespace: backplaneConfig.Spec.TargetNamespace},
 		})
+	} else {
+		r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 	}
 
 	// Deletes all templates
