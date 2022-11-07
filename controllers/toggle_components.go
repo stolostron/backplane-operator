@@ -75,11 +75,9 @@ func (r *MultiClusterEngineReconciler) ensureConsoleMCE(ctx context.Context, bac
 func (r *MultiClusterEngineReconciler) ensureNoConsoleMCE(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine, ocpConsole bool) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 	namespacedName := types.NamespacedName{Name: "console-mce-console", Namespace: backplaneConfig.Spec.TargetNamespace}
-	if ocpConsole {
-		result, err := r.removePluginFromConsoleResource(ctx, backplaneConfig)
-		if err != nil {
-			return result, err
-		}
+	result, err := r.removePluginFromConsoleResource(ctx, backplaneConfig)
+	if err != nil {
+		return result, err
 	}
 
 	// Renders all templates from charts
