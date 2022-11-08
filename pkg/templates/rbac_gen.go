@@ -224,9 +224,6 @@ package main
 //+kubebuilder:rbac:groups=internal.open-cluster-management.io,resources=managedclusterinfos/status,verbs=update;patch
 //+kubebuilder:rbac:groups=internal.open-cluster-management.io,resources=managedclusterinfos;managedclusterinfos/status,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=internal.open-cluster-management.io;"",resources=managedclusterinfos;pods;secrets,verbs=get
-//+kubebuilder:rbac:groups=inventory.open-cluster-management.io,resources=baremetalassets,verbs=list;watch
-//+kubebuilder:rbac:groups=inventory.open-cluster-management.io,resources=baremetalassets/finalizers,verbs=update
-//+kubebuilder:rbac:groups=inventory.open-cluster-management.io,resources=baremetalassets;baremetalassets/status,verbs=get;list;watch;update;delete
 //+kubebuilder:rbac:groups=metal3.io,resources=baremetalhosts,verbs=get;list;patch;update;watch
 //+kubebuilder:rbac:groups=metal3.io,resources=baremetalhosts,verbs=get;list;watch;update
 //+kubebuilder:rbac:groups=metal3.io,resources=baremetalhosts;provisionings,verbs=list;watch

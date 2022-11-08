@@ -69,14 +69,6 @@ rules:
   - list
   - watch
   apiGroups:
-  - inventory.open-cluster-management.io
-  resources:
-  - baremetalassets
-
-- verbs:
-  - list
-  - watch
-  apiGroups:
   - certificates.k8s.io
   resources:
   - certificatesigningrequests
@@ -149,7 +141,7 @@ rules:
   - submarineraddon.open-cluster-management.io
   resources:
   - submarinerconfigs
-  
+
 - verbs:
   - list
   - watch
@@ -157,7 +149,7 @@ rules:
   - extensions.hive.openshift.io
   resources:
   - agentclusterinstalls
-  
+
 - verbs:
   - list
   - watch
@@ -233,7 +225,7 @@ rules:
   - apiextensions.k8s.io
   resources:
   - customresourcedefinitions
-  
+
 - apiGroups:
   - multicluster.openshift.io
   verbs:
