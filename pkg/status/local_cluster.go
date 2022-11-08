@@ -15,9 +15,14 @@ import (
 )
 
 const (
+	lcsKind = "local-cluster"
+
 	Accepted  = "HubAcceptedManagedCluster"
 	Joined    = "ManagedClusterJoined"
 	Available = "ManagedClusterConditionAvailable"
+
+	MCDisabled = "ManagedClusterDisabled"
+	MCImported = "ManagedClusterImported"
 )
 
 // LocalClusterStatus fulfills the StatusReporter interface for managing
@@ -36,7 +41,7 @@ func (s LocalClusterStatus) GetNamespace() string {
 }
 
 func (s LocalClusterStatus) GetKind() string {
-	return "local-cluster"
+	return lcsKind
 }
 
 func (s LocalClusterStatus) Status(c client.Client) bpv1.ComponentCondition {
@@ -118,7 +123,7 @@ func (s *LocalClusterStatus) enabledStatus(mc *unstructured.Unstructured) bpv1.C
 		Status:             metav1.ConditionTrue,
 		LastUpdateTime:     metav1.Now(),
 		LastTransitionTime: metav1.Now(),
-		Reason:             "ManagedClusterImported",
+		Reason:             MCImported,
 		Message:            "ManagedCluster is accepted, joined, and available",
 	}
 }
@@ -133,7 +138,7 @@ func (s *LocalClusterStatus) disabledStatus(mc *unstructured.Unstructured) bpv1.
 			Status:             metav1.ConditionTrue,
 			LastUpdateTime:     metav1.Now(),
 			LastTransitionTime: metav1.Now(),
-			Reason:             "ManagedClusterDisabled",
+			Reason:             MCDisabled,
 			Message:            "ManagedCluster resource is not present",
 		}
 	}
@@ -146,7 +151,7 @@ func (s *LocalClusterStatus) disabledStatus(mc *unstructured.Unstructured) bpv1.
 		Status:             metav1.ConditionFalse,
 		LastUpdateTime:     metav1.Now(),
 		LastTransitionTime: metav1.Now(),
-		Reason:             "ManagedClusterDisabled",
+		Reason:             MCDisabled,
 		Message:            "ManagedCluster resource is still present",
 	}
 }
