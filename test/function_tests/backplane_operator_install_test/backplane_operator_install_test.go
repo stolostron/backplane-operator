@@ -691,16 +691,6 @@ var webhookTests = func() func() {
 				Expected string
 			}{
 				{
-					Name: "BareMetalAsset",
-					GVK: schema.GroupVersionKind{
-						Group:   "inventory.open-cluster-management.io",
-						Version: "v1alpha1",
-						Kind:    "BareMetalAsset",
-					},
-					Filepath: filepath.Join(resourcesDir, "baremetalassets.yaml"),
-					Expected: "Existing BareMetalAsset resources must first be deleted",
-				},
-				{
 					Name: "ManagedCluster",
 					GVK: schema.GroupVersionKind{
 						Group:   "cluster.open-cluster-management.io",
