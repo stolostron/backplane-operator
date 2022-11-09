@@ -95,6 +95,7 @@ package main
 //+kubebuilder:rbac:groups=agent-install.openshift.io,resources=agentserviceconfigs/finalizers,verbs=update
 //+kubebuilder:rbac:groups=agent-install.openshift.io,resources=agentserviceconfigs/status,verbs=get;patch;update
 //+kubebuilder:rbac:groups=agent-install.openshift.io,resources=hypershiftagentserviceconfigs,verbs=create;delete;get;list;patch;update;watch
+//+kubebuilder:rbac:groups=agent-install.openshift.io,resources=hypershiftagentserviceconfigs/finalizers,verbs=update
 //+kubebuilder:rbac:groups=agent-install.openshift.io,resources=hypershiftagentserviceconfigs/status,verbs=get;patch;update
 //+kubebuilder:rbac:groups=agent-install.openshift.io,resources=infraenvs,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=agent-install.openshift.io,resources=infraenvs,verbs=get;list;watch
