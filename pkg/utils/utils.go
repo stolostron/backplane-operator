@@ -48,6 +48,22 @@ func SetDefaultComponents(m *backplanev1.MultiClusterEngine) bool {
 	return updated
 }
 
+// SetHostedDefaultComponents returns true if changes are made
+func SetHostedDefaultComponents(m *backplanev1.MultiClusterEngine) bool {
+	onComponents := []string{
+		backplanev1.ClusterManager,
+	}
+
+	updated := false
+	for _, c := range onComponents {
+		if !m.ComponentPresent(c) {
+			m.Enable(c)
+			updated = true
+		}
+	}
+	return updated
+}
+
 // AddBackplaneConfigLabels adds BackplaneConfig Labels ...
 func AddBackplaneConfigLabels(u client.Object, name string) {
 	labels := make(map[string]string)
