@@ -842,36 +842,6 @@ func (r *MultiClusterEngineReconciler) CheckConsole(ctx context.Context) (bool, 
 	return false, nil
 }
 
-func newManagedCluster() *unstructured.Unstructured {
-	managedCluster := &unstructured.Unstructured{
-		Object: map[string]interface{}{
-			"apiVersion": "cluster.open-cluster-management.io/v1",
-			"kind":       "ManagedCluster",
-			"metadata": map[string]interface{}{
-				"name": utils.LocalClusterName,
-				"labels": map[string]interface{}{
-					"local-cluster":                 "true",
-					"cloud":                         "auto-detect",
-					"vendor":                        "auto-detect",
-					"velero.io/exclude-from-backup": "true",
-				},
-			},
-			"spec": map[string]interface{}{
-				"hubAcceptsClient": true,
-			},
-		},
-	}
-	return managedCluster
-}
-
-func newLocalNamespace() *corev1.Namespace {
-	return &corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: utils.LocalClusterName,
-		},
-	}
-}
-
 func (r *MultiClusterEngineReconciler) ensureLocalCluster(ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 

@@ -165,6 +165,14 @@ func IsUnitTest() bool {
 	return false
 }
 
+func SetUnitTest(on bool) {
+	if on {
+		os.Setenv(UnitTestEnvVar, "true")
+	} else {
+		os.Unsetenv(UnitTestEnvVar)
+	}
+}
+
 func DefaultTolerations() []corev1.Toleration {
 	return []corev1.Toleration{
 		{
