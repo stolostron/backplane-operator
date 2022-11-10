@@ -32,7 +32,7 @@ regenerate-charts: ## Regenerates the charts
 	python ./hack/bundle-automation/generate-charts.py --destination pkg/templates/
 
 catalog-deploy: ## Deploys backplane operator via subscription
-	IMG="${CATALOG_IMG}" yq eval -i '.spec.image = env(IMG)' hack/catalog/catalogsource.yaml
+	IMG="${IMAGE_TAG_BASE}-catalog:v${VERSION}" yq eval -i '.spec.image = env(IMG)' hack/catalog/catalogsource.yaml
 	oc create ns backplane-operator-system --dry-run=client -o yaml | oc apply -f -
 	oc apply -k hack/catalog
 
