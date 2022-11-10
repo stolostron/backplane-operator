@@ -19,16 +19,17 @@ limitations under the License.
 package v1
 
 const (
-	ManagedServiceAccount string = "managedserviceaccount-preview"
-	ConsoleMCE            string = "console-mce"
-	Discovery             string = "discovery"
-	Hive                  string = "hive"
-	AssistedService       string = "assisted-service"
-	ClusterLifecycle      string = "cluster-lifecycle"
-	ClusterManager        string = "cluster-manager"
-	ServerFoundation      string = "server-foundation"
-	HyperShift            string = "hypershift-preview"
-	ClusterProxyAddon     string = "cluster-proxy-addon"
+	ManagedServiceAccount = "managedserviceaccount-preview"
+	ConsoleMCE            = "console-mce"
+	Discovery             = "discovery"
+	Hive                  = "hive"
+	AssistedService       = "assisted-service"
+	ClusterLifecycle      = "cluster-lifecycle"
+	ClusterManager        = "cluster-manager"
+	ServerFoundation      = "server-foundation"
+	HyperShift            = "hypershift-preview"
+	ClusterProxyAddon     = "cluster-proxy-addon"
+	LocalCluster          = "local-cluster"
 )
 
 var allComponents = []string{
@@ -42,6 +43,7 @@ var allComponents = []string{
 	ManagedServiceAccount,
 	HyperShift,
 	ClusterProxyAddon,
+	LocalCluster,
 }
 
 func (mce *MultiClusterEngine) ComponentPresent(s string) bool {

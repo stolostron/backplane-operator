@@ -13,6 +13,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const (
+	UnitTestEnvVar = "UNIT_TEST"
+)
+
 var onComponents = []string{
 	backplanev1.AssistedService,
 	backplanev1.ClusterLifecycle,
@@ -21,6 +25,7 @@ var onComponents = []string{
 	backplanev1.Hive,
 	backplanev1.ServerFoundation,
 	backplanev1.ClusterProxyAddon,
+	backplanev1.LocalCluster,
 	// backplanev1.ConsoleMCE, // determined by OCP version
 	// backplanev1.HyperShift,
 }
@@ -106,7 +111,7 @@ func DefaultReplicaCount(mce *backplanev1.MultiClusterEngine) int {
 	return 2
 }
 
-//AvailabilityConfigIsValid ...
+// AvailabilityConfigIsValid ...
 func AvailabilityConfigIsValid(config backplanev1.AvailabilityType) bool {
 	switch config {
 	case backplanev1.HAHigh, backplanev1.HABasic:
@@ -149,7 +154,7 @@ func deduplicate(config []backplanev1.ComponentConfig) []backplanev1.ComponentCo
 	return newConfig
 }
 
-//GetImagePullPolicy returns either pull policy from CR overrides or default of Always
+// GetImagePullPolicy returns either pull policy from CR overrides or default of Always
 func GetImagePullPolicy(m *backplanev1.MultiClusterEngine) corev1.PullPolicy {
 	if m.Spec.Overrides == nil || m.Spec.Overrides.ImagePullPolicy == "" {
 		return corev1.PullIfNotPresent
@@ -165,6 +170,15 @@ func GetTestImages() []string {
 		"assisted_installer", "console_mce", "hypershift_addon_operator", "hypershift_operator",
 		"apiserver_network_proxy", "aws_encryption_provider", "cluster_api", "cluster_api_provider_agent", "cluster_api_provider_aws",
 		"cluster_api_provider_azure", "cluster_api_provider_kubevirt", "cluster_proxy_addon", "cluster_proxy"}
+}
+
+func IsUnitTest() bool {
+	if unitTest, found := os.LookupEnv(UnitTestEnvVar); found {
+		if unitTest == "true" {
+			return true
+		}
+	}
+	return false
 }
 
 func DefaultTolerations() []corev1.Toleration {

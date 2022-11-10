@@ -244,19 +244,37 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 	// Do not reconcile objects if this instance of mce is labeled "paused"
 	if utils.IsPaused(backplaneConfig) {
 		log.Info("MultiClusterEngine reconciliation is paused. Nothing more to do.")
-		r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing, metav1.ConditionUnknown, status.PausedReason, "Multiclusterengine is paused"))
+		cond := status.NewCondition(
+			backplanev1.MultiClusterEngineProgressing,
+			metav1.ConditionUnknown,
+			status.PausedReason,
+			"Multiclusterengine is paused",
+		)
+		r.StatusManager.AddCondition(cond)
 		return ctrl.Result{}, nil
 	}
 
 	result, err = r.adoptExistingSubcomponents(ctx, backplaneConfig)
 	if err != nil {
-		r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing, metav1.ConditionUnknown, status.DeployFailedReason, err.Error()))
+		cond := status.NewCondition(
+			backplanev1.MultiClusterEngineProgressing,
+			metav1.ConditionUnknown,
+			status.DeployFailedReason,
+			err.Error(),
+		)
+		r.StatusManager.AddCondition(cond)
 		return result, err
 	}
 
 	result, err = r.DeployAlwaysSubcomponents(ctx, backplaneConfig)
 	if err != nil {
-		r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing, metav1.ConditionUnknown, status.DeployFailedReason, err.Error()))
+		cond := status.NewCondition(
+			backplanev1.MultiClusterEngineProgressing,
+			metav1.ConditionUnknown,
+			status.DeployFailedReason,
+			err.Error(),
+		)
+		r.StatusManager.AddCondition(cond)
 		return result, err
 	}
 
@@ -331,7 +349,7 @@ func (r *MultiClusterEngineReconciler) SetupWithManager(mgr ctrl.Manager) error 
 		Complete(r)
 }
 
-// createCAconfigmap creates a configmap that will be injected with the
+// createTrustBundleConfigmap creates a configmap that will be injected with the
 // trusted CA bundle for use with the OCP cluster wide proxy
 func (r *MultiClusterEngineReconciler) createTrustBundleConfigmap(ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
@@ -611,6 +629,24 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 		}
 	}
 
+	if backplaneConfig.Enabled(backplanev1.LocalCluster) {
+		result, err := r.ensureLocalCluster(ctx, backplaneConfig)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.LocalCluster] = err
+		}
+	} else {
+		result, err := r.ensureNoLocalCluster(ctx, backplaneConfig)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.LocalCluster] = err
+		}
+	}
+
 	if len(errs) > 0 {
 		errorMessages := []string{}
 		for k, v := range errs {
@@ -707,6 +743,27 @@ func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Conte
 	_, err := r.removePluginFromConsoleResource(ctx, backplaneConfig)
 	if err != nil {
 		log.Info("Error ensuring plugin is removed from console resource")
+		return err
+	}
+
+	localCluster := &unstructured.Unstructured{}
+	localCluster.SetGroupVersionKind(
+		schema.GroupVersionKind{
+			Group:   "cluster.open-cluster-management.io",
+			Version: "v1",
+			Kind:    "ManagedCluster",
+		},
+	)
+	err = r.Client.Get(ctx, types.NamespacedName{Name: "local-cluster"}, localCluster)
+	if err == nil { // If resource exists, delete
+		log.Info("finalizing local-cluster custom resource")
+		err := r.Client.Delete(ctx, localCluster)
+		if err != nil {
+			log.Error(err, "error deleting local-cluster ManagedCluster CR")
+			return err
+		}
+	} else if err != nil && !apierrors.IsNotFound(err) { // Return error, if error is not not found error
+		log.Error(err, "error while looking for local-cluster ManagedCluster CR")
 		return err
 	}
 

@@ -49,8 +49,9 @@ var (
 	ErrInvalidInfraNS      = errors.New("invalid InfrastructureCustomNamespace")
 
 	blockDeletionResources = []struct {
-		Name string
-		GVK  schema.GroupVersionKind
+		Name       string
+		GVK        schema.GroupVersionKind
+		Exceptions []string
 	}{
 		{
 			Name: "ManagedCluster",
@@ -59,6 +60,7 @@ var (
 				Version: "v1",
 				Kind:    "ManagedClusterList",
 			},
+			Exceptions: []string{"local-cluster"},
 		},
 		{
 			Name: "DiscoveryConfig",
@@ -230,15 +232,26 @@ func (r *MultiClusterEngine) ValidateDelete() error {
 		list := &unstructured.UnstructuredList{}
 		list.SetGroupVersionKind(resource.GVK)
 		err := discovery.ServerSupportsVersion(c, list.GroupVersionKind().GroupVersion())
-		if err == nil {
-			if err := Client.List(ctx, list); err != nil {
-				return fmt.Errorf("unable to list %s: %s", resource.Name, err)
+		if err != nil {
+			continue
+		}
+		if err := Client.List(ctx, list); err != nil {
+			return fmt.Errorf("unable to list %s: %s", resource.Name, err)
+		}
+		for _, item := range list.Items {
+			if !contains(resource.Exceptions, item.GetName()) {
+				return fmt.Errorf("cannot delete %s resource. Existing %s resources must first be deleted", r.Name, resource.Name)
 			}
-			if len(list.Items) == 0 {
-				continue
-			}
-			return fmt.Errorf("cannot delete %s resource. Existing %s resources must first be deleted", r.Name, resource.Name)
 		}
 	}
 	return nil
+}
+
+func contains(s []string, v string) bool {
+	for _, vs := range s {
+		if vs == v {
+			return true
+		}
+	}
+	return false
 }
