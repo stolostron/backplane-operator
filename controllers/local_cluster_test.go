@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	testname      = "local-cluster"
+	testname      = utils.LocalClusterName
 	testnamespace = "testnamespace"
 )
 
@@ -102,7 +102,8 @@ func TestEnsureLocalCluster(t *testing.T) {
 	}
 }
 
-func TestEnsureNoLocalCluster(t *testing.T) {
+// Case 1: manangedcluster cr and namespace does not exist
+func TestEnsureNoLocalCluster1(t *testing.T) {
 	if utils.IsUnitTest() {
 		utils.SetUnitTest(false)
 		defer func() {
@@ -127,5 +128,51 @@ func TestEnsureNoLocalCluster(t *testing.T) {
 
 	if result != (ctrl.Result{}) {
 		t.Errorf("r.ensureLocalCluster result: expected ctrl.Reult{}, got %#v", result)
+	}
+}
+
+// Case 2: manangedcluster cr and namespace do exist
+func TestEnsureNoLocalCluster2(t *testing.T) {
+	if utils.IsUnitTest() {
+		utils.SetUnitTest(false)
+		defer func() {
+			utils.SetUnitTest(true)
+		}()
+	}
+
+	requeueResult := ctrl.Result{
+		RequeueAfter: requeuePeriod,
+	}
+
+	ctx := context.Background()
+	mce := &mcev1.MultiClusterEngine{}
+
+	builder := fake.NewClientBuilder()
+	mc := newMC()
+	mc.SetNamespace("")
+	ns := utils.NewLocalNamespace()
+	builder.WithObjects(mc, ns)
+	cl := localClient{
+		Client: builder.Build(),
+	}
+
+	r := newMCER(cl)
+
+	result, err := r.ensureNoLocalCluster(ctx, mce)
+	if err != nil {
+		t.Errorf("r.ensureLocalCluster err: expected nil, got %s", err)
+	}
+	if result != requeueResult {
+		t.Errorf("r.ensureLocalCluster result: expected %#v, got %#v", requeueResult, result)
+	}
+
+	result, err = r.ensureNoLocalCluster(ctx, mce)
+
+	if err != nil {
+		t.Errorf("r.ensureLocalCluster err: expected nil, got %s", err)
+	}
+
+	if result != requeueResult {
+		t.Errorf("r.ensureLocalCluster result: expected %#v, got %#v", requeueResult, result)
 	}
 }
