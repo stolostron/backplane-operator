@@ -4,6 +4,7 @@ package controllers
 import (
 	"context"
 	"errors"
+	"os"
 	"testing"
 
 	mcev1 "github.com/stolostron/backplane-operator/api/v1"
@@ -23,6 +24,14 @@ const (
 	testname      = utils.LocalClusterName
 	testnamespace = "testnamespace"
 )
+
+func SetUnitTest(on bool) {
+	if on {
+		os.Setenv(utils.UnitTestEnvVar, "true")
+	} else {
+		os.Unsetenv(utils.UnitTestEnvVar)
+	}
+}
 
 type localClient struct {
 	client.Client
@@ -76,9 +85,9 @@ func lcTests() []lcTestCase {
 
 func TestEnsureLocalCluster(t *testing.T) {
 	if utils.IsUnitTest() {
-		utils.SetUnitTest(false)
+		SetUnitTest(false)
 		defer func() {
-			utils.SetUnitTest(true)
+			SetUnitTest(true)
 		}()
 	}
 
@@ -105,9 +114,9 @@ func TestEnsureLocalCluster(t *testing.T) {
 // Case 1: manangedcluster cr and namespace does not exist
 func TestEnsureNoLocalCluster1(t *testing.T) {
 	if utils.IsUnitTest() {
-		utils.SetUnitTest(false)
+		SetUnitTest(false)
 		defer func() {
-			utils.SetUnitTest(true)
+			SetUnitTest(true)
 		}()
 	}
 
@@ -134,9 +143,9 @@ func TestEnsureNoLocalCluster1(t *testing.T) {
 // Case 2: manangedcluster cr and namespace do exist
 func TestEnsureNoLocalCluster2(t *testing.T) {
 	if utils.IsUnitTest() {
-		utils.SetUnitTest(false)
+		SetUnitTest(false)
 		defer func() {
-			utils.SetUnitTest(true)
+			SetUnitTest(true)
 		}()
 	}
 
