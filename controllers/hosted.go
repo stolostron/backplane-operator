@@ -8,12 +8,14 @@ import (
 	"fmt"
 	"time"
 
+	pkgerrors "github.com/pkg/errors"
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 	"github.com/stolostron/backplane-operator/pkg/foundation"
 	"github.com/stolostron/backplane-operator/pkg/images"
+	renderer "github.com/stolostron/backplane-operator/pkg/rendering"
 	"github.com/stolostron/backplane-operator/pkg/status"
+	"github.com/stolostron/backplane-operator/pkg/toggle"
 	"github.com/stolostron/backplane-operator/pkg/utils"
-
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -144,6 +146,19 @@ func (r *MultiClusterEngineReconciler) HostedReconcile(ctx context.Context, mce 
 		}
 	}
 
+	// Create hosted ClusterManager
+	if mce.Enabled(backplanev1.ServerFoundation) {
+		result, err := r.ensureHostedImport(ctx, mce, hostedClient)
+		if result != (ctrl.Result{}) {
+			return result, err
+		}
+	} else {
+		result, err := r.ensureNoHostedImport(ctx, mce, hostedClient)
+		if result != (ctrl.Result{}) {
+			return result, err
+		}
+	}
+
 	r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing, metav1.ConditionTrue, status.DeploySuccessReason, "All components deployed"))
 	return ctrl.Result{}, nil
 }
@@ -190,6 +205,87 @@ func parseKubeCreds(secret *corev1.Secret) ([]byte, error) {
 		return []byte{}, fmt.Errorf("%s: %w", secret.Name, ErrBadFormat)
 	}
 	return kubeconfig, nil
+}
+
+func (r *MultiClusterEngineReconciler) ensureHostedImport(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine, hostedClient client.Client) (ctrl.Result, error) {
+
+	log := log.FromContext(ctx)
+
+	r.StatusManager.AddComponent(toggle.EnabledStatus(types.NamespacedName{Name: "managed-import-controller-v2", Namespace: backplaneConfig.Spec.TargetNamespace}))
+	r.StatusManager.RemoveComponent(toggle.DisabledStatus(types.NamespacedName{Name: "managed-import-controller-v2", Namespace: backplaneConfig.Spec.TargetNamespace}, []*unstructured.Unstructured{}))
+	templates, errs := renderer.RenderChart(toggle.HostingImportChartDir, backplaneConfig, r.Images)
+	if len(errs) > 0 {
+		for _, err := range errs {
+			log.Info(err.Error())
+		}
+		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+	}
+
+	// Applies all templates
+	for _, template := range templates {
+		result, err := r.applyTemplate(ctx, backplaneConfig, template)
+		if err != nil {
+			return result, err
+		}
+	}
+
+	templates, errs = renderer.RenderChart(toggle.HostedImportChartDir, backplaneConfig, r.Images)
+	if len(errs) > 0 {
+		for _, err := range errs {
+			log.Info(err.Error())
+		}
+		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+	}
+
+	// Applies all templates
+	for _, template := range templates {
+		result, err := r.hostedApplyTemplate(ctx, backplaneConfig, template, hostedClient)
+		if err != nil {
+			return result, err
+		}
+	}
+
+	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterEngineReconciler) ensureNoHostedImport(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine, hostedClient client.Client) (ctrl.Result, error) {
+
+	log := log.FromContext(ctx)
+	r.StatusManager.RemoveComponent(toggle.EnabledStatus(types.NamespacedName{Name: "managed-import-controller-v2", Namespace: backplaneConfig.Spec.TargetNamespace}))
+	r.StatusManager.AddComponent(toggle.DisabledStatus(types.NamespacedName{Name: "managed-import-controller-v2", Namespace: backplaneConfig.Spec.TargetNamespace}, []*unstructured.Unstructured{}))
+	templates, errs := renderer.RenderChart(toggle.HostingImportChartDir, backplaneConfig, r.Images)
+	if len(errs) > 0 {
+		for _, err := range errs {
+			log.Info(err.Error())
+		}
+		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+	}
+
+	// Applies all templates
+	for _, template := range templates {
+		result, err := r.deleteTemplate(ctx, backplaneConfig, template)
+		if err != nil {
+			return result, err
+		}
+	}
+
+	templates, errs = renderer.RenderChart(toggle.HostedImportChartDir, backplaneConfig, r.Images)
+	if len(errs) > 0 {
+		for _, err := range errs {
+			log.Info(err.Error())
+		}
+		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+	}
+
+	// Applies all templates
+	for _, template := range templates {
+		result, err := r.hostedDeleteTemplate(ctx, backplaneConfig, template, hostedClient)
+		if err != nil {
+			return result, err
+		}
+	}
+
+	return ctrl.Result{}, nil
 }
 
 func (r *MultiClusterEngineReconciler) ensureHostedClusterManager(ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
@@ -349,5 +445,55 @@ func (r *MultiClusterEngineReconciler) finalizeHostedBackplaneConfig(ctx context
 	if err != nil {
 		return err
 	}
+	hostedClient, err := r.GetHostedClient(ctx, mce)
+	if err != nil {
+		return err
+	}
+	_, err = r.ensureNoHostedImport(ctx, mce, hostedClient)
+	if err != nil {
+		return err
+	}
 	return nil
+}
+
+func (r *MultiClusterEngineReconciler) hostedApplyTemplate(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine, template *unstructured.Unstructured, hostedClient client.Client) (ctrl.Result, error) {
+	// Set owner reference.
+	err := ctrl.SetControllerReference(backplaneConfig, template, r.Scheme)
+	if err != nil {
+		return ctrl.Result{}, pkgerrors.Wrapf(err, "Error setting controller reference on resource %s", template.GetName())
+	}
+
+	// Apply the object data.
+	force := true
+	err = hostedClient.Patch(ctx, template, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
+	if err != nil {
+		return ctrl.Result{}, pkgerrors.Wrapf(err, "error applying object Name: %s Kind: %s", template.GetName(), template.GetKind())
+	}
+	return ctrl.Result{}, nil
+}
+
+// deleteTemplate return true if resource does not exist and returns an error if a GET or DELETE errors unexpectedly. A false response without error
+// means the resource is in the process of deleting.
+func (r *MultiClusterEngineReconciler) hostedDeleteTemplate(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine, template *unstructured.Unstructured, hostedClient client.Client) (ctrl.Result, error) {
+	log := log.FromContext(ctx)
+	err := hostedClient.Get(ctx, types.NamespacedName{Name: template.GetName(), Namespace: template.GetNamespace()}, template)
+
+	if err != nil && apierrors.IsNotFound(err) {
+		return ctrl.Result{}, nil
+	}
+
+	// set status progressing condition
+	if err != nil {
+		log.Error(err, "Odd error delete template")
+		return ctrl.Result{}, err
+	}
+
+	log.Info(fmt.Sprintf("finalizing template: %s\n", template.GetName()))
+	err = hostedClient.Delete(ctx, template)
+	if err != nil {
+		log.Error(err, "Failed to delete template")
+		return ctrl.Result{}, err
+	}
+
+	return ctrl.Result{}, nil
 }

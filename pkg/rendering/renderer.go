@@ -40,6 +40,7 @@ type Global struct {
 	PullPolicy     string            `json:"pullPolicy" structs:"pullPolicy"`
 	PullSecret     string            `json:"pullSecret" structs:"pullSecret"`
 	Namespace      string            `json:"namespace" structs:"namespace"`
+	ConfigSecret   string            `json:"configSecret" structs:"configSecret"`
 }
 
 type HubConfig struct {
@@ -288,6 +289,12 @@ func injectValuesOverrides(values *Values, backplaneConfig *v1.MultiClusterEngin
 
 	values.Global.PullSecret = backplaneConfig.Spec.ImagePullSecret
 
+	if v1.IsInHostedMode(backplaneConfig) {
+		secretNN, err := utils.GetHostedCredentialsSecret(backplaneConfig)
+		if err == nil {
+			values.Global.ConfigSecret = secretNN.Name
+		}
+	}
 	values.HubConfig.ReplicaCount = utils.DefaultReplicaCount(backplaneConfig)
 
 	values.HubConfig.NodeSelector = backplaneConfig.Spec.NodeSelector
