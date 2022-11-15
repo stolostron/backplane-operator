@@ -51,7 +51,11 @@ func Test_reconcileLocalHosting(t *testing.T) {
 			Overrides: &v1.Overrides{
 				Components: []v1.ComponentConfig{
 					{
-						Name:    v1.LocalHosting,
+						Name:    v1.HypershiftLocalHosting,
+						Enabled: true,
+					},
+					{
+						Name:    v1.LocalCluster,
 						Enabled: true,
 					},
 				},
@@ -60,7 +64,7 @@ func Test_reconcileLocalHosting(t *testing.T) {
 	}
 
 	// Hypershift not enabled
-	_, _ = r.reconcileLocalHosting(ctx, mce)
+	_, _ = r.reconcileHypershiftLocalHosting(ctx, mce)
 	mceStatus := r.StatusManager.ReportStatus(*mce)
 	component := getComponent(mceStatus.Components, "hypershift-addon")
 	if component.Type != "NotPresent" || component.Status != metav1.ConditionTrue || component.Reason != status.ComponentDisabledReason {
@@ -70,9 +74,9 @@ func Test_reconcileLocalHosting(t *testing.T) {
 
 	// LocalHosting not enabled
 	mce.Spec.Overrides.Components = []v1.ComponentConfig{
-		{Name: v1.LocalHosting, Enabled: false},
+		{Name: v1.HypershiftLocalHosting, Enabled: false},
 	}
-	_, _ = r.reconcileLocalHosting(ctx, mce)
+	_, _ = r.reconcileHypershiftLocalHosting(ctx, mce)
 	mceStatus = r.StatusManager.ReportStatus(*mce)
 	component = getComponent(mceStatus.Components, "hypershift-addon")
 	if component.Type != "NotPresent" || component.Status != metav1.ConditionTrue || component.Reason != status.ComponentDisabledReason {
@@ -82,10 +86,11 @@ func Test_reconcileLocalHosting(t *testing.T) {
 
 	// Hypershift enabled but local-cluster namespace not present
 	mce.Spec.Overrides.Components = []v1.ComponentConfig{
-		{Name: v1.LocalHosting, Enabled: true},
+		{Name: v1.HypershiftLocalHosting, Enabled: true},
 		{Name: v1.HyperShift, Enabled: true},
+		{Name: v1.LocalCluster, Enabled: true},
 	}
-	_, _ = r.reconcileLocalHosting(ctx, mce)
+	_, _ = r.reconcileHypershiftLocalHosting(ctx, mce)
 	mceStatus = r.StatusManager.ReportStatus(*mce)
 	component = getComponent(mceStatus.Components, "hypershift-addon")
 	if component.Reason != status.WaitingForResourceReason {
@@ -114,21 +119,11 @@ func Test_reconcileLocalHosting(t *testing.T) {
 	}
 
 	// reconcile is not successful likely due to Server-Side Apply
-	_, _ = r.reconcileLocalHosting(ctx, mce)
+	_, _ = r.reconcileHypershiftLocalHosting(ctx, mce)
 	mceStatus = r.StatusManager.ReportStatus(*mce)
 	component = getComponent(mceStatus.Components, "hypershift-addon")
 	if component.Type != "Unknown" {
 		t.Error("component status should be unknown because resource missing")
 	}
 	r.StatusManager.Reset("")
-
-	// item := &unstructured.Unstructured{}
-	// item.SetAPIVersion("addon.open-cluster-management.io/v1alpha1")
-	// item.SetKind("ManagedClusterAddOn")
-	// item.SetName("hypershift-addon")
-	// item.SetNamespace("local-cluster")
-	// err = cl.Get(context.Background(), client.ObjectKeyFromObject(item), item)
-	// if err != nil {
-	// 	t.Errorf("error getting ManagedClusterAddOn: %s", err.Error())
-	// }
 }

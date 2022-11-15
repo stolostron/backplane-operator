@@ -748,19 +748,19 @@ func (r *MultiClusterEngineReconciler) ensureNoHyperShift(ctx context.Context, b
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterEngineReconciler) reconcileLocalHosting(ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+func (r *MultiClusterEngineReconciler) reconcileHypershiftLocalHosting(ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 	addon, err := renderer.RenderHypershiftAddon(mce)
 	if err != nil {
 		return ctrl.Result{RequeueAfter: requeuePeriod}, err
 	}
 
-	if !mce.Enabled(backplanev1.LocalHosting) {
+	if !mce.Enabled(backplanev1.HypershiftLocalHosting) {
 		r.StatusManager.AddComponent(status.NewDisabledStatus(
 			types.NamespacedName{Name: addon.GetName(), Namespace: addon.GetNamespace()},
 			"Component is disabled",
 			[]*unstructured.Unstructured{addon},
 		))
-		return r.removeLocalHosting(ctx, mce)
+		return r.removeHypershiftLocalHosting(ctx, mce)
 	}
 
 	if !mce.Enabled(backplanev1.HyperShift) { // if !backplaneConfig.Enabled(backplanev1.LocalCluster)
@@ -770,13 +770,23 @@ func (r *MultiClusterEngineReconciler) reconcileLocalHosting(ctx context.Context
 			"Local hosting only available when hypershift is enabled",
 			[]*unstructured.Unstructured{addon},
 		))
-		return r.removeLocalHosting(ctx, mce)
+		return r.removeHypershiftLocalHosting(ctx, mce)
+	}
+
+	if !mce.Enabled(backplanev1.LocalCluster) {
+		// report that local-cluster must be enabled
+		r.StatusManager.AddComponent(status.NewDisabledStatus(
+			types.NamespacedName{Name: addon.GetName(), Namespace: addon.GetNamespace()},
+			"Local hosting only available when local-cluster is enabled",
+			[]*unstructured.Unstructured{addon},
+		))
+		return r.removeHypershiftLocalHosting(ctx, mce)
 	}
 
 	localNS := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "local-cluster"}}
 	err = r.Client.Get(context.TODO(), types.NamespacedName{Name: localNS.GetName()}, localNS)
 	if apierrors.IsNotFound(err) {
-		// wait or local-cluster namespace
+		// wait for local-cluster namespace
 		r.StatusManager.AddComponent(status.StaticStatus{
 			NamespacedName: types.NamespacedName{Name: addon.GetName(), Namespace: addon.GetNamespace()},
 			Kind:           addon.GetKind(),
@@ -795,10 +805,10 @@ func (r *MultiClusterEngineReconciler) reconcileLocalHosting(ctx context.Context
 	r.StatusManager.AddComponent(status.ManagedClusterAddOnStatus{
 		NamespacedName: types.NamespacedName{Name: addon.GetName(), Namespace: addon.GetNamespace()},
 	})
-	return r.applyLocalHosting(ctx, mce)
+	return r.applyHypershiftLocalHosting(ctx, mce)
 }
 
-func (r *MultiClusterEngineReconciler) applyLocalHosting(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+func (r *MultiClusterEngineReconciler) applyHypershiftLocalHosting(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 	addon, err := renderer.RenderHypershiftAddon(backplaneConfig)
 	if err != nil {
 		return ctrl.Result{RequeueAfter: requeuePeriod}, err
@@ -810,7 +820,7 @@ func (r *MultiClusterEngineReconciler) applyLocalHosting(ctx context.Context, ba
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterEngineReconciler) removeLocalHosting(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+func (r *MultiClusterEngineReconciler) removeHypershiftLocalHosting(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 	addon, err := renderer.RenderHypershiftAddon(backplaneConfig)
 	if err != nil {
 		return ctrl.Result{RequeueAfter: requeuePeriod}, err

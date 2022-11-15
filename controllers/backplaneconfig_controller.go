@@ -479,12 +479,12 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 			errs[backplanev1.HyperShift] = err
 		}
 	}
-	result, err := r.reconcileLocalHosting(ctx, backplaneConfig)
+	result, err := r.reconcileHypershiftLocalHosting(ctx, backplaneConfig)
 	if result != (ctrl.Result{}) {
 		requeue = true
 	}
 	if err != nil {
-		errs[backplanev1.LocalHosting] = err
+		errs[backplanev1.HypershiftLocalHosting] = err
 	}
 
 	ocpConsole, err := r.CheckConsole(ctx)
