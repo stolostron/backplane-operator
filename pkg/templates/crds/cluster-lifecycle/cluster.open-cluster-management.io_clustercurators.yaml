@@ -61,6 +61,13 @@ spec:
                         name:
                           description: Name of the Ansible Template to run in Tower as a job
                           type: string
+                        type:
+                          default: Job
+                          description: Type of the Hook. For Job type, Ansible job template will be used. For Workflow type, Ansible workflow template will be used. If omitted, default to Job type.
+                          enum:
+                          - Job
+                          - Workflow
+                          type: string
                       required:
                       - name
                       type: object
@@ -75,6 +82,13 @@ spec:
                           x-kubernetes-preserve-unknown-fields: true
                         name:
                           description: Name of the Ansible Template to run in Tower as a job
+                          type: string
+                        type:
+                          default: Job
+                          description: Type of the Hook. For Job type, Ansible job template will be used. For Workflow type, Ansible workflow template will be used. If omitted, default to Job type.
+                          enum:
+                          - Job
+                          - Workflow
                           type: string
                       required:
                       - name
@@ -102,6 +116,13 @@ spec:
                         name:
                           description: Name of the Ansible Template to run in Tower as a job
                           type: string
+                        type:
+                          default: Job
+                          description: Type of the Hook. For Job type, Ansible job template will be used. For Workflow type, Ansible workflow template will be used. If omitted, default to Job type.
+                          enum:
+                          - Job
+                          - Workflow
+                          type: string
                       required:
                       - name
                       type: object
@@ -116,6 +137,13 @@ spec:
                           x-kubernetes-preserve-unknown-fields: true
                         name:
                           description: Name of the Ansible Template to run in Tower as a job
+                          type: string
+                        type:
+                          default: Job
+                          description: Type of the Hook. For Job type, Ansible job template will be used. For Workflow type, Ansible workflow template will be used. If omitted, default to Job type.
+                          enum:
+                          - Job
+                          - Workflow
                           type: string
                       required:
                       - name
@@ -149,6 +177,13 @@ spec:
                         name:
                           description: Name of the Ansible Template to run in Tower as a job
                           type: string
+                        type:
+                          default: Job
+                          description: Type of the Hook. For Job type, Ansible job template will be used. For Workflow type, Ansible workflow template will be used. If omitted, default to Job type.
+                          enum:
+                          - Job
+                          - Workflow
+                          type: string
                       required:
                       - name
                       type: object
@@ -163,6 +198,13 @@ spec:
                           x-kubernetes-preserve-unknown-fields: true
                         name:
                           description: Name of the Ansible Template to run in Tower as a job
+                          type: string
+                        type:
+                          default: Job
+                          description: Type of the Hook. For Job type, Ansible job template will be used. For Workflow type, Ansible workflow template will be used. If omitted, default to Job type.
+                          enum:
+                          - Job
+                          - Workflow
                           type: string
                       required:
                       - name
@@ -196,6 +238,13 @@ spec:
                         name:
                           description: Name of the Ansible Template to run in Tower as a job
                           type: string
+                        type:
+                          default: Job
+                          description: Type of the Hook. For Job type, Ansible job template will be used. For Workflow type, Ansible workflow template will be used. If omitted, default to Job type.
+                          enum:
+                          - Job
+                          - Workflow
+                          type: string
                       required:
                       - name
                       type: object
@@ -210,6 +259,13 @@ spec:
                           x-kubernetes-preserve-unknown-fields: true
                         name:
                           description: Name of the Ansible Template to run in Tower as a job
+                          type: string
+                        type:
+                          default: Job
+                          description: Type of the Hook. For Job type, Ansible job template will be used. For Workflow type, Ansible workflow template will be used. If omitted, default to Job type.
+                          enum:
+                          - Job
+                          - Workflow
                           type: string
                       required:
                       - name
