@@ -12,22 +12,6 @@ import (
 )
 
 func RenderHypershiftAddon(mce *v1.MultiClusterEngine) (*unstructured.Unstructured, error) {
-	// addon := addonv1alpha1.ManagedClusterAddOn{
-	// 	ObjectMeta: metav1.ObjectMeta{
-	// 		Name:      "hypershift-addon",
-	// 		Namespace: "local-cluster",
-	// 	},
-	// 	Spec: addonv1alpha1.ManagedClusterAddOnSpec{
-	// 		InstallNamespace: "open-cluster-management-agent-addon",
-	// 	},
-	// }
-	// content, err := runtime.DefaultUnstructuredConverter.ToUnstructured(addon)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// addonUnstructured := &unstructured.Unstructured{Object: content}
-
 	addon := &unstructured.Unstructured{
 		Object: map[string]interface{}{
 			"apiVersion": "addon.open-cluster-management.io/v1alpha1",
