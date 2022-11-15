@@ -1,6 +1,7 @@
 global:
   imageOverrides:
     cluster_curator_controller: quay.io/test/test:test
+    cluster_image_set_controller: quay.io/test/test:test
     clusterclaims_controller: quay.io/test/test:test
     clusterlifecycle_state_metrics: quay.io/test/test:test
     provider_credential_controller: quay.io/test/test:test

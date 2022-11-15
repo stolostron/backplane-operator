@@ -1550,8 +1550,12 @@ rules:
   resources:
   - clusterimagesets
   verbs:
+  - create
+  - delete
   - get
   - list
+  - patch
+  - update
   - watch
 - apiGroups:
   - hive.openshift.io
