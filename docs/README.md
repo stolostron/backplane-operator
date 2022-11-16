@@ -1,8 +1,8 @@
 ## Available Overrides / Development Tools
 
-### Overriding Image Values
+### Override Image Values
 
-See ./override-images.md for details in modifying images at runtime
+See [Overriding Images](override-images.md ) for details about modifying images at runtime
 
 ### Disable MCE Operator
 
