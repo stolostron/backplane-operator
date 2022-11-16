@@ -114,6 +114,8 @@ spec:
               fieldPath: metadata.name
         - name: MAX_CONCURRENT_RECONCILES
           value: "10"
+        - name: KUBECONFIG
+          value: "/var/run/secrets/hypershift/kubeconfig"
         - name: OPERATOR_NAME
           value: managedcluster-import-controller
         - name: DEFAULT_IMAGE_PULL_SECRET
