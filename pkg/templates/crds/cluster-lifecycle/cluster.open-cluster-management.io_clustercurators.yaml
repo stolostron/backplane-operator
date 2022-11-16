@@ -46,6 +46,10 @@ spec:
               destroy:
                 description: During an destroy curation run these **Pre hook ONLY**
                 properties:
+                  jobMonitorTimeout:
+                    default: 5
+                    description: JobMonitorTimeout defines the timeout for finding a job, the unit of this is minute. If job is found, the curator controller waits until the job becomes active. By default, it is 5 minutes If its value is less than or equal to zero, the default value will be used.
+                    type: integer
                   overrideJob:
                     description: When provided, this is a Job specification and overrides the default flow
                     type: object
@@ -87,6 +91,10 @@ spec:
               install:
                 description: During an install curation run these Pre/Post hooks
                 properties:
+                  jobMonitorTimeout:
+                    default: 5
+                    description: JobMonitorTimeout defines the timeout for finding a job, the unit of this is minute. If job is found, the curator controller waits until the job becomes active. By default, it is 5 minutes If its value is less than or equal to zero, the default value will be used.
+                    type: integer
                   overrideJob:
                     description: When provided, this is a Job specification and overrides the default flow
                     type: object
@@ -134,6 +142,10 @@ spec:
               scale:
                 description: During an scale curation run these Pre/Post hooks
                 properties:
+                  jobMonitorTimeout:
+                    default: 5
+                    description: JobMonitorTimeout defines the timeout for finding a job, the unit of this is minute. If job is found, the curator controller waits until the job becomes active. By default, it is 5 minutes If its value is less than or equal to zero, the default value will be used.
+                    type: integer
                   overrideJob:
                     description: When provided, this is a Job specification and overrides the default flow
                     type: object
@@ -181,6 +193,10 @@ spec:
                   desiredUpdate:
                     description: DesiredUpdate indicates the desired value of the cluster version. Setting this value will trigger an upgrade (if the current version does not match the desired version).
                     type: string
+                  monitorTimeout:
+                    default: 120
+                    description: MonitorTimeout defines the monitor process timeout, the unit of this is minute. By default, it is 120 minutes If its value is less than or equal to zero, the default value will be used.
+                    type: integer
                   overrideJob:
                     description: When provided, this is a Job specification and overrides the default flow
                     type: object
