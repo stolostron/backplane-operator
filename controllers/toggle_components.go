@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 
 	semver "github.com/Masterminds/semver"
 	configv1 "github.com/openshift/api/config/v1"
@@ -38,7 +39,6 @@ func (r *MultiClusterEngineReconciler) ensureConsoleMCE(ctx context.Context, bac
 	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
 
 	log := log.FromContext(ctx)
-
 	templates, errs := renderer.RenderChart(toggle.ConsoleMCEChartsDir, backplaneConfig, r.Images)
 	if len(errs) > 0 {
 		for _, err := range errs {
@@ -75,9 +75,11 @@ func (r *MultiClusterEngineReconciler) ensureConsoleMCE(ctx context.Context, bac
 func (r *MultiClusterEngineReconciler) ensureNoConsoleMCE(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine, ocpConsole bool) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 	namespacedName := types.NamespacedName{Name: "console-mce-console", Namespace: backplaneConfig.Spec.TargetNamespace}
-	result, err := r.removePluginFromConsoleResource(ctx, backplaneConfig)
-	if err != nil {
-		return result, err
+	if ocpConsole {
+		result, err := r.removePluginFromConsoleResource(ctx, backplaneConfig)
+		if err != nil {
+			return result, err
+		}
 	}
 
 	// Renders all templates from charts
@@ -99,10 +101,12 @@ func (r *MultiClusterEngineReconciler) ensureNoConsoleMCE(ctx context.Context, b
 
 	// Deletes all templates
 	for _, template := range templates {
-		result, err := r.deleteTemplate(ctx, backplaneConfig, template)
-		if err != nil {
-			log.Error(err, fmt.Sprintf("Failed to delete Console MCE template: %s", template.GetName()))
-			return result, err
+		if ocpConsole && !strings.Contains(strings.ToLower(template.GetAPIVersion()), "console") {
+			result, err := r.deleteTemplate(ctx, backplaneConfig, template)
+			if err != nil {
+				log.Error(err, fmt.Sprintf("Failed to delete Console MCE template: %s || %s || %s", template.GetName(), template.GetAPIVersion(), template.GetNamespace()))
+				return result, err
+			}
 		}
 	}
 	return ctrl.Result{}, nil

@@ -37,20 +37,14 @@ func (cs ConsoleUnavailableStatus) Status(k8sClient client.Client) bpv1.Componen
 	if err != nil && !apierrors.IsNotFound(err) {
 		fmt.Println("Err getting deployment", err)
 		return unknownStatus(cs.GetName(), cs.GetKind())
-	} else if apierrors.IsNotFound(err) {
-		return unknownStatus(cs.GetName(), cs.GetKind())
 	}
-
-	return mapConsoleDeployment(deploy)
+	return mapConsoleDeployment(cs.GetName())
 }
 
-func mapConsoleDeployment(ds *appsv1.Deployment) bpv1.ComponentCondition {
-	if len(ds.Status.Conditions) < 1 {
-		return unknownStatus(ds.Name, ds.Kind)
-	}
+func mapConsoleDeployment(name string) bpv1.ComponentCondition {
 
 	ret := bpv1.ComponentCondition{
-		Name:               ds.Name,
+		Name:               name,
 		Kind:               "Deployment",
 		Type:               string(appsv1.DeploymentAvailable),
 		Status:             metav1.ConditionFalse,

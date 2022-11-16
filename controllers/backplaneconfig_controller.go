@@ -338,14 +338,24 @@ func (r *MultiClusterEngineReconciler) SetupWithManager(mgr ctrl.Manager) error 
 				}
 			},
 		}, builder.WithPredicates(predicate.LabelChangedPredicate{})).
-		Watches(&source.Kind{Type: &configv1.ClusterVersion{}}, &handler.Funcs{
-			UpdateFunc: func(e event.UpdateEvent, q workqueue.RateLimitingInterface) {
-				labels := e.ObjectOld.GetLabels()
-				q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
-					Name: labels["backplaneconfig.name"],
-				}})
-			},
-		}).
+		Watches(&source.Kind{Type: &configv1.ClusterVersion{}},
+			handler.EnqueueRequestsFromMapFunc(func(a client.Object) []reconcile.Request {
+				req := []reconcile.Request{}
+				multiclusterengineList := &backplanev1.MultiClusterEngineList{}
+				if err := r.Client.List(context.TODO(), multiclusterengineList); err == nil && len(multiclusterengineList.Items) > 0 {
+					for _, mce := range multiclusterengineList.Items {
+						tmpreq := reconcile.Request{
+							NamespacedName: types.NamespacedName{
+								Name:      mce.GetName(),
+								Namespace: mce.GetNamespace(),
+							},
+						}
+						req = append(req, tmpreq)
+					}
+
+				}
+				return req
+			})).
 		Complete(r)
 }
 
