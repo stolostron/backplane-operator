@@ -213,13 +213,15 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return ctrl.Result{Requeue: true}, err
 	}
 
-	currentOCPVersion, err := r.getClusterVersion(ctx)
-	if err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to detect clusterversion: %w", err)
-	}
-	if err := version.ValidOCPVersion(currentOCPVersion); err != nil {
-		r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing, metav1.ConditionFalse, status.RequirementsNotMetReason, err.Error()))
-		return ctrl.Result{}, err
+	if !utils.ShouldIgnoreOCPVersion(backplaneConfig) {
+		currentOCPVersion, err := r.getClusterVersion(ctx)
+		if err != nil {
+			return ctrl.Result{}, fmt.Errorf("failed to detect clusterversion: %w", err)
+		}
+		if err := version.ValidOCPVersion(currentOCPVersion); err != nil {
+			r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing, metav1.ConditionFalse, status.RequirementsNotMetReason, err.Error()))
+			return ctrl.Result{}, err
+		}
 	}
 
 	result, err = r.validateNamespace(ctx, backplaneConfig)

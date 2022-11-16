@@ -58,8 +58,6 @@ func ValidOCPVersion(ocpVersion string) error {
 		return nil
 	}
 
-	semver.NewConstraint(">= 4.10.0-0")
-
 	aboveMinVersion, err := semver.NewConstraint(fmt.Sprintf(">= %s-0", MinimumOCPVersion))
 	if err != nil {
 		return err

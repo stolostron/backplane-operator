@@ -31,6 +31,7 @@ import (
 	configv1 "github.com/openshift/api/config/v1"
 
 	v1 "github.com/stolostron/backplane-operator/api/v1"
+	"github.com/stolostron/backplane-operator/pkg/utils"
 
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 
@@ -880,6 +881,25 @@ var _ = Describe("BackplaneConfig controller", func() {
 					g.Expect(k8sClient.Get(context.TODO(), multiClusterEngine, existingMCE)).To(Succeed(), "Failed to get MCE")
 
 					g.Expect(existingMCE.Status.Phase).To(Equal(v1.MultiClusterEnginePhaseError))
+				}, timeout, interval).Should(Succeed())
+
+				By("ensuring MCE no longer reports error in Phase when annotated")
+				multiClusterEngine := types.NamespacedName{
+					Name: BackplaneConfigName,
+				}
+				existingMCE := &v1.MultiClusterEngine{}
+				Expect(k8sClient.Get(context.TODO(), multiClusterEngine, existingMCE)).To(Succeed(), "Failed to get MCE")
+				existingMCE.SetAnnotations(map[string]string{utils.AnnotationIgnoreOCPVersion: "true"})
+				Expect(k8sClient.Update(context.TODO(), existingMCE)).To(Succeed(), "Failed to get MCE")
+
+				Eventually(func(g Gomega) {
+					multiClusterEngine := types.NamespacedName{
+						Name: BackplaneConfigName,
+					}
+					existingMCE := &v1.MultiClusterEngine{}
+					g.Expect(k8sClient.Get(context.TODO(), multiClusterEngine, existingMCE)).To(Succeed(), "Failed to get MCE")
+
+					g.Expect(existingMCE.Status.Phase).To(Not(Equal(v1.MultiClusterEnginePhaseError)))
 				}, timeout, interval).Should(Succeed())
 
 			})
