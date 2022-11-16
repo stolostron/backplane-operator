@@ -211,8 +211,8 @@ func (r *MultiClusterEngineReconciler) ensureHostedImport(ctx context.Context, b
 
 	log := log.FromContext(ctx)
 
-	r.StatusManager.AddComponent(toggle.EnabledStatus(types.NamespacedName{Name: "managed-import-controller-v2", Namespace: backplaneConfig.Spec.TargetNamespace}))
-	r.StatusManager.RemoveComponent(toggle.DisabledStatus(types.NamespacedName{Name: "managed-import-controller-v2", Namespace: backplaneConfig.Spec.TargetNamespace}, []*unstructured.Unstructured{}))
+	r.StatusManager.AddComponent(toggle.EnabledStatus(types.NamespacedName{Name: "managedcluster-import-controller-v2", Namespace: backplaneConfig.Spec.TargetNamespace}))
+	r.StatusManager.RemoveComponent(toggle.DisabledStatus(types.NamespacedName{Name: "managedcluster-import-controller-v2", Namespace: backplaneConfig.Spec.TargetNamespace}, []*unstructured.Unstructured{}))
 	templates, errs := renderer.RenderChart(toggle.HostingImportChartDir, backplaneConfig, r.Images)
 	if len(errs) > 0 {
 		for _, err := range errs {
@@ -251,8 +251,8 @@ func (r *MultiClusterEngineReconciler) ensureHostedImport(ctx context.Context, b
 func (r *MultiClusterEngineReconciler) ensureNoHostedImport(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine, hostedClient client.Client) (ctrl.Result, error) {
 
 	log := log.FromContext(ctx)
-	r.StatusManager.RemoveComponent(toggle.EnabledStatus(types.NamespacedName{Name: "managed-import-controller-v2", Namespace: backplaneConfig.Spec.TargetNamespace}))
-	r.StatusManager.AddComponent(toggle.DisabledStatus(types.NamespacedName{Name: "managed-import-controller-v2", Namespace: backplaneConfig.Spec.TargetNamespace}, []*unstructured.Unstructured{}))
+	r.StatusManager.RemoveComponent(toggle.EnabledStatus(types.NamespacedName{Name: "managedcluster-import-controller-v2", Namespace: backplaneConfig.Spec.TargetNamespace}))
+	r.StatusManager.AddComponent(toggle.DisabledStatus(types.NamespacedName{Name: "managedcluster-import-controller-v2", Namespace: backplaneConfig.Spec.TargetNamespace}, []*unstructured.Unstructured{}))
 	templates, errs := renderer.RenderChart(toggle.HostingImportChartDir, backplaneConfig, r.Images)
 	if len(errs) > 0 {
 		for _, err := range errs {
@@ -444,6 +444,9 @@ func (r *MultiClusterEngineReconciler) finalizeHostedBackplaneConfig(ctx context
 	_, err := r.ensureNoHostedClusterManager(ctx, mce)
 	if err != nil {
 		return err
+	}
+	if utils.IsUnitTest() {
+		return nil
 	}
 	hostedClient, err := r.GetHostedClient(ctx, mce)
 	if err != nil {

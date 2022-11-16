@@ -29,7 +29,7 @@ spec:
       imagePullSecrets:
         - name: {{ .Values.global.pullSecret }}
     {{- end }}
-      serviceAccountName: managedcluster-import-controller-v2
+      serviceAccountName: default
       hostNetwork: false
       hostPID: false
       hostIPC: false
@@ -70,7 +70,7 @@ spec:
                   - managedclusterimport
       {{- if .Values.global.configSecret }}
       volumes:
-      - name: kubeconfig-secret
+      - name: kubeconfig
         secret:
           secretName: {{ .Values.global.configSecret }}
       {{- end }}
@@ -79,8 +79,8 @@ spec:
         image: "{{ .Values.global.imageOverrides.managedcluster_import_controller }}"
         {{- if .Values.global.configSecret }}
         volumeMounts:
-          - name: kubeconfig-secret
-            mountPath: /hub/config/kubeconfig
+          - name: kubeconfig
+            mountPath: /var/run/secrets/hypershift
             readOnly: true
         {{- end }}
         imagePullPolicy: {{ .Values.global.pullPolicy }}

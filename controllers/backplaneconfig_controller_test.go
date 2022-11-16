@@ -853,6 +853,24 @@ var _ = Describe("BackplaneConfig controller", func() {
 		Context("and deploymentMode is Hosted", func() {
 			It("should not deploy resources in regular fashion", func() {
 				By("creating the hosted backplane config")
+				os.Setenv("UNIT_TEST", "true")
+
+				// Create test secret in target namespace
+				testconfigsecret := &corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test",
+						Namespace: DestinationNamespace,
+					},
+					Data: map[string][]byte{"kubeconfig": []byte("")},
+				}
+				Eventually(func() error {
+					err := k8sClient.Create(context.TODO(), testconfigsecret)
+					if apierrors.IsAlreadyExists(err) {
+						return nil
+					}
+					return err
+				}, timeout, interval).Should(Succeed())
+
 				backplaneConfig := &v1.MultiClusterEngine{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "multicluster.openshift.io/v1",
@@ -860,7 +878,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:        BackplaneConfigName,
-						Annotations: map[string]string{"deploymentmode": string(v1.ModeHosted)},
+						Annotations: map[string]string{"deploymentmode": string(v1.ModeHosted), "mce-kubeconfig": "test"},
 					},
 					Spec: v1.MultiClusterEngineSpec{
 						TargetNamespace: DestinationNamespace,

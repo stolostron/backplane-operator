@@ -52,6 +52,7 @@ func SetDefaultComponents(m *backplanev1.MultiClusterEngine) bool {
 func SetHostedDefaultComponents(m *backplanev1.MultiClusterEngine) bool {
 	onComponents := []string{
 		backplanev1.ClusterManager,
+		backplanev1.ServerFoundation,
 	}
 
 	updated := false
@@ -207,4 +208,13 @@ func OperatorNamespace() string {
 		panic("Missing POD_NAMESPACE variable")
 	}
 	return deploymentNamespace
+}
+
+func IsUnitTest() bool {
+	if unitTest, found := os.LookupEnv("UNIT_TEST"); found {
+		if unitTest == "true" {
+			return true
+		}
+	}
+	return false
 }
