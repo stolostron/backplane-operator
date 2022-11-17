@@ -16,7 +16,7 @@ metadata:
     capabilities: Basic Install
     operators.operatorframework.io/builder: operator-sdk-v1.25.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
-  name: multicluster-engine.v2.2.0
+  name: multicluster-engine.v0.0.1
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -1511,6 +1511,15 @@ spec:
           - patch
           - update
         - apiGroups:
+          - flowcontrol.apiserver.k8s.io
+          resources:
+          - flowschemas
+          - prioritylevelconfigurations
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
           - hive.openshift.io
           resources:
           - '*'
@@ -1547,19 +1556,6 @@ spec:
           - get
           - list
           - patch
-          - update
-          - watch
-        - apiGroups:
-          - hive.openshift.io
-          resources:
-          - clusterclaims
-          - clusterdeployments
-          - clusterpools
-          - machinepools
-          - syncsets
-          verbs:
-          - get
-          - list
           - update
           - watch
         - apiGroups:
@@ -1632,14 +1628,6 @@ spec:
           - list
           - update
           - watch
-        - apiGroups:
-          - hive.openshift.io
-          resources:
-          - syncsets
-          verbs:
-          - create
-          - delete
-          - update
         - apiGroups:
           - hiveinternal.openshift.io
           resources:
@@ -2279,4 +2267,4 @@ spec:
   provider:
     name: Red Hat
     url: https://multicluster-engine.domain
-  version: 2.2.0
+  version: 0.0.1
