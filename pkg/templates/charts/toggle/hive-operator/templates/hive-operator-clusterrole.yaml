@@ -99,10 +99,6 @@ rules:
   - get
   - list
   - watch
-  - create
-  - update
-  - patch
-  - delete
 - apiGroups:
   - rbac.authorization.k8s.io
   resources:
@@ -217,3 +213,12 @@ rules:
   - update
   - patch
   - delete
+- apiGroups:
+  - flowcontrol.apiserver.k8s.io
+  resources:
+  - prioritylevelconfigurations
+  - flowschemas
+  verbs:
+  - get
+  - list
+  - watch
