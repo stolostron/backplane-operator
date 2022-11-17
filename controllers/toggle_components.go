@@ -38,7 +38,6 @@ func (r *MultiClusterEngineReconciler) ensureConsoleMCE(ctx context.Context, bac
 	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
 
 	log := log.FromContext(ctx)
-
 	templates, errs := renderer.RenderChart(toggle.ConsoleMCEChartsDir, backplaneConfig, r.Images)
 	if len(errs) > 0 {
 		for _, err := range errs {
@@ -75,11 +74,19 @@ func (r *MultiClusterEngineReconciler) ensureConsoleMCE(ctx context.Context, bac
 func (r *MultiClusterEngineReconciler) ensureNoConsoleMCE(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine, ocpConsole bool) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 	namespacedName := types.NamespacedName{Name: "console-mce-console", Namespace: backplaneConfig.Spec.TargetNamespace}
-	if ocpConsole {
-		result, err := r.removePluginFromConsoleResource(ctx, backplaneConfig)
-		if err != nil {
-			return result, err
-		}
+	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
+	if !ocpConsole {
+		// If Openshift console is disabled then no cleanup to be done, because MCE console cannot be installed
+		r.StatusManager.AddComponent(status.ConsoleUnavailableStatus{
+			NamespacedName: types.NamespacedName{Name: "console-mce-console", Namespace: backplaneConfig.Spec.TargetNamespace},
+		})
+		return ctrl.Result{}, nil
+	}
+	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
+
+	result, err := r.removePluginFromConsoleResource(ctx, backplaneConfig)
+	if err != nil {
+		return result, err
 	}
 
 	// Renders all templates from charts
@@ -91,19 +98,11 @@ func (r *MultiClusterEngineReconciler) ensureNoConsoleMCE(ctx context.Context, b
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
 
-	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
-	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
-	if !ocpConsole {
-		r.StatusManager.AddComponent(status.ConsoleUnavailableStatus{
-			NamespacedName: types.NamespacedName{Name: "console-mce-console", Namespace: backplaneConfig.Spec.TargetNamespace},
-		})
-	}
-
 	// Deletes all templates
 	for _, template := range templates {
 		result, err := r.deleteTemplate(ctx, backplaneConfig, template)
 		if err != nil {
-			log.Error(err, fmt.Sprintf("Failed to delete Console MCE template: %s", template.GetName()))
+			log.Error(err, fmt.Sprintf("Failed to delete Console MCE template: %s || %s || %s", template.GetName(), template.GetAPIVersion(), template.GetNamespace()))
 			return result, err
 		}
 	}
