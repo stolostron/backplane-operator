@@ -346,8 +346,7 @@ func (r *MultiClusterEngineReconciler) SetupWithManager(mgr ctrl.Manager) error 
 					for _, mce := range multiclusterengineList.Items {
 						tmpreq := reconcile.Request{
 							NamespacedName: types.NamespacedName{
-								Name:      mce.GetName(),
-								Namespace: mce.GetNamespace(),
+								Name: mce.GetName(),
 							},
 						}
 						req = append(req, tmpreq)
