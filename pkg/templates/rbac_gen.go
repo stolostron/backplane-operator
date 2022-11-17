@@ -72,7 +72,7 @@ package main
 //+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=clustermanagementaddons/finalizers,verbs=update
 //+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=clustermanagementaddons;managedclusteraddons,verbs=list;watch
 //+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=clustermanagementaddons;managedclusteraddons;clustermanagementaddons/status;clustermanagementaddons/finalizers;managedclusteraddons/status,verbs=*
-//+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=clustermanagementaddons;managedclusteraddons;clustermanagementaddons/status;managedclusteraddons/status;managedclusteraddons/finalizers,verbs=get;list;watch;create;update;patch
+//+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=clustermanagementaddons;managedclusteraddons;clustermanagementaddons/status;clustermanagementaddons/finalizers;managedclusteraddons/status;managedclusteraddons/finalizers,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=managedclusteraddons,verbs=get;list;watch;create;update;delete
 //+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=managedclusteraddons/finalizers,verbs=*
 //+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=managedclusteraddons/finalizers,verbs=update
