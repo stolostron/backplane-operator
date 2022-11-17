@@ -312,14 +312,23 @@ func (r *MultiClusterEngineReconciler) SetupWithManager(mgr ctrl.Manager) error 
 				}
 			},
 		}, builder.WithPredicates(predicate.LabelChangedPredicate{})).
-		Watches(&source.Kind{Type: &configv1.ClusterVersion{}}, &handler.Funcs{
-			UpdateFunc: func(e event.UpdateEvent, q workqueue.RateLimitingInterface) {
-				labels := e.ObjectOld.GetLabels()
-				q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
-					Name: labels["backplaneconfig.name"],
-				}})
-			},
-		}, builder.WithPredicates(predicate.LabelChangedPredicate{})).
+		Watches(&source.Kind{Type: &configv1.ClusterVersion{}},
+			handler.EnqueueRequestsFromMapFunc(func(a client.Object) []reconcile.Request {
+				req := []reconcile.Request{}
+				multiclusterengineList := &backplanev1.MultiClusterEngineList{}
+				if err := r.Client.List(context.TODO(), multiclusterengineList); err == nil && len(multiclusterengineList.Items) > 0 {
+					for _, mce := range multiclusterengineList.Items {
+						tmpreq := reconcile.Request{
+							NamespacedName: types.NamespacedName{
+								Name: mce.GetName(),
+							},
+						}
+						req = append(req, tmpreq)
+					}
+
+				}
+				return req
+			})).
 		Complete(r)
 }
 
@@ -696,10 +705,17 @@ func (r *MultiClusterEngineReconciler) ensureCustomResources(ctx context.Context
 
 func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) error {
 	log := log.FromContext(ctx)
-	_, err := r.removePluginFromConsoleResource(ctx, backplaneConfig)
+
+	ocpConsole, err := r.CheckConsole(ctx)
 	if err != nil {
-		log.Info("Error ensuring plugin is removed from console resource")
 		return err
+	}
+	if ocpConsole {
+		_, err := r.removePluginFromConsoleResource(ctx, backplaneConfig)
+		if err != nil {
+			log.Info("Error ensuring plugin is removed from console resource")
+			return err
+		}
 	}
 
 	clusterManager := &unstructured.Unstructured{}
