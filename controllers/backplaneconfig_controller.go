@@ -750,10 +750,17 @@ func (r *MultiClusterEngineReconciler) ensureCustomResources(ctx context.Context
 
 func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) error {
 	log := log.FromContext(ctx)
-	_, err := r.removePluginFromConsoleResource(ctx, backplaneConfig)
+
+	ocpConsole, err := r.CheckConsole(ctx)
 	if err != nil {
-		log.Info("Error ensuring plugin is removed from console resource")
 		return err
+	}
+	if ocpConsole {
+		_, err := r.removePluginFromConsoleResource(ctx, backplaneConfig)
+		if err != nil {
+			log.Info("Error ensuring plugin is removed from console resource")
+			return err
+		}
 	}
 
 	localCluster := &unstructured.Unstructured{}
