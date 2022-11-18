@@ -563,6 +563,23 @@ spec:
           - clustermanagementaddons/finalizers
           - clustermanagementaddons/status
           - managedclusteraddons
+          - managedclusteraddons/finalizers
+          - managedclusteraddons/status
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - addon.open-cluster-management.io
+          resources:
+          - clustermanagementaddons
+          - clustermanagementaddons/finalizers
+          - clustermanagementaddons/status
+          - managedclusteraddons
           - managedclusteraddons/status
           verbs:
           - '*'
@@ -578,21 +595,6 @@ spec:
           - create
           - delete
           - deletecollection
-          - get
-          - list
-          - patch
-          - update
-          - watch
-        - apiGroups:
-          - addon.open-cluster-management.io
-          resources:
-          - clustermanagementaddons
-          - clustermanagementaddons/status
-          - managedclusteraddons
-          - managedclusteraddons/finalizers
-          - managedclusteraddons/status
-          verbs:
-          - create
           - get
           - list
           - patch
