@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 
+	semver "github.com/Masterminds/semver"
+	configv1 "github.com/openshift/api/config/v1"
 	operatorv1 "github.com/openshift/api/operator/v1"
 	"github.com/pkg/errors"
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
@@ -32,7 +34,6 @@ func (r *MultiClusterEngineReconciler) ensureConsoleMCE(ctx context.Context, bac
 	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
 
 	log := log.FromContext(ctx)
-
 	templates, errs := renderer.RenderChart(toggle.ConsoleMCEChartsDir, backplaneConfig, r.Images)
 	if len(errs) > 0 {
 		for _, err := range errs {
@@ -66,9 +67,18 @@ func (r *MultiClusterEngineReconciler) ensureConsoleMCE(ctx context.Context, bac
 	return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 }
 
-func (r *MultiClusterEngineReconciler) ensureNoConsoleMCE(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+func (r *MultiClusterEngineReconciler) ensureNoConsoleMCE(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine, ocpConsole bool) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 	namespacedName := types.NamespacedName{Name: "console-mce-console", Namespace: backplaneConfig.Spec.TargetNamespace}
+	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
+	if !ocpConsole {
+		// If Openshift console is disabled then no cleanup to be done, because MCE console cannot be installed
+		r.StatusManager.AddComponent(status.ConsoleUnavailableStatus{
+			NamespacedName: types.NamespacedName{Name: "console-mce-console", Namespace: backplaneConfig.Spec.TargetNamespace},
+		})
+		return ctrl.Result{}, nil
+	}
+	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 
 	result, err := r.removePluginFromConsoleResource(ctx, backplaneConfig)
 	if err != nil {
@@ -84,14 +94,11 @@ func (r *MultiClusterEngineReconciler) ensureNoConsoleMCE(ctx context.Context, b
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
 
-	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
-	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
-
 	// Deletes all templates
 	for _, template := range templates {
 		result, err := r.deleteTemplate(ctx, backplaneConfig, template)
 		if err != nil {
-			log.Error(err, fmt.Sprintf("Failed to delete Console MCE template: %s", template.GetName()))
+			log.Error(err, fmt.Sprintf("Failed to delete Console MCE template: %s || %s || %s", template.GetName(), template.GetAPIVersion(), template.GetNamespace()))
 			return result, err
 		}
 	}
@@ -797,4 +804,41 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterProxyAddon(ctx context.Con
 		}
 	}
 	return ctrl.Result{}, nil
+}
+
+//Checks if OCP Console is enabled and return true if so. If <OCP v4.12, always return true
+//Otherwise check in the EnabledCapabilities spec for OCP console
+func (r *MultiClusterEngineReconciler) CheckConsole(ctx context.Context) (bool, error) {
+	versionStatus := &configv1.ClusterVersion{}
+	err := r.Client.Get(ctx, types.NamespacedName{Name: "version"}, versionStatus)
+	if err != nil {
+		return false, err
+	}
+	ocpVersion, err := r.getClusterVersion(ctx)
+	if err != nil {
+		return false, err
+	}
+	if hubOCPVersion, ok := os.LookupEnv("ACM_HUB_OCP_VERSION"); ok {
+		ocpVersion = hubOCPVersion
+	}
+	semverVersion, err := semver.NewVersion(ocpVersion)
+	if err != nil {
+		return false, fmt.Errorf("failed to convert ocp version to semver compatible value: %w", err)
+	}
+	// -0 allows for prerelease builds to pass the validation.
+	// If -0 is removed, developer/rc builds will not pass this check
+	//OCP Console can only be disabled in OCP 4.12+
+	constraint, err := semver.NewConstraint(">= 4.12.0-0")
+	if err != nil {
+		return false, fmt.Errorf("failed to set ocp version constraint: %w", err)
+	}
+	if !constraint.Check(semverVersion) {
+		return true, nil
+	}
+	for _, v := range versionStatus.Status.Capabilities.EnabledCapabilities {
+		if v == "Console" {
+			return true, nil
+		}
+	}
+	return false, nil
 }

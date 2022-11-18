@@ -312,6 +312,23 @@ func (r *MultiClusterEngineReconciler) SetupWithManager(mgr ctrl.Manager) error 
 				}
 			},
 		}, builder.WithPredicates(predicate.LabelChangedPredicate{})).
+		Watches(&source.Kind{Type: &configv1.ClusterVersion{}},
+			handler.EnqueueRequestsFromMapFunc(func(a client.Object) []reconcile.Request {
+				req := []reconcile.Request{}
+				multiclusterengineList := &backplanev1.MultiClusterEngineList{}
+				if err := r.Client.List(context.TODO(), multiclusterengineList); err == nil && len(multiclusterengineList.Items) > 0 {
+					for _, mce := range multiclusterengineList.Items {
+						tmpreq := reconcile.Request{
+							NamespacedName: types.NamespacedName{
+								Name: mce.GetName(),
+							},
+						}
+						req = append(req, tmpreq)
+					}
+
+				}
+				return req
+			})).
 		Complete(r)
 }
 
@@ -446,7 +463,12 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 		}
 	}
 
-	if backplaneConfig.Enabled(backplanev1.ConsoleMCE) {
+	ocpConsole, err := r.CheckConsole(ctx)
+	if err != nil {
+		return ctrl.Result{RequeueAfter: requeuePeriod}, err
+	}
+
+	if backplaneConfig.Enabled(backplanev1.ConsoleMCE) && ocpConsole {
 		result, err := r.ensureConsoleMCE(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
 			requeue = true
@@ -455,7 +477,7 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 			errs[backplanev1.ConsoleMCE] = err
 		}
 	} else {
-		result, err := r.ensureNoConsoleMCE(ctx, backplaneConfig)
+		result, err := r.ensureNoConsoleMCE(ctx, backplaneConfig, ocpConsole)
 		if result != (ctrl.Result{}) {
 			requeue = true
 		}
@@ -683,10 +705,17 @@ func (r *MultiClusterEngineReconciler) ensureCustomResources(ctx context.Context
 
 func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) error {
 	log := log.FromContext(ctx)
-	_, err := r.removePluginFromConsoleResource(ctx, backplaneConfig)
+
+	ocpConsole, err := r.CheckConsole(ctx)
 	if err != nil {
-		log.Info("Error ensuring plugin is removed from console resource")
 		return err
+	}
+	if ocpConsole {
+		_, err := r.removePluginFromConsoleResource(ctx, backplaneConfig)
+		if err != nil {
+			log.Info("Error ensuring plugin is removed from console resource")
+			return err
+		}
 	}
 
 	clusterManager := &unstructured.Unstructured{}
@@ -827,7 +856,7 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 	os.Setenv("ACM_CLUSTER_INGRESS_DOMAIN", clusterIngressDomain)
 
 	// If OCP 4.10+ then set then enable the MCE console. Else ensure it is disabled
-	currentClusterVersion, err := r.getClusterVersion(ctx, m)
+	currentClusterVersion, err := r.getClusterVersion(ctx)
 	if err != nil {
 		return ctrl.Result{}, pkgerrors.Wrapf(err, "failed to detect clusterversion")
 	}
@@ -968,10 +997,13 @@ func (r *MultiClusterEngineReconciler) adoptExistingSubcomponents(ctx context.Co
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterEngineReconciler) getClusterVersion(ctx context.Context, mce *backplanev1.MultiClusterEngine) (string, error) {
+func (r *MultiClusterEngineReconciler) getClusterVersion(ctx context.Context) (string, error) {
 	log := log.FromContext(ctx)
 	// If Unit test
 	if val, ok := os.LookupEnv("UNIT_TEST"); ok && val == "true" {
+		if _, exists := os.LookupEnv("ACM_HUB_OCP_VERSION"); exists {
+			return os.Getenv("ACM_HUB_OCP_VERSION"), nil
+		}
 		return "4.9.0", nil
 	}
 
