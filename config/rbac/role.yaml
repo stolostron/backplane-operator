@@ -1106,6 +1106,7 @@ rules:
 - apiGroups:
   - cluster.open-cluster-management.io
   resources:
+  - addonplacementscores/status
   - clustercurators
   verbs:
   - create
