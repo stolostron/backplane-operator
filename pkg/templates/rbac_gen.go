@@ -150,8 +150,8 @@ package main
 //+kubebuilder:rbac:groups=certificates.k8s.io,resources=signers,verbs=approve
 //+kubebuilder:rbac:groups=certificates.k8s.io,resources=signers,verbs=approve
 //+kubebuilder:rbac:groups=certificates.k8s.io,resources=signers,verbs=approve
-//+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=addonplacementscores,verbs=create;delete;deletecollection;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=addonplacementscores/status,verbs=create;delete;get;list;patch;update;watch
+//+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=addonplacementscores;addonplacementscores/status,verbs=create;delete;deletecollection;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=clustercurators,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=clustercurators/status,verbs=get;patch;update
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclusters,verbs=get;list;create;delete;watch;update;patch
