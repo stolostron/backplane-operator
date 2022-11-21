@@ -1106,7 +1106,32 @@ rules:
 - apiGroups:
   - cluster.open-cluster-management.io
   resources:
+  - addonplacementscores
   - addonplacementscores/status
+  verbs:
+  - create
+  - delete
+  - deletecollection
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.open-cluster-management.io
+  resources:
+  - addonplacementscores/status
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.open-cluster-management.io
+  resources:
   - clustercurators
   verbs:
   - create
