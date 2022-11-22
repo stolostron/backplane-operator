@@ -30,6 +30,11 @@ const (
 	NamespaceTerminatingReason = "ManagedClusterNamespaceTerminating"
 	// PausedReason is added when the multiclusterengine is paused
 	PausedReason = "Paused"
+	// UnsupportedConfigReason means the resource can't be deployed as intended based on current configuration
+	// settings
+	UnsupportedConfigReason = "UnsupportedConfiguration"
+	// ComponentDisabledReason means the component has been specifically disabled by user in config
+	ComponentDisabledReason = "ComponentDisabled"
 )
 
 // NewCondition creates a new condition.
