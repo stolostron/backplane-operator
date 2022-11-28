@@ -62,8 +62,14 @@ spec:
                           description: Ansible job extra_vars is passed to the Ansible job at execution time and is a known Ansible entity.
                           type: object
                           x-kubernetes-preserve-unknown-fields: true
+                        job_tags:
+                          description: A comma-separated list of tags to specify which sets of ansible tasks in a job should be run.
+                          type: string
                         name:
                           description: Name of the Ansible Template to run in Tower as a job
+                          type: string
+                        skip_tags:
+                          description: A comma-separated list of tags to specify which sets of ansible tasks in a job should not be run.
                           type: string
                         type:
                           default: Job
@@ -84,8 +90,14 @@ spec:
                           description: Ansible job extra_vars is passed to the Ansible job at execution time and is a known Ansible entity.
                           type: object
                           x-kubernetes-preserve-unknown-fields: true
+                        job_tags:
+                          description: A comma-separated list of tags to specify which sets of ansible tasks in a job should be run.
+                          type: string
                         name:
                           description: Name of the Ansible Template to run in Tower as a job
+                          type: string
+                        skip_tags:
+                          description: A comma-separated list of tags to specify which sets of ansible tasks in a job should not be run.
                           type: string
                         type:
                           default: Job
@@ -121,8 +133,14 @@ spec:
                           description: Ansible job extra_vars is passed to the Ansible job at execution time and is a known Ansible entity.
                           type: object
                           x-kubernetes-preserve-unknown-fields: true
+                        job_tags:
+                          description: A comma-separated list of tags to specify which sets of ansible tasks in a job should be run.
+                          type: string
                         name:
                           description: Name of the Ansible Template to run in Tower as a job
+                          type: string
+                        skip_tags:
+                          description: A comma-separated list of tags to specify which sets of ansible tasks in a job should not be run.
                           type: string
                         type:
                           default: Job
@@ -143,8 +161,14 @@ spec:
                           description: Ansible job extra_vars is passed to the Ansible job at execution time and is a known Ansible entity.
                           type: object
                           x-kubernetes-preserve-unknown-fields: true
+                        job_tags:
+                          description: A comma-separated list of tags to specify which sets of ansible tasks in a job should be run.
+                          type: string
                         name:
                           description: Name of the Ansible Template to run in Tower as a job
+                          type: string
+                        skip_tags:
+                          description: A comma-separated list of tags to specify which sets of ansible tasks in a job should not be run.
                           type: string
                         type:
                           default: Job
@@ -186,8 +210,14 @@ spec:
                           description: Ansible job extra_vars is passed to the Ansible job at execution time and is a known Ansible entity.
                           type: object
                           x-kubernetes-preserve-unknown-fields: true
+                        job_tags:
+                          description: A comma-separated list of tags to specify which sets of ansible tasks in a job should be run.
+                          type: string
                         name:
                           description: Name of the Ansible Template to run in Tower as a job
+                          type: string
+                        skip_tags:
+                          description: A comma-separated list of tags to specify which sets of ansible tasks in a job should not be run.
                           type: string
                         type:
                           default: Job
@@ -208,8 +238,14 @@ spec:
                           description: Ansible job extra_vars is passed to the Ansible job at execution time and is a known Ansible entity.
                           type: object
                           x-kubernetes-preserve-unknown-fields: true
+                        job_tags:
+                          description: A comma-separated list of tags to specify which sets of ansible tasks in a job should be run.
+                          type: string
                         name:
                           description: Name of the Ansible Template to run in Tower as a job
+                          type: string
+                        skip_tags:
+                          description: A comma-separated list of tags to specify which sets of ansible tasks in a job should not be run.
                           type: string
                         type:
                           default: Job
@@ -251,8 +287,14 @@ spec:
                           description: Ansible job extra_vars is passed to the Ansible job at execution time and is a known Ansible entity.
                           type: object
                           x-kubernetes-preserve-unknown-fields: true
+                        job_tags:
+                          description: A comma-separated list of tags to specify which sets of ansible tasks in a job should be run.
+                          type: string
                         name:
                           description: Name of the Ansible Template to run in Tower as a job
+                          type: string
+                        skip_tags:
+                          description: A comma-separated list of tags to specify which sets of ansible tasks in a job should not be run.
                           type: string
                         type:
                           default: Job
@@ -273,8 +315,14 @@ spec:
                           description: Ansible job extra_vars is passed to the Ansible job at execution time and is a known Ansible entity.
                           type: object
                           x-kubernetes-preserve-unknown-fields: true
+                        job_tags:
+                          description: A comma-separated list of tags to specify which sets of ansible tasks in a job should be run.
+                          type: string
                         name:
                           description: Name of the Ansible Template to run in Tower as a job
+                          type: string
+                        skip_tags:
+                          description: A comma-separated list of tags to specify which sets of ansible tasks in a job should not be run.
                           type: string
                         type:
                           default: Job
