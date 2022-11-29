@@ -801,8 +801,8 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterProxyAddon(ctx context.Con
 	return ctrl.Result{}, nil
 }
 
-//Checks if OCP Console is enabled and return true if so. If <OCP v4.12, always return true
-//Otherwise check in the EnabledCapabilities spec for OCP console
+// Checks if OCP Console is enabled and return true if so. If <OCP v4.12, always return true
+// Otherwise check in the EnabledCapabilities spec for OCP console
 func (r *MultiClusterEngineReconciler) CheckConsole(ctx context.Context) (bool, error) {
 	versionStatus := &configv1.ClusterVersion{}
 	err := r.Client.Get(ctx, types.NamespacedName{Name: "version"}, versionStatus)

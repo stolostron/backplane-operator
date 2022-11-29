@@ -209,4 +209,3 @@ func OperatorNamespace() string {
 	}
 	return deploymentNamespace
 }
-
