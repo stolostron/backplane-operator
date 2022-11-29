@@ -57,7 +57,7 @@ spec:
             memory: "32Mi"
             cpu: "25m"
           limits:
-            memory: "256Mi"
+            memory: "1Gi"
             cpu: "500m"
         args:
           - "--http-port=8080"
