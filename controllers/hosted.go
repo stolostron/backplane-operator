@@ -133,6 +133,23 @@ func (r *MultiClusterEngineReconciler) HostedReconcile(ctx context.Context, mce 
 		return ctrl.Result{RequeueAfter: requeuePeriod}, err
 	}
 
+	// Render CRD templates
+	crdsDir := "pkg/templates/hosted-crds"
+	crds, errs := renderer.RenderCRDs(crdsDir)
+	for _, err := range errs {
+		log.Info(err.Error())
+	}
+	if len(errs) > 0 {
+		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+	}
+
+	for _, template := range crds {
+		result, err := r.hostedApplyTemplate(ctx, mce, template, hostedClient)
+		if err != nil {
+			return result, err
+		}
+	}
+
 	// Create hosted ClusterManager
 	if mce.Enabled(backplanev1.ClusterManager) {
 		result, err := r.ensureHostedClusterManager(ctx, mce)
