@@ -23,6 +23,8 @@ const (
 	ManagedServiceAccountCRDPath  = "pkg/templates/managed-serviceaccount/crds"
 
 	DiscoveryChartDir        = "pkg/templates/charts/toggle/discovery-operator"
+	HostedImportChartDir     = "pkg/templates/charts/hosted/server-foundation"
+	HostingImportChartDir    = "pkg/templates/charts/hosting/server-foundation"
 	HiveChartDir             = "pkg/templates/charts/toggle/hive-operator"
 	AssistedServiceChartDir  = "pkg/templates/charts/toggle/assisted-service"
 	ClusterLifecycleChartDir = "pkg/templates/charts/toggle/cluster-lifecycle"

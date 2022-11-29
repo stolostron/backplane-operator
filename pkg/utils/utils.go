@@ -58,6 +58,7 @@ func SetDefaultComponents(m *backplanev1.MultiClusterEngine) bool {
 func SetHostedDefaultComponents(m *backplanev1.MultiClusterEngine) bool {
 	onComponents := []string{
 		backplanev1.ClusterManager,
+		backplanev1.ServerFoundation,
 	}
 
 	updated := false
