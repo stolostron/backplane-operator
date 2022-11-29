@@ -1,0 +1,10 @@
+
+# Source: managed-serviceaccount/templates/clustermanagementaddon.yaml
+apiVersion: addon.open-cluster-management.io/v1alpha1
+kind: ClusterManagementAddOn
+metadata:
+  name: hypershift-addon
+spec:
+  addOnMeta:
+    displayName: Hypershift Addon Agent
+    description: Installs the Hypershift operator and monitors hosted clusters
