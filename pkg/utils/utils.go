@@ -210,11 +210,3 @@ func OperatorNamespace() string {
 	return deploymentNamespace
 }
 
-func IsUnitTest() bool {
-	if unitTest, found := os.LookupEnv("UNIT_TEST"); found {
-		if unitTest == "true" {
-			return true
-		}
-	}
-	return false
-}
