@@ -14,6 +14,8 @@ import (
 var (
 	// AnnotationMCEPause sits in multiclusterengine annotations to identify if the multiclusterengine is paused or not
 	AnnotationMCEPause = "pause"
+	// AnnotationIgnoreOCPVersion indicates the operator should not check the OCP version before proceeding when set
+	AnnotationIgnoreOCPVersion = "ignoreOCPVersion"
 	// AnnotationImageRepo sits in multiclusterengine annotations to identify a custom image repository to use
 	AnnotationImageRepo = "imageRepository"
 	// AnnotationImageOverridesCM identifies a configmap name containing an image override mapping
@@ -34,6 +36,20 @@ func IsPaused(instance *backplanev1.MultiClusterEngine) bool {
 		return true
 	}
 
+	return false
+}
+
+// ShouldIgnoreOCPVersion returns true if the multiclusterengine instance is annotated to skip
+// the minimum OCP version requirement
+func ShouldIgnoreOCPVersion(instance *backplanev1.MultiClusterEngine) bool {
+	a := instance.GetAnnotations()
+	if a == nil {
+		return false
+	}
+
+	if _, ok := a[AnnotationIgnoreOCPVersion]; ok {
+		return true
+	}
 	return false
 }
 

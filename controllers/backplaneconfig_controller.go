@@ -33,6 +33,7 @@ import (
 	renderer "github.com/stolostron/backplane-operator/pkg/rendering"
 	"github.com/stolostron/backplane-operator/pkg/status"
 	"github.com/stolostron/backplane-operator/pkg/utils"
+	"github.com/stolostron/backplane-operator/pkg/version"
 	clustermanager "open-cluster-management.io/api/operator/v1"
 
 	configv1 "github.com/openshift/api/config/v1"
@@ -210,6 +211,17 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}
 	if err != nil {
 		return ctrl.Result{Requeue: true}, err
+	}
+
+	if !utils.ShouldIgnoreOCPVersion(backplaneConfig) {
+		currentOCPVersion, err := r.getClusterVersion(ctx)
+		if err != nil {
+			return ctrl.Result{}, fmt.Errorf("failed to detect clusterversion: %w", err)
+		}
+		if err := version.ValidOCPVersion(currentOCPVersion); err != nil {
+			r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing, metav1.ConditionFalse, status.RequirementsNotMetReason, err.Error()))
+			return ctrl.Result{}, err
+		}
 	}
 
 	result, err = r.validateNamespace(ctx, backplaneConfig)
@@ -1076,7 +1088,7 @@ func (r *MultiClusterEngineReconciler) getClusterVersion(ctx context.Context) (s
 		if _, exists := os.LookupEnv("ACM_HUB_OCP_VERSION"); exists {
 			return os.Getenv("ACM_HUB_OCP_VERSION"), nil
 		}
-		return "4.9.0", nil
+		return "4.99.99", nil
 	}
 
 	clusterVersion := &configv1.ClusterVersion{}
