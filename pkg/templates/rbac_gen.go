@@ -121,6 +121,7 @@ package main
 //+kubebuilder:rbac:groups=apps,resources=deployments,verbs=create;get;list;update;watch;patch;delete
 //+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch
 //+kubebuilder:rbac:groups=apps,resources=deployments/finalizers,verbs=update
+//+kubebuilder:rbac:groups=apps,resources=deployments;deployments/finalizers,verbs=get;list;create;delete;update;patch
 //+kubebuilder:rbac:groups=apps,resources=deployments;deployments/finalizers;daemonsets;daemonsets/finalizers;statefulsets,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=apps,resources=deployments;deployments/scale,verbs=*
 //+kubebuilder:rbac:groups=apps,resources=replicasets,verbs=get
@@ -182,6 +183,7 @@ package main
 //+kubebuilder:rbac:groups=config.openshift.io,resources=infrastructures,verbs=get;list;watch;patch;update
 //+kubebuilder:rbac:groups=config.openshift.io;console.openshift.io;project.openshift.io;tower.ansible.com,resources=infrastructures;consolelinks;projects;featuregates;ansiblejobs,verbs=list;get;watch
 //+kubebuilder:rbac:groups=console.open-cluster-management.io,resources=userpreferences,verbs=list;watch
+//+kubebuilder:rbac:groups=console.openshift.io,resources=consoleclidownloads,verbs=get;list;create;delete;update;patch
 //+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=*
 //+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=*
 //+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=create;delete;get;list;patch;update;watch
@@ -251,6 +253,7 @@ package main
 //+kubebuilder:rbac:groups=operator.open-cluster-management.io,resources=clustermanagers/status,verbs=update;patch
 //+kubebuilder:rbac:groups=operator.open-cluster-management.io,resources=klusterlets,verbs=create;delete;deletecollection;get;list;patch;update;watch;escalate
 //+kubebuilder:rbac:groups=operator.open-cluster-management.io,resources=multiclusterhubs,verbs=get;list;watch
+//+kubebuilder:rbac:groups=operators.coreos.com,resources=clusterserviceversions,verbs=get;list
 //+kubebuilder:rbac:groups=operators.coreos.com,resources=subscriptions,verbs=get;list;watch
 //+kubebuilder:rbac:groups=policy.open-cluster-management.io;app.k8s.io;apps.open-cluster-management.io;argoproj.io,resources=applications;applicationsets;appprojects;argocds;channels;gitopsclusters;helmreleases;placementrules;placementbindings;policies;policyautomations;policysets;subscriptions;subscriptionreports,verbs=list;watch
 //+kubebuilder:rbac:groups=proxy.open-cluster-management.io,resources=clusterstatuses/aggregator,verbs=get;create
@@ -273,6 +276,7 @@ package main
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io;"",resources=roles;rolebindings,verbs=create;get
 //+kubebuilder:rbac:groups=register.open-cluster-management.io,resources=managedclusters/accept,verbs=update
 //+kubebuilder:rbac:groups=route.openshift.io,resources=routes,verbs=create;delete;get;list;patch;update;watch
+//+kubebuilder:rbac:groups=route.openshift.io,resources=routes,verbs=get;list;create;delete;update;patch
 //+kubebuilder:rbac:groups=route.openshift.io,resources=routes/custom-host,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=route.openshift.io,resources=routes;routes/custom-host,verbs=create;get
 //+kubebuilder:rbac:groups=submarineraddon.open-cluster-management.io,resources=submarinerconfigs,verbs=list;watch
