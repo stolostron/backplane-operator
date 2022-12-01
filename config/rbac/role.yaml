@@ -913,6 +913,18 @@ rules:
   - apps
   resources:
   - deployments
+  - deployments/finalizers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+- apiGroups:
+  - apps
+  resources:
+  - deployments
   - deployments/scale
   verbs:
   - '*'
@@ -1338,6 +1350,17 @@ rules:
   verbs:
   - list
   - watch
+- apiGroups:
+  - console.openshift.io
+  resources:
+  - consoleclidownloads
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
 - apiGroups:
   - console.openshift.io
   resources:
@@ -1828,6 +1851,13 @@ rules:
 - apiGroups:
   - operators.coreos.com
   resources:
+  - clusterserviceversions
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - operators.coreos.com
+  resources:
   - subscriptions
   verbs:
   - get
@@ -1959,6 +1989,13 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - clusterroles/finalizers
+  verbs:
+  - get
+  - update
 - apiGroups:
   - rbac.authorization.k8s.io
   resources:

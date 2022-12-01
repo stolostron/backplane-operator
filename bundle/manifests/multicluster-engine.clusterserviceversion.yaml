@@ -14,7 +14,7 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    operators.operatorframework.io/builder: operator-sdk-v1.25.0
+    operators.operatorframework.io/builder: operator-sdk-v1.22.2
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
   name: multicluster-engine.v0.0.1
   namespace: placeholder
@@ -981,6 +981,18 @@ spec:
           - apps
           resources:
           - deployments
+          - deployments/finalizers
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
           - deployments/scale
           verbs:
           - '*'
@@ -1174,7 +1186,32 @@ spec:
         - apiGroups:
           - cluster.open-cluster-management.io
           resources:
+          - addonplacementscores
           - addonplacementscores/status
+          verbs:
+          - create
+          - delete
+          - deletecollection
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - cluster.open-cluster-management.io
+          resources:
+          - addonplacementscores/status
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - cluster.open-cluster-management.io
+          resources:
           - clustercurators
           verbs:
           - create
@@ -1381,6 +1418,17 @@ spec:
           verbs:
           - list
           - watch
+        - apiGroups:
+          - console.openshift.io
+          resources:
+          - consoleclidownloads
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
         - apiGroups:
           - console.openshift.io
           resources:
@@ -1617,8 +1665,12 @@ spec:
           resources:
           - clusterimagesets
           verbs:
+          - create
+          - delete
           - get
           - list
+          - patch
+          - update
           - watch
         - apiGroups:
           - hive.openshift.io
@@ -1867,6 +1919,13 @@ spec:
         - apiGroups:
           - operators.coreos.com
           resources:
+          - clusterserviceversions
+          verbs:
+          - get
+          - list
+        - apiGroups:
+          - operators.coreos.com
+          resources:
           - subscriptions
           verbs:
           - get
@@ -1998,6 +2057,13 @@ spec:
           - patch
           - update
           - watch
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          resources:
+          - clusterroles/finalizers
+          verbs:
+          - get
+          - update
         - apiGroups:
           - rbac.authorization.k8s.io
           resources:
