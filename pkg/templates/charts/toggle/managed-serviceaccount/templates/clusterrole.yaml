@@ -17,7 +17,6 @@ rules:
   - clustermanagementaddons
   - managedclusteraddons
   - clustermanagementaddons/status
-  - clustermanagementaddons/finalizers
   - managedclusteraddons/status
   - managedclusteraddons/finalizers
   verbs:
@@ -27,7 +26,6 @@ rules:
   - create
   - update
   - patch
-  - delete
 - apiGroups:
   - addon.open-cluster-management.io
   resources:
