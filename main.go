@@ -60,6 +60,7 @@ import (
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 	"github.com/stolostron/backplane-operator/controllers"
+	addonapiv1alpha1 "open-cluster-management.io/api/addon/v1alpha1"
 	clustermanager "open-cluster-management.io/api/operator/v1"
 	//+kubebuilder:scaffold:imports
 )
@@ -98,6 +99,8 @@ func init() {
 	utilruntime.Must(configv1.AddToScheme(scheme))
 
 	utilruntime.Must(operatorv1.AddToScheme(scheme))
+
+	utilruntime.Must(addonapiv1alpha1.AddToScheme(scheme))
 
 	//+kubebuilder:scaffold:scheme
 }
