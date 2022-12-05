@@ -689,20 +689,21 @@ rules:
   - agent-install.openshift.io
   resources:
   - agents
+  - agentserviceconfigs
   - infraenvs
+  - nmstateconfigs
   verbs:
-  - get
   - list
-  - update
   - watch
 - apiGroups:
   - agent-install.openshift.io
   resources:
   - agents
   - infraenvs
-  - nmstateconfigs
   verbs:
+  - get
   - list
+  - update
   - watch
 - apiGroups:
   - agent-install.openshift.io
@@ -1335,6 +1336,7 @@ rules:
   - tower.ansible.com
   resources:
   - ansiblejobs
+  - clusterversions
   - consolelinks
   - featuregates
   - infrastructures
@@ -2072,6 +2074,13 @@ rules:
   - list
   - patch
   - update
+  - watch
+- apiGroups:
+  - storage.k8s.io
+  resources:
+  - storageclass
+  verbs:
+  - list
   - watch
 - apiGroups:
   - submarineraddon.open-cluster-management.io
