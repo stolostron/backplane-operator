@@ -17,7 +17,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	addonapiv1alpha1 "open-cluster-management.io/api/addon/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -44,7 +43,6 @@ func init() {
 
 	utilruntime.Must(operatorv1.AddToScheme(scheme))
 
-	utilruntime.Must(addonapiv1alpha1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 

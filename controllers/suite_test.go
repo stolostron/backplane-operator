@@ -34,7 +34,6 @@ import (
 
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
-	addonapiv1alpha1 "open-cluster-management.io/api/addon/v1alpha1"
 	clustermanager "open-cluster-management.io/api/operator/v1"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -124,9 +123,6 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 
 	err = operatorv1.AddToScheme(scheme.Scheme)
-	Expect(err).NotTo(HaveOccurred())
-
-	err = addonapiv1alpha1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	err = os.Setenv("POD_NAMESPACE", "default")
