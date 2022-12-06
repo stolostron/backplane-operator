@@ -47,7 +47,7 @@ package main
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;watch;list;create
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=list;get;watch
-//+kubebuilder:rbac:groups="",resources=secrets;configmaps;events,verbs=get;list;watch;create;update;delete;deletecollection;patch
+//+kubebuilder:rbac:groups="",resources=secrets;configmaps;events;services,verbs=get;list;watch;create;update;delete;deletecollection;patch
 //+kubebuilder:rbac:groups="",resources=secrets;events,verbs=get;list;watch;create;update;patch
 //+kubebuilder:rbac:groups="",resources=secrets;namespaces,verbs=list;get;watch;delete
 //+kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=create;delete;get;list;patch;update;watch

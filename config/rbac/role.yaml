@@ -80,6 +80,7 @@ rules:
   - configmaps
   - events
   - secrets
+  - services
   verbs:
   - create
   - delete
