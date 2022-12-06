@@ -4,7 +4,7 @@ metadata:
   name: {{ .Values.org }}:{{ .Chart.Name }}:hypershift-addon-manager
 rules:
 - apiGroups: [""]
-  resources: ["secrets", "configmaps", "events"]
+  resources: ["secrets", "configmaps", "events", "services"]
   verbs: ["get", "list", "watch", "create", "update", "delete", "deletecollection", "patch"]
 - apiGroups: ["addon.open-cluster-management.io"]
   resources: ["managedclusteraddons", "managedclusteraddons/finalizers", "managedclusteraddons/status", "clustermanagementaddons", "clustermanagementaddons/finalizers"]
