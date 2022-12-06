@@ -41,6 +41,9 @@ const (
 //+kubebuilder:rbac:groups=route.openshift.io,resources=routes,verbs=get;create;update;list;watch;delete;patch
 //+kubebuilder:rbac:groups=proxy.open-cluster-management.io,resources=managedproxyconfigurations;managedproxyserviceresolvers,verbs=get;create;update;list;watch;delete;patch
 
+// hypershift
+//+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=addondeploymentconfigs,verbs=get;create;update;list;watch;delete;patch
+
 var resources = []string{
 	"APIService",
 	"ClusterManagementAddOn",
@@ -61,6 +64,7 @@ var resources = []string{
 	"ServiceAccount",
 	"ServiceMonitor",
 	"ValidatingWebhookConfiguration",
+	"AddOnDeploymentConfig",
 }
 
 func main() {

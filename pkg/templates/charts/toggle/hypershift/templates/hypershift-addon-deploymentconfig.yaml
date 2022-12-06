@@ -1,0 +1,11 @@
+apiVersion: addon.open-cluster-management.io/v1alpha1
+kind: AddOnDeploymentConfig
+metadata:
+  name: hypershift-addon-deploy-config
+  namespace: {{ .Values.global.namespace }}
+spec:
+  customizedVariables:
+  - name: hcMaxNumber
+    value: "80"
+  - name: hcThresholdNumber
+    value: "60"

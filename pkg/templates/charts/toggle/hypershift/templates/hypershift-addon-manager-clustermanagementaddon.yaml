@@ -8,3 +8,9 @@ spec:
   addOnMeta:
     displayName: Hypershift Addon Agent
     description: Installs the Hypershift operator and monitors hosted clusters
+  supportedConfigs:
+  - group: addon.open-cluster-management.io
+    resource: addondeploymentconfigs
+    defaultConfig:
+      name: hypershift-addon-deploy-config
+      namespace: {{ .Values.global.namespace }}

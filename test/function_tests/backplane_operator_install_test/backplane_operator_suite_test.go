@@ -42,6 +42,7 @@ func init() {
 	utilruntime.Must(configv1.AddToScheme(scheme))
 
 	utilruntime.Must(operatorv1.AddToScheme(scheme))
+
 	// +kubebuilder:scaffold:scheme
 }
 
