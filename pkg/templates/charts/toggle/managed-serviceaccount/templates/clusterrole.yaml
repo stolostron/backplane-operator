@@ -15,11 +15,20 @@ rules:
   - addon.open-cluster-management.io
   resources:
   - clustermanagementaddons
-  - managedclusteraddons
-  - clustermanagementaddons/status
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - addon.open-cluster-management.io
+  resources:
   - clustermanagementaddons/finalizers
-  - managedclusteraddons/status
-  - managedclusteraddons/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - addon.open-cluster-management.io
+  resources:
+  - managedclusteraddons
   verbs:
   - get
   - list
@@ -28,6 +37,19 @@ rules:
   - update
   - patch
   - delete
+- apiGroups:
+  - addon.open-cluster-management.io
+  resources:
+  - managedclusteraddons/status
+  verbs:
+  - update
+  - patch
+- apiGroups:
+  - addon.open-cluster-management.io
+  resources:
+  - managedclusteraddons/finalizers
+  verbs:
+  - update
 - apiGroups:
   - addon.open-cluster-management.io
   resources:
