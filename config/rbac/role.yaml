@@ -500,23 +500,6 @@ rules:
   - clustermanagementaddons/finalizers
   - clustermanagementaddons/status
   - managedclusteraddons
-  - managedclusteraddons/finalizers
-  - managedclusteraddons/status
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - addon.open-cluster-management.io
-  resources:
-  - clustermanagementaddons
-  - clustermanagementaddons/finalizers
-  - clustermanagementaddons/status
-  - managedclusteraddons
   - managedclusteraddons/status
   verbs:
   - '*'
@@ -560,6 +543,7 @@ rules:
   - delete
   - get
   - list
+  - patch
   - update
   - watch
 - apiGroups:
