@@ -568,23 +568,6 @@ spec:
           - clustermanagementaddons/finalizers
           - clustermanagementaddons/status
           - managedclusteraddons
-          - managedclusteraddons/finalizers
-          - managedclusteraddons/status
-          verbs:
-          - create
-          - delete
-          - get
-          - list
-          - patch
-          - update
-          - watch
-        - apiGroups:
-          - addon.open-cluster-management.io
-          resources:
-          - clustermanagementaddons
-          - clustermanagementaddons/finalizers
-          - clustermanagementaddons/status
-          - managedclusteraddons
           - managedclusteraddons/status
           verbs:
           - '*'
@@ -628,6 +611,7 @@ spec:
           - delete
           - get
           - list
+          - patch
           - update
           - watch
         - apiGroups:
@@ -762,20 +746,21 @@ spec:
           - agent-install.openshift.io
           resources:
           - agents
+          - agentserviceconfigs
           - infraenvs
+          - nmstateconfigs
           verbs:
-          - get
           - list
-          - update
           - watch
         - apiGroups:
           - agent-install.openshift.io
           resources:
           - agents
           - infraenvs
-          - nmstateconfigs
           verbs:
+          - get
           - list
+          - update
           - watch
         - apiGroups:
           - agent-install.openshift.io
@@ -1408,6 +1393,7 @@ spec:
           - tower.ansible.com
           resources:
           - ansiblejobs
+          - clusterversions
           - consolelinks
           - featuregates
           - infrastructures
@@ -2145,6 +2131,13 @@ spec:
           - list
           - patch
           - update
+          - watch
+        - apiGroups:
+          - storage.k8s.io
+          resources:
+          - storageclass
+          verbs:
+          - list
           - watch
         - apiGroups:
           - submarineraddon.open-cluster-management.io
