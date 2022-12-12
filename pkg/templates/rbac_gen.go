@@ -231,6 +231,7 @@ package main
 //+kubebuilder:rbac:groups=hive.openshift.io,resources=clusterdeployments;clusterpools;clusterclaims;machinepools,verbs=get;list;watch;update
 //+kubebuilder:rbac:groups=hive.openshift.io,resources=clusterdeployments;syncsets;selectorsyncsets,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=hive.openshift.io,resources=clusterimagesets,verbs=get;list;watch
+//+kubebuilder:rbac:groups=hive.openshift.io,resources=clusterimagesets,verbs=get;list;watch
 //+kubebuilder:rbac:groups=hive.openshift.io,resources=clusterimagesets,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=hiveinternal.openshift.io,resources=*,verbs=*
 //+kubebuilder:rbac:groups=hiveinternal.openshift.io,resources=clustersyncs,verbs=get;list;watch
