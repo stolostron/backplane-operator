@@ -19,7 +19,7 @@ rules:
 
 - apiGroups: ["hive.openshift.io"]
   resources: ["clusterdeployments"]
-  verbs: ["patch","delete"]
+  verbs: ["patch","delete","update"]
 
 - apiGroups: ["internal.open-cluster-management.io",""]
   resources: ["managedclusterinfos","pods","secrets"]

@@ -223,7 +223,7 @@ package main
 //+kubebuilder:rbac:groups=hive.openshift.io,resources=clusterdeployments,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=hive.openshift.io,resources=clusterdeployments,verbs=get
 //+kubebuilder:rbac:groups=hive.openshift.io,resources=clusterdeployments,verbs=get;list;watch
-//+kubebuilder:rbac:groups=hive.openshift.io,resources=clusterdeployments,verbs=patch;delete
+//+kubebuilder:rbac:groups=hive.openshift.io,resources=clusterdeployments,verbs=patch;delete;update
 //+kubebuilder:rbac:groups=hive.openshift.io,resources=clusterdeployments/finalizers,verbs=update
 //+kubebuilder:rbac:groups=hive.openshift.io,resources=clusterdeployments/status,verbs=get;patch;update
 //+kubebuilder:rbac:groups=hive.openshift.io,resources=clusterdeployments;clusterpools;clusterclaims;machinepools,verbs=*
