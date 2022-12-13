@@ -52,7 +52,7 @@ func NewCondition(condType v1.MultiClusterEngineConditionType, status metav1.Con
 // SetCondition sets the status condition. It either overwrites the existing one or creates a new one.
 func setCondition(conditions []v1.MultiClusterEngineCondition, c v1.MultiClusterEngineCondition) []v1.MultiClusterEngineCondition {
 	currentCond := getCondition(conditions, c.Type)
-	if currentCond != nil && currentCond.Status == c.Status && currentCond.Reason == c.Reason {
+	if currentCond != nil && currentCond.Status == c.Status && currentCond.Reason == c.Reason && currentCond.Message == c.Message {
 		// Condition already present
 		return conditions
 	}
