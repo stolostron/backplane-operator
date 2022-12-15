@@ -7,4 +7,4 @@ data:
   LOG_LEVEL: info
   ansibleIntegration: disabled
   singleNodeOpenshift: disabled
- 
+  awsPrivateWizardStep: enabled
