@@ -42,6 +42,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -692,9 +693,12 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 
 func (r *MultiClusterEngineReconciler) applyTemplate(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine, template *unstructured.Unstructured) (ctrl.Result, error) {
 	// Set owner reference.
-	err := ctrl.SetControllerReference(backplaneConfig, template, r.Scheme)
-	if err != nil {
-		return ctrl.Result{}, pkgerrors.Wrapf(err, "Error setting controller reference on resource %s", template.GetName())
+	// Don't set owner reference on hypershift-addon ManagedClusterAddOn. See ACM-2289
+	if !(template.GetName() == "hypershift-addon" && template.GetKind() == "ManagedClusterAddOn") {
+		err := ctrl.SetControllerReference(backplaneConfig, template, r.Scheme)
+		if err != nil {
+			return ctrl.Result{}, pkgerrors.Wrapf(err, "Error setting controller reference on resource %s", template.GetName())
+		}
 	}
 
 	if template.GetKind() == "APIService" {
@@ -705,7 +709,7 @@ func (r *MultiClusterEngineReconciler) applyTemplate(ctx context.Context, backpl
 	} else {
 		// Apply the object data.
 		force := true
-		err = r.Client.Patch(ctx, template, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
+		err := r.Client.Patch(ctx, template, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
 		if err != nil {
 			return ctrl.Result{}, pkgerrors.Wrapf(err, "error applying object Name: %s Kind: %s", template.GetName(), template.GetKind())
 		}
@@ -781,6 +785,37 @@ func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Conte
 		}
 	}
 
+	// Remove hypershift-addon ManagedClusterAddOn if present
+	hypershiftAddon, err := renderer.RenderHypershiftAddon(backplaneConfig)
+	if err != nil {
+		return err
+	}
+	err = r.Client.Get(ctx, types.NamespacedName{Name: hypershiftAddon.GetName(), Namespace: hypershiftAddon.GetNamespace()}, hypershiftAddon)
+	if err != nil {
+		if !(apierrors.IsNotFound(err) || apimeta.IsNoMatchError(err)) {
+			log.Error(err, "error while looking for hypershift-addon ManagedClusterAddOn")
+			return err
+		}
+	} else {
+		log.Info("finalizing hypershift-addon ManagedClusterAddOn")
+		err := r.Client.Delete(ctx, hypershiftAddon)
+		if err != nil {
+			log.Error(err, "error deleting hypershift-addon ManagedClusterAddOn")
+			return err
+		}
+
+		// If wait time exceeds expected then uninstall may not be able to progress
+		if time.Since(backplaneConfig.DeletionTimestamp.Time) < 3*time.Minute {
+			terminatingCondition := status.NewCondition(backplanev1.MultiClusterEngineConditionType(backplanev1.MultiClusterEngineProgressing), metav1.ConditionTrue, status.WaitingForResourceReason, "Waiting for ManagedClusterAddOn hypershift-addon to terminate.")
+			r.StatusManager.AddCondition(terminatingCondition)
+		} else {
+			terminatingCondition := status.NewCondition(backplanev1.MultiClusterEngineConditionType(backplanev1.MultiClusterEngineProgressing), metav1.ConditionFalse, status.WaitingForResourceReason, "ManagedClusterAddOn hypershift-addon still exists.")
+			r.StatusManager.AddCondition(terminatingCondition)
+		}
+
+		return fmt.Errorf("waiting for 'hypershift-addon' ManagedClusterAddOn to be terminated before proceeding with uninstallation")
+	}
+
 	localCluster := &unstructured.Unstructured{}
 	localCluster.SetGroupVersionKind(
 		schema.GroupVersionKind{
@@ -796,6 +831,15 @@ func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Conte
 		if err != nil {
 			log.Error(err, "error deleting local-cluster ManagedCluster CR")
 			return err
+		}
+
+		// If wait time exceeds expected then uninstall may not be able to progress
+		if time.Since(backplaneConfig.DeletionTimestamp.Time) < 3*time.Minute {
+			terminatingCondition := status.NewCondition(backplanev1.MultiClusterEngineConditionType(backplanev1.MultiClusterEngineProgressing), metav1.ConditionTrue, status.WaitingForResourceReason, "Waiting for ManagedCluster local-cluster to terminate.")
+			r.StatusManager.AddCondition(terminatingCondition)
+		} else {
+			terminatingCondition := status.NewCondition(backplanev1.MultiClusterEngineConditionType(backplanev1.MultiClusterEngineProgressing), metav1.ConditionFalse, status.WaitingForResourceReason, "ManagedCluster local-cluster still exists.")
+			r.StatusManager.AddCondition(terminatingCondition)
 		}
 	} else if err != nil && !apierrors.IsNotFound(err) { // Return error, if error is not not found error
 		log.Error(err, "error while looking for local-cluster ManagedCluster CR")
@@ -817,6 +861,14 @@ func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Conte
 		err := r.Client.Delete(ctx, clusterManager)
 		if err != nil {
 			return err
+		}
+		// If wait time exceeds expected then uninstall may not be able to progress
+		if time.Since(backplaneConfig.DeletionTimestamp.Time) < 5*time.Minute {
+			terminatingCondition := status.NewCondition(backplanev1.MultiClusterEngineConditionType(backplanev1.MultiClusterEngineProgressing), metav1.ConditionTrue, status.WaitingForResourceReason, "Waiting for ClusterManager cluster-manager to terminate.")
+			r.StatusManager.AddCondition(terminatingCondition)
+		} else {
+			terminatingCondition := status.NewCondition(backplanev1.MultiClusterEngineConditionType(backplanev1.MultiClusterEngineProgressing), metav1.ConditionFalse, status.WaitingForResourceReason, "ClusterManager cluster-manager still exists.")
+			r.StatusManager.AddCondition(terminatingCondition)
 		}
 	} else if err != nil && !apierrors.IsNotFound(err) { // Return error, if error is not not found error
 		return err
