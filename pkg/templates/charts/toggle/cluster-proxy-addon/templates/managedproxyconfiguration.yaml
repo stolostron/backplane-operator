@@ -37,7 +37,5 @@ spec:
   proxyAgent:
     image: '{{ .Values.global.imageOverrides.cluster_proxy_addon }}'
     replicas: 1
-    {{- if .Values.global.pullSecret }}
     imagePullSecrets:
     - "open-cluster-management-image-pull-credentials"
-    {{- end }}
