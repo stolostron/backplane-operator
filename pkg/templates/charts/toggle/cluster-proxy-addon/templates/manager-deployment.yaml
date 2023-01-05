@@ -82,6 +82,7 @@ spec:
             - --agent-image-name={{ .Values.global.imageOverrides.cluster_proxy }}
             - --agent-install-namespace=open-cluster-management-agent-addon
             - --agent-install-all=true
+            - --enable-kube-api-proxy=false
         {{- if .Values.global.pullSecret }}
       imagePullSecrets:
       - name: {{ .Values.global.pullSecret }}
