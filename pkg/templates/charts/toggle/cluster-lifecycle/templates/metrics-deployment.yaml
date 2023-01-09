@@ -57,7 +57,7 @@ spec:
             memory: "32Mi"
             cpu: "25m"
           limits:
-            memory: "1Gi"
+            memory: "2Gi"
             cpu: "500m"
         args:
           - "--http-port=8080"
@@ -71,6 +71,8 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: metadata.name
+          - name: GOMEMLIMIT
+            value: "1892MiB"
 {{- if .Values.hubconfig.proxyConfigs }}
           - name: HTTP_PROXY
             value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}

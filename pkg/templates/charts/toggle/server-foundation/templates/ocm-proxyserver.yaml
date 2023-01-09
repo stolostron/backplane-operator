@@ -53,6 +53,8 @@ spec:
         - name: NO_PROXY
           value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
 {{- end }}
+        - name: GOMEMLIMIT
+          value: "2750MiB"
         image: '{{ .Values.global.imageOverrides.multicloud_manager }}'
         imagePullPolicy: '{{ .Values.global.pullPolicy }}'
         name: ocm-proxyserver
@@ -81,7 +83,7 @@ spec:
             cpu: 100m
             memory: 256Mi
           limits:
-            memory: 4Gi
+            memory: 3Gi
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
