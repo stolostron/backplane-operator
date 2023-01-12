@@ -834,13 +834,15 @@ func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Conte
 		}
 
 		// If wait time exceeds expected then uninstall may not be able to progress
-		if time.Since(backplaneConfig.DeletionTimestamp.Time) < 3*time.Minute {
+		if time.Since(backplaneConfig.DeletionTimestamp.Time) < 10*time.Minute {
 			terminatingCondition := status.NewCondition(backplanev1.MultiClusterEngineConditionType(backplanev1.MultiClusterEngineProgressing), metav1.ConditionTrue, status.WaitingForResourceReason, "Waiting for ManagedCluster local-cluster to terminate.")
 			r.StatusManager.AddCondition(terminatingCondition)
 		} else {
 			terminatingCondition := status.NewCondition(backplanev1.MultiClusterEngineConditionType(backplanev1.MultiClusterEngineProgressing), metav1.ConditionFalse, status.WaitingForResourceReason, "ManagedCluster local-cluster still exists.")
 			r.StatusManager.AddCondition(terminatingCondition)
 		}
+		return fmt.Errorf("waiting for 'local-cluster' ManagedCluster to be terminated before proceeding with uninstallation")
+
 	} else if err != nil && !apierrors.IsNotFound(err) { // Return error, if error is not not found error
 		log.Error(err, "error while looking for local-cluster ManagedCluster CR")
 		return err
@@ -863,13 +865,15 @@ func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Conte
 			return err
 		}
 		// If wait time exceeds expected then uninstall may not be able to progress
-		if time.Since(backplaneConfig.DeletionTimestamp.Time) < 5*time.Minute {
+		if time.Since(backplaneConfig.DeletionTimestamp.Time) < 10*time.Minute {
 			terminatingCondition := status.NewCondition(backplanev1.MultiClusterEngineConditionType(backplanev1.MultiClusterEngineProgressing), metav1.ConditionTrue, status.WaitingForResourceReason, "Waiting for ClusterManager cluster-manager to terminate.")
 			r.StatusManager.AddCondition(terminatingCondition)
 		} else {
 			terminatingCondition := status.NewCondition(backplanev1.MultiClusterEngineConditionType(backplanev1.MultiClusterEngineProgressing), metav1.ConditionFalse, status.WaitingForResourceReason, "ClusterManager cluster-manager still exists.")
 			r.StatusManager.AddCondition(terminatingCondition)
 		}
+		return fmt.Errorf("waiting for 'cluster-manager' ClusterManager to be terminated before proceeding with uninstallation")
+
 	} else if err != nil && !apierrors.IsNotFound(err) { // Return error, if error is not not found error
 		return err
 	}
@@ -878,7 +882,7 @@ func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Conte
 	err = r.Client.Get(ctx, types.NamespacedName{Name: "open-cluster-management-hub"}, ocmHubNamespace)
 	if err == nil {
 		// If wait time exceeds expected then uninstall may not be able to progress
-		if time.Since(backplaneConfig.DeletionTimestamp.Time) < 5*time.Minute {
+		if time.Since(backplaneConfig.DeletionTimestamp.Time) < 10*time.Minute {
 			terminatingCondition := status.NewCondition(backplanev1.MultiClusterEngineConditionType(backplanev1.MultiClusterEngineProgressing), metav1.ConditionTrue, status.WaitingForResourceReason, "Waiting for namespace open-cluster-management-hub to terminate.")
 			r.StatusManager.AddCondition(terminatingCondition)
 		} else {
