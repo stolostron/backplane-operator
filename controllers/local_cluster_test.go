@@ -38,7 +38,7 @@ type localClient struct {
 	err string
 }
 
-func (lc localClient) Get(ctx context.Context, key types.NamespacedName, obj client.Object) error {
+func (lc localClient) Get(ctx context.Context, key types.NamespacedName, obj client.Object, opts ...client.GetOption) error {
 	if lc.err != "" {
 		return apierrors.NewInternalError(errors.New(lc.err))
 	}

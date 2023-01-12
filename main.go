@@ -28,24 +28,29 @@ import (
 	"os"
 	"time"
 
+	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
+	"github.com/stolostron/backplane-operator/controllers"
 	renderer "github.com/stolostron/backplane-operator/pkg/rendering"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"github.com/stolostron/backplane-operator/pkg/status"
+	"github.com/stolostron/backplane-operator/pkg/version"
+	clustermanager "open-cluster-management.io/api/operator/v1"
+
+	configv1 "github.com/openshift/api/config/v1"
+	operatorv1 "github.com/openshift/api/operator/v1"
+	hiveconfig "github.com/openshift/hive/apis/hive/v1"
+
+	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
-
-	operatorv1 "github.com/openshift/api/operator/v1"
-	admissionregistration "k8s.io/api/admissionregistration/v1"
-	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
-	"sigs.k8s.io/yaml"
 
-	configv1 "github.com/openshift/api/config/v1"
-	hiveconfig "github.com/openshift/hive/apis/hive/v1"
-	"github.com/stolostron/backplane-operator/pkg/status"
-	"github.com/stolostron/backplane-operator/pkg/version"
+	admissionregistration "k8s.io/api/admissionregistration/v1"
+	corev1 "k8s.io/api/core/v1"
+	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -53,20 +58,20 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/yaml"
 
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
-	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
-	"github.com/stolostron/backplane-operator/controllers"
-	clustermanager "open-cluster-management.io/api/operator/v1"
 	//+kubebuilder:scaffold:imports
 )
 
 const (
-	crdName = "multiclusterengines.multicluster.openshift.io"
-	crdsDir = "pkg/templates/crds"
+	crdName    = "multiclusterengines.multicluster.openshift.io"
+	crdsDir    = "pkg/templates/crds"
+	NoCacheEnv = "DISABLE_CLIENT_CACHE"
 )
 
 var (
@@ -121,7 +126,7 @@ func main() {
 
 	ctrl.Log.WithName("Backplane Operator version").Info(fmt.Sprintf("%#v", version.Get()))
 
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+	mgrOptions := ctrl.Options{
 		Scheme:                 scheme,
 		MetricsBindAddress:     metricsAddr,
 		Port:                   9443,
@@ -130,7 +135,18 @@ func main() {
 		LeaderElectionID:       "797f9276.open-cluster-management.io",
 		WebhookServer:          &webhook.Server{TLSMinVersion: "1.2"},
 		// LeaderElectionNamespace: "backplane-operator-system", // Ensure this is commented out. Uncomment only for running operator locally.
-	})
+	}
+
+	cacheSecrets := os.Getenv(NoCacheEnv)
+	if len(cacheSecrets) > 0 {
+		setupLog.Info("Operator Client Cache Disabled")
+		mgrOptions.ClientDisableCacheFor = []client.Object{
+			&corev1.Secret{},
+			&olmv1alpha1.ClusterServiceVersion{},
+		}
+	}
+
+	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), mgrOptions)
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)

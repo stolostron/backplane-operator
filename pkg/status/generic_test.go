@@ -24,7 +24,7 @@ type buggyClient struct {
 	shouldError bool
 }
 
-func (cl buggyClient) Get(ctx context.Context, key types.NamespacedName, obj client.Object) error {
+func (cl buggyClient) Get(ctx context.Context, key types.NamespacedName, obj client.Object, opts ...client.GetOption) error {
 	if cl.shouldError {
 		return apierrors.NewInternalError(fmt.Errorf("oops"))
 	}
