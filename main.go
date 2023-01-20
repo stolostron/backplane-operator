@@ -32,6 +32,7 @@ import (
 	"github.com/stolostron/backplane-operator/controllers"
 	renderer "github.com/stolostron/backplane-operator/pkg/rendering"
 	"github.com/stolostron/backplane-operator/pkg/status"
+	"github.com/stolostron/backplane-operator/pkg/utils"
 	"github.com/stolostron/backplane-operator/pkg/version"
 	clustermanager "open-cluster-management.io/api/operator/v1"
 
@@ -44,6 +45,7 @@ import (
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
+	"k8s.io/client-go/util/retry"
 
 	admissionregistration "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -161,6 +163,15 @@ func main() {
 		os.Exit(1)
 	}
 
+	// use uncached client for setup before manager starts
+	uncachedClient, err := client.New(ctrl.GetConfigOrDie(), client.Options{
+		Scheme: mgr.GetScheme(),
+	})
+	if err != nil {
+		setupLog.Error(err, "unable to create uncached client")
+		os.Exit(1)
+	}
+
 	// Render CRD templates
 	crdsDir := crdsDir
 	crds, errs := renderer.RenderCRDs(crdsDir)
@@ -171,10 +182,15 @@ func main() {
 		os.Exit(1)
 	}
 
-	for _, crd := range crds {
-		err := ensureCRD(mgr, crd)
-		if err != nil {
-			setupLog.Info(err.Error())
+	// udpate CRDs with retry
+	for i := range crds {
+		retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			crd := crds[i]
+			e := ensureCRD(context.TODO(), uncachedClient, crd)
+			return e
+		})
+		if retryErr != nil {
+			setupLog.Error(err, "unable to ensure CRD exists in alloted time. Failing.")
 			os.Exit(1)
 		}
 	}
@@ -209,44 +225,32 @@ func main() {
 	}
 }
 
-func ensureCRD(mgr ctrl.Manager, crd *unstructured.Unstructured) error {
-	ctx := context.Background()
-	maxAttempts := 5
-	go func() {
-		for i := 0; i < maxAttempts; i++ {
-			setupLog.Info(fmt.Sprintf("Ensuring '%s' CRD exists", crd.GetName()))
-			existingCRD := &unstructured.Unstructured{}
-			existingCRD.SetGroupVersionKind(crd.GroupVersionKind())
-			err := mgr.GetClient().Get(ctx, types.NamespacedName{Name: crd.GetName()}, existingCRD)
-			if err != nil && errors.IsNotFound(err) {
-				// CRD not found. Create and return
-				err = mgr.GetClient().Create(ctx, crd)
-				if err != nil {
-					setupLog.Error(err, fmt.Sprintf("Error creating '%s' CRD", crd.GetName()))
-					time.Sleep(5 * time.Second)
-					continue
-				}
-				return
-			} else if err != nil {
-				setupLog.Error(err, fmt.Sprintf("Error getting '%s' CRD", crd.GetName()))
-			} else if err == nil {
-				// CRD already exists. Update and return
-				setupLog.Info(fmt.Sprintf("'%s' CRD already exists. Updating.", crd.GetName()))
-				crd.SetResourceVersion(existingCRD.GetResourceVersion())
-				err = mgr.GetClient().Update(ctx, crd)
-				if err != nil {
-					setupLog.Error(err, fmt.Sprintf("Error updating '%s' CRD", crd.GetName()))
-					time.Sleep(5 * time.Second)
-					continue
-				}
-				return
-			}
-			time.Sleep(5 * time.Second)
+func ensureCRD(ctx context.Context, c client.Client, crd *unstructured.Unstructured) error {
+	existingCRD := &unstructured.Unstructured{}
+	existingCRD.SetGroupVersionKind(crd.GroupVersionKind())
+	err := c.Get(ctx, types.NamespacedName{Name: crd.GetName()}, existingCRD)
+	if err != nil && errors.IsNotFound(err) {
+		// CRD not found. Create and return
+		setupLog.Info(fmt.Sprintf("creating CRD '%s'", crd.GetName()))
+		err = c.Create(ctx, crd)
+		if err != nil {
+			return fmt.Errorf("error creating CRD '%s': %w", crd.GetName(), err)
 		}
-
-		setupLog.Info(fmt.Sprintf("Unable to ensure '%s' CRD exists in allotted time. Failing.", crd.GetName()))
-		os.Exit(1)
-	}()
+	} else if err != nil {
+		return fmt.Errorf("error getting CRD '%s': %w", crd.GetName(), err)
+	} else if err == nil {
+		// CRD already exists. Update and return
+		if utils.AnnotationPresent(utils.AnnotationMCEIgnore, existingCRD) {
+			setupLog.Info(fmt.Sprintf("CRD '%s' has ignore label. Skipping update.", crd.GetName()))
+			return nil
+		}
+		crd.SetResourceVersion(existingCRD.GetResourceVersion())
+		setupLog.Info(fmt.Sprintf("updating CRD '%s'", crd.GetName()))
+		err = c.Update(ctx, crd)
+		if err != nil {
+			return fmt.Errorf("error updating CRD '%s': %w", crd.GetName(), err)
+		}
+	}
 	return nil
 }
 
