@@ -23,7 +23,7 @@ kubectl annotate mce <mce-name> --overwrite imageRepository="quay.io/stolostron"
 
 Images replacements can be defined in a configmap and referenced in the multiclusterengine resource. The operator will then deploy resources using these images. 
 
-This is done by creating a configmap from a new [manifest](https://github.com/stolostron/backplane-pipeline/tree/2.2-integration/snapshots). A developer may use this to override any 1 or all images. This configmap must be in the same namespace as the backplane operator.
+This is done by creating a configmap from a new [manifest](https://github.com/stolostron/backplane-pipeline/tree/2.3-integration/snapshots). A developer may use this to override any 1 or all images. This configmap must be in the same namespace as the backplane operator.
 
 
 If overriding individual images, the minimum required parameters required to build the image reference are - 
