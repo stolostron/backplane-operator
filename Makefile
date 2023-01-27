@@ -243,4 +243,4 @@ ft-install: ## Docker run the functional test image
 	docker run --env TEST_MODE="install" --volume ~/.kube/config:/opt/.kube/config $(REGISTRY)/backplane-operator-test:$(VERSION)
 
 functional-tests: ## Run ginkgo functional tests directly.
-	ginkgo -tags functional -v --slowSpecThreshold=600 test/function_tests/backplane_operator_install_test
+	ginkgo -tags functional -v test/function_tests/backplane_operator_install_test
