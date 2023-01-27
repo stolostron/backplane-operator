@@ -122,8 +122,8 @@ func Test_reconcileLocalHosting(t *testing.T) {
 	_, _ = r.reconcileHypershiftLocalHosting(ctx, mce)
 	mceStatus = r.StatusManager.ReportStatus(*mce)
 	component = getComponent(mceStatus.Components, "hypershift-addon")
-	if component.Type != "Unknown" {
-		t.Error("component status should be unknown because resource missing")
+	if component.Type != "Available" {
+		t.Errorf("Got status %s, expected %s", component.Type, "Available")
 	}
 	r.StatusManager.Reset("")
 }
