@@ -173,7 +173,13 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 			retRes = ctrl.Result{RequeueAfter: requeuePeriod}
 		}
 		if err != nil {
-			retErr = err
+			if apierrors.IsConflict(err) {
+				// Error from object being modified is normal behavior and should not be treated like an error
+				log.Info("Failed to update status", "Reason", "Object has been modified")
+				retRes = ctrl.Result{RequeueAfter: requeuePeriod}
+			} else {
+				retErr = err
+			}
 		}
 	}()
 
@@ -386,7 +392,6 @@ func (r *MultiClusterEngineReconciler) createTrustBundleConfigmap(ctx context.Co
 		Name:      trustBundleName,
 		Namespace: trustBundleNamespace,
 	}
-	log.Info("using trust bundle configmap %s/%s", trustBundleNamespace, trustBundleName)
 
 	// Check if configmap exists
 	cm := &corev1.ConfigMap{}
@@ -417,6 +422,7 @@ func (r *MultiClusterEngineReconciler) createTrustBundleConfigmap(ctx context.Co
 			trustBundleName,
 		)
 	}
+	log.Info(fmt.Sprintf("creating trust bundle configmap %s: %s", trustBundleNamespace, trustBundleName))
 	err = r.Client.Create(ctx, cm)
 	if err != nil {
 		// Error creating configmap
@@ -697,7 +703,7 @@ func (r *MultiClusterEngineReconciler) applyTemplate(ctx context.Context, backpl
 	if !(template.GetName() == "hypershift-addon" && template.GetKind() == "ManagedClusterAddOn") {
 		err := ctrl.SetControllerReference(backplaneConfig, template, r.Scheme)
 		if err != nil {
-			return ctrl.Result{}, pkgerrors.Wrapf(err, "Error setting controller reference on resource %s", template.GetName())
+			return ctrl.Result{}, fmt.Errorf("error setting controller reference on resource Name: %s Kind: %s Error: %w", template.GetName(), template.GetKind(), err)
 		}
 	}
 
@@ -711,7 +717,7 @@ func (r *MultiClusterEngineReconciler) applyTemplate(ctx context.Context, backpl
 		force := true
 		err := r.Client.Patch(ctx, template, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
 		if err != nil {
-			return ctrl.Result{}, pkgerrors.Wrapf(err, "error applying object Name: %s Kind: %s", template.GetName(), template.GetKind())
+			return ctrl.Result{}, fmt.Errorf("error applying object Name: %s Kind: %s Error: %w", template.GetName(), template.GetKind(), err)
 		}
 	}
 	return ctrl.Result{}, nil
@@ -723,7 +729,7 @@ func (r *MultiClusterEngineReconciler) deleteTemplate(ctx context.Context, backp
 	log := log.FromContext(ctx)
 	err := r.Client.Get(ctx, types.NamespacedName{Name: template.GetName(), Namespace: template.GetNamespace()}, template)
 
-	if err != nil && apierrors.IsNotFound(err) {
+	if err != nil && (apierrors.IsNotFound(err) || apimeta.IsNoMatchError(err)) {
 		return ctrl.Result{}, nil
 	}
 

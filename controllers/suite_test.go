@@ -62,7 +62,8 @@ func TestControllers(t *testing.T) {
 var cfg *rest.Config
 var k8sClient client.Client
 var testEnv *envtest.Environment
-var signalHandlerContext context.Context
+var ctx context.Context
+var cancel context.CancelFunc
 var reconciler MultiClusterEngineReconciler
 
 var _ = BeforeSuite(func() {
@@ -71,7 +72,7 @@ var _ = BeforeSuite(func() {
 	// SetupSignalHandler can only be called once, so we'll save the
 	// context it returns and reuse it each time we start a new
 	// manager.
-	signalHandlerContext = ctrl.SetupSignalHandler()
+	ctx, cancel = context.WithCancel(context.Background())
 
 	By("bootstrap test environment")
 	testEnv = &envtest.Environment{
@@ -163,13 +164,12 @@ var _ = BeforeSuite(func() {
 		// For explanation of GinkgoRecover in a go routine, see
 		// https://onsi.github.io/ginkgo/#mental-model-how-ginkgo-handles-failure
 		defer GinkgoRecover()
-		err = k8sManager.Start(signalHandlerContext)
+		err = k8sManager.Start(ctx)
 		Expect(err).ToNot(HaveOccurred())
 	}()
 })
 
 var _ = AfterSuite(func() {
-	By("tearing down the test environment")
 	err := os.Unsetenv("OPERAND_IMAGE_TEST_IMAGE")
 	Expect(err).NotTo(HaveOccurred())
 	err = os.Unsetenv("POD_NAMESPACE")
@@ -179,6 +179,7 @@ var _ = AfterSuite(func() {
 	err = os.Unsetenv("DIRECTORY_OVERRIDE")
 	Expect(err).NotTo(HaveOccurred())
 
+	cancel()
 	By("tearing down the test environment")
 	err = testEnv.Stop()
 	Expect(err).NotTo(HaveOccurred())

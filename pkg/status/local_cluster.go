@@ -8,6 +8,8 @@ import (
 	"github.com/stolostron/backplane-operator/pkg/utils"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
@@ -60,7 +62,7 @@ func (s LocalClusterStatus) Status(c client.Client) bpv1.ComponentCondition {
 func (s *LocalClusterStatus) getManagedCluster(c client.Client) (*unstructured.Unstructured, error) {
 	mc := utils.NewManagedCluster()
 	err := c.Get(context.Background(), s.NamespacedName, mc)
-	if apierrors.IsNotFound(err) {
+	if apierrors.IsNotFound(err) || apimeta.IsNoMatchError(err) {
 		return nil, nil
 	} else if err != nil {
 		return nil, err
