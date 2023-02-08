@@ -9,11 +9,14 @@ import (
 
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var (
 	// AnnotationMCEPause sits in multiclusterengine annotations to identify if the multiclusterengine is paused or not
 	AnnotationMCEPause = "pause"
+	// AnnotationMCEIgnore labels a resource as something the operator should ignore and not update
+	AnnotationMCEIgnore = "multiclusterengine.openshift.io/ignore"
 	// AnnotationIgnoreOCPVersion indicates the operator should not check the OCP version before proceeding when set
 	AnnotationIgnoreOCPVersion = "ignoreOCPVersion"
 	// AnnotationImageRepo sits in multiclusterengine annotations to identify a custom image repository to use
@@ -57,6 +60,15 @@ func ShouldIgnoreOCPVersion(instance *backplanev1.MultiClusterEngine) bool {
 func AnnotationsMatch(old, new map[string]string) bool {
 	return old[AnnotationMCEPause] == new[AnnotationMCEPause] &&
 		old[AnnotationImageRepo] == new[AnnotationImageRepo]
+}
+
+// AnnotationPresent returns true if annotation is present on object
+func AnnotationPresent(annotation string, obj client.Object) bool {
+	if obj.GetAnnotations() == nil {
+		return false
+	}
+	_, exists := obj.GetAnnotations()[annotation]
+	return exists
 }
 
 // getAnnotation returns the annotation value for a given key, or an empty string if not set

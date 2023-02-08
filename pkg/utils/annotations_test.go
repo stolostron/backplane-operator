@@ -9,6 +9,7 @@ import (
 
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestIsPaused(t *testing.T) {
@@ -154,6 +155,54 @@ func TestShouldIgnoreOCPVersion(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := ShouldIgnoreOCPVersion(tt.instance); got != tt.want {
 				t.Errorf("ShouldIgnoreOCPVersion() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestAnnotationPresent(t *testing.T) {
+	type args struct {
+		annotation string
+		obj        client.Object
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "Annotation is true",
+			args: args{
+				annotation: AnnotationMCEPause,
+				obj: &backplanev1.MultiClusterEngine{
+					ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{AnnotationMCEPause: "true"}},
+				},
+			},
+			want: true,
+		},
+		{
+			name: "Annotation is present",
+			args: args{
+				annotation: AnnotationMCEIgnore,
+				obj: &backplanev1.MultiClusterEngine{
+					ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{AnnotationMCEIgnore: ""}},
+				},
+			},
+			want: true,
+		},
+		{
+			name: "No annotations",
+			args: args{
+				annotation: AnnotationMCEIgnore,
+				obj:        &backplanev1.MultiClusterEngine{},
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := AnnotationPresent(tt.args.annotation, tt.args.obj); got != tt.want {
+				t.Errorf("AnnotationPresent() = %v, want %v", got, tt.want)
 			}
 		})
 	}
