@@ -224,3 +224,58 @@ func OperatorNamespace() string {
 	}
 	return deploymentNamespace
 }
+
+// isCommunityMode returns true if operator is running in community mode
+func isCommunityMode() bool {
+	packageName := os.Getenv("OPERATOR_PACKAGE")
+	if packageName == "multicluster-engine" {
+		return false
+	} else {
+		// other option is "stolostron-engine"
+		return true
+	}
+}
+
+// isACMManaged returns true if operator is managed by ACM
+func isACMManaged(mce *backplanev1.MultiClusterEngine) bool {
+	managedByACMLabel := "multiclusterhubs.operator.open-cluster-management.io/managed-by"
+	if labels := mce.GetLabels(); labels != nil {
+		if labels[managedByACMLabel] == "true" {
+			return true
+		}
+	}
+	return false
+}
+
+// HubType defines the circumstances of how MCE is being run
+type HubType string
+
+const (
+	// HubType MCE is the product version of MCE running standalone
+	HubTypeMCE HubType = "mce"
+	// HubType ACM is the product version of MCE managed by ACM
+	HubTypeACM HubType = "acm"
+	// HubType StolostronEngine is the community version of MCE running standalone
+	HubTypeStolostronEngine HubType = "stolostron-engine"
+	// HubType Stolostron is the community version of MCE managed by ACM
+	HubTypeStolostron HubType = "stolostron"
+)
+
+// GetHubType returns the HubType which defines the circumstances of how MCE is being run
+func GetHubType(mce *backplanev1.MultiClusterEngine) string {
+	isCommunity := isCommunityMode()
+	isManaged := isACMManaged(mce)
+	if isCommunity {
+		if isManaged {
+			return string(HubTypeStolostron)
+		} else {
+			return string(HubTypeStolostronEngine)
+		}
+	} else {
+		if isManaged {
+			return string(HubTypeACM)
+		} else {
+			return string(HubTypeMCE)
+		}
+	}
+}
