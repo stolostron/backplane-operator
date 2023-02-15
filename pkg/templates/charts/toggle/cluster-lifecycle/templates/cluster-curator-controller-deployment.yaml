@@ -89,8 +89,8 @@ spec:
           readOnlyRootFilesystem: true
         resources:
           limits:
-            cpu: "10m"
-            memory: "128Mi"
+            cpu: "500m"
+            memory: "2Gi"
           requests:
             cpu: "3m"        # Runs < 2m most of the time
             memory: "25Mi"   # Runs between 25-28Mi
