@@ -87,8 +87,8 @@ spec:
           readOnlyRootFilesystem: true
         resources:
           limits:
-            cpu: "20m"
-            memory: "500Mi"
+            cpu: "500m"
+            memory: "3Gi"
           requests:
             cpu: "3m"
             memory: "65Mi"
@@ -112,8 +112,8 @@ spec:
           readOnlyRootFilesystem: true
         resources:
           limits:
-            cpu: "20m"
-            memory: "500Mi"
+            cpu: "500m"
+            memory: "3Gi"
           requests:
             cpu: "3m"
             memory: "65Mi"
