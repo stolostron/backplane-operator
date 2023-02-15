@@ -51,7 +51,6 @@ spec:
                   operator: In
                   values:
                   - clusterclaims-controller
-
       serviceAccountName: clusterclaims
       hostNetwork: false
       hostPID: false
@@ -68,6 +67,8 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.name
+        - name: GOMEMLIMIT
+          value: "1892MiB"
 {{- if .Values.hubconfig.proxyConfigs }}
         - name: HTTP_PROXY
           value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
@@ -87,8 +88,8 @@ spec:
           readOnlyRootFilesystem: true
         resources:
           limits:
-            cpu: "20m"
-            memory: "500Mi"
+            memory: "2Gi"
+            cpu: "500m"
           requests:
             cpu: "3m"
             memory: "65Mi"
@@ -97,6 +98,8 @@ spec:
         - "-enable-leader-election"
         image: "{{ .Values.global.imageOverrides.clusterclaims_controller }}"
         env:
+        - name: GOMEMLIMIT
+          value: "1892MiB"
         - name: POD_NAME
           valueFrom:
             fieldRef:
@@ -112,8 +115,8 @@ spec:
           readOnlyRootFilesystem: true
         resources:
           limits:
-            cpu: "20m"
-            memory: "500Mi"
+            memory: "2Gi"
+            cpu: "500m"
           requests:
             cpu: "3m"
             memory: "65Mi"
