@@ -50,6 +50,7 @@ type HubConfig struct {
 	Tolerations          []Toleration      `json:"tolerations" structs:"tolerations"`
 	OCPVersion           string            `json:"ocpVersion" structs:"ocpVersion"`
 	ClusterIngressDomain string            `json:"clusterIngressDomain" structs:"clusterIngressDomain"`
+	HubType              string            `json:"hubType" structs:"hubType"`
 }
 
 type Toleration struct {
@@ -311,6 +312,8 @@ func injectValuesOverrides(values *Values, backplaneConfig *v1.MultiClusterEngin
 
 	values.HubConfig.ClusterIngressDomain = os.Getenv("ACM_CLUSTER_INGRESS_DOMAIN")
 
+	values.HubConfig.HubType = utils.GetHubType(backplaneConfig)
+
 	if utils.ProxyEnvVarsAreSet() {
 		proxyVar := map[string]string{}
 		proxyVar["HTTP_PROXY"] = os.Getenv("HTTP_PROXY")
@@ -318,6 +321,4 @@ func injectValuesOverrides(values *Values, backplaneConfig *v1.MultiClusterEngin
 		proxyVar["NO_PROXY"] = os.Getenv("NO_PROXY")
 		values.HubConfig.ProxyConfigs = proxyVar
 	}
-
-	// TODO: Define all overrides
 }

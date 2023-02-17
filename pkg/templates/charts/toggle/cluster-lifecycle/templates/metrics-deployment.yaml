@@ -73,6 +73,8 @@ spec:
                 fieldPath: metadata.name
           - name: GOMEMLIMIT
             value: "1892MiB"
+          - name: HUB_TYPE
+            value: {{ .Values.hubconfig.hubType }}
 {{- if .Values.hubconfig.proxyConfigs }}
           - name: HTTP_PROXY
             value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}

@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func Test_deduplicate(t *testing.T) {
@@ -93,5 +94,65 @@ func Test_deduplicate(t *testing.T) {
 	attemptedRemove := Remove(stringList, "test1")
 	if len(attemptedRemove) != len(stringRemoveList) {
 		t.Error("Removes did not work")
+	}
+}
+
+func TestGetHubType(t *testing.T) {
+	tests := []struct {
+		name string
+		env  string
+		mce  *backplanev1.MultiClusterEngine
+		want string
+	}{
+		{
+			name: "mce",
+			env:  "multicluster-engine",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "mce",
+				},
+			},
+			want: "mce",
+		},
+		{
+			name: "acm",
+			env:  "multicluster-engine",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:   "mce",
+					Labels: map[string]string{"multiclusterhubs.operator.open-cluster-management.io/managed-by": "true"},
+				},
+			},
+			want: "acm",
+		},
+		{
+			name: "stolostron-engine",
+			env:  "stolostron-engine",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "mce",
+				},
+			},
+			want: "stolostron-engine",
+		},
+		{
+			name: "stolostron",
+			env:  "stolostron-engine",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:   "mce",
+					Labels: map[string]string{"multiclusterhubs.operator.open-cluster-management.io/managed-by": "true"},
+				},
+			},
+			want: "stolostron",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Setenv("OPERATOR_PACKAGE", tt.env)
+			if got := GetHubType(tt.mce); got != tt.want {
+				t.Errorf("GetHubType() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }
