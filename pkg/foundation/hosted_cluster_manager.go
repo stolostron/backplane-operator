@@ -21,7 +21,7 @@ func hostedName(m *v1.MultiClusterEngine) string {
 }
 
 // HostedClusterManager returns the ClusterManager in hosted mode
-func HostedClusterManager(m *v1.MultiClusterEngine, overrides map[string]string) *unstructured.Unstructured {
+func HostedClusterManager(m *v1.MultiClusterEngine, overrides map[string]string, registrationWebhookServiceAddr string, workWebhookServiceAddr string) *unstructured.Unstructured {
 	log := log.FromContext(context.Background())
 
 	cmTolerations := []corev1.Toleration{}
@@ -51,11 +51,11 @@ func HostedClusterManager(m *v1.MultiClusterEngine, overrides map[string]string)
 				Mode: ocmapiv1.InstallModeHosted,
 				Hosted: &ocmapiv1.HostedClusterManagerConfiguration{
 					RegistrationWebhookConfiguration: ocmapiv1.WebhookConfiguration{
-						Address: "192.168.218.1",
+						Address: registrationWebhookServiceAddr,
 						Port:    443,
 					},
 					WorkWebhookConfiguration: ocmapiv1.WebhookConfiguration{
-						Address: "192.168.218.2",
+						Address: workWebhookServiceAddr,
 						Port:    443,
 					},
 				},

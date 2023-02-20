@@ -1,0 +1,12 @@
+global:
+    imageOverrides:
+    pullSecret: ""
+    namespace: default
+    proxyAddr: []
+    name: ""
+hubconfig:
+    nodeSelector: {}
+    proxyConfigs: {}
+    replicaCount: 1
+    tolerations: []
+org: open-cluster-management

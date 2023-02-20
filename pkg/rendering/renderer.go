@@ -36,11 +36,16 @@ type Values struct {
 }
 
 type Global struct {
-	ImageOverrides map[string]string `json:"imageOverrides" structs:"imageOverrides"`
-	PullPolicy     string            `json:"pullPolicy" structs:"pullPolicy"`
-	PullSecret     string            `json:"pullSecret" structs:"pullSecret"`
-	Namespace      string            `json:"namespace" structs:"namespace"`
-	ConfigSecret   string            `json:"configSecret" structs:"configSecret"`
+	ImageOverrides    map[string]string `json:"imageOverrides" structs:"imageOverrides"`
+	PullPolicy        string            `json:"pullPolicy" structs:"pullPolicy"`
+	PullSecret        string            `json:"pullSecret" structs:"pullSecret"`
+	Namespace         string            `json:"namespace" structs:"namespace"`
+	Name              string            `json:"name" structs:"name"`
+	ConfigSecret      string            `json:"configSecret" structs:"configSecret"`
+	HyperShiftCPNS    string            `json:"hyperShiftCPNS" structs:"hyperShiftCPNS"`
+	HostedClusterNS   string            `json:"hostedClusterNS" structs:"hostedClusterNS"`
+	HostedClusterName string            `json:"hostedClusterName" structs:"hostedClusterName"`
+	ProxyAddr         []string          `json:"proxyAddr" structs:"proxyAddr"`
 }
 
 type HubConfig struct {
@@ -224,6 +229,23 @@ func RenderChart(chartPath string, backplaneConfig *v1.MultiClusterEngine, image
 
 }
 
+func ProxyRenderChart(chartPath string, backplaneConfig *v1.MultiClusterEngine, images map[string]string, addresses []string) ([]*unstructured.Unstructured, []error) {
+	log := log.FromContext(context.Background())
+	errs := []error{}
+	if val, ok := os.LookupEnv("DIRECTORY_OVERRIDE"); ok {
+		chartPath = path.Join(val, chartPath)
+	}
+	chartTemplates, errs := renderProxyTemplates(chartPath, backplaneConfig, images, addresses)
+	if len(errs) > 0 {
+		for _, err := range errs {
+			log.Info(err.Error())
+		}
+		return nil, errs
+	}
+	return chartTemplates, nil
+
+}
+
 // RenderChartWithNamespace wraps the RenderChart function, overriding the target namespace
 func RenderChartWithNamespace(chartPath string, backplaneConfig *v1.MultiClusterEngine, images map[string]string, namespace string) ([]*unstructured.Unstructured, []error) {
 	mce := backplaneConfig.DeepCopy()
@@ -280,6 +302,55 @@ func renderTemplates(chartPath string, backplaneConfig *v1.MultiClusterEngine, i
 	return templates, errs
 }
 
+func renderProxyTemplates(chartPath string, backplaneConfig *v1.MultiClusterEngine, images map[string]string, addresses []string) ([]*unstructured.Unstructured, []error) {
+	log := log.FromContext(context.Background())
+	var templates []*unstructured.Unstructured
+	errs := []error{}
+	chart, err := loader.Load(chartPath)
+	if err != nil {
+		log.Info(fmt.Sprintf("error loading chart: %s", chart.Name()))
+		return nil, append(errs, err)
+	}
+	valuesYaml := &Values{}
+	injectProxyValuesOverrides(valuesYaml, backplaneConfig, images, addresses)
+	helmEngine := engine.Engine{
+		Strict:   true,
+		LintMode: false,
+	}
+
+	vals, err := valuesYaml.ToValues()
+	if err != nil {
+		log.Info(fmt.Sprintf("error rendering chart: %s", chart.Name()))
+		return nil, append(errs, err)
+	}
+
+	rawTemplates, err := helmEngine.Render(chart, chartutil.Values{"Values": vals.AsMap()})
+	// rawTemplates, err := helmEngine.Render(chart, valuesYaml.ToValues())
+
+	if err != nil {
+		log.Info(fmt.Sprintf("error rendering chart: %s", chart.Name()))
+		return nil, append(errs, err)
+	}
+
+	for fileName, templateFile := range rawTemplates {
+		unstructured := &unstructured.Unstructured{}
+		if err = yaml.Unmarshal([]byte(templateFile), unstructured); err != nil {
+			return nil, append(errs, fmt.Errorf("error converting file %s to unstructured", fileName))
+		}
+
+		utils.AddBackplaneConfigLabels(unstructured, backplaneConfig.Name)
+
+		// Add namespace to namespaced resources
+		switch unstructured.GetKind() {
+		case "Deployment", "ServiceAccount", "Role", "RoleBinding", "Service", "ConfigMap", "Route":
+			unstructured.SetNamespace(backplaneConfig.Spec.TargetNamespace)
+		}
+		templates = append(templates, unstructured)
+	}
+
+	return templates, errs
+}
+
 func injectValuesOverrides(values *Values, backplaneConfig *v1.MultiClusterEngine, images map[string]string) {
 
 	values.Global.ImageOverrides = images
@@ -287,6 +358,8 @@ func injectValuesOverrides(values *Values, backplaneConfig *v1.MultiClusterEngin
 	values.Global.PullPolicy = string(utils.GetImagePullPolicy(backplaneConfig))
 
 	values.Global.Namespace = backplaneConfig.Spec.TargetNamespace
+
+	values.Global.Name = backplaneConfig.Name
 
 	values.Global.PullSecret = backplaneConfig.Spec.ImagePullSecret
 
@@ -305,6 +378,69 @@ func injectValuesOverrides(values *Values, backplaneConfig *v1.MultiClusterEngin
 	} else {
 		values.HubConfig.Tolerations = convertTolerations(utils.DefaultTolerations())
 	}
+
+	values.Org = "open-cluster-management"
+
+	values.HubConfig.OCPVersion = os.Getenv("ACM_HUB_OCP_VERSION")
+
+	values.HubConfig.ClusterIngressDomain = os.Getenv("ACM_CLUSTER_INGRESS_DOMAIN")
+
+	if utils.ProxyEnvVarsAreSet() {
+		proxyVar := map[string]string{}
+		proxyVar["HTTP_PROXY"] = os.Getenv("HTTP_PROXY")
+		proxyVar["HTTPS_PROXY"] = os.Getenv("HTTPS_PROXY")
+		proxyVar["NO_PROXY"] = os.Getenv("NO_PROXY")
+		values.HubConfig.ProxyConfigs = proxyVar
+	}
+
+}
+func injectProxyValuesOverrides(values *Values, backplaneConfig *v1.MultiClusterEngine, images map[string]string, addresses []string) {
+
+	values.Global.ImageOverrides = images
+
+	values.Global.PullPolicy = string(utils.GetImagePullPolicy(backplaneConfig))
+
+	values.Global.Namespace = backplaneConfig.Spec.TargetNamespace
+
+	values.Global.Name = backplaneConfig.Name
+
+	values.Global.PullSecret = backplaneConfig.Spec.ImagePullSecret
+
+	if v1.IsInHostedMode(backplaneConfig) {
+		secretNN, err := utils.GetHostedCredentialsSecret(backplaneConfig)
+		if err == nil {
+			values.Global.ConfigSecret = secretNN.Name
+		}
+	}
+	if v1.IsInHostedMode(backplaneConfig) {
+		hCNS, err := utils.GetHostedClusterNamespace(backplaneConfig)
+		if err == nil {
+			values.Global.HostedClusterNS = hCNS
+		}
+	}
+	if v1.IsInHostedMode(backplaneConfig) {
+		hCN, err := utils.GetHostedClusterName(backplaneConfig)
+		if err == nil {
+			values.Global.HostedClusterName = hCN
+		}
+	}
+	if v1.IsInHostedMode(backplaneConfig) {
+		hCPNS, err := utils.GetHyperShiftNamespace(backplaneConfig)
+		if err == nil {
+			values.Global.HyperShiftCPNS = hCPNS
+		}
+	}
+	values.HubConfig.ReplicaCount = utils.DefaultReplicaCount(backplaneConfig)
+
+	values.HubConfig.NodeSelector = backplaneConfig.Spec.NodeSelector
+
+	if len(backplaneConfig.Spec.Tolerations) > 0 {
+		values.HubConfig.Tolerations = convertTolerations(backplaneConfig.Spec.Tolerations)
+	} else {
+		values.HubConfig.Tolerations = convertTolerations(utils.DefaultTolerations())
+	}
+
+	values.Global.ProxyAddr = addresses
 
 	values.Org = "open-cluster-management"
 

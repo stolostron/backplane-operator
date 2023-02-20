@@ -1379,6 +1379,14 @@ rules:
   - update
   - watch
 - apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - discovery.open-cluster-management.io
   resources:
   - discoveredclusters
@@ -1789,6 +1797,18 @@ rules:
   - patch
   - update
 - apiGroups:
+  - networking.k8s.io
+  resources:
+  - networkpolicies
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - operator.open-cluster-management.io
   resources:
   - clustermanagers
@@ -2064,6 +2084,32 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - search.open-cluster-management.io
+  resources:
+  - searches
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - search.open-cluster-management.io
+  resources:
+  - searches/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - search.open-cluster-management.io
+  resources:
+  - searches/status
+  verbs:
+  - get
+  - patch
+  - update
 - apiGroups:
   - storage.k8s.io
   resources:

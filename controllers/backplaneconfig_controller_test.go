@@ -933,7 +933,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:        BackplaneConfigName,
-						Annotations: map[string]string{"deploymentmode": string(v1.ModeHosted), "mce-kubeconfig": "test"},
+						Annotations: map[string]string{"deploymentmode": string(v1.ModeHosted), "mce-kubeconfig": "test", "hosted-cluster-name": "test", "hosted-cluster-namespace": "test2", "hyper-shift-control-plane-namespace": "test3"},
 					},
 					Spec: v1.MultiClusterEngineSpec{
 						TargetNamespace: DestinationNamespace,

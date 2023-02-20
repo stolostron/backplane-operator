@@ -26,6 +26,10 @@ var (
 
 	// AnnotationKubeconfig is the secret name residing in targetcontaining the kubeconfig to access the remote cluster
 	AnnotationKubeconfig = "mce-kubeconfig"
+
+	AnnotationHostedClusterName      = "hosted-cluster-name"
+	AnnotationHostedClusterNamespace = "hosted-cluster-namespace"
+	AnnotationHyperShiftNamespace    = "hyper-shift-control-plane-namespace"
 )
 
 // IsPaused returns true if the multiclusterengine instance is labeled as paused, and false otherwise
@@ -110,4 +114,43 @@ func GetHostedCredentialsSecret(mce *backplanev1.MultiClusterEngine) (types.Name
 		nn.Namespace = backplanev1.DefaultTargetNamespace
 	}
 	return nn, nil
+}
+
+func GetKonnectivitySecret(mce *backplanev1.MultiClusterEngine) (types.NamespacedName, error) {
+	nn := types.NamespacedName{}
+	if mce.Annotations == nil || mce.Annotations[AnnotationHyperShiftNamespace] == "" {
+		return nn, fmt.Errorf("no kubeconfig secret annotation defined in %s", mce.Name)
+	}
+	nn.Name = "konnectivity-agent"
+
+	nn.Namespace = mce.Annotations[AnnotationHyperShiftNamespace]
+	return nn, nil
+}
+
+func GetHostedClusterNamespace(mce *backplanev1.MultiClusterEngine) (string, error) {
+	var ns string
+	if mce.Annotations == nil || mce.Annotations[AnnotationHostedClusterNamespace] == "" {
+		return ns, fmt.Errorf("no hosted cluster namespace annotation defined in %s", mce.Name)
+	}
+
+	ns = mce.Annotations[AnnotationHostedClusterNamespace]
+	return ns, nil
+}
+func GetHyperShiftNamespace(mce *backplanev1.MultiClusterEngine) (string, error) {
+	var ns string
+	if mce.Annotations == nil || mce.Annotations[AnnotationHyperShiftNamespace] == "" {
+		return ns, fmt.Errorf("no hyper shift conntrol plane namespace annotation defined in %s", mce.Name)
+	}
+
+	ns = mce.Annotations[AnnotationHyperShiftNamespace]
+	return ns, nil
+}
+func GetHostedClusterName(mce *backplanev1.MultiClusterEngine) (string, error) {
+	var ns string
+	if mce.Annotations == nil || mce.Annotations[AnnotationHostedClusterName] == "" {
+		return ns, fmt.Errorf("no hosted cluster name annotation defined in %s", mce.Name)
+	}
+
+	ns = mce.Annotations[AnnotationHostedClusterName]
+	return ns, nil
 }

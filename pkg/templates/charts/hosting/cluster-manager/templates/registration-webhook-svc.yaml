@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: cluster-manager-registration-webhook
+  namespace: {{ .Values.global.namespace }}
+spec:
+  ports:
+  - name: webhook-server
+    port: 443
+    protocol: TCP
+    targetPort: 6443
+  selector:
+    app: cluster-manager-registration-webhook
+  sessionAffinity: None
+  type: ClusterIP

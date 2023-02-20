@@ -24,6 +24,8 @@ const (
 
 	DiscoveryChartDir        = "pkg/templates/charts/toggle/discovery-operator"
 	HostedImportChartDir     = "pkg/templates/charts/hosted/server-foundation"
+	HostedKonnectivityDir    = "pkg/templates/charts/hosting/konnectivity"
+	HostedCMDir              = "pkg/templates/charts/hosting/cluster-manager"
 	HostingImportChartDir    = "pkg/templates/charts/hosting/server-foundation"
 	HiveChartDir             = "pkg/templates/charts/toggle/hive-operator"
 	AssistedServiceChartDir  = "pkg/templates/charts/toggle/assisted-service"

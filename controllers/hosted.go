@@ -366,21 +366,117 @@ func (r *MultiClusterEngineReconciler) ensureHostedClusterManager(ctx context.Co
 		return ctrl.Result{Requeue: true}, nil
 	}
 
-	// Apply clustermanager
-	cmTemplate := foundation.HostedClusterManager(mce, r.Images)
-	if err := ctrl.SetControllerReference(mce, cmTemplate, r.Scheme); err != nil {
-		return ctrl.Result{}, fmt.Errorf("Error setting controller reference on resource `%s`: %w", cmTemplate.GetName(), err)
-	}
-	force = true
-	err = r.Client.Patch(ctx, cmTemplate, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
+	// Apply secret in namespace
+	konnectivitySecret := &corev1.Secret{}
+	secretNN, err = utils.GetKonnectivitySecret(mce)
 	if err != nil {
-		return ctrl.Result{}, fmt.Errorf("error applying object Name: %s Kind: %s, %w", cmTemplate.GetName(), cmTemplate.GetKind(), err)
+		return ctrl.Result{Requeue: true}, err
+	}
+	err = r.Client.Get(ctx, secretNN, konnectivitySecret)
+	if err != nil {
+		return ctrl.Result{Requeue: true}, err
+	}
+
+	proxySecret := &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: konnectivitySecret.APIVersion,
+			Kind:       konnectivitySecret.Kind,
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "konnectivity-agent",
+			Namespace: mce.Spec.TargetNamespace,
+		},
+		Data: konnectivitySecret.Data,
+		Type: konnectivitySecret.Type,
+	}
+
+	force = true
+	err = r.Client.Patch(context.TODO(), proxySecret, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
+	if err != nil {
+		log.Info(fmt.Sprintf("Error applying proxy secret to target namespace: %s", err.Error()))
+		return ctrl.Result{Requeue: true}, nil
+	}
+
+	templates, errs := renderer.RenderChart(toggle.HostedCMDir, mce, r.Images)
+	if len(errs) > 0 {
+		for _, err := range errs {
+			log.Info(err.Error())
+		}
+		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+	}
+
+	// Applies all templates
+	for _, template := range templates {
+		result, err := r.applyTemplate(ctx, mce, template)
+		if err != nil {
+			return result, err
+		}
+	}
+
+	registrationWebhookService := &corev1.Service{}
+	workWebhookService := &corev1.Service{}
+	registrationWebhookServiceNN := types.NamespacedName{
+		Name:      "cluster-manager-registration-webhook",
+		Namespace: mce.Spec.TargetNamespace,
+	}
+	workWebhookServiceNN := types.NamespacedName{
+		Name:      "cluster-manager-work-webhook",
+		Namespace: mce.Spec.TargetNamespace,
+	}
+
+	err = r.Client.Get(ctx, registrationWebhookServiceNN, registrationWebhookService)
+	err2 := r.Client.Get(ctx, workWebhookServiceNN, workWebhookService)
+	addresses := []string{registrationWebhookService.Spec.ClusterIP, workWebhookService.Spec.ClusterIP}
+	if err != nil || err2 != nil {
+
+		// Apply clustermanager
+		cmTemplate := foundation.HostedClusterManager(mce, r.Images, "192.0.2.0", "192.0.2.0")
+		if err := ctrl.SetControllerReference(mce, cmTemplate, r.Scheme); err != nil {
+			return ctrl.Result{}, fmt.Errorf("Error setting controller reference on resource `%s`: %w", cmTemplate.GetName(), err)
+		}
+		force = true
+		err = r.Client.Patch(ctx, cmTemplate, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
+		if err != nil {
+			return ctrl.Result{}, fmt.Errorf("error applying object Name: %s Kind: %s, %w", cmTemplate.GetName(), cmTemplate.GetKind(), err)
+		}
+		log.Info(fmt.Sprintf("Re-reconciling to get proxy addresses"))
+		return ctrl.Result{Requeue: true}, nil
+	} else {
+
+		// Apply clustermanager
+		cmTemplate := foundation.HostedClusterManager(mce, r.Images, registrationWebhookService.Spec.ClusterIP, workWebhookService.Spec.ClusterIP)
+		if err := ctrl.SetControllerReference(mce, cmTemplate, r.Scheme); err != nil {
+			return ctrl.Result{}, fmt.Errorf("Error setting controller reference on resource `%s`: %w", cmTemplate.GetName(), err)
+		}
+		force = true
+		err = r.Client.Patch(ctx, cmTemplate, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
+		if err != nil {
+			return ctrl.Result{}, fmt.Errorf("error applying object Name: %s Kind: %s, %w", cmTemplate.GetName(), cmTemplate.GetKind(), err)
+		}
+	}
+	log.Info("made it this far")
+	templates, errs = renderer.ProxyRenderChart(toggle.HostedKonnectivityDir, mce, r.Images, addresses)
+	if len(errs) > 0 {
+		for _, err := range errs {
+			log.Info(err.Error())
+		}
+		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+	}
+
+	// Applies all templates
+	for _, template := range templates {
+		log.Info(template.GetName())
+		result, err := r.applyTemplate(ctx, mce, template)
+		if err != nil {
+			return result, err
+		}
 	}
 
 	return ctrl.Result{}, nil
 }
 
 func (r *MultiClusterEngineReconciler) ensureNoHostedClusterManager(ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+	log := log.FromContext(ctx)
 	cmName := fmt.Sprintf("%s-cluster-manager", mce.Name)
 
 	r.StatusManager.RemoveComponent(status.ClusterManagerStatus{
@@ -404,6 +500,78 @@ func (r *MultiClusterEngineReconciler) ensureNoHostedClusterManager(ctx context.
 		}
 	} else if err != nil && !apierrors.IsNotFound(err) { // Return error, if error is not not found error
 		return ctrl.Result{RequeueAfter: requeuePeriod}, err
+	}
+
+	konnectivityDeployment := &unstructured.Unstructured{}
+	konnectivityDeployment.SetGroupVersionKind(
+		schema.GroupVersionKind{
+			Group:   "apps",
+			Version: "v1",
+			Kind:    "Deployment",
+		},
+	)
+	err = r.Client.Get(ctx, types.NamespacedName{Name: "cluster-manager-webhook-konnectivity-agent", Namespace: mce.Spec.TargetNamespace}, konnectivityDeployment)
+	if err == nil { // If resource exists, delete
+		err := r.Client.Delete(ctx, konnectivityDeployment)
+		if err != nil {
+			return ctrl.Result{RequeueAfter: requeuePeriod}, err
+		}
+	} else if err != nil && !apierrors.IsNotFound(err) { // Return error, if error is not not found error
+		return ctrl.Result{RequeueAfter: requeuePeriod}, err
+	}
+
+	konnectivityNetworkPolicy := &unstructured.Unstructured{}
+	konnectivityNetworkPolicy.SetGroupVersionKind(
+		schema.GroupVersionKind{
+			Group:   "networking.k8s.io",
+			Version: "v1",
+			Kind:    "NetworkPolicy",
+		},
+	)
+	hCNS, _ := utils.GetHostedClusterNamespace(mce)
+	err = r.Client.Get(ctx, types.NamespacedName{Name: "cluster-manager-webhook-konnectivity-agent", Namespace: hCNS}, konnectivityNetworkPolicy)
+	if err == nil { // If resource exists, delete
+		err := r.Client.Delete(ctx, konnectivityNetworkPolicy)
+		if err != nil {
+			return ctrl.Result{RequeueAfter: requeuePeriod}, err
+		}
+	} else if err != nil && !apierrors.IsNotFound(err) { // Return error, if error is not not found error
+		return ctrl.Result{RequeueAfter: requeuePeriod}, err
+	}
+
+	konnectivitySecret := &unstructured.Unstructured{}
+	konnectivitySecret.SetGroupVersionKind(
+		schema.GroupVersionKind{
+			Group:   "",
+			Version: "v1",
+			Kind:    "Secret",
+		},
+	)
+
+	err = r.Client.Get(ctx, types.NamespacedName{Name: "konnectivity-agent", Namespace: mce.Spec.TargetNamespace}, konnectivitySecret)
+	if err == nil { // If resource exists, delete
+		err := r.Client.Delete(ctx, konnectivitySecret)
+		if err != nil {
+			return ctrl.Result{RequeueAfter: requeuePeriod}, err
+		}
+	} else if err != nil && !apierrors.IsNotFound(err) { // Return error, if error is not not found error
+		return ctrl.Result{RequeueAfter: requeuePeriod}, err
+	}
+
+	templates, errs := renderer.RenderChart(toggle.HostedCMDir, mce, r.Images)
+	if len(errs) > 0 {
+		for _, err := range errs {
+			log.Info(err.Error())
+		}
+		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+	}
+
+	// Applies all templates
+	for _, template := range templates {
+		result, err := r.deleteTemplate(ctx, mce, template)
+		if err != nil {
+			return result, err
+		}
 	}
 
 	// Verify clustermanager namespace deleted

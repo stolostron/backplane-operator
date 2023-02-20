@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  annotations:
+    hypershift.openshift.io/cluster: {{ .Values.global.hostedClusterNS }}/{{ .Values.global.hostedClusterName }}
+  name: konnectivity-server-from-hub-ns
+  namespace: {{ .Values.global.hyperShiftCPNS }}
+spec:
+  policyTypes:
+  - Ingress
+  podSelector:
+    matchLabels:
+      app: konnectivity-server
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          installer.open-cluster-management.io/hosted-engine: {{ .Values.global.name }}
+  - ports:
+    - port: 8091
+      protocol: TCP
