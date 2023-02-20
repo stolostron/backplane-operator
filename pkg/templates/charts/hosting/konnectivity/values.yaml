@@ -1,0 +1,15 @@
+global:
+    imageOverrides:
+    pullSecret: ""
+    namespace: default
+    proxyAddr: []
+    hyperShiftCPNS: ""
+    hostedClusterName: ""
+    hostedClusterNS: ""
+    name: ""
+hubconfig:
+    nodeSelector: {}
+    proxyConfigs: {}
+    replicaCount: 1
+    tolerations: []
+org: open-cluster-management
