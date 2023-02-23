@@ -7,6 +7,7 @@ import (
 
 	bpv1 "github.com/stolostron/backplane-operator/api/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -140,10 +141,88 @@ func (s DisabledStatus) Status(k8sClient client.Client) bpv1.ComponentCondition 
 	}
 }
 
+func NewPresentStatus(namespacedName types.NamespacedName, gvk schema.GroupVersionKind) StatusReporter {
+	return PresentStatus{
+		NamespacedName: namespacedName,
+		gvk:            gvk,
+	}
+}
+
+// PresentStatus fulfills the StatusReporter interface for a component that should be present. It ensures all resources exist.
+// If in desired status will explain why with reason and message.
+type PresentStatus struct {
+	types.NamespacedName
+	// Resource type
+	gvk schema.GroupVersionKind
+}
+
+func (s PresentStatus) GetName() string {
+	return s.Name
+}
+
+func (s PresentStatus) GetNamespace() string {
+	return s.Namespace
+}
+
+func (s PresentStatus) GetKind() string {
+	return s.gvk.Kind
+}
+
+// Converts this component's status to a backplane component status
+func (s PresentStatus) Status(k8sClient client.Client) bpv1.ComponentCondition {
+	u := newUnstructured(s.NamespacedName, s.gvk)
+	err := k8sClient.Get(context.TODO(), types.NamespacedName{
+		Name:      u.GetName(),
+		Namespace: u.GetNamespace(),
+	}, u)
+
+	if err == nil {
+		return bpv1.ComponentCondition{
+			Name:      s.GetName(),
+			Kind:      s.GetKind(),
+			Type:      "Present",
+			Status:    metav1.ConditionTrue,
+			Reason:    DeploySuccessReason,
+			Available: true,
+		}
+	}
+
+	// Recognized error response
+	if apimeta.IsNoMatchError(err) || apierrors.IsNotFound(err) {
+		resourceName := u.GetName()
+		if u.GetNamespace() != "" {
+			resourceName = fmt.Sprintf("%s/%s", s.GetNamespace(), resourceName)
+		}
+		missingString := fmt.Sprintf("<%s %s>", s.GetKind(), resourceName)
+		return bpv1.ComponentCondition{
+			Name:      s.GetName(),
+			Kind:      s.GetKind(),
+			Type:      "Present",
+			Status:    metav1.ConditionFalse,
+			Reason:    DeployFailedReason,
+			Message:   fmt.Sprintf("The following resource is missing: %s", missingString),
+			Available: false,
+		}
+	}
+
+	// Unknown error getting resource
+	return bpv1.ComponentCondition{
+		Name:               s.GetName(),
+		Kind:               s.GetKind(),
+		Type:               "Unknown",
+		Status:             metav1.ConditionUnknown,
+		LastUpdateTime:     metav1.Now(),
+		LastTransitionTime: metav1.Now(),
+		Reason:             "Error checking status",
+		Message:            "Error getting resource",
+		Available:          false,
+	}
+}
+
 func newUnstructured(nn types.NamespacedName, gvk schema.GroupVersionKind) *unstructured.Unstructured {
 	u := unstructured.Unstructured{}
 	u.SetGroupVersionKind(gvk)
 	u.SetName(nn.Name)
-	u.SetNamespace((nn.Namespace))
+	u.SetNamespace(nn.Namespace)
 	return &u
 }
