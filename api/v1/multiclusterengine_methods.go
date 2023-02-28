@@ -31,6 +31,7 @@ const (
 	ClusterProxyAddon      = "cluster-proxy-addon"
 	HypershiftLocalHosting = "hypershift-local-hosting"
 	LocalCluster           = "local-cluster"
+	AddOnManager           = "addon-manager"
 )
 
 var allComponents = []string{
@@ -46,6 +47,7 @@ var allComponents = []string{
 	HypershiftLocalHosting,
 	ClusterProxyAddon,
 	LocalCluster,
+	AddOnManager,
 }
 
 func (mce *MultiClusterEngine) ComponentPresent(s string) bool {

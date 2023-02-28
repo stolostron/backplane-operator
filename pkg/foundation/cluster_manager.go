@@ -17,6 +17,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/yaml"
 
+	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 	v1 "github.com/stolostron/backplane-operator/api/v1"
 	"github.com/stolostron/backplane-operator/pkg/utils"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -30,7 +31,9 @@ const (
 	// WorkImageKey used by work deployments
 	WorkImageKey = "work"
 	// PlacementImageKey used by placement deployments
-	PlacementImageKey             = "placement"
+	PlacementImageKey = "placement"
+	// AddOnManagerImageKey used by addon-manager deployments
+	AddOnManagerImageKey          = "addon-manager"
 	addonPath                     = "pkg/templates/clustermanagementaddons/"
 	clusterManagementAddonCRDName = "clustermanagementaddons.addon.open-cluster-management.io"
 	ClusterManagementAddonKind    = "ClusterManagementAddOn"
@@ -49,6 +52,11 @@ func WorkImage(overrides map[string]string) string {
 // PlacementImage ...
 func PlacementImage(overrides map[string]string) string {
 	return overrides[PlacementImageKey]
+}
+
+// AddOnManagerImage ...
+func AddOnManagerImage(overrides map[string]string) string {
+	return overrides[AddOnManagerImageKey]
 }
 
 func ClusterManager(m *v1.MultiClusterEngine, overrides map[string]string) *unstructured.Unstructured {
@@ -73,6 +81,7 @@ func ClusterManager(m *v1.MultiClusterEngine, overrides map[string]string) *unst
 			RegistrationImagePullSpec: RegistrationImage(overrides),
 			WorkImagePullSpec:         WorkImage(overrides),
 			PlacementImagePullSpec:    PlacementImage(overrides),
+			AddOnManagerImagePullSpec: AddOnManagerImage(overrides),
 			NodePlacement: ocmapiv1.NodePlacement{
 				NodeSelector: m.Spec.NodeSelector,
 				Tolerations:  cmTolerations,
@@ -81,6 +90,12 @@ func ClusterManager(m *v1.MultiClusterEngine, overrides map[string]string) *unst
 				Mode: "Default",
 			},
 		},
+	}
+
+	if m.Enabled(backplanev1.AddOnManager) {
+		cm.Spec.AddOnManagerConfiguration = &ocmapiv1.AddOnManagerConfiguration{
+			Mode: ocmapiv1.ComponentModeTypeEnable,
+		}
 	}
 
 	utils.AddBackplaneConfigLabels(cm, m.GetName())

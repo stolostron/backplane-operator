@@ -34,6 +34,7 @@ import (
 	"github.com/stolostron/backplane-operator/pkg/utils"
 
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	ocmapiv1 "open-cluster-management.io/api/operator/v1"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -56,6 +57,7 @@ const (
 	BackplaneOperatorNamespace = "default"
 	DestinationNamespace       = "test"
 	JobName                    = "test-job"
+	ClusterManagerTestName     = "Cluster Manager"
 
 	timeout  = time.Second * 60
 	duration = time.Second * 10
@@ -269,7 +271,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 				Expected:       nil,
 			},
 			{
-				Name:           "Cluster Manager",
+				Name:           ClusterManagerTestName,
 				NamespacedName: types.NamespacedName{Name: "cluster-manager"},
 				ResourceType:   clusterManager,
 				Expected:       nil,
@@ -593,6 +595,45 @@ var _ = Describe("BackplaneConfig controller", func() {
 							Equal(corev1.PullAlways),
 						)
 					}, timeout, interval).Should(Succeed())
+				}
+			})
+		})
+
+		Context("and enable AddOnManager", func() {
+			It("should set enable AddOnManagerConfiguration mode to enable", func() {
+				By("creating the backplane config with addOnManager enabled")
+				backplaneConfig := &v1.MultiClusterEngine{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "multicluster.openshift.io/v1",
+						Kind:       "MultiClusterEngine",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: BackplaneConfigName,
+					},
+					Spec: v1.MultiClusterEngineSpec{
+						TargetNamespace: DestinationNamespace,
+						Overrides: &v1.Overrides{
+							Components: []v1.ComponentConfig{
+								{
+									Name:    v1.AddOnManager,
+									Enabled: true,
+								},
+							},
+						},
+					},
+				}
+				createCtx := context.Background()
+				Expect(k8sClient.Create(createCtx, backplaneConfig)).Should(Succeed())
+				By("ensuring the cluster manager AddOnManagerConfiguration mode is enabled")
+				for _, test := range tests {
+					if test.Name == ClusterManagerTestName {
+						Eventually(func(g Gomega) {
+							ctx := context.Background()
+							cm := &ocmapiv1.ClusterManager{}
+							g.Expect(k8sClient.Get(ctx, test.NamespacedName, cm)).To(Succeed())
+							g.Expect(cm.Spec.AddOnManagerConfiguration.Mode).To(Equal(ocmapiv1.ComponentModeTypeEnable))
+						}, timeout, interval).Should(Succeed())
+					}
 				}
 			})
 		})

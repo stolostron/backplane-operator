@@ -20,31 +20,36 @@ func TestClusterManager(t *testing.T) {
 		expectedRegistrationImage string
 		expectedWorkImage         string
 		expectedPlacementImage    string
+		expectedAddOnManagerImage string
 	}{
 		{
 			name: "craete cluster manager without nodeSelector",
 			mce:  &v1.MultiClusterEngine{},
 			imageOverrides: map[string]string{
-				"registration": "quay.io/stolostron/registration@sha256:fe95bca419976ca8ffe608bc66afcead6ef333b863f22be55df57c89ded75dda",
-				"work":         "quay.io/stolostron/work@sha256:856d2151423f020952d9b9253676c1c4d462fab6722c8af4885fe2b19ccd1be0",
-				"placement":    "quay.io/stolostron/placement@sha256:8d69eb89ee008bf95c2b877887e66cc1541c2407c9d7339fff8a9a973200660f",
+				"registration":  "quay.io/stolostron/registration@sha256:fe95bca419976ca8ffe608bc66afcead6ef333b863f22be55df57c89ded75dda",
+				"work":          "quay.io/stolostron/work@sha256:856d2151423f020952d9b9253676c1c4d462fab6722c8af4885fe2b19ccd1be0",
+				"placement":     "quay.io/stolostron/placement@sha256:8d69eb89ee008bf95c2b877887e66cc1541c2407c9d7339fff8a9a973200660f",
+				"addon-manager": "quay.io/stolostron/addon-manager@sha256:TODO",
 			},
 			expectedRegistrationImage: "quay.io/stolostron/registration@sha256:fe95bca419976ca8ffe608bc66afcead6ef333b863f22be55df57c89ded75dda",
 			expectedWorkImage:         "quay.io/stolostron/work@sha256:856d2151423f020952d9b9253676c1c4d462fab6722c8af4885fe2b19ccd1be0",
 			expectedPlacementImage:    "quay.io/stolostron/placement@sha256:8d69eb89ee008bf95c2b877887e66cc1541c2407c9d7339fff8a9a973200660f",
+			expectedAddOnManagerImage: "quay.io/stolostron/addon-manager@sha256:TODO",
 		},
 		{
 			name: "craete cluster manager with nodeSelector",
 			mce:  &v1.MultiClusterEngine{Spec: v1.MultiClusterEngineSpec{NodeSelector: map[string]string{"node-role.kubernetes.io/infra": ""}}},
 			imageOverrides: map[string]string{
-				"registration": "quay.io/stolostron/registration@sha256:fe95bca419976ca8ffe608bc66afcead6ef333b863f22be55df57c89ded75dda",
-				"work":         "quay.io/stolostron/work@sha256:856d2151423f020952d9b9253676c1c4d462fab6722c8af4885fe2b19ccd1be0",
-				"placement":    "quay.io/stolostron/placement@sha256:8d69eb89ee008bf95c2b877887e66cc1541c2407c9d7339fff8a9a973200660f",
+				"registration":  "quay.io/stolostron/registration@sha256:fe95bca419976ca8ffe608bc66afcead6ef333b863f22be55df57c89ded75dda",
+				"work":          "quay.io/stolostron/work@sha256:856d2151423f020952d9b9253676c1c4d462fab6722c8af4885fe2b19ccd1be0",
+				"placement":     "quay.io/stolostron/placement@sha256:8d69eb89ee008bf95c2b877887e66cc1541c2407c9d7339fff8a9a973200660f",
+				"addon-manager": "quay.io/stolostron/addon-manager@sha256:TODO",
 			},
 			expectedNodeSelector:      map[string]string{"node-role.kubernetes.io/infra": ""},
 			expectedRegistrationImage: "quay.io/stolostron/registration@sha256:fe95bca419976ca8ffe608bc66afcead6ef333b863f22be55df57c89ded75dda",
 			expectedWorkImage:         "quay.io/stolostron/work@sha256:856d2151423f020952d9b9253676c1c4d462fab6722c8af4885fe2b19ccd1be0",
 			expectedPlacementImage:    "quay.io/stolostron/placement@sha256:8d69eb89ee008bf95c2b877887e66cc1541c2407c9d7339fff8a9a973200660f",
+			expectedAddOnManagerImage: "quay.io/stolostron/addon-manager@sha256:TODO",
 		},
 	}
 
@@ -81,6 +86,14 @@ func TestClusterManager(t *testing.T) {
 			}
 			if placementImage != test.expectedPlacementImage {
 				t.Errorf("expected placementImagePullSpec %s, got %s", placementImage, test.expectedPlacementImage)
+			}
+
+			addOnManagerImage, found, err := unstructured.NestedString(c.Object, "spec", "addOnManagerImagePullSpec")
+			if err != nil || !found {
+				t.Errorf("expected cluster manager addOnManagerImagePullSpec not found")
+			}
+			if addOnManagerImage != test.expectedAddOnManagerImage {
+				t.Errorf("expected placementImagePullSpec %s, got %s", addOnManagerImage, test.expectedAddOnManagerImage)
 			}
 
 			nodeSelector, found, err := unstructured.NestedMap(c.Object, "spec", "nodePlacement", "nodeSelector")
