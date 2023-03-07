@@ -59,6 +59,48 @@ func TestNewDisabledStatus(t *testing.T) {
 
 }
 
+func TestNewPresentStatus(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	// Test with namespace
+	sr := NewPresentStatus(
+		types.NamespacedName{Name: "test", Namespace: ""},
+		schema.GroupVersionKind{Group: "", Kind: "Namespace", Version: "v1"},
+	)
+
+	g.Expect(sr.GetName()).To(gomega.Equal("test"))
+	g.Expect(sr.GetKind()).To(gomega.Equal("Namespace"))
+	g.Expect(sr.GetNamespace()).To(gomega.Equal(""))
+
+	cl := fake.NewClientBuilder().Build()
+	condition := sr.Status(cl)
+	g.Expect(condition.Available).To(gomega.BeFalse(), "Status should not be good because namespace does not exist")
+
+	cl = fake.NewClientBuilder().WithObjects(&corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "test"}}).Build()
+	condition = sr.Status(cl)
+	g.Expect(condition.Available).To(gomega.BeTrue(), "Status should be good because namespace exist")
+
+	bc := buggyClient{cl, true}
+	condition = sr.Status(bc)
+	g.Expect(condition.Type).To(gomega.Equal("Unknown"), "Status should be unknown due to request error")
+
+	// Test with Custom Resource
+	testCR := types.NamespacedName{Name: "addon-component", Namespace: ""}
+	sr = NewPresentStatus(
+		testCR,
+		schema.GroupVersionKind{
+			Group:   "addon.open-cluster-management.io",
+			Version: "v1alpha1",
+			Kind:    "ClusterManagementAddOn",
+		},
+	)
+
+	cl = fake.NewClientBuilder().Build()
+	condition = sr.Status(cl)
+	g.Expect(condition.Available).To(gomega.BeFalse(), "Status should not be good because Kind does not exist")
+
+}
+
 func TestStaticStatus(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
