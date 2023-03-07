@@ -189,7 +189,7 @@ package main
 //+kubebuilder:rbac:groups=config.openshift.io,resources=infrastructures,verbs=get;list;watch
 //+kubebuilder:rbac:groups=config.openshift.io,resources=infrastructures,verbs=get;list;watch;patch;update
 //+kubebuilder:rbac:groups=config.openshift.io;console.openshift.io;project.openshift.io;tower.ansible.com,resources=infrastructures;consolelinks;projects;featuregates;ansiblejobs;clusterversions,verbs=list;get;watch
-//+kubebuilder:rbac:groups=console.open-cluster-management.io,resources=userpreferences,verbs=list;watch
+//+kubebuilder:rbac:groups=console.open-cluster-management.io,resources=userpreferences,verbs=create;list;patch;watch
 //+kubebuilder:rbac:groups=console.openshift.io,resources=consoleclidownloads,verbs=get;list;create;delete;update;patch
 //+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=*
 //+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=*
