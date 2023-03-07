@@ -2,16 +2,17 @@ package controllers
 
 import (
 	"context"
+	"reflect"
 	"testing"
 
+	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 	v1 "github.com/stolostron/backplane-operator/api/v1"
+	"github.com/stolostron/backplane-operator/pkg/status"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-
-	"github.com/stolostron/backplane-operator/pkg/status"
 	addonv1alpha1 "open-cluster-management.io/api/addon/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -126,4 +127,44 @@ func Test_reconcileLocalHosting(t *testing.T) {
 		t.Errorf("Got status %s, expected %s", component.Type, "Available")
 	}
 	r.StatusManager.Reset("")
+}
+
+func Test_clusterManagementAddOnNotFoundStatus(t *testing.T) {
+	type args struct {
+		name      string
+		namespace string
+	}
+	tests := []struct {
+		name string
+		args args
+		want status.StatusReporter
+	}{
+		{
+			name: "create static status",
+			args: args{
+				name:      "new-component",
+				namespace: "new-namespace",
+			},
+			want: status.StaticStatus{
+				NamespacedName: types.NamespacedName{Name: "new-component", Namespace: "new-namespace"},
+				Kind:           "Component",
+				Condition: backplanev1.ComponentCondition{
+					Type:      "Available",
+					Name:      "new-component",
+					Status:    metav1.ConditionFalse,
+					Reason:    status.WaitingForResourceReason,
+					Kind:      "Component",
+					Available: false,
+					Message:   "Waiting for ClusterManagementAddOn CRD to be available",
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := clusterManagementAddOnNotFoundStatus(tt.args.name, tt.args.namespace); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("clusterManagementAddOnNotFoundStatus() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }

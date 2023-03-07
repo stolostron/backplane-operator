@@ -161,19 +161,7 @@ func (r *MultiClusterEngineReconciler) ensureManagedServiceAccount(ctx context.C
 				log.Info("Couldn't apply template for managed-serviceaccount due to missing CRD", "error is", err.Error())
 
 				missingCRDErrorOccured = true
-				r.StatusManager.AddComponent(status.StaticStatus{
-					NamespacedName: types.NamespacedName{Name: "managed-serviceaccount", Namespace: backplaneConfig.Spec.TargetNamespace},
-					Kind:           "Component",
-					Condition: backplanev1.ComponentCondition{
-						Type:      "Available",
-						Name:      "managed-serviceaccount",
-						Status:    metav1.ConditionFalse,
-						Reason:    status.WaitingForResourceReason,
-						Kind:      "Component",
-						Available: false,
-						Message:   "Waiting for ClusterManagementAddOn CRD to be available",
-					},
-				})
+				r.StatusManager.AddComponent(clusterManagementAddOnNotFoundStatus("managed-serviceaccount", backplaneConfig.Spec.TargetNamespace))
 			} else {
 				return result, err
 			}
@@ -759,19 +747,7 @@ func (r *MultiClusterEngineReconciler) ensureHyperShift(ctx context.Context, bac
 				log.Info("Couldn't apply template for hypershift due to missing CRD", "error is", err.Error())
 
 				missingCRDErrorOccured = true
-				r.StatusManager.AddComponent(status.StaticStatus{
-					NamespacedName: types.NamespacedName{Name: "hypershift-preview", Namespace: backplaneConfig.Spec.TargetNamespace},
-					Kind:           "Component",
-					Condition: backplanev1.ComponentCondition{
-						Type:      "Available",
-						Name:      "hypershift-preview",
-						Status:    metav1.ConditionFalse,
-						Reason:    status.WaitingForResourceReason,
-						Kind:      "Component",
-						Available: false,
-						Message:   "Waiting for ClusterManagementAddOn CRD to be available",
-					},
-				})
+				r.StatusManager.AddComponent(clusterManagementAddOnNotFoundStatus("hypershift-preview", backplaneConfig.Spec.TargetNamespace))
 			} else {
 				return result, err
 			}
@@ -964,19 +940,7 @@ func (r *MultiClusterEngineReconciler) ensureClusterProxyAddon(ctx context.Conte
 		if err != nil {
 			if apimeta.IsNoMatchError(errors.Unwrap(err)) || apierrors.IsNotFound(errors.Unwrap(err)) {
 				missingCRDErrorOccured = true
-				r.StatusManager.AddComponent(status.StaticStatus{
-					NamespacedName: types.NamespacedName{Name: "cluster-proxy-addon", Namespace: backplaneConfig.Spec.TargetNamespace},
-					Kind:           "Component",
-					Condition: backplanev1.ComponentCondition{
-						Type:      "Available",
-						Name:      "cluster-proxy-addon",
-						Status:    metav1.ConditionFalse,
-						Reason:    status.WaitingForResourceReason,
-						Kind:      "Component",
-						Available: false,
-						Message:   "Waiting for ClusterManagementAddOn CRD to be available",
-					},
-				})
+				r.StatusManager.AddComponent(clusterManagementAddOnNotFoundStatus("cluster-proxy-addon", backplaneConfig.Spec.TargetNamespace))
 			} else {
 				return result, err
 			}
@@ -1260,4 +1224,22 @@ func (r *MultiClusterEngineReconciler) ensureNoLocalCluster(ctx context.Context,
 	r.StatusManager.AddCondition(condition)
 	log.Info(msg)
 	return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+}
+
+// clusterManagementAddOnNotFoundStatus reports that a component is not available because
+// the ClusterManagementAddOn CRD is not present on the cluster
+func clusterManagementAddOnNotFoundStatus(name, namespace string) status.StatusReporter {
+	return status.StaticStatus{
+		NamespacedName: types.NamespacedName{Name: name, Namespace: namespace},
+		Kind:           "Component",
+		Condition: backplanev1.ComponentCondition{
+			Type:      "Available",
+			Name:      name,
+			Status:    metav1.ConditionFalse,
+			Reason:    status.WaitingForResourceReason,
+			Kind:      "Component",
+			Available: false,
+			Message:   "Waiting for ClusterManagementAddOn CRD to be available",
+		},
+	}
 }
