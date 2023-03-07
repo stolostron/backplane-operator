@@ -1339,7 +1339,9 @@ rules:
   resources:
   - userpreferences
   verbs:
+  - create
   - list
+  - patch
   - watch
 - apiGroups:
   - console.openshift.io
