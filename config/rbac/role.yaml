@@ -1340,6 +1340,7 @@ rules:
   - userpreferences
   verbs:
   - create
+  - get
   - list
   - patch
   - watch
