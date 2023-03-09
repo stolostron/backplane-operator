@@ -204,7 +204,10 @@ rules:
   - watch
 
 - verbs:
+  - create
+  - get
   - list
+  - patch
   - watch
   apiGroups:
   - console.open-cluster-management.io
