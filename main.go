@@ -28,12 +28,14 @@ import (
 	"os"
 	"time"
 
+	operatorsapiv2 "github.com/operator-framework/api/pkg/operators/v2"
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 	"github.com/stolostron/backplane-operator/controllers"
 	renderer "github.com/stolostron/backplane-operator/pkg/rendering"
 	"github.com/stolostron/backplane-operator/pkg/status"
 	"github.com/stolostron/backplane-operator/pkg/utils"
 	"github.com/stolostron/backplane-operator/pkg/version"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clustermanager "open-cluster-management.io/api/operator/v1"
 
 	configv1 "github.com/openshift/api/config/v1"
@@ -51,7 +53,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -91,6 +92,8 @@ func init() {
 	utilruntime.Must(backplanev1.AddToScheme(scheme))
 
 	utilruntime.Must(apiregistrationv1.AddToScheme(scheme))
+
+	utilruntime.Must(operatorsapiv2.AddToScheme(scheme))
 
 	utilruntime.Must(admissionregistration.AddToScheme(scheme))
 
@@ -154,21 +157,51 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.MultiClusterEngineReconciler{
-		Client:        mgr.GetClient(),
-		Scheme:        mgr.GetScheme(),
-		StatusManager: &status.StatusTracker{Client: mgr.GetClient()},
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "MultiClusterEngine")
-		os.Exit(1)
-	}
-
 	// use uncached client for setup before manager starts
 	uncachedClient, err := client.New(ctrl.GetConfigOrDie(), client.Options{
 		Scheme: mgr.GetScheme(),
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to create uncached client")
+		os.Exit(1)
+	}
+
+	// Force OperatorCondition Upgradeable to False
+	//
+	// We have to at least default the condition to False or
+	// OLM will use the Readiness condition via our readiness probe instead:
+	// https://olm.operatorframework.io/docs/advanced-tasks/communicating-operator-conditions-to-olm/#setting-defaults
+	//
+	// We want to force it to False to ensure that the final decision about whether
+	// the operator can be upgraded stays within the hyperconverged controller.
+	setupLog.Info("Setting OperatorCondition.")
+	upgradeableCondition, err := utils.NewOperatorCondition(uncachedClient, operatorsapiv2.Upgradeable)
+	ctx := context.Background()
+
+	if err != nil {
+		setupLog.Error(err, "Cannot create the Upgradeable Operator Condition")
+		os.Exit(1)
+	}
+	err = upgradeableCondition.Set(ctx, metav1.ConditionFalse, utils.UpgradeableInitReason, utils.UpgradeableInitMessage)
+	if err != nil {
+		setupLog.Error(err, "unable to create set operator condition upgradable to false")
+		os.Exit(1)
+	}
+
+	// re-create the condition, this time with the final client
+	upgradeableCondition, err = utils.NewOperatorCondition(mgr.GetClient(), operatorsapiv2.Upgradeable)
+	if err != nil {
+		setupLog.Error(err, "unable to create Upgradable Operator Condition with the final client")
+		os.Exit(1)
+	}
+
+	if err = (&controllers.MultiClusterEngineReconciler{
+		Client:          mgr.GetClient(),
+		Scheme:          mgr.GetScheme(),
+		StatusManager:   &status.StatusTracker{Client: mgr.GetClient()},
+		UpgradeableCond: upgradeableCondition,
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "MultiClusterEngine")
 		os.Exit(1)
 	}
 

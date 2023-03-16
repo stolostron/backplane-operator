@@ -68,9 +68,10 @@ import (
 // MultiClusterEngineReconciler reconciles a MultiClusterEngine object
 type MultiClusterEngineReconciler struct {
 	client.Client
-	Scheme        *runtime.Scheme
-	Images        map[string]string
-	StatusManager *status.StatusTracker
+	Scheme          *runtime.Scheme
+	Images          map[string]string
+	StatusManager   *status.StatusTracker
+	UpgradeableCond utils.Condition
 }
 
 const (
@@ -135,6 +136,7 @@ const (
 //+kubebuilder:rbac:groups="action.open-cluster-management.io",resources=managedclusteractions,verbs=get;create;update;delete
 //+kubebuilder:rbac:groups="cluster.open-cluster-management.io",resources=clustercurators;clustercurators/status,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups="operators.coreos.com",resources=subscriptions,verbs=get;list;watch
+//+kubebuilder:rbac:groups="operators.coreos.com",resources=operatorconditions,verbs=create;get;list;patch;update;delete;watch
 //+kubebuilder:rbac:groups="",resources=serviceaccounts/token,verbs=create
 //+kubebuilder:rbac:groups=authentication.k8s.io,resources=tokenrequests,verbs=create
 
@@ -158,6 +160,13 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 	r.StatusManager.Reset("")
 	for _, c := range backplaneConfig.Status.Conditions {
 		r.StatusManager.AddCondition(c)
+	}
+
+	// Check to see if upgradeable
+	upgrade, err := r.setOperatorUpgradeableStatus(ctx, backplaneConfig)
+	if err != nil {
+		log.Info(err.Error())
+		return ctrl.Result{}, err
 	}
 
 	// Do not preform any further action on a hosted-mode MCE
@@ -312,9 +321,60 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return result, err
 	}
 
+	if upgrade {
+		return ctrl.Result{Requeue: true}, nil
+	}
+
 	r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing, metav1.ConditionTrue, status.DeploySuccessReason, "All components deployed"))
 
 	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterEngineReconciler) setOperatorUpgradeableStatus(ctx context.Context, m *backplanev1.MultiClusterEngine) (bool, error) {
+
+	// Temporary variable
+	var upgradeable bool
+
+	// Checking to see if the current version of the MCE matches the desired to determine if we are in an upgrade scenario
+	// If the current version doesn't exist, we are currently in a install which will also not allow it to upgrade
+
+	if m.Status.CurrentVersion != m.Status.DesiredVersion {
+		upgradeable = false
+	} else {
+		upgradeable = true
+	}
+
+	// 	These messages are drawn from operator condition
+	// Right now, they just indicate between upgrading and not
+	msg := utils.UpgradeableAllowMessage
+	status := metav1.ConditionTrue
+	reason := utils.UpgradeableAllowReason
+
+	// 	The condition is the only field that affects whether or not we can upgrade
+	// The rest are just status info
+	if !upgradeable {
+		status = metav1.ConditionFalse
+		reason = utils.UpgradeableUpgradingReason
+		msg = utils.UpgradeableUpgradingMessage
+
+	} else {
+
+		msg = utils.UpgradeableAllowMessage
+		status = metav1.ConditionTrue
+		reason = utils.UpgradeableAllowReason
+
+	}
+	// This error should only occur if the operator condition does not exist for some reason
+	if err := r.UpgradeableCond.Set(ctx, status, reason, msg); err != nil {
+		return true, err
+	}
+
+	if !upgradeable {
+		return true, nil
+	} else {
+		return false, nil
+	}
+
 }
 
 // SetupWithManager sets up the controller with the Manager.

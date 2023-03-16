@@ -53,7 +53,7 @@ import (
 const (
 	BackplaneConfigName        = "test-backplaneconfig"
 	BackplaneConfigTestName    = "Backplane Config"
-	BackplaneOperatorNamespace = "default"
+	BackplaneOperatorNamespace = "multicluster-engine"
 	DestinationNamespace       = "test"
 	JobName                    = "test-job"
 

@@ -1382,6 +1382,14 @@ rules:
   - update
   - watch
 - apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - discovery.open-cluster-management.io
   resources:
   - discoveredclusters
@@ -1849,6 +1857,18 @@ rules:
   verbs:
   - get
   - list
+- apiGroups:
+  - operators.coreos.com
+  resources:
+  - operatorconditions
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - operators.coreos.com
   resources:

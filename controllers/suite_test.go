@@ -26,11 +26,18 @@ import (
 	"strings"
 	"testing"
 
+	// "time"
+
 	configv1 "github.com/openshift/api/config/v1"
 	operatorv1 "github.com/openshift/api/operator/v1"
 	hiveconfig "github.com/openshift/hive/apis/hive/v1"
+
+	// operatorsapiv1 "github.com/operator-framework/api/pkg/operators/v1"
+	operatorsapiv2 "github.com/operator-framework/api/pkg/operators/v2"
 	admissionregistration "k8s.io/api/admissionregistration/v1"
+	corev1 "k8s.io/api/core/v1"
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
@@ -58,6 +65,7 @@ func TestControllers(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Controller Suite")
 }
+
 
 var cfg *rest.Config
 var k8sClient client.Client
@@ -105,6 +113,9 @@ var _ = BeforeSuite(func() {
 	err = apiregistrationv1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
+	Expect(operatorsapiv2.AddToScheme(scheme.Scheme)).Should(Succeed())
+	// Expect(operatorsapiv1.AddToScheme(scheme.Scheme)).Should(Succeed())
+
 	err = admissionregistration.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
@@ -126,7 +137,7 @@ var _ = BeforeSuite(func() {
 	err = operatorv1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
-	err = os.Setenv("POD_NAMESPACE", "default")
+	err = os.Setenv("POD_NAMESPACE", "multicluster-engine")
 	Expect(err).NotTo(HaveOccurred())
 
 	err = os.Setenv("DIRECTORY_OVERRIDE", "../")
@@ -135,6 +146,14 @@ var _ = BeforeSuite(func() {
 	err = os.Setenv("UNIT_TEST", "true")
 	Expect(err).NotTo(HaveOccurred())
 
+	os.Setenv("OPERATOR_CONDITION_NAME", "multicluster-engine.v2.3.0")
+	defer os.Unsetenv("OPERATOR_CONDITION_NAME")
+
+	OCMNamespace := &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "multicluster-engine",
+		},
+	}
 	for _, v := range utils.GetTestImages() {
 		key := fmt.Sprintf("OPERAND_IMAGE_%s", strings.ToUpper(v))
 		err := os.Setenv(key, "quay.io/test/test:test")
@@ -146,16 +165,23 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
 
+	ctx := context.Background()
+	Expect(k8sClient.Create(ctx, OCMNamespace)).Should(Succeed())
+
 	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
 		Scheme:                 scheme.Scheme,
 		MetricsBindAddress:     "0",
 		HealthProbeBindAddress: "0",
 	})
 	Expect(err).ToNot(HaveOccurred())
+
+	upgradeableCondition, _ := utils.NewOperatorCondition(k8sClient, operatorsapiv2.Upgradeable)
+	Expect(err).ToNot(HaveOccurred())
 	reconciler = MultiClusterEngineReconciler{
-		Client:        k8sManager.GetClient(),
-		Scheme:        k8sManager.GetScheme(),
-		StatusManager: &status.StatusTracker{Client: k8sManager.GetClient()},
+		Client:          k8sManager.GetClient(),
+		Scheme:          k8sManager.GetScheme(),
+		StatusManager:   &status.StatusTracker{Client: k8sManager.GetClient()},
+		UpgradeableCond: upgradeableCondition,
 	}
 	err = (reconciler).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
@@ -181,6 +207,24 @@ var _ = AfterSuite(func() {
 
 	cancel()
 	By("tearing down the test environment")
+	// Expect(k8sClient.DeleteAllOf(context.Background(), &operatorsapiv1.OperatorCondition{}, client.InNamespace("multicluster-engine"))).To(Succeed())
+	Expect(k8sClient.Delete(context.Background(), &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "multicluster-engine",
+		},
+	})).To(Succeed())
+	// err = testEnv.Stop()
+	// if err != nil {
+	// 	time.Sleep(4 * time.Second)
+	// }
 	err = testEnv.Stop()
 	Expect(err).NotTo(HaveOccurred())
+
+	// Eventually(func() error {
+
+	// 	err = testEnv.Stop()
+	// 	return err
+
+	// }, timeoutt, intervall).Should(Succeed())
+
 })
