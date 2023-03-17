@@ -163,9 +163,10 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}
 
 	// Check to see if upgradeable
+	r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing, metav1.ConditionTrue, status.WaitingForResourceReason, "Setting the operator"))
 	upgrade, err := r.setOperatorUpgradeableStatus(ctx, backplaneConfig)
 	if err != nil {
-		log.Info(err.Error())
+		log.Error(err, "Trouble with Upgradable Operator Condition")
 		return ctrl.Result{}, err
 	}
 
