@@ -117,6 +117,21 @@ func (s *LocalClusterStatus) enabledStatus(mc *unstructured.Unstructured) bpv1.C
 		}
 	}
 
+	// correct the user's change of the local-cluster in mce when it is owned by mch
+	if detaching := mc.GetDeletionTimestamp(); detaching != nil {
+		return bpv1.ComponentCondition{
+			Name:               s.GetName(),
+			Kind:               s.GetKind(),
+			Available:          false,
+			Type:               latest["type"].(string),
+			Status:             metav1.ConditionStatus(latest["status"].(string)),
+			LastUpdateTime:     metav1.Now(),
+			LastTransitionTime: metav1.Now(),
+			Reason:             latest["reason"].(string),
+			Message:            "Local-Cluster is currently being detached",
+		}
+	}
+
 	return bpv1.ComponentCondition{
 		Name:               s.GetName(),
 		Kind:               s.GetKind(),
