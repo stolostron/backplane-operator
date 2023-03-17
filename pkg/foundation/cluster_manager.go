@@ -30,7 +30,9 @@ const (
 	// WorkImageKey used by work deployments
 	WorkImageKey = "work"
 	// PlacementImageKey used by placement deployments
-	PlacementImageKey             = "placement"
+	PlacementImageKey = "placement"
+	// AddonManagerImageKey used by addon-manager deployments
+	AddonManagerImageKey          = "addon-manager"
 	addonPath                     = "pkg/templates/clustermanagementaddons/"
 	clusterManagementAddonCRDName = "clustermanagementaddons.addon.open-cluster-management.io"
 	ClusterManagementAddonKind    = "ClusterManagementAddOn"
@@ -49,6 +51,11 @@ func WorkImage(overrides map[string]string) string {
 // PlacementImage ...
 func PlacementImage(overrides map[string]string) string {
 	return overrides[PlacementImageKey]
+}
+
+// AddonManagerImage ...
+func AddonManagerImage(overrides map[string]string) string {
+	return overrides[AddonManagerImageKey]
 }
 
 func ClusterManager(m *v1.MultiClusterEngine, overrides map[string]string) *unstructured.Unstructured {
@@ -73,12 +80,13 @@ func ClusterManager(m *v1.MultiClusterEngine, overrides map[string]string) *unst
 			RegistrationImagePullSpec: RegistrationImage(overrides),
 			WorkImagePullSpec:         WorkImage(overrides),
 			PlacementImagePullSpec:    PlacementImage(overrides),
+			AddOnManagerImagePullSpec: AddonManagerImage(overrides),
 			NodePlacement: ocmapiv1.NodePlacement{
 				NodeSelector: m.Spec.NodeSelector,
 				Tolerations:  cmTolerations,
 			},
 			DeployOption: ocmapiv1.ClusterManagerDeployOption{
-				Mode: "Default",
+				Mode: ocmapiv1.InstallModeDefault,
 			},
 		},
 	}

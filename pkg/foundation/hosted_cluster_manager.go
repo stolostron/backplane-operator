@@ -43,6 +43,7 @@ func HostedClusterManager(m *v1.MultiClusterEngine, overrides map[string]string)
 			RegistrationImagePullSpec: RegistrationImage(overrides),
 			WorkImagePullSpec:         WorkImage(overrides),
 			PlacementImagePullSpec:    PlacementImage(overrides),
+			AddOnManagerImagePullSpec: AddonManagerImage(overrides),
 			NodePlacement: ocmapiv1.NodePlacement{
 				NodeSelector: m.Spec.NodeSelector,
 				Tolerations:  cmTolerations,

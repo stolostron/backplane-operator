@@ -1,4 +1,3 @@
-// Copyright (c) 2021 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
 package foundation
@@ -13,7 +12,7 @@ import (
 	v1 "github.com/stolostron/backplane-operator/api/v1"
 )
 
-func TestClusterManager(t *testing.T) {
+func TestHostedClusterManager(t *testing.T) {
 	tests := []struct {
 		name                      string
 		mce                       *v1.MultiClusterEngine
@@ -57,7 +56,7 @@ func TestClusterManager(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			c := ClusterManager(test.mce, test.imageOverrides)
+			c := HostedClusterManager(test.mce, test.imageOverrides)
 
 			os.Setenv("DIRECTORY_OVERRIDE", "../../")
 
@@ -116,8 +115,8 @@ func TestClusterManager(t *testing.T) {
 				t.Errorf("expected cluster manager deploy mode not found")
 			}
 
-			if mode != string(ocmapiv1.InstallModeDefault) {
-				t.Errorf("expected deploy mode %s, got %s", ocmapiv1.InstallModeDefault, mode)
+			if mode != string(ocmapiv1.InstallModeHosted) {
+				t.Errorf("expected deploy mode %s, got %s", ocmapiv1.InstallModeHosted, mode)
 			}
 		})
 	}
