@@ -167,7 +167,7 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 	upgrade, err := r.setOperatorUpgradeableStatus(ctx, backplaneConfig)
 	if err != nil {
 		log.Error(err, "Trouble with Upgradable Operator Condition")
-		return ctrl.Result{}, err
+		r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing, metav1.ConditionFalse, status.RequirementsNotMetReason, err.Error()))
 	}
 
 	// Do not preform any further action on a hosted-mode MCE
