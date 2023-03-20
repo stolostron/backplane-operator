@@ -55,6 +55,15 @@ var _ = Describe("OperatorCondition", func() {
 		Expect(cond.Type).Should(Equal("testCondition"))
 		Expect(cond.Reason).Should(Equal("myReason"))
 		Expect(cond.Message).Should(Equal("my message"))
+
+		oc = &OperatorCondition{}
+		msg := UpgradeableAllowMessage
+		status := metav1.ConditionTrue
+		reason := UpgradeableAllowReason
+		ctx := context.Background()
+		err = oc.Set(ctx, status, reason, msg)
+		Expect(err).ShouldNot(HaveOccurred())
+
 	})
 })
 
