@@ -188,12 +188,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	// re-create the condition, this time with the final client
-	upgradeableCondition, err = utils.NewOperatorCondition(mgr.GetClient(), operatorsapiv2.Upgradeable)
-	if err != nil {
-		setupLog.Error(err, "unable to create Upgradable Operator Condition with the final client")
-		os.Exit(1)
-	}
+
 
 	if err = (&controllers.MultiClusterEngineReconciler{
 		Client:          mgr.GetClient(),

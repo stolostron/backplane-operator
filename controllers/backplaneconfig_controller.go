@@ -339,7 +339,7 @@ func (r *MultiClusterEngineReconciler) setOperatorUpgradeableStatus(ctx context.
 	// Checking to see if the current version of the MCE matches the desired to determine if we are in an upgrade scenario
 	// If the current version doesn't exist, we are currently in a install which will also not allow it to upgrade
 
-	if m.Status.CurrentVersion != m.Status.DesiredVersion {
+	if m.Status.CurrentVersion != version.Version {
 		upgradeable = false
 	} else {
 		upgradeable = true
@@ -358,14 +358,9 @@ func (r *MultiClusterEngineReconciler) setOperatorUpgradeableStatus(ctx context.
 		reason = utils.UpgradeableUpgradingReason
 		msg = utils.UpgradeableUpgradingMessage
 
-	} else {
-
-		msg = utils.UpgradeableAllowMessage
-		status = metav1.ConditionTrue
-		reason = utils.UpgradeableAllowReason
-
 	}
 	// This error should only occur if the operator condition does not exist for some reason
+	// We will return true so that we re-reconcile on the failed update of the operator condition
 	if err := r.UpgradeableCond.Set(ctx, status, reason, msg); err != nil {
 		return true, err
 	}

@@ -142,8 +142,6 @@ var _ = BeforeSuite(func() {
 	err = os.Setenv("UNIT_TEST", "true")
 	Expect(err).NotTo(HaveOccurred())
 
-	// os.Setenv("OPERATOR_CONDITION_NAME", "multicluster-engine.v2.3.0")
-	// defer os.Unsetenv("OPERATOR_CONDITION_NAME")
 
 	for _, v := range utils.GetTestImages() {
 		key := fmt.Sprintf("OPERAND_IMAGE_%s", strings.ToUpper(v))
@@ -199,11 +197,5 @@ var _ = AfterSuite(func() {
 	err = testEnv.Stop()
 	Expect(err).NotTo(HaveOccurred())
 
-	// Eventually(func() error {
-
-	// 	err = testEnv.Stop()
-	// 	return err
-
-	// }, timeoutt, intervall).Should(Succeed())
 
 })
