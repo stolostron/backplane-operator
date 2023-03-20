@@ -26,17 +26,15 @@ import (
 	"strings"
 	"testing"
 
-	// "time"
-
 	configv1 "github.com/openshift/api/config/v1"
 	operatorv1 "github.com/openshift/api/operator/v1"
 	hiveconfig "github.com/openshift/hive/apis/hive/v1"
 
-	// operatorsapiv1 "github.com/operator-framework/api/pkg/operators/v1"
 	operatorsapiv2 "github.com/operator-framework/api/pkg/operators/v2"
 	admissionregistration "k8s.io/api/admissionregistration/v1"
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 
+	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	clustermanager "open-cluster-management.io/api/operator/v1"
@@ -120,6 +118,8 @@ var _ = BeforeSuite(func() {
 
 	err = hiveconfig.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
+
+	Expect(olmv1.AddToScheme(scheme.Scheme)).Should(Succeed())
 
 	err = clustermanager.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
