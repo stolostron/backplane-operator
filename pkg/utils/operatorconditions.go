@@ -28,10 +28,10 @@ type OperatorCondition struct {
 
 const (
 	UpgradeableInitReason  = "Initializing"
-	UpgradeableInitMessage = "The mch operator is starting up"
+	UpgradeableInitMessage = "The mce operator is starting up"
 
 	UpgradeableUpgradingReason  = "AlreadyPerformingUpgrade"
-	UpgradeableUpgradingMessage = "upgrading the mch operator to version "
+	UpgradeableUpgradingMessage = "upgrading the mce operator to version "
 
 	UpgradeableAllowReason  = "Upgradeable"
 	UpgradeableAllowMessage = ""
