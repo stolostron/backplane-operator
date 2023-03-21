@@ -1382,14 +1382,6 @@ rules:
   - update
   - watch
 - apiGroups:
-  - ""
-  resources:
-  - secrets
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
   - discovery.open-cluster-management.io
   resources:
   - discoveredclusters
