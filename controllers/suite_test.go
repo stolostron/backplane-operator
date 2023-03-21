@@ -142,7 +142,6 @@ var _ = BeforeSuite(func() {
 	err = os.Setenv("UNIT_TEST", "true")
 	Expect(err).NotTo(HaveOccurred())
 
-
 	for _, v := range utils.GetTestImages() {
 		key := fmt.Sprintf("OPERAND_IMAGE_%s", strings.ToUpper(v))
 		err := os.Setenv(key, "quay.io/test/test:test")
@@ -196,6 +195,5 @@ var _ = AfterSuite(func() {
 
 	err = testEnv.Stop()
 	Expect(err).NotTo(HaveOccurred())
-
 
 })

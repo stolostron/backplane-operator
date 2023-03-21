@@ -188,8 +188,6 @@ func main() {
 		os.Exit(1)
 	}
 
-
-
 	if err = (&controllers.MultiClusterEngineReconciler{
 		Client:          mgr.GetClient(),
 		Scheme:          mgr.GetScheme(),
