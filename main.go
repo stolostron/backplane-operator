@@ -244,11 +244,27 @@ func main() {
 		os.Exit(1)
 	}
 
+	multiclusterengineList := &backplanev1.MultiClusterEngineList{}
+	err = uncachedClient.List(context.TODO(), multiclusterengineList)
+	if err != nil {
+		setupLog.Error(err, "Could not set List multicluster engines")
+		os.Exit(1)
+	}
+
+	if len(multiclusterengineList.Items) == 0 {
+		err = upgradeableCondition.Set(ctx, metav1.ConditionTrue, utils.UpgradeableAllowReason, utils.UpgradeableAllowMessage)
+		if err != nil {
+			setupLog.Error(err, "Could not set Operator Condition")
+			os.Exit(1)
+		}
+	}
+
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
+
 }
 
 func ensureCRD(ctx context.Context, c client.Client, crd *unstructured.Unstructured) error {

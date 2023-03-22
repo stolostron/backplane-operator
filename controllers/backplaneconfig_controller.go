@@ -149,22 +149,10 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 	if err != nil && !apierrors.IsNotFound(err) {
 		// Unknown error. Requeue
 		log.Info("Failed to fetch backplaneConfig")
-		err := r.UpgradeableCond.Set(ctx, metav1.ConditionTrue, utils.UpgradeableAllowReason, utils.UpgradeableAllowMessage)
-		if err != nil {
-			// Unknown error. Requeue
-			log.Info("Failed to  set operator condition status")
-			return ctrl.Result{RequeueAfter: requeuePeriod}, err
-		}
 		return ctrl.Result{RequeueAfter: requeuePeriod}, err
 	} else if err != nil && apierrors.IsNotFound(err) {
 		// BackplaneConfig deleted or not found
 		// Return and don't requeue
-		err := r.UpgradeableCond.Set(ctx, metav1.ConditionTrue, utils.UpgradeableAllowReason, utils.UpgradeableAllowMessage)
-		if err != nil {
-			// Unknown error. Requeue
-			log.Info("Failed to  set operator condition status")
-			return ctrl.Result{RequeueAfter: requeuePeriod}, err
-		}
 		return ctrl.Result{}, nil
 	}
 
@@ -342,6 +330,9 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 
 	return ctrl.Result{}, nil
 }
+
+// This function set the operator condition created by OLM to either allow or disallow upgrade based on whether X.Y desired version matches current version
+// It returns an error as well as Boolean determining whether or not the reconcile needs to be rerun in order to update status
 
 func (r *MultiClusterEngineReconciler) setOperatorUpgradeableStatus(ctx context.Context, m *backplanev1.MultiClusterEngine) (bool, error) {
 
