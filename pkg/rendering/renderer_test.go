@@ -15,6 +15,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	addonv1alpha1 "open-cluster-management.io/api/addon/v1alpha1"
 )
 
 const (
@@ -160,6 +161,20 @@ func TestRender(t *testing.T) {
 			containsHTTP = false
 			containsHTTPS = false
 			containsNO = false
+		}
+		if template.GetKind() == "AddOnDeploymentConfig" {
+			addonDep := &addonv1alpha1.AddOnDeploymentConfig{}
+			err := runtime.DefaultUnstructuredConverter.FromUnstructured(template.Object, addonDep)
+			if err != nil {
+				fmt.Println("KV Pair: ", template)
+				t.Fatalf(err.Error())
+			}
+			if nodePlacement := addonDep.Spec.NodePlacement.NodeSelector; !reflect.DeepEqual(nodePlacement, backplaneNodeSelector) {
+				t.Fatalf("NodeSelector did not propagate to the template %s: expected %#v, got %#v", addonDep.Name, backplaneNodeSelector, nodePlacement)
+			}
+			if tolerationPlacement := addonDep.Spec.NodePlacement.Tolerations; !reflect.DeepEqual(tolerationPlacement, backplaneTolerations) {
+				t.Fatalf("Toleration did not propagate to the template %s: expected %v, got %v", addonDep.Name, backplaneTolerations, tolerationPlacement)
+			}
 		}
 
 	}
