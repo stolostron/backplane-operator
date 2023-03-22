@@ -149,10 +149,22 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 	if err != nil && !apierrors.IsNotFound(err) {
 		// Unknown error. Requeue
 		log.Info("Failed to fetch backplaneConfig")
+		err := r.UpgradeableCond.Set(ctx, metav1.ConditionTrue, utils.UpgradeableAllowReason, utils.UpgradeableAllowMessage)
+		if err != nil {
+			// Unknown error. Requeue
+			log.Info("Failed to  set operator condition status")
+			return ctrl.Result{RequeueAfter: requeuePeriod}, err
+		}
 		return ctrl.Result{RequeueAfter: requeuePeriod}, err
 	} else if err != nil && apierrors.IsNotFound(err) {
 		// BackplaneConfig deleted or not found
 		// Return and don't requeue
+		err := r.UpgradeableCond.Set(ctx, metav1.ConditionTrue, utils.UpgradeableAllowReason, utils.UpgradeableAllowMessage)
+		if err != nil {
+			// Unknown error. Requeue
+			log.Info("Failed to  set operator condition status")
+			return ctrl.Result{RequeueAfter: requeuePeriod}, err
+		}
 		return ctrl.Result{}, nil
 	}
 
@@ -338,11 +350,13 @@ func (r *MultiClusterEngineReconciler) setOperatorUpgradeableStatus(ctx context.
 
 	// Checking to see if the current version of the MCE matches the desired to determine if we are in an upgrade scenario
 	// If the current version doesn't exist, we are currently in a install which will also not allow it to upgrade
+	parts1 := strings.Split(m.Status.CurrentVersion, ".")
+	parts2 := strings.Split(version.Version, ".")
 
-	if m.Status.CurrentVersion != version.Version {
-		upgradeable = false
-	} else {
+	if parts1[0] == parts2[0] && parts1[1] == parts2[1] {
 		upgradeable = true
+	} else {
+		upgradeable = false
 	}
 
 	// 	These messages are drawn from operator condition
