@@ -173,7 +173,7 @@ func main() {
 	// https://olm.operatorframework.io/docs/advanced-tasks/communicating-operator-conditions-to-olm/#setting-defaults
 	//
 	// We want to force it to False to ensure that the final decision about whether
-	// the operator can be upgraded stays within the hyperconverged controller.
+	// the operator can be upgraded stays within the mce controller.
 	setupLog.Info("Setting OperatorCondition.")
 	upgradeableCondition, err := utils.NewOperatorCondition(uncachedClient, operatorsapiv2.Upgradeable)
 	ctx := context.Background()
