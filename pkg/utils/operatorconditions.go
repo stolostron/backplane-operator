@@ -31,7 +31,7 @@ const (
 	UpgradeableInitMessage = "The mce operator is starting up"
 
 	UpgradeableUpgradingReason  = "AlreadyPerformingUpgrade"
-	UpgradeableUpgradingMessage = "upgrading the mce operator to version "
+	UpgradeableUpgradingMessage = "Upgrading the mce operator"
 
 	UpgradeableAllowReason  = "Upgradeable"
 	UpgradeableAllowMessage = ""
