@@ -1,5 +1,6 @@
 global:
     imageOverrides:
+        apiserver_network_policy: quay.io/test/test:test him
     pullSecret: ""
     namespace: default
     proxyAddr: []
