@@ -56,7 +56,7 @@ func TestHostedClusterManager(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			c := HostedClusterManager(test.mce, test.imageOverrides)
+			c := HostedClusterManager(test.mce, test.imageOverrides, "0.0", "0.0")
 
 			os.Setenv("DIRECTORY_OVERRIDE", "../../")
 
