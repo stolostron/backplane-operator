@@ -308,10 +308,18 @@ func (r *MultiClusterEngineReconciler) ensureNoHostedImport(ctx context.Context,
 func (r *MultiClusterEngineReconciler) ensureHostedClusterManager(ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 	cmName := fmt.Sprintf("%s-cluster-manager", mce.Name)
-
 	r.StatusManager.AddComponent(status.ClusterManagerStatus{
 		NamespacedName: types.NamespacedName{Name: cmName},
 	})
+	namespacedName := types.NamespacedName{Name: "cluster-manager-webhook-konnectivity-agent", Namespace: mce.Spec.TargetNamespace}
+	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
+	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
+	namespacedName = types.NamespacedName{Name: fmt.Sprintf("%s-cluster-manager-registration-webhook", mce.Name), Namespace: fmt.Sprintf("%s-cluster-manager", mce.Name)}
+	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
+	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
+	namespacedName = types.NamespacedName{Name: fmt.Sprintf("%s-cluster-manager-work-webhook", mce.Name), Namespace: fmt.Sprintf("%s-cluster-manager", mce.Name)}
+	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
+	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 
 	// Apply namespace
 	newNs := &corev1.Namespace{
@@ -425,7 +433,15 @@ func (r *MultiClusterEngineReconciler) ensureHostedClusterManager(ctx context.Co
 	}
 
 	err = r.Client.Get(ctx, registrationWebhookServiceNN, registrationWebhookService)
+	if err != nil && !apierrors.IsNotFound(err) {
+		log.Error(err, "error getting registration webhook service")
+		return ctrl.Result{}, err
+	}
 	err2 := r.Client.Get(ctx, workWebhookServiceNN, workWebhookService)
+	if err2 != nil && !apierrors.IsNotFound(err2) {
+		log.Error(err2, "error getting work webhook service")
+		return ctrl.Result{}, err2
+	}
 	addresses := []string{registrationWebhookService.Spec.ClusterIP, workWebhookService.Spec.ClusterIP}
 	if err != nil || err2 != nil {
 
@@ -454,7 +470,6 @@ func (r *MultiClusterEngineReconciler) ensureHostedClusterManager(ctx context.Co
 			return ctrl.Result{}, fmt.Errorf("error applying object Name: %s Kind: %s, %w", cmTemplate.GetName(), cmTemplate.GetKind(), err)
 		}
 	}
-	log.Info("made it this far")
 	templates, errs = renderer.ProxyRenderChart(toggle.HostedKonnectivityDir, mce, r.Images, addresses)
 	if len(errs) > 0 {
 		for _, err := range errs {
@@ -478,10 +493,22 @@ func (r *MultiClusterEngineReconciler) ensureHostedClusterManager(ctx context.Co
 func (r *MultiClusterEngineReconciler) ensureNoHostedClusterManager(ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 	cmName := fmt.Sprintf("%s-cluster-manager", mce.Name)
-
+	hCNS, err := utils.GetHostedClusterNamespace(mce)
+	if err != nil {
+		return ctrl.Result{RequeueAfter: requeuePeriod}, err
+	}
 	r.StatusManager.RemoveComponent(status.ClusterManagerStatus{
 		NamespacedName: types.NamespacedName{Name: cmName},
 	})
+	namespacedName := types.NamespacedName{Name: "cluster-manager-webhook-konnectivity-agent", Namespace: mce.Spec.TargetNamespace}
+	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
+	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
+	namespacedName = types.NamespacedName{Name: fmt.Sprintf("%s-cluster-manager-work-webhook", mce.Name), Namespace: fmt.Sprintf("%s-cluster-manager", mce.Name)}
+	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
+	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
+	namespacedName = types.NamespacedName{Name: fmt.Sprintf("%s-cluster-manager-registration-webhook", mce.Name), Namespace: fmt.Sprintf("%s-cluster-manager", mce.Name)}
+	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
+	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 
 	// Delete clustermanager
 	clusterManager := &unstructured.Unstructured{}
@@ -492,7 +519,7 @@ func (r *MultiClusterEngineReconciler) ensureNoHostedClusterManager(ctx context.
 			Kind:    "ClusterManager",
 		},
 	)
-	err := r.Client.Get(ctx, types.NamespacedName{Name: cmName}, clusterManager)
+	err = r.Client.Get(ctx, types.NamespacedName{Name: cmName}, clusterManager)
 	if err == nil { // If resource exists, delete
 		err := r.Client.Delete(ctx, clusterManager)
 		if err != nil {
@@ -528,7 +555,6 @@ func (r *MultiClusterEngineReconciler) ensureNoHostedClusterManager(ctx context.
 			Kind:    "NetworkPolicy",
 		},
 	)
-	hCNS, _ := utils.GetHostedClusterNamespace(mce)
 	err = r.Client.Get(ctx, types.NamespacedName{Name: "cluster-manager-webhook-konnectivity-agent", Namespace: hCNS}, konnectivityNetworkPolicy)
 	if err == nil { // If resource exists, delete
 		err := r.Client.Delete(ctx, konnectivityNetworkPolicy)

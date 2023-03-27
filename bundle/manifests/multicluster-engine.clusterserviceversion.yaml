@@ -850,6 +850,17 @@ spec:
           - patch
           - update
         - apiGroups:
+          - networking.k8s.io
+          resources:
+          - networkpolicies
+          verbs:
+          - create
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
           - agent-install.openshift.io
           resources:
           - nmstateconfigs
