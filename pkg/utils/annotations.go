@@ -23,7 +23,6 @@ var (
 	AnnotationImageRepo = "imageRepository"
 	// AnnotationImageOverridesCM identifies a configmap name containing an image override mapping
 	AnnotationImageOverridesCM = "imageOverridesCM"
-
 	// AnnotationKubeconfig is the secret name residing in targetcontaining the kubeconfig to access the remote cluster
 	AnnotationKubeconfig = "mce-kubeconfig"
 
@@ -119,7 +118,7 @@ func GetHostedCredentialsSecret(mce *backplanev1.MultiClusterEngine) (types.Name
 func GetKonnectivitySecret(mce *backplanev1.MultiClusterEngine) (types.NamespacedName, error) {
 	nn := types.NamespacedName{}
 	if mce.Annotations == nil || mce.Annotations[AnnotationHyperShiftNamespace] == "" {
-		return nn, fmt.Errorf("no kubeconfig secret annotation defined in %s", mce.Name)
+		return nn, fmt.Errorf("no konnectivity secret annotation defined in %s", mce.Name)
 	}
 	nn.Name = "konnectivity-agent"
 
