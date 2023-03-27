@@ -67,7 +67,7 @@ spec:
         command:
         - /usr/bin/proxy-agent
         # MCE has an external image entry for the proxy agent image.  SHould we use that?
-        image: quay.io/stolostron/apiserver-network-proxy:latest
+        image: {{ .Values.global.imageOverrides.apiserver_network_policy }}
         imagePullPolicy: Always
         livenessProbe:
           failureThreshold: 3
