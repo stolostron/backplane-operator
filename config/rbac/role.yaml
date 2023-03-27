@@ -1383,14 +1383,6 @@ rules:
   - update
   - watch
 - apiGroups:
-  - ""
-  resources:
-  - secrets
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
   - discovery.open-cluster-management.io
   resources:
   - discoveredclusters
@@ -2092,18 +2084,6 @@ rules:
   - route.openshift.io
   resources:
   - routes/custom-host
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - search.open-cluster-management.io
-  resources:
-  - searches
   verbs:
   - create
   - delete
