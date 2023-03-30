@@ -66,8 +66,17 @@ spec:
         - 5m
         command:
         - /usr/bin/proxy-agent
+        env:
+{{- if .Values.hubconfig.proxyConfigs }}
+        - name: HTTP_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
+        - name: HTTPS_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.HTTPS_PROXY }}
+        - name: NO_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
+{{- end }}
         # MCE has an external image entry for the proxy agent image.  SHould we use that?
-        image: {{ .Values.global.imageOverrides.apiserver_network_policy }}
+        image: {{ .Values.global.imageOverrides.apiserver_network_proxy }}
         imagePullPolicy: Always
         livenessProbe:
           failureThreshold: 3
@@ -94,6 +103,14 @@ spec:
       restartPolicy: Always
       schedulerName: default-scheduler
       securityContext: {}
+{{- if .Values.global.pullSecret }}
+      imagePullSecrets:
+      - name: {{ .Values.global.pullSecret }}
+{{- end }}
+      {{- with .Values.hubconfig.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+{{- end }}
       terminationGracePeriodSeconds: 30
       # XXX: What kind of nodes get corresponding taints?
       tolerations:
@@ -111,3 +128,13 @@ spec:
           defaultMode: 420
           # This secret is copied into the hosted MCE operand namespace.
           secretName: konnectivity-agent
+{{- with .Values.hubconfig.tolerations }}
+      tolerations:
+      {{- range . }}
+      - {{ if .Key }} key: {{ .Key }} {{- end }}
+        {{ if .Operator }} operator: {{ .Operator }} {{- end }}
+        {{ if .Value }} value: {{ .Value }} {{- end }}
+        {{ if .Effect }} effect: {{ .Effect }} {{- end }}
+        {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
+        {{- end }}
+{{- end }}
