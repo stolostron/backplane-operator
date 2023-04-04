@@ -307,6 +307,7 @@ func (r *MultiClusterEngineReconciler) ensureNoHostedImport(ctx context.Context,
 
 func (r *MultiClusterEngineReconciler) ensureHostedClusterManager(ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
+	var serviceSearch bool
 	cmName := fmt.Sprintf("%s-cluster-manager", mce.Name)
 	r.StatusManager.AddComponent(status.ClusterManagerStatus{
 		NamespacedName: types.NamespacedName{Name: cmName},
@@ -405,31 +406,15 @@ func (r *MultiClusterEngineReconciler) ensureHostedClusterManager(ctx context.Co
 		return ctrl.Result{Requeue: true}, nil
 	}
 
-	templates, errs := renderer.RenderChart(toggle.HostedCMDir, mce, r.Images)
-	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
-	}
-
-	// Applies all templates
-	for _, template := range templates {
-		result, err := r.applyTemplate(ctx, mce, template)
-		if err != nil {
-			return result, err
-		}
-	}
-
 	registrationWebhookService := &corev1.Service{}
 	workWebhookService := &corev1.Service{}
 	registrationWebhookServiceNN := types.NamespacedName{
 		Name:      "cluster-manager-registration-webhook",
-		Namespace: mce.Spec.TargetNamespace,
+		Namespace: fmt.Sprintf("%s-cluster-manager", mce.Name),
 	}
 	workWebhookServiceNN := types.NamespacedName{
 		Name:      "cluster-manager-work-webhook",
-		Namespace: mce.Spec.TargetNamespace,
+		Namespace: fmt.Sprintf("%s-cluster-manager", mce.Name),
 	}
 
 	err = r.Client.Get(ctx, registrationWebhookServiceNN, registrationWebhookService)
@@ -455,8 +440,8 @@ func (r *MultiClusterEngineReconciler) ensureHostedClusterManager(ctx context.Co
 		if err != nil {
 			return ctrl.Result{}, fmt.Errorf("error applying object Name: %s Kind: %s, %w", cmTemplate.GetName(), cmTemplate.GetKind(), err)
 		}
-		log.Info(fmt.Sprintf("Re-reconciling to get proxy addresses"))
-		return ctrl.Result{Requeue: true}, nil
+		serviceSearch = true
+
 	} else {
 
 		// Apply clustermanager
@@ -469,7 +454,34 @@ func (r *MultiClusterEngineReconciler) ensureHostedClusterManager(ctx context.Co
 		if err != nil {
 			return ctrl.Result{}, fmt.Errorf("error applying object Name: %s Kind: %s, %w", cmTemplate.GetName(), cmTemplate.GetKind(), err)
 		}
+		serviceSearch = false
 	}
+
+	templates, errs := renderer.RenderChart(toggle.HostedCMDir, mce, r.Images)
+	if len(errs) > 0 {
+		for _, err := range errs {
+			log.Info(err.Error())
+		}
+
+		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+
+	}
+	log.Info("rendered")
+
+	// Applies all templates
+	for _, template := range templates {
+		result, err := r.applyTemplate(ctx, mce, template)
+		if err != nil {
+			return result, err
+		}
+		log.Info("apply")
+	}
+
+	if serviceSearch {
+		log.Info(fmt.Sprintf("Re-reconciling to get proxy addresses"))
+		return ctrl.Result{Requeue: true}, nil
+	}
+
 	templates, errs = renderer.ProxyRenderChart(toggle.HostedKonnectivityDir, mce, r.Images, addresses)
 	if len(errs) > 0 {
 		for _, err := range errs {
@@ -485,6 +497,57 @@ func (r *MultiClusterEngineReconciler) ensureHostedClusterManager(ctx context.Co
 		if err != nil {
 			return result, err
 		}
+	}
+
+	// Apply secret in namespace
+	externalKubeconfigSecret := &corev1.Secret{}
+	secretNN, err = utils.GetExternalKubeconfigSecret(mce)
+	if err != nil {
+		return ctrl.Result{Requeue: true}, err
+	}
+	err = r.Client.Get(ctx, secretNN, externalKubeconfigSecret)
+	if err != nil {
+		return ctrl.Result{Requeue: true}, err
+	}
+
+	externalSecret := &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: externalKubeconfigSecret.APIVersion,
+			Kind:       externalKubeconfigSecret.Kind,
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "external-hub-kubeconfig",
+			Namespace: mce.Spec.TargetNamespace,
+		},
+		Data: externalKubeconfigSecret.Data,
+		Type: externalKubeconfigSecret.Type,
+	}
+
+	force = true
+	err = r.Client.Patch(context.TODO(), externalSecret, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
+	if err != nil {
+		log.Info(fmt.Sprintf("Error applying proxy secret to target namespace: %s", err.Error()))
+		return ctrl.Result{Requeue: true}, nil
+	}
+
+	externalCMSecret := &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: externalKubeconfigSecret.APIVersion,
+			Kind:       externalKubeconfigSecret.Kind,
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "external-hub-kubeconfig",
+			Namespace: fmt.Sprintf("%s-cluster-manager", mce.Name),
+		},
+		Data: externalKubeconfigSecret.Data,
+		Type: externalKubeconfigSecret.Type,
+	}
+
+	force = true
+	err = r.Client.Patch(context.TODO(), externalCMSecret, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
+	if err != nil {
+		log.Info(fmt.Sprintf("Error applying proxy secret to cluster manager namespace: %s", err.Error()))
+		return ctrl.Result{Requeue: true}, nil
 	}
 
 	return ctrl.Result{}, nil

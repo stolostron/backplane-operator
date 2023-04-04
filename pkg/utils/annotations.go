@@ -126,6 +126,17 @@ func GetKonnectivitySecret(mce *backplanev1.MultiClusterEngine) (types.Namespace
 	return nn, nil
 }
 
+func GetExternalKubeconfigSecret(mce *backplanev1.MultiClusterEngine) (types.NamespacedName, error) {
+	nn := types.NamespacedName{}
+	if mce.Annotations == nil || mce.Annotations[AnnotationHostedClusterNamespace] == "" || mce.Annotations[AnnotationHostedClusterName] == "" {
+		return nn, fmt.Errorf("no hosted cluster secret annotation defined in %s", mce.Name)
+	}
+	nn.Name = fmt.Sprintf("%s-admin-kubeconfig", mce.Annotations[AnnotationHostedClusterName])
+
+	nn.Namespace = mce.Annotations[AnnotationHostedClusterNamespace]
+	return nn, nil
+}
+
 func GetHostedClusterNamespace(mce *backplanev1.MultiClusterEngine) (string, error) {
 	var ns string
 	if mce.Annotations == nil || mce.Annotations[AnnotationHostedClusterNamespace] == "" {
