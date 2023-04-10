@@ -9,6 +9,7 @@ import shutil
 import yaml
 import array
 import logging
+import sys
 from git import Repo, exc
 
 from validate_csv import *
@@ -234,10 +235,22 @@ def addResources(helmChart, csvPath):
             addNamespaceScopedRBAC(helmChart, role)
     logging.info("Resources have been successfully added to chart '%s' from CSV '%s'.\n", helmChart, csvPath)
     
+    logging.info("Check to see if there are resources in the csv that aren't getting picked up")
+    handleAllFiles = False
+    # Current list of resources we handle
+    listOfResourcesAdded = ["deployments", "clusterPermissions", "permissions", "CustomResourceDefinition"]
+    for resource in csv['spec']['install']['spec']:
+        if resource not in listOfResourcesAdded:
+            logging.error("Found a resource in the csv not being handled called '%s' in '%s'", resource, csvPath)
+            handleAllFiles = True
+
     logging.info("Copying over other resources in the bundle if they exist ...")
     dirPath = os.path.dirname(csvPath)
 
     otherBundleResourceTypes = ["ClusterRole", "ClusterRoleBinding", "Role", "RoleBinding", "Service"]
+    # list of files we handle currently
+    listOfFilesAdded = ["ClusterRole", "ClusterRoleBinding", "Role", 
+    "RoleBinding", "Service", "CustomResourceDefinition", "ClusterServiceVersion"]
     for filename in os.listdir(dirPath):
         if filename.endswith(".yaml") or filename.endswith(".yml"):
             filePath = os.path.join(dirPath, filename)
@@ -248,7 +261,9 @@ def addResources(helmChart, csvPath):
             continue
         else:
             continue
-
+    if handleAllFiles:
+        logging.error("Found a resource in either the manifest or csv we aren't handling")
+        sys.exit(1)
 
 # Given a resource Kind, return all filepaths of that resource type in a chart directory
 def findTemplatesOfType(helmChart, kind):
