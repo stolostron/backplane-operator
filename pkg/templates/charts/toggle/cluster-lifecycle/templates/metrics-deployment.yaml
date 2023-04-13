@@ -66,6 +66,9 @@ spec:
           - "--https-telemetry-port=8444"
           - "--tls-crt-file=/var/run/clusterlifecycle-state-metrics/tls.crt"
           - "--tls-key-file=/var/run/clusterlifecycle-state-metrics/tls.key"
+{{- if .Values.hubconfig.hubType }}
+          - "--hub-type={{ .Values.hubconfig.hubType }}"
+{{- end }}
         env:
           - name: POD_NAME
             valueFrom:
@@ -73,8 +76,6 @@ spec:
                 fieldPath: metadata.name
           - name: GOMEMLIMIT
             value: "1892MiB"
-          - name: HUB_TYPE
-            value: {{ .Values.hubconfig.hubType }}
 {{- if .Values.hubconfig.proxyConfigs }}
           - name: HTTP_PROXY
             value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
