@@ -41,8 +41,7 @@ import (
 	configv1 "github.com/openshift/api/config/v1"
 	operatorv1 "github.com/openshift/api/operator/v1"
 	hiveconfig "github.com/openshift/hive/apis/hive/v1"
-
-	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
+	rbacv1 "k8s.io/api/rbac/v1"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -163,13 +162,14 @@ func main() {
 		// LeaderElectionNamespace: "backplane-operator-system", // Ensure this is commented out. Uncomment only for running operator locally.
 	}
 
-	cacheSecrets := os.Getenv(NoCacheEnv)
-	if len(cacheSecrets) > 0 {
-		setupLog.Info("Operator Client Cache Disabled")
-		mgrOptions.ClientDisableCacheFor = []client.Object{
-			&corev1.Secret{},
-			&olmv1alpha1.ClusterServiceVersion{},
-		}
+	setupLog.Info("Disabling Operator Client Cache for high-memory resources")
+	mgrOptions.ClientDisableCacheFor = []client.Object{
+		&corev1.Secret{},
+		&rbacv1.ClusterRole{},
+		&rbacv1.ClusterRoleBinding{},
+		&rbacv1.RoleBinding{},
+		&corev1.ConfigMap{},
+		&corev1.ServiceAccount{},
 	}
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), mgrOptions)
