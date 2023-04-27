@@ -9,6 +9,7 @@ global:
     cluster_api_provider_azure: ""
     hypershift_operator: ""
     cluster_api_provider_kubevirt: ""
+    kube_rbac_proxy_mce: "registry.redhat.io/openshift4/ose-kube-rbac-proxy:v4.10"
   namespace: default
   pullSecret: null
 hubconfig:
