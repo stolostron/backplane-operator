@@ -22,6 +22,8 @@ import (
 	"errors"
 	"fmt"
 
+	admissionregistration "k8s.io/api/admissionregistration/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -80,6 +82,56 @@ var (
 		},
 	}
 )
+
+// ValidatingWebhook returns the ValidatingWebhookConfiguration used for the multiclusterengine
+// linked to a service in the provided namespace
+func ValidatingWebhook(namespace string) *admissionregistration.ValidatingWebhookConfiguration {
+	fail := admissionregistration.Fail
+	none := admissionregistration.SideEffectClassNone
+	path := "/validate-multicluster-openshift-io-v1-multiclusterengine"
+	return &admissionregistration.ValidatingWebhookConfiguration{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "admissionregistration.k8s.io/v1",
+			Kind:       "ValidatingWebhookConfiguration",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        "multiclusterengines.multicluster.openshift.io",
+			Annotations: map[string]string{"service.beta.openshift.io/inject-cabundle": "true"},
+		},
+		Webhooks: []admissionregistration.ValidatingWebhook{
+			{
+				AdmissionReviewVersions: []string{
+					"v1",
+					"v1beta1",
+				},
+				Name: "multiclusterengines.multicluster.openshift.io",
+				ClientConfig: admissionregistration.WebhookClientConfig{
+					Service: &admissionregistration.ServiceReference{
+						Name:      "multicluster-engine-operator-webhook-service",
+						Namespace: namespace,
+						Path:      &path,
+					},
+				},
+				FailurePolicy: &fail,
+				Rules: []admissionregistration.RuleWithOperations{
+					{
+						Rule: admissionregistration.Rule{
+							APIGroups:   []string{GroupVersion.Group},
+							APIVersions: []string{GroupVersion.Version},
+							Resources:   []string{"multiclusterengines"},
+						},
+						Operations: []admissionregistration.OperationType{
+							admissionregistration.Create,
+							admissionregistration.Update,
+							admissionregistration.Delete,
+						},
+					},
+				},
+				SideEffects: &none,
+			},
+		},
+	}
+}
 
 func (r *MultiClusterEngine) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	Client = mgr.GetClient()
