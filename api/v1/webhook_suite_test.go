@@ -30,6 +30,8 @@ import (
 	. "github.com/onsi/gomega"
 
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
+	admissionregistration "k8s.io/api/admissionregistration/v1"
+
 	//+kubebuilder:scaffold:imports
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
@@ -64,7 +66,9 @@ var _ = BeforeSuite(func() {
 		CRDDirectoryPaths:     []string{filepath.Join("..", "..", "config", "crd", "bases")},
 		ErrorIfCRDPathMissing: false,
 		WebhookInstallOptions: envtest.WebhookInstallOptions{
-			Paths: []string{filepath.Join("..", "..", "pkg", "templates", "core")},
+			ValidatingWebhooks: []*admissionregistration.ValidatingWebhookConfiguration{
+				ValidatingWebhook("system"),
+			},
 		},
 	}
 
