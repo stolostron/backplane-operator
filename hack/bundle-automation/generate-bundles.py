@@ -9,6 +9,7 @@ import shutil
 import yaml
 import array
 import logging
+import sys
 from git import Repo, exc
 
 from validate_csv import *
@@ -78,6 +79,7 @@ def fillChartYaml(helmChart, name, csvPath):
     with open(chartYml, 'r') as f:
         chart = yaml.safe_load(f)
 
+    # logging.info("%s", csvPath)
     # Read CSV    
     with open(csvPath, 'r') as f:
         csv = yaml.safe_load(f)
@@ -110,6 +112,11 @@ def addDeployment(helmChart, deployment):
         deploy = yaml.safe_load(f)
         
     deploy['spec'] = deployment['spec']
+    if 'spec' in deploy:
+        if 'template' in deploy['spec']:
+            if 'spec' in deploy['spec']['template']:
+                if 'imagePullPolicy' in deploy['spec']['template']['spec']:
+                    del deploy['spec']['template']['spec']['imagePullPolicy']
     deploy['metadata']['name'] = name
     with open(deployYaml, 'w') as f:
         yaml.dump(deploy, f)
@@ -234,10 +241,22 @@ def addResources(helmChart, csvPath):
             addNamespaceScopedRBAC(helmChart, role)
     logging.info("Resources have been successfully added to chart '%s' from CSV '%s'.\n", helmChart, csvPath)
     
+    logging.info("Check to see if there are resources in the csv that aren't getting picked up")
+    handleAllFiles = False
+    # Current list of resources we handle
+    listOfResourcesAdded = ["deployments", "clusterPermissions", "permissions", "CustomResourceDefinition"]
+    for resource in csv['spec']['install']['spec']:
+        if resource not in listOfResourcesAdded:
+            logging.error("Found a resource in the csv not being handled called '%s' in '%s'", resource, csvPath)
+            handleAllFiles = True
+
     logging.info("Copying over other resources in the bundle if they exist ...")
     dirPath = os.path.dirname(csvPath)
-
-    otherBundleResourceTypes = ["ClusterRole", "ClusterRoleBinding", "Role", "RoleBinding", "Service"]
+    logging.info("From directory '%s'", dirPath)
+    otherBundleResourceTypes = ["ClusterRole", "ClusterRoleBinding", "Role", "RoleBinding", "Service", "ConfigMap"]
+    # list of files we handle currently
+    listOfFilesAdded = ["ClusterRole", "ClusterRoleBinding", "Role", 
+    "RoleBinding", "Service", "ClusterManagementAddOn", "CustomResourceDefinition", "ClusterServiceVersion", "ConfigMap"]
     for filename in os.listdir(dirPath):
         if filename.endswith(".yaml") or filename.endswith(".yml"):
             filePath = os.path.join(dirPath, filename)
@@ -245,11 +264,15 @@ def addResources(helmChart, csvPath):
                 fileYml = yaml.safe_load(f)
             if fileYml['kind'] in otherBundleResourceTypes:
                 shutil.copyfile(filePath, os.path.join(helmChart, "templates", os.path.basename(filePath)))
+            if fileYml['kind'] not in listOfFilesAdded:
+                logging.error("Found a file of a resource that is not being handled called '%s' in '%s", fileYml['kind'],dirPath)
+                handleAllFiles = True
             continue
         else:
             continue
-
-
+    if handleAllFiles:
+        logging.error("Found a resource in either the manifest or csv we aren't handling")
+        sys.exit(1)
 # Given a resource Kind, return all filepaths of that resource type in a chart directory
 def findTemplatesOfType(helmChart, kind):
     resources = []
@@ -478,6 +501,43 @@ def split_at(the_str, the_delim, favor_right=True):
 
    return (left_part, right_part)
 
+def addCMAs(repo, operator, outputDir):
+    if 'bundlePath' in operator:
+        bundlePath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "tmp", repo, operator["bundlePath"])
+        if not os.path.exists(bundlePath):
+            logging.critical("Could not validate bundlePath at given path: " + operator["bundlePath"])
+            exit(1)
+    else:
+        packageYmlPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "tmp", repo, operator["package-yml"])
+        if not os.path.exists(packageYmlPath):
+            logging.critical("Could not find package.yaml at given path: " + operator["package-yml"])
+            exit(1)
+
+        with open(packageYmlPath, 'r') as f:
+            packageYml = yaml.safe_load(f)
+
+        bundlePath = ""
+        for channel in packageYml["channels"]:
+            if channel["name"] == operator["channel"]:
+                version = channel["currentCSV"].split(".", 1)[1][1:]
+                bundlePath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "tmp", repo, os.path.dirname(operator["package-yml"]), version)
+                break
+
+        if bundlePath == "":
+            print("Unable to find given channel: " +  operator["channel"] + " in package.yaml: " + operator["package-yml"])
+            exit(1)
+
+    for filename in os.listdir(bundlePath):
+        if not filename.endswith(".yaml"): 
+            continue
+        filepath = os.path.join(bundlePath, filename)
+        with open(filepath, 'r') as f:
+            resourceFile = yaml.safe_load(f)
+
+        if resourceFile["kind"] == "ClusterManagementAddOn":
+            logging.info("CMA")
+            shutil.copyfile(filepath, os.path.join(outputDir, "charts", "toggle", operator['name'], "templates", filename))
+
 def addCRDs(repo, operator, outputDir):
     if 'bundlePath' in operator:
         bundlePath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "tmp", repo, operator["bundlePath"])
@@ -674,7 +734,7 @@ def main():
                 continue
 
 
-            # Copy over all CRDs to the destination directory
+            # Copy over all CRDs to the destination directory from the manifest folder
             addCRDs(repo["repo_name"], operator, destination)
 
             # If name is empty, fail
@@ -686,6 +746,7 @@ def main():
 
             # Template Helm Chart Directory from 'chart-templates'
             logging.info("Templating helm chart '%s' ...", operator["name"])
+            # Creates a helm chart template
             templateHelmChart(destination, operator["name"])
             
             # Generate the Chart.yaml file based off of the CSV
@@ -698,11 +759,15 @@ def main():
             addResources(helmChart, csvPath)
             logging.info("Resources have been added from CSV. \n")
 
+            # Copy over all ClusterManagementAddons to the destination directory
+            addCMAs(repo["repo_name"], operator, destination)
+
             if not skipOverrides:
                 logging.info("Adding Overrides (set --skipOverrides=true to skip) ...")
                 exclusions = operator["exclusions"] if "exclusions" in operator else []
                 injectRequirements(helmChart, operator["imageMappings"], exclusions)
                 logging.info("Overrides added. \n")
+    shutil.rmtree((os.path.join(os.path.dirname(os.path.realpath(__file__)), "tmp")), ignore_errors=True)       
 
 if __name__ == "__main__":
    main()
