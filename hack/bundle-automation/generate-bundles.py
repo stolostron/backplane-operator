@@ -680,11 +680,12 @@ def main():
                 # should be generated, and where they are fetched from for chartifying.
 
                 branch = repo["branch"]
+                sha = repo["sha"]
                 bundlePath = repo["bundlePath"]
             except KeyError:
                 logging.critical("branch and bundlePath are required for tool-generated bundles")
                 exit(1)
-            cmd = "%s %s %s" % (repo["gen_command"], branch, bundlePath)
+            cmd = "%s %s %s %s" % (repo["gen_command"], branch, sha, bundlePath)
             logging.info("Running bundle-gen tool: %s", cmd)
             rc = os.system(cmd)
             if rc != 0:
