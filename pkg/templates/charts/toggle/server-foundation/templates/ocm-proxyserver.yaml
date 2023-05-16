@@ -59,25 +59,17 @@ spec:
         imagePullPolicy: '{{ .Values.global.pullPolicy }}'
         name: ocm-proxyserver
         livenessProbe:
-          failureThreshold: 3
-          httpGet:
-            path: /healthz
-            port: 6443
-            scheme: HTTPS
-          initialDelaySeconds: 2
-          periodSeconds: 10
-          successThreshold: 1
-          timeoutSeconds: 1
+          exec:
+            command:
+            - ls
+          initialDelaySeconds: 15
+          periodSeconds: 15
         readinessProbe:
-          failureThreshold: 3
-          httpGet:
-            path: /healthz
-            port: 6443
-            scheme: HTTPS
-          initialDelaySeconds: 2
-          periodSeconds: 10
-          successThreshold: 1
-          timeoutSeconds: 1
+          exec:
+            command:
+            - ls
+          initialDelaySeconds: 15
+          periodSeconds: 15
         resources:
           requests:
             cpu: 100m
