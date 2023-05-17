@@ -25,6 +25,8 @@ spec:
       hostIPC: false
       securityContext:
         runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
