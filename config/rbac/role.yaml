@@ -1227,18 +1227,6 @@ rules:
 - apiGroups:
   - cluster.open-cluster-management.io
   resources:
-  - managedclusters
-  - managedclustersets
-  - placementdecisions
-  - placementdecisions/status
-  verbs:
-  - get
-  - list
-  - update
-  - watch
-- apiGroups:
-  - cluster.open-cluster-management.io
-  resources:
   - managedclusters/status
   verbs:
   - patch
@@ -1254,6 +1242,17 @@ rules:
   - get
   - list
   - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.open-cluster-management.io
+  resources:
+  - managedclustersets
+  - placementdecisions
+  - placementdecisions/status
+  verbs:
+  - get
+  - list
   - update
   - watch
 - apiGroups:
