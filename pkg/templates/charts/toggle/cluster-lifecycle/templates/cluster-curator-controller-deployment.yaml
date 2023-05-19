@@ -58,8 +58,6 @@ spec:
       hostIPC: false
       securityContext:
         runAsNonRoot: true
-        seccompProfile:
-          type: RuntimeDefault
       containers:
       - command:
           - "./manager"
