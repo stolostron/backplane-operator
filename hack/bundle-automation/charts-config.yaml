@@ -5,7 +5,7 @@
     - name: "managed-serviceaccount"
       chart-path: "charts/managed-serviceaccount"
       always-or-toggle: "toggle"
-      branch: "backplane-2.3"
+      branch: "backplane-2.4"
       imageMappings:
         managed-serviceaccount: managed_serviceaccount
       inclusions:
