@@ -12,8 +12,9 @@
 
 me=$(basename "$0")
 
-commit_ish="$1"
-output_dir="$2"
+branch="$1"
+commit_ish="$2"
+output_dir="$3"
 if [[ -z "$output_dir" ]]; then
    >&2 echo "Syntax: $me <commit_ish> <output_path>"
    exit 5
@@ -40,6 +41,8 @@ if [[ $rc -ne 0 ]]; then
    exit 3
 fi
 cd hive
+git fetch origin $branch
+git checkout $branch
 git -c advice.detachedHead=false checkout "$commit_ish"
 rc=$?
 if [[ $rc -ne 0 ]]; then
