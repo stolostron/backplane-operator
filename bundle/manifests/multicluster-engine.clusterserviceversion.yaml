@@ -14,7 +14,7 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    createdAt: "2023-05-18T13:32:47Z"
+    createdAt: "2023-05-23T13:36:41Z"
     operators.operatorframework.io/builder: operator-sdk-v1.28.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
   name: multicluster-engine.v0.0.1
@@ -175,12 +175,13 @@ spec:
           resources:
           - configmaps
           - namespaces
-          - secrets
+          - pods
           - serviceaccounts
           - services
           verbs:
           - create
           - delete
+          - deletecollection
           - get
           - list
           - patch
@@ -487,8 +488,13 @@ spec:
           - events
           verbs:
           - create
+          - delete
+          - deletecollection
+          - get
+          - list
           - patch
           - update
+          - watch
         - apiGroups:
           - ""
           - internal.open-cluster-management.io
@@ -595,13 +601,33 @@ spec:
           - clustermanagementaddons
           - managedclusteraddons
           verbs:
+          - create
+          - delete
+          - get
           - list
+          - patch
+          - update
           - watch
         - apiGroups:
           - addon.open-cluster-management.io
           resources:
           - clustermanagementaddons/finalizers
           verbs:
+          - update
+        - apiGroups:
+          - addon.open-cluster-management.io
+          resources:
+          - clustermanagementaddons/finalizers
+          - managedclusteraddons/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - addon.open-cluster-management.io
+          resources:
+          - clustermanagementaddons/status
+          - managedclusteraddons/status
+          verbs:
+          - patch
           - update
         - apiGroups:
           - addon.open-cluster-management.io
@@ -1157,6 +1183,13 @@ spec:
         - apiGroups:
           - certificates.k8s.io
           resources:
+          - certificatesigningrequests/approval
+          - certificatesigningrequests/status
+          verbs:
+          - update
+        - apiGroups:
+          - certificates.k8s.io
+          resources:
           - signers
           verbs:
           - '*'
@@ -1187,6 +1220,16 @@ spec:
           - list
           - patch
           - update
+          - watch
+        - apiGroups:
+          - cluster.open-cluster-management.io
+          resources:
+          - addonplacementscores
+          - managedclustersetbindings
+          - placements
+          verbs:
+          - get
+          - list
           - watch
         - apiGroups:
           - cluster.open-cluster-management.io
@@ -1303,11 +1346,35 @@ spec:
         - apiGroups:
           - cluster.open-cluster-management.io
           resources:
+          - managedclusters/status
+          - managedclustersetbindings/status
+          - managedclustersets/status
+          - placementdecisions/status
+          - placements/status
+          verbs:
+          - patch
+          - update
+        - apiGroups:
+          - cluster.open-cluster-management.io
+          resources:
           - managedclustersetbindings
           verbs:
           - create
           - delete
           - deletecollection
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - cluster.open-cluster-management.io
+          resources:
+          - managedclustersets
+          - placementdecisions
+          verbs:
+          - create
+          - delete
           - get
           - list
           - patch
@@ -1336,6 +1403,12 @@ spec:
           - managedclustersets/join
           verbs:
           - create
+        - apiGroups:
+          - cluster.open-cluster-management.io
+          resources:
+          - placements/finalizers
+          verbs:
+          - update
         - apiGroups:
           - clusterview.open-cluster-management.io
           resources:
@@ -1383,6 +1456,14 @@ spec:
           - config.openshift.io
           resources:
           - ingresses
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - config.openshift.io
+          resources:
+          - proxies
           verbs:
           - get
           - list
@@ -2117,6 +2198,12 @@ spec:
           verbs:
           - update
         - apiGroups:
+          - register.open-cluster-management.io
+          resources:
+          - managedclusters/clientcertificates
+          verbs:
+          - renew
+        - apiGroups:
           - route.openshift.io
           resources:
           - routes
@@ -2208,11 +2295,39 @@ spec:
         - apiGroups:
           - work.open-cluster-management.io
           resources:
+          - manifestworkreplicasets
+          verbs:
+          - create
+          - delete
+          - deletecollection
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - work.open-cluster-management.io
+          resources:
+          - manifestworkreplicasets/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - work.open-cluster-management.io
+          resources:
+          - manifestworkreplicasets/status
+          - manifestworks/status
+          verbs:
+          - patch
+          - update
+        - apiGroups:
+          - work.open-cluster-management.io
+          resources:
           - manifestworks
           verbs:
           - create
           - delete
           - deletecollection
+          - execute-as
           - get
           - list
           - patch
