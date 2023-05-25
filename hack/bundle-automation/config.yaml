@@ -1,7 +1,7 @@
 
 - repo_name: generate-hive-bundle
   gen_command: ./hack/bundle-automation/gen-hive-bundle.sh
-  branch: mce-2.3
+  branch: mce-2.3 #Change when 2.4 branch is made
   sha: acfdebfb192b5f566562474f691e15259f87e794
   bundlePath: /tmp/hive-operator-manifests
   name: hive-operator
@@ -11,7 +11,7 @@
   github_ref: "https://github.com/redhat-openshift-ecosystem/community-operators-prod.git"
   operators:
     - name: "assisted-service"
-      channel: "ocm-2.8"
+      channel: "ocm-2.9"
       package-yml: "operators/assisted-service-operator/assisted-service.package.yaml"
       imageMappings:
         assisted-service: assisted_service
@@ -22,7 +22,7 @@
         assisted-image-service: assisted_image_service
 - repo_name: registration-operator
   github_ref: "https://github.com/stolostron/registration-operator.git"
-  branch: "backplane-2.3"
+  branch: "backplane-2.4"
   operators:
     - name: cluster-manager
       bundlePath: "deploy/cluster-manager/olm-catalog/cluster-manager/manifests/"
@@ -32,7 +32,7 @@
         - readOnlyRootFilesystem
 - repo_name: discovery-operator
   github_ref: "https://github.com/stolostron/discovery.git"
-  branch: "backplane-2.3"
+  branch: "backplane-2.4"
   operators:
     - name: discovery-operator
       bundlePath: "bundle/manifests/"
