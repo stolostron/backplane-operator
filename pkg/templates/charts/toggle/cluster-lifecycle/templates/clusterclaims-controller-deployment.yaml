@@ -57,6 +57,10 @@ spec:
       hostIPC: false
       securityContext:
         runAsNonRoot: true
+        {{- if semverCompare ">=4.11.0" .Values.hubconfig.ocpVersion }}
+        seccompProfile:
+          type: RuntimeDefault
+        {{- end }}
       containers:
       - command:
           - "./manager-clusterclaims"
