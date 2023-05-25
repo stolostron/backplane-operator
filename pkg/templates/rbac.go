@@ -70,6 +70,7 @@ var resources = []string{
 func main() {
 	// os.Setenv("DIRECTORY_OVERRIDE", "../../")
 	// defer os.Unsetenv("DIRECTORY_OVERRIDE")
+	os.Setenv("ACM_HUB_OCP_VERSION", "4.10.0")
 
 	testBackplane := &backplanev1.MultiClusterEngine{
 		ObjectMeta: metav1.ObjectMeta{

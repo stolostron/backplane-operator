@@ -100,6 +100,11 @@ spec:
           - mountPath: "/var/run/clusterlifecycle-state-metrics"
             name: certs
             readOnly: true
+      securityContext:
+        {{- if semverCompare ">=4.11.0" .Values.hubconfig.ocpVersion }}
+        seccompProfile:
+          type: RuntimeDefault
+        {{- end }}
       volumes:
       - name: certs
         secret:
