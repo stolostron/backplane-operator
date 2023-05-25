@@ -88,6 +88,7 @@ func TestRender(t *testing.T) {
 	os.Setenv("HTTP_PROXY", "test1")
 	os.Setenv("HTTPS_PROXY", "test2")
 	os.Setenv("NO_PROXY", "test3")
+	os.Setenv("ACM_HUB_OCP_VERSION", "4.10.0")
 
 	testImages := map[string]string{}
 	for _, v := range utils.GetTestImages() {
@@ -128,6 +129,14 @@ func TestRender(t *testing.T) {
 			}
 			if deployment.ObjectMeta.Namespace != backplaneNamespace {
 				t.Fatalf("Namespace did not propagate to the deployments use")
+			}
+
+			if deployment.Spec.Template.Spec.SecurityContext == nil {
+				t.Logf("SecurityContext doesn't exist %s", deployment.Name)
+			} else if profile := deployment.Spec.Template.Spec.SecurityContext.SeccompProfile; profile == nil || profile.Type != corev1.SeccompProfileTypeRuntimeDefault {
+				t.Logf("Seccomp does not have runtime default type on deployment %s", deployment.Name)
+			} else {
+				t.Fatalf("Seccomp should not have runtime default type on deployment in 4.10 %s", deployment.Name)
 			}
 
 			if utils.Contains(availabilityList, deployment.ObjectMeta.Name) && *deployment.Spec.Replicas != 2 {
@@ -257,6 +266,7 @@ func TestRender(t *testing.T) {
 	os.Unsetenv("HTTPS_PROXY")
 	os.Unsetenv("NO_PROXY")
 	os.Unsetenv("POD_NAMESPACE")
+	os.Unsetenv("ACM_HUB_OCP_VERSION")
 
 }
 

@@ -20,6 +20,10 @@ spec:
       serviceAccountName: console-mce
       securityContext:
         runAsNonRoot: true
+        {{- if semverCompare ">=4.11.0" .Values.hubconfig.ocpVersion }}
+        seccompProfile:
+          type: RuntimeDefault
+        {{- end }}
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
