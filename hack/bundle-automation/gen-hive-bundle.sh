@@ -5,7 +5,8 @@
 # Arguments:
 #
 # $1 = Name of branch of commit SHA to use for the tool, and the bundle input.
-# $2 = Pathname of the directory to contain the resulting Hive bundle.
+# $2 = Commit SHA (or HEAD) on branch named in $1
+# $3 = Pathname of the directory to contain the resulting Hive bundle.
 #
 # Note: The output directory is removed at the start of each run to ensure
 #       a clean/consistent result.
@@ -63,7 +64,7 @@ fi
 mkdir bundle
 cd bundle
 echo "Running Hive bundle-gen tool ($gen_tool)."
-python3 ../hive/$gen_tool --hive-repo "$hive_repo_spot" --dummy-bundle "$commit_ish"
+python3 ../hive/$gen_tool --hive-repo "$hive_repo_spot" --commit "$commit_ish" --dummy-bundle "$branch"
 # Note: We point the bundle-gen tool at the local repo we already checked out
 # since we know that it contains the Git SHA we are using for input.
 rc=$?
