@@ -114,6 +114,10 @@ spec:
 {{- end }}
       securityContext:
         runAsNonRoot: true
+{{- if semverCompare ">=4.11.0" .Values.hubconfig.ocpVersion }}
+        seccompProfile:
+          type: RuntimeDefault
+{{- end }}
       serviceAccountName: assisted-service
       terminationGracePeriodSeconds: 10
 {{- with .Values.hubconfig.tolerations }}
