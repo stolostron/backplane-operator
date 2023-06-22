@@ -763,7 +763,39 @@ func (r *MultiClusterEngineReconciler) ensureHyperShift(ctx context.Context, bac
 func (r *MultiClusterEngineReconciler) ensureNoHyperShift(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 	namespacedName := types.NamespacedName{Name: "hypershift-addon-manager", Namespace: backplaneConfig.Spec.TargetNamespace}
-	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
+
+	// Ensure hypershift-addon is removed first
+	waitingForHypershiftAddon := status.StaticStatus{
+		NamespacedName: namespacedName,
+		Kind:           "Component",
+		Condition: backplanev1.ComponentCondition{
+			Type:      "Uninstalled",
+			Name:      "hypershift-preview",
+			Status:    metav1.ConditionFalse,
+			Reason:    status.WaitingForResourceReason,
+			Kind:      "Component",
+			Available: false,
+			Message:   "Waiting for 'hypershift-addon' ManagedClusterAddOn to be removed",
+		},
+	}
+	hypershiftAddon, err := renderer.RenderHypershiftAddon(backplaneConfig)
+	if err != nil {
+		return ctrl.Result{RequeueAfter: requeuePeriod}, err
+	}
+	err = r.Client.Get(ctx, types.NamespacedName{Name: hypershiftAddon.GetName(), Namespace: hypershiftAddon.GetNamespace()}, hypershiftAddon)
+	if err != nil {
+		if !(apierrors.IsNotFound(err) || apimeta.IsNoMatchError(err)) {
+			// Unexpected error getting addon
+			log.Error(err, "error while looking for hypershift-addon ManagedClusterAddOn")
+			r.StatusManager.AddComponent(waitingForHypershiftAddon)
+			return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+		}
+	} else {
+		// Resource still present
+		r.StatusManager.AddComponent(waitingForHypershiftAddon)
+		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+	}
+
 	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 	// Renders all templates from charts
 	templates, errs := renderer.RenderChart(toggle.HyperShiftChartDir, backplaneConfig, r.Images)
