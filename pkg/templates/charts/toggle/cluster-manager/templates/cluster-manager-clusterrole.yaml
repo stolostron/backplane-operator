@@ -186,6 +186,7 @@ rules:
   - watch
   - update
   - delete
+  - patch
 - apiGroups:
   - operator.open-cluster-management.io
   resources:
@@ -234,6 +235,15 @@ rules:
   verbs:
   - update
 - apiGroups:
+  - addon.open-cluster-management.io
+  resources:
+  - addondeploymentconfigs
+  - addontemplates
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -257,12 +267,11 @@ rules:
   - update
 - apiGroups:
   - certificates.k8s.io
-  resourceNames:
-  - kubernetes.io/kube-apiserver-client
   resources:
   - signers
   verbs:
   - approve
+  - sign
 - apiGroups:
   - cluster.open-cluster-management.io
   resources:
@@ -319,6 +328,12 @@ rules:
   - managedclusters/clientcertificates
   verbs:
   - renew
+- apiGroups:
+  - register.open-cluster-management.io
+  resources:
+  - managedclusters/accept
+  verbs:
+  - update
 - apiGroups:
   - work.open-cluster-management.io
   resources:
