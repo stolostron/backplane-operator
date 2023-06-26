@@ -490,6 +490,15 @@ rules:
 - apiGroups:
   - addon.open-cluster-management.io
   resources:
+  - addondeploymentconfigs
+  - addontemplates
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - addon.open-cluster-management.io
+  resources:
   - clustermanagementaddons
   verbs:
   - create
@@ -1125,6 +1134,7 @@ rules:
   verbs:
   - '*'
   - approve
+  - sign
 - apiGroups:
   - cluster.open-cluster-management.io
   resources:

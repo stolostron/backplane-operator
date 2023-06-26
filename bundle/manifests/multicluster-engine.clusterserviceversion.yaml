@@ -14,8 +14,8 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    createdAt: "2023-05-23T13:36:41Z"
-    operators.operatorframework.io/builder: operator-sdk-v1.28.0
+    createdAt: "2023-06-26T06:40:37Z"
+    operators.operatorframework.io/builder: operator-sdk-v1.29.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
   name: multicluster-engine.v0.0.1
   namespace: placeholder
@@ -555,6 +555,15 @@ spec:
           - list
           - patch
           - update
+          - watch
+        - apiGroups:
+          - addon.open-cluster-management.io
+          resources:
+          - addondeploymentconfigs
+          - addontemplates
+          verbs:
+          - get
+          - list
           - watch
         - apiGroups:
           - addon.open-cluster-management.io
@@ -1194,6 +1203,7 @@ spec:
           verbs:
           - '*'
           - approve
+          - sign
         - apiGroups:
           - cluster.open-cluster-management.io
           resources:
