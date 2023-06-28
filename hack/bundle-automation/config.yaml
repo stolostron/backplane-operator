@@ -21,7 +21,7 @@
         assisted-installer: assisted_installer
         assisted-image-service: assisted_image_service
 - repo_name: registration-operator
-  github_ref: "https://github.com/stolostron/registration-operator.git"
+  github_ref: "https://github.com/stolostron/ocm.git"
   branch: "backplane-2.4"
   operators:
     - name: cluster-manager
@@ -37,4 +37,4 @@
     - name: discovery-operator
       bundlePath: "bundle/manifests/"
       imageMappings:
-        discovery-operator: discovery_operator 
+        discovery-operator: discovery_operator
