@@ -111,7 +111,7 @@ rules:
   - list
   - patch
   - update
-  - watch  
+  - watch
   - escalate
   - bind
 - apiGroups:
@@ -230,5 +230,25 @@ rules:
     - authentication.k8s.io
   resources:
     - tokenrequests
+    - tokenreviews
   verbs:
     - create
+- apiGroups:
+    - agent.open-cluster-management.io
+  resources:
+    - klusterletaddonconfigs
+  verbs:
+    - list
+    - create
+    - update
+    - get
+    - watch
+    - patch
+    - delete
+- apiGroups:
+    - "authorization.k8s.io"
+  resources:
+    - subjectaccessreviews
+  verbs:
+    - create
+    - get

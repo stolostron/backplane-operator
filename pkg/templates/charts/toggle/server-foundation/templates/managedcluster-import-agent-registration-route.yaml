@@ -1,0 +1,14 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: managedcluster-import-agent-registration
+spec:
+  host: managedcluster-import-agent-registration.{{ .Values.hubconfig.clusterIngressDomain }}
+  port:
+    targetPort: agentregistration
+  tls:
+    termination: reencrypt
+    insecureEdgeTerminationPolicy: Redirect
+  to:
+    kind: Service
+    name: managedcluster-import-agent-registration
