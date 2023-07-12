@@ -12,7 +12,7 @@
   operators:
     - name: "assisted-service"
       channel: "ocm-2.8"
-      package-yml: "operators/assisted-service-operator/assisted-service.package.yaml"
+      bundles-directory: "operators/assisted-service-operator/"
       imageMappings:
         assisted-service: assisted_service
         postgresql-12-centos7: postgresql_12

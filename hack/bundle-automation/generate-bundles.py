@@ -11,6 +11,7 @@ import array
 import logging
 import sys
 from git import Repo, exc
+from packaging import version
 
 from validate_csv import *
 
@@ -537,34 +538,18 @@ def injectRequirements(helmChart, imageKeyMapping, exclusions):
 
 def addCMAs(repo, operator, outputDir):
     if 'bundlePath' in operator:
-        bundlePath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "tmp", repo, operator["bundlePath"])
-        if not os.path.exists(bundlePath):
+        manifestsPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "tmp", repo, operator["bundlePath"])
+        if not os.path.exists(manifestsPath):
             logging.critical("Could not validate bundlePath at given path: " + operator["bundlePath"])
             exit(1)
     else:
-        packageYmlPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "tmp", repo, operator["package-yml"])
-        if not os.path.exists(packageYmlPath):
-            logging.critical("Could not find package.yaml at given path: " + operator["package-yml"])
-            exit(1)
+        bundlePath = getBundleManifestsPath(repo, operator)
+        manifestsPath = os.path.join(bundlePath, "manifests")
 
-        with open(packageYmlPath, 'r') as f:
-            packageYml = yaml.safe_load(f)
-
-        bundlePath = ""
-        for channel in packageYml["channels"]:
-            if channel["name"] == operator["channel"]:
-                version = channel["currentCSV"].split(".", 1)[1][1:]
-                bundlePath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "tmp", repo, os.path.dirname(operator["package-yml"]), version)
-                break
-
-        if bundlePath == "":
-            print("Unable to find given channel: " +  operator["channel"] + " in package.yaml: " + operator["package-yml"])
-            exit(1)
-
-    for filename in os.listdir(bundlePath):
+    for filename in os.listdir(manifestsPath):
         if not filename.endswith(".yaml"): 
             continue
-        filepath = os.path.join(bundlePath, filename)
+        filepath = os.path.join(manifestsPath, filename)
         with open(filepath, 'r') as f:
             resourceFile = yaml.safe_load(f)
 
@@ -574,75 +559,85 @@ def addCMAs(repo, operator, outputDir):
 
 def addCRDs(repo, operator, outputDir):
     if 'bundlePath' in operator:
-        bundlePath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "tmp", repo, operator["bundlePath"])
-        if not os.path.exists(bundlePath):
+        manifestsPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "tmp", repo, operator["bundlePath"])
+        if not os.path.exists(manifestsPath):
             logging.critical("Could not validate bundlePath at given path: " + operator["bundlePath"])
             exit(1)
     else:
-        packageYmlPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "tmp", repo, operator["package-yml"])
-        if not os.path.exists(packageYmlPath):
-            logging.critical("Could not find package.yaml at given path: " + operator["package-yml"])
-            exit(1)
-
-        with open(packageYmlPath, 'r') as f:
-            packageYml = yaml.safe_load(f)
-
-        bundlePath = ""
-        for channel in packageYml["channels"]:
-            if channel["name"] == operator["channel"]:
-                version = channel["currentCSV"].split(".", 1)[1][1:]
-                bundlePath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "tmp", repo, os.path.dirname(operator["package-yml"]), version)
-                break
-
-        if bundlePath == "":
-            print("Unable to find given channel: " +  operator["channel"] + " in package.yaml: " + operator["package-yml"])
-            exit(1)
+        bundlePath = getBundleManifestsPath(repo, operator)
+        manifestsPath = os.path.join(bundlePath, "manifests")
 
     directoryPath = os.path.join(outputDir, "crds", operator['name'])
     if os.path.exists(directoryPath): # If path exists, remove and re-clone
         shutil.rmtree(directoryPath)
     os.makedirs(directoryPath)
 
-    for filename in os.listdir(bundlePath):
+    for filename in os.listdir(manifestsPath):
         if not filename.endswith(".yaml"): 
             continue
-        filepath = os.path.join(bundlePath, filename)
+        filepath = os.path.join(manifestsPath, filename)
         with open(filepath, 'r') as f:
             resourceFile = yaml.safe_load(f)
 
         if resourceFile["kind"] == "CustomResourceDefinition":
             shutil.copyfile(filepath, os.path.join(outputDir, "crds", operator['name'], filename))
 
-def getCSVPath(repo, operator):
+def getBundleManifestsPath(repo, operator):
+    """
+    getBundleManifestsPath returns the path to the manifests directory
+    of the latest operator bundle available in the desired channel
+    """
     if 'bundlePath' in operator:
         bundlePath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "tmp", repo, operator["bundlePath"])
         if not os.path.exists(bundlePath):
             logging.critical("Could not validate bundlePath at given path: " + operator["bundlePath"])
             exit(1)
+        return bundlePath
+    
+    # check every bundle's metadata for its supported channels
+    bundles_directory = os.path.join(os.path.dirname(os.path.realpath(__file__)), "tmp", repo, operator["bundles-directory"])
+    if not os.path.exists(bundles_directory):
+        logging.critical("Could not find bundles at given path: " + operator["bundles-directory"])
+        exit(1)
+
+    latest_bundle_version = "0.0.0"
+    directories = [dir for dir in os.listdir(bundles_directory) if os.path.isdir(os.path.join(bundles_directory, dir))]
+    for dir_name in directories:
+        bundle_path = os.path.join(bundles_directory, dir_name)
+        
+        # Read metadata annotations
+        annotations_file = os.path.join(bundle_path, "metadata", "annotations.yaml")
+        if not os.path.isfile(annotations_file):
+            logging.critical("Could not find annotations at given path: " + annotations_file)
+            exit(1)
+        with open(annotations_file, 'r') as f:
+            annotations = yaml.safe_load(f)
+            channels = annotations.get('annotations', {}).get('operators.operatorframework.io.bundle.channels.v1').split(',')
+            if not channels:
+                logging.critical("Could not find channels in annotations file at given path: " + annotations_file)
+                exit(1)
+            if operator["channel"] in channels:
+                # compare semantic version based on directory name
+                if version.parse(dir_name) > version.parse(latest_bundle_version):
+                    latest_bundle_version = dir_name
+
+    latest_bundle_path = os.path.join(bundles_directory, latest_bundle_version)
+    return latest_bundle_path
+
+def getCSVPath(repo, operator):
+    if 'bundlePath' in operator:
+        manifestsPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "tmp", repo, operator["bundlePath"])
+        if not os.path.exists(manifestsPath):
+            logging.critical("Could not validate bundlePath at given path: " + operator["bundlePath"])
+            exit(1)
     else:
-        packageYmlPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "tmp", repo, operator["package-yml"])
-        if not os.path.exists(packageYmlPath):
-            logging.critical("Could not find package.yaml at given path: " + operator["package-yml"])
-            exit(1)
+        bundlePath = getBundleManifestsPath(repo, operator)
+        manifestsPath = os.path.join(bundlePath, "manifests")
 
-        with open(packageYmlPath, 'r') as f:
-            packageYml = yaml.safe_load(f)
-
-        bundlePath = ""
-        for channel in packageYml["channels"]:
-            if channel["name"] == operator["channel"]:
-                version = channel["currentCSV"].split(".", 1)[1][1:]
-                bundlePath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "tmp", repo, os.path.dirname(operator["package-yml"]), version)
-                break
-
-        if bundlePath == "":
-            print("Unable to find given channel: " +  operator["channel"] + " in package.yaml: " + operator["package-yml"])
-            exit(1)
-
-    for filename in os.listdir(bundlePath):
+    for filename in os.listdir(manifestsPath):
         if not filename.endswith(".yaml"): 
             continue
-        filepath = os.path.join(bundlePath, filename)
+        filepath = os.path.join(manifestsPath, filename)
         with open(filepath, 'r') as f:
             resourceFile = yaml.safe_load(f)
 
@@ -742,11 +737,14 @@ def main():
         # Loop through each operator in the repo identified by the config
         for operator in repo["operators"]:
             logging.info("Helm Chartifying -  %s!\n", operator["name"])
-            # Generate and return path to CSV based on bundlePath or package-yml in config.yaml
+            # Generate and return path to CSV based on bundlePath or bundles-directory
+            bundlepath = getBundleManifestsPath(repo["repo_name"], operator)
+            print("the latest bundle path for channel is ", bundlepath)
+
             csvPath = getCSVPath(repo["repo_name"], operator)
             if csvPath == "":
-                # Validate the bundlePath or package-yml path exists in config.yaml
-                print("Unable to find given channel: " +  operator["channel"] + " in package.yaml: " + operator["package-yml"])
+                # Validate the bundlePath exists in config.yaml
+                print("Unable to find given channel: " +  operator["channel"])
                 exit(1)
 
             logging.basicConfig(level=logging.DEBUG)
