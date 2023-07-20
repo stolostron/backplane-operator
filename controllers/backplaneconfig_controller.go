@@ -28,7 +28,6 @@ import (
 
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 	"github.com/stolostron/backplane-operator/pkg/foundation"
-	"github.com/stolostron/backplane-operator/pkg/hive"
 	"github.com/stolostron/backplane-operator/pkg/images"
 	renderer "github.com/stolostron/backplane-operator/pkg/rendering"
 	"github.com/stolostron/backplane-operator/pkg/status"
@@ -281,18 +280,6 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		)
 		r.StatusManager.AddCondition(cond)
 		return ctrl.Result{}, nil
-	}
-
-	result, err = r.adoptExistingSubcomponents(ctx, backplaneConfig)
-	if err != nil {
-		cond := status.NewCondition(
-			backplanev1.MultiClusterEngineProgressing,
-			metav1.ConditionUnknown,
-			status.DeployFailedReason,
-			err.Error(),
-		)
-		r.StatusManager.AddCondition(cond)
-		return result, err
 	}
 
 	result, err = r.DeployAlwaysSubcomponents(ctx, backplaneConfig)
@@ -1164,43 +1151,6 @@ func (r *MultiClusterEngineReconciler) validateImagePullSecret(ctx context.Conte
 		return ctrl.Result{Requeue: true}, err
 	}
 
-	return ctrl.Result{}, nil
-}
-
-// adoptExistingSubcomponents checks for the existence of subcomponents installed by the MCH, and adds a label
-// signaling that they have been adopted by the MCE.
-func (r *MultiClusterEngineReconciler) adoptExistingSubcomponents(ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-
-	log := log.FromContext(ctx)
-
-	cmTemplate := foundation.ClusterManager(mce, r.Images)
-	hiveTemplate := hive.HiveConfig(mce)
-
-	resources := []*unstructured.Unstructured{cmTemplate, hiveTemplate}
-
-	for _, resource := range resources {
-
-		existingResource := &unstructured.Unstructured{}
-		existingResource.SetGroupVersionKind(resource.GroupVersionKind())
-		err := r.Get(ctx, types.NamespacedName{Name: resource.GetName(), Namespace: resource.GetNamespace()}, existingResource)
-		if err != nil && !apierrors.IsNotFound(err) {
-			log.Info(fmt.Sprintf("Unable to get existing resource: %+v", err.Error()))
-			return ctrl.Result{}, err
-		} else if apierrors.IsNotFound(err) {
-			// Resource doesn't exist, no need to adopt
-			continue
-		}
-
-		if err := ctrl.SetControllerReference(mce, existingResource, r.Scheme); err != nil {
-			return ctrl.Result{}, pkgerrors.Wrapf(err, "Error setting controller reference on resource %s", existingResource.GetName())
-		}
-
-		err = r.Update(ctx, existingResource)
-		if err != nil {
-			log.Info(fmt.Sprintf("Unable to update existing resource: %+v", err.Error()))
-			return ctrl.Result{}, err
-		}
-	}
 	return ctrl.Result{}, nil
 }
 
