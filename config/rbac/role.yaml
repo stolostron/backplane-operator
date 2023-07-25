@@ -825,6 +825,15 @@ rules:
   - watch
 - apiGroups:
   - agent.open-cluster-management.io
+  resources:
+  - klusterletaddonconfigs
+  verbs:
+  - create
+  - get
+  - list
+  - watch
+- apiGroups:
+  - agent.open-cluster-management.io
   - cluster.open-cluster-management.io
   - operator.open-cluster-management.io
   resources:

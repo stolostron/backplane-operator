@@ -111,7 +111,7 @@ rules:
   - list
   - patch
   - update
-  - watch  
+  - watch
   - escalate
   - bind
 - apiGroups:
@@ -232,3 +232,12 @@ rules:
     - tokenrequests
   verbs:
     - create
+- apiGroups:
+    - agent.open-cluster-management.io
+  resources:
+    - klusterletaddonconfigs
+  verbs:
+    - watch
+    - create
+    - list
+    - get
