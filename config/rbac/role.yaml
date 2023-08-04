@@ -1018,6 +1018,13 @@ rules:
 - apiGroups:
   - authentication.k8s.io
   resources:
+  - tokenrequests
+  - tokenreviews
+  verbs:
+  - create
+- apiGroups:
+  - authentication.k8s.io
+  resources:
   - tokenreviews
   verbs:
   - create

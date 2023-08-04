@@ -1,0 +1,15 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: agent-registration
+  annotations:
+      openshift.io/host.generated: "true"
+spec:
+  port:
+    targetPort: agentregistration
+  tls:
+    termination: reencrypt
+    insecureEdgeTerminationPolicy: Redirect
+  to:
+    kind: Service
+    name: agent-registration
