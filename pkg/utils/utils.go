@@ -33,7 +33,6 @@ var onComponents = []string{
 
 var offComponents = []string{
 	backplanev1.ManagedServiceAccount,
-	backplanev1.HyperShiftPreview,
 }
 
 // SetDefaultComponents returns true if changes are made
