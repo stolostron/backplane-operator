@@ -37,6 +37,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -74,6 +75,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 		clusterManager         *unstructured.Unstructured
 		hiveConfig             *unstructured.Unstructured
 		clusterManagementAddon *unstructured.Unstructured
+		addonTemplate          *unstructured.Unstructured
 		tests                  testList
 		msaTests               testList
 		secondTests            testList
@@ -189,6 +191,13 @@ var _ = Describe("BackplaneConfig controller", func() {
 			Kind:    "ClusterManagementAddOn",
 		})
 
+		addonTemplate = &unstructured.Unstructured{}
+		addonTemplate.SetGroupVersionKind(schema.GroupVersionKind{
+			Group:   "addon.open-cluster-management.io",
+			Version: "v1alpha1",
+			Kind:    "AddOnTemplate",
+		})
+
 		tests = testList{
 			{
 				Name:           BackplaneConfigTestName,
@@ -302,15 +311,21 @@ var _ = Describe("BackplaneConfig controller", func() {
 
 		msaTests = testList{
 			{
-				Name:           "Managed-ServiceAccount Deployment",
-				NamespacedName: types.NamespacedName{Name: "managed-serviceaccount-addon-manager", Namespace: DestinationNamespace},
-				ResourceType:   &appsv1.Deployment{},
+				Name:           "Managed-ServiceAccount Addon Template",
+				NamespacedName: types.NamespacedName{Name: "managed-serviceaccount"},
+				ResourceType:   addonTemplate,
 				Expected:       nil,
 			},
 			{
-				Name:           "Managed-ServiceAccount ServiceAccount",
-				NamespacedName: types.NamespacedName{Name: "managed-serviceaccount", Namespace: DestinationNamespace},
-				ResourceType:   &corev1.ServiceAccount{},
+				Name:           "Managed-ServiceAccount agent registration clusterrole",
+				NamespacedName: types.NamespacedName{Name: "managed-serviceaccount-addon-agent"},
+				ResourceType:   &rbacv1.ClusterRole{},
+				Expected:       nil,
+			},
+			{
+				Name:           "Managed-ServiceAccount addon manager clusterrolebinding",
+				NamespacedName: types.NamespacedName{Name: "open-cluster-management-addon-manager-managed-serviceaccount"},
+				ResourceType:   &rbacv1.ClusterRoleBinding{},
 				Expected:       nil,
 			},
 			{

@@ -34,15 +34,14 @@ const (
 //+kubebuilder:rbac:groups=apiregistration.k8s.io,resources=apiservices,verbs=create;get;list;update;watch;patch;delete
 
 //+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=clustermanagementaddons,verbs=create;get;list;update;patch;watch;delete
+//+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=addondeploymentconfigs,verbs=create;get;list;update;patch;watch;delete
+//+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=addontemplates,verbs=create;get;list;update;patch;watch;delete
 //+kubebuilder:rbac:groups=console.openshift.io,resources=consoleplugins;consolequickstarts,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=monitoring.coreos.com,resources=servicemonitors,verbs=get;create;update;list;watch;delete;patch
 
 // cluster-proxy-addon
 //+kubebuilder:rbac:groups=route.openshift.io,resources=routes,verbs=get;create;update;list;watch;delete;patch
 //+kubebuilder:rbac:groups=proxy.open-cluster-management.io,resources=managedproxyconfigurations;managedproxyserviceresolvers,verbs=get;create;update;list;watch;delete;patch
-
-// hypershift
-//+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=addondeploymentconfigs,verbs=get;create;update;list;watch;delete;patch
 
 var resources = []string{
 	"APIService",
@@ -65,6 +64,7 @@ var resources = []string{
 	"ServiceMonitor",
 	"ValidatingWebhookConfiguration",
 	"AddOnDeploymentConfig",
+	"AddOnTemplate",
 }
 
 func main() {

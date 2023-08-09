@@ -45,6 +45,23 @@ var (
 				types.NamespacedName{Name: "open-cluster-management:hypershift-preview:hypershift-deployment-controller"},
 				schema.GroupVersionKind{Group: "rbac.authorization.k8s.io", Kind: "ClusterRoleBinding", Version: "v1"},
 			),
+			// managed-serviceaccount
+			newUnstructured(
+				types.NamespacedName{Name: "managed-serviceaccount", Namespace: backplaneConfig.Spec.TargetNamespace},
+				schema.GroupVersionKind{Group: "", Kind: "ServiceAccount", Version: "v1"},
+			),
+			newUnstructured(
+				types.NamespacedName{Name: "managed-serviceaccount-addon-manager", Namespace: backplaneConfig.Spec.TargetNamespace},
+				schema.GroupVersionKind{Group: "apps", Kind: "Deployment", Version: "v1"},
+			),
+			newUnstructured(
+				types.NamespacedName{Name: "open-cluster-management:managed-serviceaccount:managed-serviceaccount"},
+				schema.GroupVersionKind{Group: "rbac.authorization.k8s.io", Kind: "ClusterRole", Version: "v1"},
+			),
+			newUnstructured(
+				types.NamespacedName{Name: "open-cluster-management:managed-serviceaccount:managed-serviceaccount"},
+				schema.GroupVersionKind{Group: "rbac.authorization.k8s.io", Kind: "ClusterRoleBinding", Version: "v1"},
+			),
 		}
 
 		return removals

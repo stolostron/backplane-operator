@@ -1,10 +1,16 @@
-
-# Source: managed-serviceaccount/templates/clustermanagementaddon.yaml
+# Source: managed-serviceaccount//deploy/bases/clustermanagementaddon.yaml
 apiVersion: addon.open-cluster-management.io/v1alpha1
 kind: ClusterManagementAddOn
 metadata:
   name: managed-serviceaccount
+  annotations:
+    addon.open-cluster-management.io/lifecycle: "addon-manager"
 spec:
   addOnMeta:
     displayName: managed-serviceaccount
     description: managed-serviceaccount
+  supportedConfigs:
+  - group: addon.open-cluster-management.io
+    resource: addontemplates
+    defaultConfig:
+      name: managed-serviceaccount
