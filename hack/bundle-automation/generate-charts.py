@@ -231,9 +231,15 @@ def fixImageReferences(helmChart, imageKeyMapping):
         yaml.dump(values, f, width=float("inf"))
     logging.info("Image references and pull policy in deployments and values.yaml updated successfully.\n")
 
+# insers Heml flow control if/end block around a first and last line without changing
+# the indexes of the lines list (so as to not mess up iteration across the lines).
+def insertFlowControlIfAround(lines_list, first_line_index, last_line_index, if_condition):
+   lines_list[first_line_index] = "{{- if %s }}\n%s" % (if_condition, lines_list[first_line_index])
+   lines_list[last_line_index] = "%s{{- end }}\n" % lines_list[last_line_index]
+
 # injectHelmFlowControl injects advanced helm flow control which would typically make a .yaml file more difficult to parse. This should be called last.
 def injectHelmFlowControl(deployment):
-    logging.info("Adding Helm flow control for NodeSelector and Proxy Overrides ...")
+    logging.info("Adding Helm flow control for NodeSelector, Proxy Overrides, and SeccompProfile ...")
     deploy = open(deployment, "r")
     lines = deploy.readlines()
     for i, line in enumerate(lines):
@@ -278,10 +284,17 @@ def injectHelmFlowControl(deployment):
         if 'replicas:' in line.strip():
             lines[i] = """  replicas: {{ .Values.hubconfig.replicaCount }}
 """
+
+        if line.strip() == "seccompProfile:":
+            next_line = lines[i+1]  # Ignore possible reach beyond end-of-list, not really possible
+            prev_line = lines[i-1]
+            if next_line.strip() == "type: RuntimeDefault" and "semverCompare" not in prev_line:
+                insertFlowControlIfAround(lines, i, i+1, "semverCompare \">=4.11.0\" .Values.hubconfig.ocpVersion")
+
         a_file = open(deployment, "w")
         a_file.writelines(lines)
         a_file.close()
-    logging.info("Added Helm flow control for NodeSelector and Proxy Overrides.\n")
+    logging.info("Added Helm flow control for NodeSelector, Proxy, and SeccompProfile Overrides.\n")
 
 def addPullSecretOverride(deployment):
     deploy = open(deployment, "r")
@@ -326,6 +339,17 @@ def updateDeployments(chartName, helmChart, exclusions, inclusions):
         deploy['spec']['template']['metadata']['labels']['ocm-antiaffinity-selector'] = deploy['metadata']['name']
         deploy['spec']['template']['spec']['nodeSelector'] = ""
         deploy['spec']['template']['spec']['imagePullSecrets'] = ''
+        pod_template_spec = deploy['spec']['template']['spec']
+        if 'securityContext' not in pod_template_spec:
+            pod_template_spec['securityContext'] = {}
+        pod_security_context = pod_template_spec['securityContext']
+        pod_security_context['runAsNonRoot'] = True
+        if 'seccompProfile' not in pod_security_context:
+            pod_security_context['seccompProfile'] = {'type': 'RuntimeDefault'}
+            # This will be made conditional on OCP version >= 4.11 by injectHelmFlowControl()
+        else:
+            if pod_security_context['seccompProfile']['type'] != 'RuntimeDefault':
+                logging.warning("Leaving non-standard pod-level seccompprofile setting.")
 
         containers = deploy['spec']['template']['spec']['containers']
         for container in containers:
@@ -340,6 +364,13 @@ def updateDeployments(chartName, helmChart, exclusions, inclusions):
             container['securityContext']['runAsNonRoot'] = True
             if 'readOnlyRootFilesystem' not in exclusions:
                 container['securityContext']['readOnlyRootFilesystem'] = True
+            if 'seccompProfile' in container['securityContext']:
+                if container['securityContext']['seccompProfile']['type'] == 'RuntimeDefault':
+                    # Remove, to allow pod-level setting to have effect.
+                    del container['securityContext']['seccompProfile']
+                else:
+                    container_name = container['name']
+                    logging.warning("Leaving non-standard seccompprofile setting for container %s" % container_name)
         
         with open(deployment, 'w') as f:
             yaml.dump(deploy, f, width=float("inf"))
