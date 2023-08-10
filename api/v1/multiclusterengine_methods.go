@@ -27,7 +27,8 @@ const (
 	ClusterLifecycle       = "cluster-lifecycle"
 	ClusterManager         = "cluster-manager"
 	ServerFoundation       = "server-foundation"
-	HyperShift             = "hypershift-preview"
+	HyperShift             = "hypershift"
+	HyperShiftPreview      = "hypershift-preview"
 	ClusterProxyAddon      = "cluster-proxy-addon"
 	HypershiftLocalHosting = "hypershift-local-hosting"
 	LocalCluster           = "local-cluster"
@@ -43,6 +44,7 @@ var allComponents = []string{
 	ConsoleMCE,
 	ManagedServiceAccount,
 	HyperShift,
+	HyperShiftPreview,
 	HypershiftLocalHosting,
 	ClusterProxyAddon,
 	LocalCluster,

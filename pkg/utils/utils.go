@@ -27,13 +27,12 @@ var onComponents = []string{
 	backplanev1.ClusterProxyAddon,
 	backplanev1.LocalCluster,
 	backplanev1.HypershiftLocalHosting,
+	backplanev1.HyperShift,
 	// backplanev1.ConsoleMCE, // determined by OCP version
-	// backplanev1.HyperShift,
 }
 
 var offComponents = []string{
 	backplanev1.ManagedServiceAccount,
-	backplanev1.HyperShift,
 }
 
 // SetDefaultComponents returns true if changes are made
