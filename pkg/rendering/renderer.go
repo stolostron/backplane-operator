@@ -6,7 +6,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -165,7 +164,7 @@ func RenderCRDs(crdDir string) ([]*unstructured.Unstructured, []error) {
 		if info == nil || info.IsDir() {
 			return nil
 		}
-		bytesFile, e := ioutil.ReadFile(path)
+		bytesFile, e := os.ReadFile(path)
 		if e != nil {
 			errs = append(errs, fmt.Errorf("%s - error reading file: %v", info.Name(), err.Error()))
 		}
@@ -189,7 +188,7 @@ func RenderCharts(chartDir string, backplaneConfig *v1.MultiClusterEngine, image
 	if val, ok := os.LookupEnv("DIRECTORY_OVERRIDE"); ok {
 		chartDir = path.Join(val, chartDir)
 	}
-	charts, err := ioutil.ReadDir(chartDir)
+	charts, err := os.ReadDir(chartDir)
 	if err != nil {
 		errs = append(errs, err)
 	}
