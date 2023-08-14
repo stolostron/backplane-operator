@@ -32,7 +32,7 @@ const (
 	// PlacementImageKey used by placement deployments
 	PlacementImageKey = "placement"
 	// AddonManagerImageKey used by addon-manager deployments
-	AddonManagerImageKey          = "addon-manager"
+	AddonManagerImageKey          = "addon_manager"
 	addonPath                     = "pkg/templates/clustermanagementaddons/"
 	clusterManagementAddonCRDName = "clustermanagementaddons.addon.open-cluster-management.io"
 	ClusterManagementAddonKind    = "ClusterManagementAddOn"
