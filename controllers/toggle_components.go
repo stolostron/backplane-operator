@@ -747,7 +747,7 @@ func (r *MultiClusterEngineReconciler) ensureHyperShift(ctx context.Context, bac
 				log.Info("Couldn't apply template for hypershift due to missing CRD", "error is", err.Error())
 
 				missingCRDErrorOccured = true
-				r.StatusManager.AddComponent(clusterManagementAddOnNotFoundStatus("hypershift-preview", backplaneConfig.Spec.TargetNamespace))
+				r.StatusManager.AddComponent(clusterManagementAddOnNotFoundStatus("hypershift", backplaneConfig.Spec.TargetNamespace))
 			} else {
 				return result, err
 			}
@@ -770,7 +770,7 @@ func (r *MultiClusterEngineReconciler) ensureNoHyperShift(ctx context.Context, b
 		Kind:           "Component",
 		Condition: backplanev1.ComponentCondition{
 			Type:      "Uninstalled",
-			Name:      "hypershift-preview",
+			Name:      "hypershift",
 			Status:    metav1.ConditionFalse,
 			Reason:    status.WaitingForResourceReason,
 			Kind:      "Component",
