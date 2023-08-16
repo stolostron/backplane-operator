@@ -39,8 +39,6 @@ import (
 	operatorv1 "github.com/openshift/api/operator/v1"
 	hiveconfig "github.com/openshift/hive/apis/hive/v1"
 
-	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
-
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -142,7 +140,6 @@ func main() {
 		setupLog.Info("Operator Client Cache Disabled")
 		mgrOptions.ClientDisableCacheFor = []client.Object{
 			&corev1.Secret{},
-			&olmv1alpha1.ClusterServiceVersion{},
 		}
 	}
 
