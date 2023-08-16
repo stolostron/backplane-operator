@@ -1,0 +1,34 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: system:open-cluster-management:managedcluster:bootstrap:agent-registration
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+- apiGroups:
+  - certificates.k8s.io
+  resources:
+  - certificatesigningrequests
+  verbs:
+  - create
+  - get
+  - list
+  - watch
+- apiGroups:
+  - cluster.open-cluster-management.io
+  resources:
+  - managedclusters
+  verbs:
+  - get
+  - create
+  - update
+- apiGroups: # this is needed for creating managed cluster from agent-side.
+  - "cluster.open-cluster-management.io"
+  resources:
+  - "managedclustersets/join"
+  verbs:
+  - "create"

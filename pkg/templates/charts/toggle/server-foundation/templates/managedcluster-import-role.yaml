@@ -111,7 +111,7 @@ rules:
   - list
   - patch
   - update
-  - watch  
+  - watch
   - escalate
   - bind
 - apiGroups:
@@ -230,5 +230,12 @@ rules:
     - authentication.k8s.io
   resources:
     - tokenrequests
+    - tokenreviews # used in agent-registration's authentication
+  verbs:
+    - create
+- apiGroups: # used in agent-registration's autherization
+    - "authorization.k8s.io"
+  resources:
+    - subjectaccessreviews
   verbs:
     - create
