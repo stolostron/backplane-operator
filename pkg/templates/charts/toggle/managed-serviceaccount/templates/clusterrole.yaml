@@ -74,14 +74,17 @@ rules:
   - certificates.k8s.io
   resources:
   - certificatesigningrequests
-  - certificatesigningrequests/approval
-  - certificatesigningrequests/status
   verbs:
   - get
   - list
   - watch
+- apiGroups:
+  - certificates.k8s.io
+  resources:
+  - certificatesigningrequests/approval
+  - certificatesigningrequests/status
+  verbs:
   - update
-  - patch
 - apiGroups:
   - certificates.k8s.io
   resourceNames:
@@ -89,16 +92,25 @@ rules:
   resources:
   - signers
   verbs:
-  - '*'
+  - approve
+  - sign
 - apiGroups:
   - ''
   resources:
   - secrets
-  - events
   verbs:
   - get
   - list
   - watch
+  - create
+  - update
+- apiGroups:
+  - ''
+  resources:
+  - configmaps
+  - events
+  verbs:
+  - get
   - create
   - update
   - patch
@@ -109,11 +121,8 @@ rules:
   - rolebindings
   verbs:
   - get
-  - list
-  - watch
   - create
   - update
-  - patch
 - apiGroups:
   - work.open-cluster-management.io
   resources:
@@ -126,15 +135,13 @@ rules:
   - update
   - patch
 - apiGroups:
-  - ''
-  resources:
-  - configmaps
-  - secrets
-  verbs:
-  - '*'
-- apiGroups:
   - coordination.k8s.io
   resources:
   - leases
   verbs:
-  - '*'
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
