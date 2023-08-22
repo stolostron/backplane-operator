@@ -79,10 +79,10 @@ spec:
 {{- end }}
       securityContext:
         runAsNonRoot: true
-        {{- if semverCompare ">=4.11.0" .Values.hubconfig.ocpVersion }}
+{{- if semverCompare ">=4.11.0" .Values.hubconfig.ocpVersion }}
         seccompProfile:
           type: RuntimeDefault
-        {{- end }}
+{{- end }}
       serviceAccount: managed-serviceaccount
 {{- with .Values.hubconfig.tolerations }}
       tolerations:
