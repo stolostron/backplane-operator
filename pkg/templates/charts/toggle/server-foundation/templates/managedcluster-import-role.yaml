@@ -221,6 +221,14 @@ rules:
     - delete
     - deletecollection
 - apiGroups:
+    - config.open-cluster-management.io
+  resources:
+    - klusterletconfigs
+  verbs:
+    - get
+    - list
+    - watch
+- apiGroups:
     - ""
   resources:
     - serviceaccounts/token

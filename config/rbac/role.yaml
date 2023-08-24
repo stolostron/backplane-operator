@@ -61,6 +61,16 @@ rules:
   resources:
   - configmaps
   - events
+  verbs:
+  - create
+  - get
+  - patch
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - events
   - namespaces
   - secrets
   - serviceaccounts
@@ -185,18 +195,6 @@ rules:
   verbs:
   - create
   - patch
-- apiGroups:
-  - ""
-  resources:
-  - events
-  - secrets
-  verbs:
-  - create
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - ""
   resources:
@@ -1365,6 +1363,18 @@ rules:
   verbs:
   - get
   - list
+  - watch
+- apiGroups:
+  - config.open-cluster-management.io
+  resources:
+  - klusterletconfigs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
   - watch
 - apiGroups:
   - config.openshift.io
