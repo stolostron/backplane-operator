@@ -545,6 +545,18 @@ spec:
           - patch
           - update
         - apiGroups:
+          - config.open-cluster-management.io
+          resources:
+          - klusterletconfigs
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
           - addon.open-cluster-management.io
           resources:
           - addondeploymentconfigs
