@@ -185,10 +185,12 @@ func (r *MultiClusterEngine) ValidateCreate() (admission.Warnings, error) {
 	for _, mce := range mceList.Items {
 		mce := mce
 		if mce.Spec.TargetNamespace == targetNS || (targetNS == DefaultTargetNamespace && mce.Spec.TargetNamespace == "") {
-			return nil, fmt.Errorf("%w: MultiClusterEngine with targetNamespace already exists: '%s'", ErrInvalidNamespace, mce.Name)
+			return nil, fmt.Errorf("%w: MultiClusterEngine with targetNamespace already exists: '%s'",
+				ErrInvalidNamespace, mce.Name)
 		}
 		if !IsInHostedMode(r) && !IsInHostedMode(&mce) {
-			return nil, fmt.Errorf("%w: MultiClusterEngine in Standalone mode already exists: `%s`. Only one resource may exist in Standalone mode.", ErrInvalidDeployMode, mce.Name)
+			return nil, fmt.Errorf("%w: MultiClusterEngine in Standalone mode already exists: `%s`. "+
+				"Only one resource may exist in Standalone mode.", ErrInvalidDeployMode, mce.Name)
 		}
 	}
 	return nil, nil
@@ -292,7 +294,8 @@ func (r *MultiClusterEngine) ValidateDelete() (admission.Warnings, error) {
 		}
 		for _, item := range list.Items {
 			if !contains(resource.Exceptions, item.GetName()) {
-				return nil, fmt.Errorf("cannot delete %s resource. Existing %s resources must first be deleted", r.Name, resource.Name)
+				return nil, fmt.Errorf("cannot delete %s resource. Existing %s resources must first be deleted",
+					r.Name, resource.Name)
 			}
 		}
 	}
