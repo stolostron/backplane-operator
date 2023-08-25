@@ -57,7 +57,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	semver "github.com/Masterminds/semver"
 	pkgerrors "github.com/pkg/errors"
@@ -323,7 +322,6 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 // It returns an error as well as Boolean determining whether or not the reconcile needs to be rerun in order to update status
 
 func (r *MultiClusterEngineReconciler) setOperatorUpgradeableStatus(ctx context.Context, m *backplanev1.MultiClusterEngine) (bool, error) {
-
 	// Temporary variable
 	var upgradeable bool
 
@@ -363,7 +361,6 @@ func (r *MultiClusterEngineReconciler) setOperatorUpgradeableStatus(ctx context.
 	} else {
 		return false, nil
 	}
-
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -371,33 +368,33 @@ func (r *MultiClusterEngineReconciler) SetupWithManager(mgr ctrl.Manager) error 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&backplanev1.MultiClusterEngine{}).
 		WithEventFilter(predicate.Or(predicate.GenerationChangedPredicate{}, predicate.LabelChangedPredicate{}, predicate.AnnotationChangedPredicate{})).
-		Watches(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueRequestForOwner{
-			OwnerType: &backplanev1.MultiClusterEngine{},
-		}).
-		Watches(&source.Kind{Type: &hiveconfig.HiveConfig{}}, &handler.Funcs{
-			DeleteFunc: func(e event.DeleteEvent, q workqueue.RateLimitingInterface) {
+		Watches(&appsv1.Deployment{},
+			handler.EnqueueRequestForOwner(mgr.GetScheme(), mgr.GetRESTMapper(), &backplanev1.MultiClusterEngine{}),
+		).
+		Watches(&hiveconfig.HiveConfig{}, &handler.Funcs{
+			DeleteFunc: func(ctx context.Context, e event.DeleteEvent, q workqueue.RateLimitingInterface) {
 				labels := e.Object.GetLabels()
 				q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
 					Name: labels["backplaneconfig.name"],
 				}})
 			},
 		}, builder.WithPredicates(predicate.LabelChangedPredicate{})).
-		Watches(&source.Kind{Type: &clustermanager.ClusterManager{}}, &handler.Funcs{
-			DeleteFunc: func(e event.DeleteEvent, q workqueue.RateLimitingInterface) {
+		Watches(&clustermanager.ClusterManager{}, &handler.Funcs{
+			DeleteFunc: func(ctx context.Context, e event.DeleteEvent, q workqueue.RateLimitingInterface) {
 				labels := e.Object.GetLabels()
 				q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
 					Name: labels["backplaneconfig.name"],
 				}})
 			},
-			UpdateFunc: func(e event.UpdateEvent, q workqueue.RateLimitingInterface) {
+			UpdateFunc: func(ctx context.Context, e event.UpdateEvent, q workqueue.RateLimitingInterface) {
 				labels := e.ObjectOld.GetLabels()
 				q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
 					Name: labels["backplaneconfig.name"],
 				}})
 			},
 		}, builder.WithPredicates(predicate.LabelChangedPredicate{})).
-		Watches(&source.Kind{Type: &monitorv1.ServiceMonitor{}}, &handler.Funcs{
-			DeleteFunc: func(e event.DeleteEvent, q workqueue.RateLimitingInterface) {
+		Watches(&monitorv1.ServiceMonitor{}, &handler.Funcs{
+			DeleteFunc: func(ctx context.Context, e event.DeleteEvent, q workqueue.RateLimitingInterface) {
 				labels := e.Object.GetLabels()
 				if label, ok := labels["backplaneconfig.name"]; ok {
 					q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
@@ -406,11 +403,11 @@ func (r *MultiClusterEngineReconciler) SetupWithManager(mgr ctrl.Manager) error 
 				}
 			},
 		}, builder.WithPredicates(predicate.LabelChangedPredicate{})).
-		Watches(&source.Kind{Type: &configv1.ClusterVersion{}},
-			handler.EnqueueRequestsFromMapFunc(func(a client.Object) []reconcile.Request {
+		Watches(&configv1.ClusterVersion{},
+			handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, a client.Object) []reconcile.Request {
 				req := []reconcile.Request{}
 				multiclusterengineList := &backplanev1.MultiClusterEngineList{}
-				if err := r.Client.List(context.TODO(), multiclusterengineList); err == nil && len(multiclusterengineList.Items) > 0 {
+				if err := r.Client.List(ctx, multiclusterengineList); err == nil && len(multiclusterengineList.Items) > 0 {
 					for _, mce := range multiclusterengineList.Items {
 						tmpreq := reconcile.Request{
 							NamespacedName: types.NamespacedName{
@@ -419,7 +416,6 @@ func (r *MultiClusterEngineReconciler) SetupWithManager(mgr ctrl.Manager) error 
 						}
 						req = append(req, tmpreq)
 					}
-
 				}
 				return req
 			})).
@@ -1101,7 +1097,6 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 	} else {
 		return ctrl.Result{}, nil
 	}
-
 }
 
 func (r *MultiClusterEngineReconciler) validateNamespace(ctx context.Context, m *backplanev1.MultiClusterEngine) (ctrl.Result, error) {

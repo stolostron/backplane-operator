@@ -155,7 +155,7 @@ func main() {
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "797f9276.open-cluster-management.io",
-		WebhookServer:          &webhook.Server{TLSMinVersion: "1.2"},
+		WebhookServer:          webhook.NewServer(webhook.Options{TLSMinVersion: "1.2"}),
 		LeaseDuration:          &leaseDuration,
 		RenewDeadline:          &renewDeadline,
 		RetryPeriod:            &retryPeriod,
@@ -285,7 +285,6 @@ func main() {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
-
 }
 
 func ensureCRD(ctx context.Context, c client.Client, crd *unstructured.Unstructured) error {
