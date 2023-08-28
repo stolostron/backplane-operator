@@ -33,6 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 const (
@@ -154,26 +155,26 @@ func (r *MultiClusterEngine) Default() {
 var _ webhook.Validator = &MultiClusterEngine{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *MultiClusterEngine) ValidateCreate() error {
+func (r *MultiClusterEngine) ValidateCreate() (admission.Warnings, error) {
 	ctx := context.Background()
 	backplaneconfiglog.Info("validate create", "name", r.Name)
 
 	if (r.Spec.AvailabilityConfig != HABasic) && (r.Spec.AvailabilityConfig != HAHigh) && (r.Spec.AvailabilityConfig != "") {
-		return ErrInvalidAvailability
+		return nil, ErrInvalidAvailability
 	}
 
 	// Validate components
 	if r.Spec.Overrides != nil {
 		for _, c := range r.Spec.Overrides.Components {
 			if !validComponent(c) {
-				return fmt.Errorf("%w: %s is not a known component", ErrInvalidComponent, c.Name)
+				return nil, fmt.Errorf("%w: %s is not a known component", ErrInvalidComponent, c.Name)
 			}
 		}
 	}
 
 	mceList := &MultiClusterEngineList{}
 	if err := Client.List(ctx, mceList); err != nil {
-		return fmt.Errorf("unable to list BackplaneConfigs: %s", err)
+		return nil, fmt.Errorf("unable to list BackplaneConfigs: %s", err)
 	}
 
 	targetNS := r.Spec.TargetNamespace
@@ -184,26 +185,28 @@ func (r *MultiClusterEngine) ValidateCreate() error {
 	for _, mce := range mceList.Items {
 		mce := mce
 		if mce.Spec.TargetNamespace == targetNS || (targetNS == DefaultTargetNamespace && mce.Spec.TargetNamespace == "") {
-			return fmt.Errorf("%w: MultiClusterEngine with targetNamespace already exists: '%s'", ErrInvalidNamespace, mce.Name)
+			return nil, fmt.Errorf("%w: MultiClusterEngine with targetNamespace already exists: '%s'",
+				ErrInvalidNamespace, mce.Name)
 		}
 		if !IsInHostedMode(r) && !IsInHostedMode(&mce) {
-			return fmt.Errorf("%w: MultiClusterEngine in Standalone mode already exists: `%s`. Only one resource may exist in Standalone mode.", ErrInvalidDeployMode, mce.Name)
+			return nil, fmt.Errorf("%w: MultiClusterEngine in Standalone mode already exists: `%s`. "+
+				"Only one resource may exist in Standalone mode.", ErrInvalidDeployMode, mce.Name)
 		}
 	}
-	return nil
+	return nil, nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *MultiClusterEngine) ValidateUpdate(old runtime.Object) error {
+func (r *MultiClusterEngine) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
 	backplaneconfiglog.Info("validate update", "name", r.Name)
 
 	oldMCE := old.(*MultiClusterEngine)
 	backplaneconfiglog.Info(oldMCE.Spec.TargetNamespace)
 	if (r.Spec.TargetNamespace != oldMCE.Spec.TargetNamespace) && (oldMCE.Spec.TargetNamespace != "") {
-		return fmt.Errorf("%w: changes cannot be made to target namespace", ErrInvalidNamespace)
+		return nil, fmt.Errorf("%w: changes cannot be made to target namespace", ErrInvalidNamespace)
 	}
 	if IsInHostedMode(r) != IsInHostedMode(oldMCE) {
-		return fmt.Errorf("%w: changes cannot be made to DeploymentMode", ErrInvalidDeployMode)
+		return nil, fmt.Errorf("%w: changes cannot be made to DeploymentMode", ErrInvalidDeployMode)
 	}
 
 	oldNS, newNS := "", ""
@@ -214,19 +217,18 @@ func (r *MultiClusterEngine) ValidateUpdate(old runtime.Object) error {
 		newNS = r.Spec.Overrides.InfrastructureCustomNamespace
 	}
 	if oldNS != newNS {
-		return fmt.Errorf("%w: changes cannot be made to InfrastructureCustomNamespace", ErrInvalidInfraNS)
+		return nil, fmt.Errorf("%w: changes cannot be made to InfrastructureCustomNamespace", ErrInvalidInfraNS)
 	}
 
 	if (r.Spec.AvailabilityConfig != HABasic) && (r.Spec.AvailabilityConfig != HAHigh) && (r.Spec.AvailabilityConfig != "") {
-		return ErrInvalidAvailability
-
+		return nil, ErrInvalidAvailability
 	}
 
 	// Validate components
 	if r.Spec.Overrides != nil {
 		for _, c := range r.Spec.Overrides.Components {
 			if !validComponent(c) {
-				return fmt.Errorf("%w: %s is not a known component", ErrInvalidComponent, c.Name)
+				return nil, fmt.Errorf("%w: %s is not a known component", ErrInvalidComponent, c.Name)
 			}
 		}
 	}
@@ -235,12 +237,12 @@ func (r *MultiClusterEngine) ValidateUpdate(old runtime.Object) error {
 	if r.ComponentPresent(Discovery) && !r.Enabled(Discovery) {
 		cfg, err := config.GetConfig()
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		c, err := discovery.NewDiscoveryClientForConfig(cfg)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		gvk := schema.GroupVersionKind{
@@ -253,31 +255,31 @@ func (r *MultiClusterEngine) ValidateUpdate(old runtime.Object) error {
 		err = discovery.ServerSupportsVersion(c, gvk.GroupVersion())
 		if err == nil {
 			if err := Client.List(context.TODO(), list); err != nil {
-				return fmt.Errorf("unable to list %s: %s", "DiscoveryConfig", err)
+				return nil, fmt.Errorf("unable to list %s: %s", "DiscoveryConfig", err)
 			}
 			if len(list.Items) != 0 {
-				return fmt.Errorf("existing %s resources must first be deleted", "DiscoveryConfig")
+				return nil, fmt.Errorf("existing %s resources must first be deleted", "DiscoveryConfig")
 			}
 		}
 	}
 
-	return nil
+	return nil, nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *MultiClusterEngine) ValidateDelete() error {
+func (r *MultiClusterEngine) ValidateDelete() (admission.Warnings, error) {
 	// TODO(user): fill in your validation logic upon object deletion.
 	backplaneconfiglog.Info("validate delete", "name", r.Name)
 	ctx := context.Background()
 
 	cfg, err := config.GetConfig()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	c, err := discovery.NewDiscoveryClientForConfig(cfg)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	for _, resource := range blockDeletionResources {
@@ -288,15 +290,16 @@ func (r *MultiClusterEngine) ValidateDelete() error {
 			continue
 		}
 		if err := Client.List(ctx, list); err != nil {
-			return fmt.Errorf("unable to list %s: %s", resource.Name, err)
+			return nil, fmt.Errorf("unable to list %s: %s", resource.Name, err)
 		}
 		for _, item := range list.Items {
 			if !contains(resource.Exceptions, item.GetName()) {
-				return fmt.Errorf("cannot delete %s resource. Existing %s resources must first be deleted", r.Name, resource.Name)
+				return nil, fmt.Errorf("cannot delete %s resource. Existing %s resources must first be deleted",
+					r.Name, resource.Name)
 			}
 		}
 	}
-	return nil
+	return nil, nil
 }
 
 func contains(s []string, v string) bool {
