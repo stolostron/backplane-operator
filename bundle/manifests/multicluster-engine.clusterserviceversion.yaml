@@ -14,7 +14,7 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    createdAt: "2023-06-26T06:40:37Z"
+    createdAt: "2023-08-29T10:23:17Z"
     operators.operatorframework.io/builder: operator-sdk-v1.29.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
   name: multicluster-engine.v0.0.1
@@ -125,6 +125,16 @@ spec:
           - patch
           - update
           - watch
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps
+          - events
+          verbs:
+          - create
+          - get
+          - patch
+          - update
         - apiGroups:
           - ""
           resources:
@@ -254,18 +264,6 @@ spec:
           verbs:
           - create
           - patch
-        - apiGroups:
-          - ""
-          resources:
-          - events
-          - secrets
-          verbs:
-          - create
-          - get
-          - list
-          - patch
-          - update
-          - watch
         - apiGroups:
           - ""
           resources:
@@ -544,18 +542,6 @@ spec:
           verbs:
           - patch
           - update
-        - apiGroups:
-          - config.open-cluster-management.io
-          resources:
-          - klusterletconfigs
-          verbs:
-          - create
-          - delete
-          - get
-          - list
-          - patch
-          - update
-          - watch
         - apiGroups:
           - addon.open-cluster-management.io
           resources:
@@ -1099,6 +1085,13 @@ spec:
         - apiGroups:
           - authentication.k8s.io
           resources:
+          - tokenrequests
+          - tokenreviews
+          verbs:
+          - create
+        - apiGroups:
+          - authentication.k8s.io
+          resources:
           - tokenreviews
           verbs:
           - create
@@ -1439,6 +1432,18 @@ spec:
           verbs:
           - get
           - list
+          - watch
+        - apiGroups:
+          - config.open-cluster-management.io
+          resources:
+          - klusterletconfigs
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
           - watch
         - apiGroups:
           - config.openshift.io
