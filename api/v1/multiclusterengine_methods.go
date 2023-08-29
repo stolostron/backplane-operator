@@ -19,19 +19,20 @@ limitations under the License.
 package v1
 
 const (
-	ManagedServiceAccount  = "managedserviceaccount-preview"
-	ConsoleMCE             = "console-mce"
-	Discovery              = "discovery"
-	Hive                   = "hive"
-	AssistedService        = "assisted-service"
-	ClusterLifecycle       = "cluster-lifecycle"
-	ClusterManager         = "cluster-manager"
-	ServerFoundation       = "server-foundation"
-	HyperShift             = "hypershift"
-	HyperShiftPreview      = "hypershift-preview"
-	ClusterProxyAddon      = "cluster-proxy-addon"
-	HypershiftLocalHosting = "hypershift-local-hosting"
-	LocalCluster           = "local-cluster"
+	ManagedServiceAccount        = "managedserviceaccount"
+	ManagedServiceAccountPreview = "managedserviceaccount-preview"
+	ConsoleMCE                   = "console-mce"
+	Discovery                    = "discovery"
+	Hive                         = "hive"
+	AssistedService              = "assisted-service"
+	ClusterLifecycle             = "cluster-lifecycle"
+	ClusterManager               = "cluster-manager"
+	ServerFoundation             = "server-foundation"
+	HyperShift                   = "hypershift"
+	HyperShiftPreview            = "hypershift-preview"
+	ClusterProxyAddon            = "cluster-proxy-addon"
+	HypershiftLocalHosting       = "hypershift-local-hosting"
+	LocalCluster                 = "local-cluster"
 )
 
 var allComponents = []string{
@@ -43,6 +44,7 @@ var allComponents = []string{
 	ServerFoundation,
 	ConsoleMCE,
 	ManagedServiceAccount,
+	ManagedServiceAccountPreview,
 	HyperShift,
 	HyperShiftPreview,
 	HypershiftLocalHosting,

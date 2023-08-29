@@ -517,7 +517,8 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 	errs := map[string]error{}
 	requeue := false
 
-	if backplaneConfig.Enabled(backplanev1.ManagedServiceAccount) {
+	if backplaneConfig.Enabled(backplanev1.ManagedServiceAccount) ||
+		backplaneConfig.Enabled(backplanev1.ManagedServiceAccountPreview) {
 		result, err := r.ensureManagedServiceAccount(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
 			requeue = true

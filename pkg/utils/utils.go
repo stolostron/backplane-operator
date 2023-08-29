@@ -33,6 +33,7 @@ var onComponents = []string{
 
 var offComponents = []string{
 	backplanev1.ManagedServiceAccount,
+	backplanev1.ManagedServiceAccountPreview,
 }
 
 // SetDefaultComponents returns true if changes are made
