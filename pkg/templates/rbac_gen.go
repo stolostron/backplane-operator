@@ -19,7 +19,6 @@ package main
 //+kubebuilder:rbac:groups="",resources=configmaps/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups="",resources=configmaps/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups="",resources=configmaps/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups="",resources=configmaps;events,verbs=get;create;update;patch
 //+kubebuilder:rbac:groups="",resources=configmaps;jobs;namespaces;pods;secrets,verbs=list;watch
 //+kubebuilder:rbac:groups="",resources=configmaps;namespaces;serviceaccounts;services;pods,verbs=create;get;list;update;watch;patch;delete;deletecollection
 //+kubebuilder:rbac:groups="",resources=configmaps;secrets,verbs=*
@@ -157,10 +156,8 @@ package main
 //+kubebuilder:rbac:groups=certificates.k8s.io,resources=certificatesigningrequests,verbs=create;get;list;watch
 //+kubebuilder:rbac:groups=certificates.k8s.io,resources=certificatesigningrequests,verbs=create;get;list;watch
 //+kubebuilder:rbac:groups=certificates.k8s.io,resources=certificatesigningrequests,verbs=create;get;list;watch
-//+kubebuilder:rbac:groups=certificates.k8s.io,resources=certificatesigningrequests,verbs=get;list;watch
 //+kubebuilder:rbac:groups=certificates.k8s.io,resources=certificatesigningrequests,verbs=list;watch
 //+kubebuilder:rbac:groups=certificates.k8s.io,resources=certificatesigningrequests/approval,verbs=update
-//+kubebuilder:rbac:groups=certificates.k8s.io,resources=certificatesigningrequests/approval;certificatesigningrequests/status,verbs=update
 //+kubebuilder:rbac:groups=certificates.k8s.io,resources=certificatesigningrequests/approval;certificatesigningrequests/status,verbs=update
 //+kubebuilder:rbac:groups=certificates.k8s.io,resources=certificatesigningrequests;certificatesigningrequests/approval,verbs=create;get;list;watch;patch;update
 //+kubebuilder:rbac:groups=certificates.k8s.io,resources=certificatesigningrequests;certificatesigningrequests/approval,verbs=get;list;watch;create;update
@@ -169,7 +166,6 @@ package main
 //+kubebuilder:rbac:groups=certificates.k8s.io,resources=signers,verbs=approve
 //+kubebuilder:rbac:groups=certificates.k8s.io,resources=signers,verbs=approve
 //+kubebuilder:rbac:groups=certificates.k8s.io,resources=signers,verbs=approve
-//+kubebuilder:rbac:groups=certificates.k8s.io,resources=signers,verbs=approve;sign
 //+kubebuilder:rbac:groups=certificates.k8s.io,resources=signers,verbs=approve;sign
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=addonplacementscores/status,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=addonplacementscores;addonplacementscores/status,verbs=create;delete;deletecollection;get;list;patch;update;watch
@@ -220,7 +216,6 @@ package main
 //+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;create;update
 //+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;create;update
 //+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;create;update;patch
-//+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;watch;create;update;patch
 //+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;watch;create;update;patch;delete
@@ -300,7 +295,6 @@ package main
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles;rolebindings,verbs=create;delete;get;list;patch;update;watch;escalate;bind
-//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles;rolebindings,verbs=get;create;update
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles;rolebindings,verbs=get;list;watch;create;update;delete
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles;rolebindings,verbs=get;list;watch;create;update;patch
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles;rolebindings;clusterroles;clusterrolebindings,verbs=get;list;watch;create;update;delete

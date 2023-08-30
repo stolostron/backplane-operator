@@ -1,4 +1,5 @@
-# Source: managed-serviceaccount//deploy/bases/clustermanagementaddon.yaml
+
+# Source: managed-serviceaccount/templates/clustermanagementaddon.yaml
 apiVersion: addon.open-cluster-management.io/v1alpha1
 kind: ClusterManagementAddOn
 metadata:
@@ -11,6 +12,12 @@ spec:
     description: managed-serviceaccount
   supportedConfigs:
   - group: addon.open-cluster-management.io
+    resource: addondeploymentconfigs
+# TODO: uncomment when the agentInstallNamespace field is added to the ocm repo
+    # defaultConfig:
+    #   namespace: default
+    #   name: managed-serviceaccount-addon-deploy-config
+  - group: addon.open-cluster-management.io
     resource: addontemplates
     defaultConfig:
-      name: managed-serviceaccount
+      name: managed-serviceaccount-0.4.0

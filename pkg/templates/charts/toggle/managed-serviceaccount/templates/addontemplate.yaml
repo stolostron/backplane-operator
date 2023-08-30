@@ -1,109 +1,135 @@
 apiVersion: addon.open-cluster-management.io/v1alpha1
 kind: AddOnTemplate
 metadata:
-  name: managed-serviceaccount
+  name: managed-serviceaccount-0.4.0
 spec:
   addonName: managed-serviceaccount
   agentSpec:
-      workload:
-        manifests:
-          - kind: ClusterRole
-            apiVersion: rbac.authorization.k8s.io/v1
+    workload:
+      manifests:
+      - apiVersion: rbac.authorization.k8s.io/v1
+        kind: ClusterRole
+        metadata:
+          name: open-cluster-management:managed-serviceaccount:addon-agent
+        rules:
+        - apiGroups:
+          - authentication.k8s.io
+          resources:
+          - tokenreviews
+          verbs:
+          - create
+      - apiVersion: rbac.authorization.k8s.io/v1
+        kind: ClusterRoleBinding
+        metadata:
+          name: open-cluster-management:managed-serviceaccount:addon-agent
+        roleRef:
+          apiGroup: rbac.authorization.k8s.io
+          kind: ClusterRole
+          name: open-cluster-management:managed-serviceaccount:addon-agent
+        subjects:
+        - kind: ServiceAccount
+          name: managed-serviceaccount
+          namespace: open-cluster-management-agent-addon
+      - apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: managed-serviceaccount-addon-agent
+          namespace: open-cluster-management-agent-addon
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              addon-agent: managed-serviceaccount
+          template:
             metadata:
-              name: open-cluster-management:managed-serviceaccount:addon-agent
-            rules:
-            - apiGroups: ["authentication.k8s.io"]
-              resources: ["tokenreviews"]
-              verbs: ["create"]
-          - kind: ClusterRoleBinding
-            apiVersion: rbac.authorization.k8s.io/v1
-            metadata:
-              name: open-cluster-management:managed-serviceaccount:addon-agent
-            roleRef:
-              apiGroup: rbac.authorization.k8s.io
-              kind: ClusterRole
-              name: open-cluster-management:managed-serviceaccount:addon-agent
-            subjects:
-              - kind: ServiceAccount
-                name: managed-serviceaccount
-                namespace: open-cluster-management-agent-addon
-          - apiVersion: apps/v1
-            kind: Deployment
-            metadata:
-              name: managed-serviceaccount-addon-agent
-              namespace: open-cluster-management-agent-addon
+              labels:
+                addon-agent: managed-serviceaccount
             spec:
-              replicas: 1
-              selector:
-                matchLabels:
-                  addon-agent: managed-serviceaccount
-              template:
-                metadata:
-                  labels:
-                    addon-agent: managed-serviceaccount
-                spec:
-                  serviceAccount: managed-serviceaccount
-                  containers:
-                    - name: addon-agent
-                      image: {{ .Values.global.imageOverrides.managed_serviceaccount }}
-                      imagePullPolicy: IfNotPresent
-                      command:
-                        - /agent
-                      args:
-                        - --leader-elect=true
-                        - --cluster-name={{ `{{CLUSTER_NAME}}` }}          # escape double curly brackets, option 1
-                        - --kubeconfig={{ "{{" }}HUB_KUBECONFIG{{ "}}" }}  # escape double curly brackets, option 2
-                        - --feature-gates=EphemeralIdentity=true
-                      livenessProbe:
-                        httpGet:
-                          path: /healthz
-                          port: 8000
-                        initialDelaySeconds: 2
-                        periodSeconds: 10
-          - apiVersion: rbac.authorization.k8s.io/v1
-            kind: Role
-            metadata:
-              name: open-cluster-management:managed-serviceaccount:addon-agent
-              namespace: open-cluster-management-agent-addon
-            rules:
-            - apiGroups: [""]
-              resources: ["events"]
-              verbs: ["create"]
-            - apiGroups: [""]
-              resources: ["serviceaccounts", "serviceaccounts/token"]
-              verbs: ["get", "watch", "list", "create", "delete"]
-            - apiGroups: ["coordination.k8s.io"]
-              resources: ["leases"]
-              verbs: ["get", "create", "update", "patch"]
-            - apiGroups: ["authentication.k8s.io"]
-              resources: ["tokenrequests"]
-              verbs: ["get", "create", "update", "patch"]
-          - kind: RoleBinding
-            apiVersion: rbac.authorization.k8s.io/v1
-            metadata:
-              name: open-cluster-management:managed-serviceaccount:addon-agent
-              namespace: open-cluster-management-agent-addon
-            roleRef:
-              apiGroup: rbac.authorization.k8s.io
-              kind: Role
-              name: open-cluster-management:managed-serviceaccount:addon-agent
-            subjects:
-              - kind: ServiceAccount
-                name: managed-serviceaccount
-                namespace: open-cluster-management-agent-addon
-          - kind: ServiceAccount
-            apiVersion: v1
-            metadata:
-              name: managed-serviceaccount
-              namespace: open-cluster-management-agent-addon
-            imagePullSecrets:
-              - name: open-cluster-management-image-pull-credentials
+              containers:
+              - args:
+                - --leader-elect=true
+                - --cluster-name={{ `{{CLUSTER_NAME}}` }}
+                - --kubeconfig={{ `{{HUB_KUBECONFIG}}` }}
+                - --feature-gates=EphemeralIdentity=true
+                command:
+                - /agent
+                image: '{{ .Values.global.imageOverrides.managed_serviceaccount }}'
+                imagePullPolicy: IfNotPresent
+                livenessProbe:
+                  httpGet:
+                    path: /healthz
+                    port: 8000
+                  initialDelaySeconds: 2
+                  periodSeconds: 10
+                name: addon-agent
+              serviceAccount: managed-serviceaccount
+      - apiVersion: rbac.authorization.k8s.io/v1
+        kind: Role
+        metadata:
+          name: open-cluster-management:managed-serviceaccount:addon-agent
+          namespace: open-cluster-management-agent-addon
+        rules:
+        - apiGroups:
+          - ''
+          resources:
+          - events
+          verbs:
+          - create
+        - apiGroups:
+          - ''
+          resources:
+          - serviceaccounts
+          - serviceaccounts/token
+          verbs:
+          - get
+          - watch
+          - list
+          - create
+          - delete
+        - apiGroups:
+          - coordination.k8s.io
+          resources:
+          - leases
+          verbs:
+          - get
+          - create
+          - update
+          - patch
+        - apiGroups:
+          - authentication.k8s.io
+          resources:
+          - tokenrequests
+          verbs:
+          - get
+          - create
+          - update
+          - patch
+      - apiVersion: rbac.authorization.k8s.io/v1
+        kind: RoleBinding
+        metadata:
+          name: open-cluster-management:managed-serviceaccount:addon-agent
+          namespace: open-cluster-management-agent-addon
+        roleRef:
+          apiGroup: rbac.authorization.k8s.io
+          kind: Role
+          name: open-cluster-management:managed-serviceaccount:addon-agent
+        subjects:
+        - kind: ServiceAccount
+          name: managed-serviceaccount
+          namespace: open-cluster-management-agent-addon
+      - apiVersion: v1
+        imagePullSecrets:
+        - name: open-cluster-management-image-pull-credentials
+        kind: ServiceAccount
+        metadata:
+          name: managed-serviceaccount
+          namespace: open-cluster-management-agent-addon
   registration:
-    - type: KubeClient
-      kubeClient:
-        hubPermissions:
-          - type: CurrentCluster
-            roleRef:
-              apiGroup: rbac.authorization.k8s.io
-              kind: ClusterRole
-              name: managed-serviceaccount-addon-agent
+  - kubeClient:
+      hubPermissions:
+      - roleRef:
+          apiGroup: rbac.authorization.k8s.io
+          kind: ClusterRole
+          name: managed-serviceaccount-addon-agent
+        type: CurrentCluster
+    type: KubeClient

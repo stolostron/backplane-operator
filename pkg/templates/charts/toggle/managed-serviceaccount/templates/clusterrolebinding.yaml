@@ -1,5 +1,3 @@
-# grant permission to addon-manager-controller-sa to create rolebindings
-# in the managed cluster for the managed-serviceaccount addon agent
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -9,6 +7,6 @@ roleRef:
   kind: ClusterRole
   name: managed-serviceaccount-addon-agent
 subjects:
-  - kind: ServiceAccount
-    name: addon-manager-controller-sa
-    namespace: '{{ .Values.global.namespace }}'
+- kind: ServiceAccount
+  name: addon-manager-controller-sa
+  namespace: open-cluster-management-hub
