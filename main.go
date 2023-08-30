@@ -90,6 +90,8 @@ func init() {
 
 	utilruntime.Must(apiregistrationv1.AddToScheme(scheme))
 
+	utilruntime.Must(olmv1alpha1.AddToScheme(scheme))
+
 	utilruntime.Must(admissionregistration.AddToScheme(scheme))
 
 	utilruntime.Must(apixv1.AddToScheme(scheme))
