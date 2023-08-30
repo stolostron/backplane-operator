@@ -62,5 +62,11 @@ var _ = Describe("V1 API Methods", func() {
 			Expect(mce.ComponentPresent(api.Discovery)).To(BeTrue())
 			Expect(mce.Enabled(api.Discovery)).To(BeFalse())
 		})
+
+		It("prunes a component", func() {
+			m := makeMCE(config(api.Discovery, true))
+			Expect(m.Prune(api.Discovery)).To(BeTrue())
+			Expect(m.Prune("test")).To(BeFalse())
+		})
 	})
 })

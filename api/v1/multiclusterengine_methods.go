@@ -91,6 +91,28 @@ func (mce *MultiClusterEngine) Enable(s string) {
 	})
 }
 
+// Prune removes the component from the component list. Returns true if changes are made
+func (mce *MultiClusterEngine) Prune(s string) bool {
+	if mce.Spec.Overrides == nil {
+		return false
+	}
+	pruned := false
+	prunedList := []ComponentConfig{}
+	for _, c := range mce.Spec.Overrides.Components {
+		if c.Name == s {
+			pruned = true
+		} else {
+			prunedList = append(prunedList, c)
+		}
+	}
+
+	if pruned {
+		mce.Spec.Overrides.Components = prunedList
+		return true
+	}
+	return false
+}
+
 func (mce *MultiClusterEngine) Disable(s string) {
 	if mce.Spec.Overrides == nil {
 		mce.Spec.Overrides = &Overrides{}
