@@ -1033,6 +1033,11 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 		updateNecessary = true
 	}
 
+	// hyper-shift preview component upgraded in 2.8.0
+	if m.Prune(backplanev1.HyperShiftPreview) {
+		updateNecessary = true
+	}
+
 	if utils.DeduplicateComponents(m) {
 		updateNecessary = true
 	}
