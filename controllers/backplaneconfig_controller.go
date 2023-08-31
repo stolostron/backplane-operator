@@ -517,8 +517,7 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 	errs := map[string]error{}
 	requeue := false
 
-	if backplaneConfig.Enabled(backplanev1.ManagedServiceAccount) ||
-		backplaneConfig.Enabled(backplanev1.ManagedServiceAccountPreview) {
+	if backplaneConfig.Enabled(backplanev1.ManagedServiceAccount) {
 		result, err := r.ensureManagedServiceAccount(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
 			requeue = true
@@ -1036,6 +1035,13 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 
 	// hyper-shift preview component upgraded in 2.8.0
 	if m.Prune(backplanev1.HyperShiftPreview) {
+		updateNecessary = true
+	}
+
+	// managedserviceaccount preview component upgraded in 2.9.0
+	if m.Prune(backplanev1.ManagedServiceAccountPreview) {
+		// if the preview was pruned, start up the non-preview version
+		m.Enable(backplanev1.ManagedServiceAccount)
 		updateNecessary = true
 	}
 
