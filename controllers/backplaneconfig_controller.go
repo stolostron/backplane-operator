@@ -1038,10 +1038,15 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 		updateNecessary = true
 	}
 
-	// managedserviceaccount preview component upgraded in 2.9.0
-	if m.Prune(backplanev1.ManagedServiceAccountPreview) {
+	if m.Enabled(backplanev1.ManagedServiceAccountPreview) {
 		// if the preview was pruned, enable the non-preview version instead
 		m.Enable(backplanev1.ManagedServiceAccount)
+		// no need to disable -preview version, as it will get pruned below
+		updateNecessary = true
+	}
+
+	// managedserviceaccount preview component upgraded in 2.9.0
+	if m.Prune(backplanev1.ManagedServiceAccountPreview) {
 		updateNecessary = true
 	}
 
