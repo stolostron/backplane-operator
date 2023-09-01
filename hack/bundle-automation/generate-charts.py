@@ -64,12 +64,31 @@ def updateClusterRoleBinding(yamlContent):
     for sub in subjectsList:
         sub['namespace'] = '{{ .Values.global.namespace }}'
 
+def escapeTemplateVariables(helmChart, variables):
+    addonTemplates = findTemplatesOfType(helmChart, 'AddOnTemplate')
+    for addonTemplate in addonTemplates:
+        for variable in variables:
+            logging.info("Start to escape vriable %s", variable)
+            at = open(addonTemplate, "r")
+            lines = at.readlines()
+            v = "{{"+variable+"}}"
+            for i, line in enumerate(lines):
+                if v in line.strip():
+                    logging.info("Found variable %s in line: %s", v, line.strip())
+                    lines[i] = line.replace(v, "{{ `"+ v + "` }}")
+
+            a_file = open(addonTemplate, "w")
+            a_file.writelines(lines)
+            a_file.close()
+    logging.info("Escaped template variables.\n")
+
 # Copy chart-templates to a new helmchart directory
 def updateResources(outputDir, repo, chart):
     logging.info(" Updating resources!")
     # Create main folder
     always_or_toggle = chart['always-or-toggle']
-    templateDir = os.path.join(outputDir, "charts", always_or_toggle, chart['name'], "templates")
+    chartDir = os.path.join(outputDir, "charts", always_or_toggle, chart['name'])
+    templateDir = os.path.join(chartDir, "templates")
     print(templateDir)
     for tempFile in os.listdir(templateDir):
         filePath = os.path.join(templateDir, tempFile)
@@ -80,18 +99,20 @@ def updateResources(outputDir, repo, chart):
             logging.info(" Updating ServiceAccount!")
             updateServiceAccount(yamlContent)
         elif kind == "ClusterRoleBinding":
-            logging.info(" Updating ClusterRoleBinding!")
-            updateClusterRoleBinding(yamlContent)
+            if not chart['skipRBACOverrides']:
+                logging.info(" Updating ClusterRoleBinding!")
+                updateClusterRoleBinding(yamlContent)
         else:
             logging.info(" No updates for kind %s at this step.", kind)
             continue
         with open(filePath, 'w') as f:
             yaml.dump(yamlContent, f, width=float("inf"))
-
+    # Escape template variables
+    escapeTemplateVariables(chartDir, chart["escape-template-variables"])
 
 
 # Copy chart-templates to a new helmchart directory
-def copyHelmChart(destinationChartPath, repo, chart):
+def copyHelmChart(destinationChartPath, repo, chart, chartVersion):
     chartName = chart['name']
     logging.info("Copying templates into new '%s' chart directory ...", chartName)
     # Create main folder
@@ -123,6 +144,14 @@ def copyHelmChart(destinationChartPath, repo, chart):
     if not os.path.exists(chartYamlPath):
         logging.info("No Chart.yaml for chart: ", chartName)
         return
+
+    if chartVersion != "":
+        with open(chartYamlPath, 'r') as f:
+            chartYaml = yaml.safe_load(f)
+        chartYaml['version'] = chartVersion
+        with open(chartYamlPath, 'w') as f:
+            yaml.dump(chartYaml, f, width=float("inf"))
+
     shutil.copyfile(chartYamlPath, os.path.join(destinationChartPath, "Chart.yaml"))
 
     shutil.copyfile(os.path.join(chartPath, "values.yaml"), os.path.join(destinationChartPath, "values.yaml"))
@@ -380,6 +409,60 @@ def updateDeployments(chartName, helmChart, exclusions, inclusions):
         if 'pullSecretOverride' in inclusions:
             addPullSecretOverride(deployment)
 
+
+# fixImageReferencesForAddonTemplate identify the image references for every deployment in addontemplates, if any exist
+# in the image field, insert helm flow control code to reference it, and add image-key to the values.yaml file.
+# If the image-key referenced in the addon template deployment does not exist in `imageMappings` in the Config.yaml,
+# this will fail. Images must be explicitly defined
+def fixImageReferencesForAddonTemplate(helmChart, imageKeyMapping):
+    logging.info("Fixing image references in addon templates and values.yaml ...")
+
+    addonTemplates = findTemplatesOfType(helmChart, 'AddOnTemplate')
+    imageKeys = []
+    temp = "" ## temporarily read image ref
+    for addonTemplate in addonTemplates:
+        with open(addonTemplate, 'r') as f:
+            templateContent = yaml.safe_load(f)
+            agentSpec = templateContent['spec']['agentSpec']
+            if 'workload' not in agentSpec:
+                return
+            workload = agentSpec['workload']
+            if 'manifests' not in workload:
+                return
+            manifests = workload['manifests']
+            imageKeys = []
+            for manifest in manifests:
+                if manifest['kind'] == 'Deployment':
+                    containers = manifest['spec']['template']['spec']['containers']
+                    for container in containers:
+                        image_key = parse_image_ref(container['image'])["repository"]
+                        try:
+                            image_key = imageKeyMapping[image_key]
+                        except KeyError:
+                            logging.critical("No image key mapping provided for imageKey: %s" % image_key)
+                            exit(1)
+                        imageKeys.append(image_key)
+                        temp = container['image']
+                        container['image'] = "{{ .Values.global.imageOverrides." + image_key + " }}"
+                        # container['imagePullPolicy'] = "{{ .Values.global.pullPolicy }}"
+        with open(addonTemplate, 'w') as f:
+            yaml.dump(templateContent, f, width=float("inf"))
+            logging.info("AddOnTemplate updated with image override successfully. \n")
+
+    if len(imageKeys) == 0:
+        return
+    valuesYaml = os.path.join(helmChart, "values.yaml")
+    with open(valuesYaml, 'r') as f:
+        values = yaml.safe_load(f)
+    if 'imageOverride' in values['global']['imageOverrides']:
+        del values['global']['imageOverrides']['imageOverride']
+    for imageKey in imageKeys:
+        values['global']['imageOverrides'][imageKey] = "" # set to temp to debug
+    with open(valuesYaml, 'w') as f:
+        yaml.dump(values, f, width=float("inf"))
+    logging.info("Image references and pull policy in addon templates and values.yaml updated successfully.\n")
+
+
 # updateRBAC adds standard configuration to the RBAC resources (clusterroles, roles, clusterrolebindings, and rolebindings)
 def updateRBAC(helmChart, chartName):
     logging.info("Updating clusterroles, roles, clusterrolebindings, and rolebindings ...")
@@ -399,12 +482,15 @@ def updateRBAC(helmChart, chartName):
     logging.info("Clusterroles, roles, clusterrolebindings, and rolebindings updated. \n")
 
 
-def injectRequirements(helmChart, chartName, imageKeyMapping, exclusions, inclusions):
+def injectRequirements(helmChart, chartName, imageKeyMapping, skipRBACOverrides, exclusions, inclusions):
     logging.info("Updating Helm chart '%s' with onboarding requirements ...", helmChart)
     fixImageReferences(helmChart, imageKeyMapping)
     fixEnvVarImageReferences(helmChart, imageKeyMapping)
-    updateRBAC(helmChart, chartName)
+    fixImageReferencesForAddonTemplate(helmChart, imageKeyMapping)
+    if not skipRBACOverrides:
+        updateRBAC(helmChart, chartName)
     updateDeployments(chartName, helmChart, exclusions, inclusions)
+
     logging.info("Updated Chart '%s' successfully\n", helmChart)
 
 def split_at(the_str, the_delim, favor_right=True):
@@ -459,6 +545,28 @@ def chartConfigAcceptable(chart):
         return False
     return True
 
+def getChartVersion(updateChartVersion, repo):
+    chartVersion = ""
+    if not updateChartVersion:
+        return chartVersion
+
+    logging.info("Calculating chart version ...")
+    if 'branch' not in repo:
+        logging.warning("No branch specified for repo %s, skip.", repo["repo_name"])
+        return chartVersion
+
+    version = repo['branch'].replace("backplane-", "")
+    if not version.replace(".", "").isdecimal():
+        logging.warning("Unable to use branch name %s as chart version for repo %s, skip.",
+                        repo['branch'], repo["branch"])
+        return chartVersion
+
+    chartVersion = version
+    logging.info("Chart version: %s", chartVersion)
+    # TODO: consider getting chart version from chart template
+    return chartVersion
+
+
 def main():
     ## Initialize ArgParser
     parser = argparse.ArgumentParser()
@@ -511,9 +619,11 @@ def main():
             always_or_toggle = chart['always-or-toggle']
             destinationChartPath = os.path.join(destination, "charts", always_or_toggle, chart['name'])
 
+            chartVersion = getChartVersion(chart['updateChartVersion'], repo)
+
             # Template Helm Chart Directory from 'chart-templates'
             logging.info("Templating helm chart '%s' ...", chart["name"])
-            copyHelmChart(destinationChartPath, repo["repo_name"], chart)
+            copyHelmChart(destinationChartPath, repo["repo_name"], chart, chartVersion)
 
             updateResources(destination, repo["repo_name"], chart)
 
@@ -521,7 +631,7 @@ def main():
                 logging.info("Adding Overrides (set --skipOverrides=true to skip) ...")
                 exclusions = chart["exclusions"] if "exclusions" in chart else []
                 inclusions = chart["inclusions"] if "inclusions" in chart else []
-                injectRequirements(destinationChartPath, chart["name"], chart["imageMappings"], exclusions, inclusions)
+                injectRequirements(destinationChartPath, chart["name"], chart["imageMappings"], chart["skipRBACOverrides"], exclusions, inclusions)
                 logging.info("Overrides added. \n")
 
 if __name__ == "__main__":

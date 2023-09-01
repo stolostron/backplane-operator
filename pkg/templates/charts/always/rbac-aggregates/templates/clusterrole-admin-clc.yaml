@@ -42,7 +42,7 @@ rules:
   resources: ["clusterstatuses/log"]
   verbs: ["get"]
 - apiGroups: ["addon.open-cluster-management.io"]
-  resources: ["managedclusteraddons","managedclusteraddons/status"]
+  resources: ["managedclusteraddons","managedclusteraddons/status","addondeploymentconfigs","addontemplates"]
   verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
 - apiGroups: ["addon.open-cluster-management.io"]
   resources: ["clustermanagementaddons"]

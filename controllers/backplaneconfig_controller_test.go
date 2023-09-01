@@ -22,6 +22,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -37,6 +38,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -74,6 +76,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 		clusterManager         *unstructured.Unstructured
 		hiveConfig             *unstructured.Unstructured
 		clusterManagementAddon *unstructured.Unstructured
+		addonTemplate          *unstructured.Unstructured
 		tests                  testList
 		msaTests               testList
 		secondTests            testList
@@ -189,6 +192,13 @@ var _ = Describe("BackplaneConfig controller", func() {
 			Kind:    "ClusterManagementAddOn",
 		})
 
+		addonTemplate = &unstructured.Unstructured{}
+		addonTemplate.SetGroupVersionKind(schema.GroupVersionKind{
+			Group:   "addon.open-cluster-management.io",
+			Version: "v1alpha1",
+			Kind:    "AddOnTemplate",
+		})
+
 		tests = testList{
 			{
 				Name:           BackplaneConfigTestName,
@@ -302,15 +312,21 @@ var _ = Describe("BackplaneConfig controller", func() {
 
 		msaTests = testList{
 			{
-				Name:           "Managed-ServiceAccount Deployment",
-				NamespacedName: types.NamespacedName{Name: "managed-serviceaccount-addon-manager", Namespace: DestinationNamespace},
-				ResourceType:   &appsv1.Deployment{},
+				Name:           "Managed-ServiceAccount Addon Template",
+				NamespacedName: types.NamespacedName{Name: "managed-serviceaccount"},
+				ResourceType:   addonTemplate,
 				Expected:       nil,
 			},
 			{
-				Name:           "Managed-ServiceAccount ServiceAccount",
-				NamespacedName: types.NamespacedName{Name: "managed-serviceaccount", Namespace: DestinationNamespace},
-				ResourceType:   &corev1.ServiceAccount{},
+				Name:           "Managed-ServiceAccount agent registration clusterrole",
+				NamespacedName: types.NamespacedName{Name: "managed-serviceaccount-addon-agent"},
+				ResourceType:   &rbacv1.ClusterRole{},
+				Expected:       nil,
+			},
+			{
+				Name:           "Managed-ServiceAccount addon manager clusterrolebinding",
+				NamespacedName: types.NamespacedName{Name: "open-cluster-management-addon-manager-managed-serviceaccount"},
+				ResourceType:   &rbacv1.ClusterRoleBinding{},
 				Expected:       nil,
 			},
 			{
@@ -626,6 +642,11 @@ var _ = Describe("BackplaneConfig controller", func() {
 				By("ensuring each deployment and config is created")
 				for _, test := range withMSATests {
 					By(fmt.Sprintf("ensuring %s is created", test.Name))
+					if test.ResourceType == addonTemplate {
+						// the name of the addon template increases with each version,
+						// managed-serviceaccount-2.4, managed-serviceaccount-2.5, etc.
+						continue
+					}
 					Eventually(func() bool {
 						ctx := context.Background()
 						err := k8sClient.Get(ctx, test.NamespacedName, test.ResourceType)
@@ -639,6 +660,11 @@ var _ = Describe("BackplaneConfig controller", func() {
 						continue // config itself won't have ownerreference
 					}
 					By(fmt.Sprintf("ensuring %s has an ownerreference set", test.Name))
+					if test.ResourceType == addonTemplate {
+						// the name of the addon template increases with each version,
+						// managed-serviceaccount-2.4, managed-serviceaccount-2.5, etc.
+						continue
+					}
 					Eventually(func(g Gomega) {
 						ctx := context.Background()
 						g.Expect(k8sClient.Get(ctx, test.NamespacedName, test.ResourceType)).To(Succeed())
@@ -648,6 +674,41 @@ var _ = Describe("BackplaneConfig controller", func() {
 						)
 						g.Expect(test.ResourceType.GetOwnerReferences()[0].Name).To(Equal(BackplaneConfigName))
 					}, timeout, interval).Should(Succeed())
+				}
+
+				By("ensuring each addon template is created and has an owner reference")
+				for _, test := range withMSATests {
+					if test.ResourceType != addonTemplate {
+						continue
+					}
+
+					By(fmt.Sprintf("ensuring %s is created and has an ownerreference set", test.Name))
+					// the name of the addon template increases with each version,
+					// managed-serviceaccount-2.4, managed-serviceaccount-2.5, etc.
+					Eventually(func() error {
+						ctx := context.Background()
+						ats := &unstructured.UnstructuredList{}
+						ats.SetGroupVersionKind(schema.GroupVersionKind{
+							Group:   "addon.open-cluster-management.io",
+							Version: "v1alpha1",
+							Kind:    "AddOnTemplateList",
+						})
+						err := k8sClient.List(ctx, ats)
+						if err != test.Expected {
+							return err
+						}
+						for _, at := range ats.Items {
+							if strings.HasPrefix(at.GetName(), test.NamespacedName.Name) {
+								Expect(len(at.GetOwnerReferences())).To(
+									Equal(1),
+									fmt.Sprintf("Missing ownerreference on %s", test.Name),
+								)
+								Expect(at.GetOwnerReferences()[0].Name).To(Equal(BackplaneConfigName))
+								return nil
+							}
+						}
+						return fmt.Errorf("addon template %s not found", test.NamespacedName.Name)
+					}, timeout, interval).ShouldNot(HaveOccurred())
 				}
 
 			})

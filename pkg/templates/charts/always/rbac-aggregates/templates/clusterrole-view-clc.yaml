@@ -35,7 +35,7 @@ rules:
   resources: ["clusterstatuses/log"]
   verbs: ["get"]
 - apiGroups: ["addon.open-cluster-management.io"]
-  resources: ["managedclusteraddons","managedclusteraddons/status","clustermanagementaddons"]
+  resources: ["managedclusteraddons","managedclusteraddons/status","clustermanagementaddons","addondeploymentconfigs","addontemplates"]
   verbs: ["get", "list", "watch"]
 - apiGroups: ["clusterview.open-cluster-management.io"]
   resources: ["managedclusters","managedclustersets"]

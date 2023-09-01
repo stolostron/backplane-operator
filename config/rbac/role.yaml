@@ -61,16 +61,6 @@ rules:
   resources:
   - configmaps
   - events
-  verbs:
-  - create
-  - get
-  - patch
-  - update
-- apiGroups:
-  - ""
-  resources:
-  - configmaps
-  - events
   - namespaces
   - secrets
   - serviceaccounts
@@ -497,6 +487,18 @@ rules:
 - apiGroups:
   - addon.open-cluster-management.io
   resources:
+  - addontemplates
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - addon.open-cluster-management.io
+  resources:
   - clustermanagementaddons
   verbs:
   - create
@@ -576,7 +578,6 @@ rules:
   - delete
   - get
   - list
-  - patch
   - update
   - watch
 - apiGroups:
@@ -1039,7 +1040,6 @@ rules:
   - authentication.open-cluster-management.io
   resources:
   - managedserviceaccounts
-  - managedserviceaccounts/status
   verbs:
   - delete
   - get
@@ -1047,6 +1047,14 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - authentication.open-cluster-management.io
+  resources:
+  - managedserviceaccounts/status
+  verbs:
+  - get
+  - patch
+  - update
 - apiGroups:
   - authorization.k8s.io
   resources:

@@ -17,7 +17,7 @@ rules:
   resources: [ "managedclusters","managedclustersets" ]
   verbs: [ "list","get","watch" ]
 - apiGroups: ["addon.open-cluster-management.io"]
-  resources: ["managedclusteraddons", "managedclusteraddons/status", "clustermanagementaddons"]
+  resources: ["managedclusteraddons", "managedclusteraddons/status", "clustermanagementaddons","addondeploymentconfigs","addontemplates"]
   verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
 - apiGroups: ["cluster.open-cluster-management.io"]
   resources: ["placements", "placements/status", "placementdecisions", "placementdecisions/status"]
