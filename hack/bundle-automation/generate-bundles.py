@@ -280,6 +280,8 @@ def addResources(helmChart, csvPath):
             filePath = os.path.join(dirPath, filename)
             with open(filePath, 'r') as f:
                 fileYml = yaml.safe_load(f)
+            if "kind" not in fileYml:
+                continue
             if fileYml['kind'] in otherBundleResourceTypes:
                 shutil.copyfile(filePath, os.path.join(helmChart, "templates", os.path.basename(filePath)))
             if fileYml['kind'] not in listOfFilesAdded:
@@ -553,7 +555,9 @@ def addCMAs(repo, operator, outputDir):
         with open(filepath, 'r') as f:
             resourceFile = yaml.safe_load(f)
 
-        if resourceFile["kind"] == "ClusterManagementAddOn":
+        if "kind" not in resourceFile:
+            continue
+        elif resourceFile["kind"] == "ClusterManagementAddOn":
             logging.info("CMA")
             shutil.copyfile(filepath, os.path.join(outputDir, "charts", "toggle", operator['name'], "templates", filename))
 
@@ -579,7 +583,9 @@ def addCRDs(repo, operator, outputDir):
         with open(filepath, 'r') as f:
             resourceFile = yaml.safe_load(f)
 
-        if resourceFile["kind"] == "CustomResourceDefinition":
+        if "kind" not in resourceFile:
+            continue
+        elif resourceFile["kind"] == "CustomResourceDefinition":
             shutil.copyfile(filepath, os.path.join(outputDir, "crds", operator['name'], filename))
 
 def getBundleManifestsPath(repo, operator):
