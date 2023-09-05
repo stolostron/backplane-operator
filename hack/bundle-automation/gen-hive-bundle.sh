@@ -33,7 +33,7 @@ cd "$tmp_dir"
 
 # Clone the Hive operator repo at specified commit/branch.
 
-echo "Cloning/checking out HIve repo at branch/commit ($commit_ish)."
+echo "Cloning/checking out Hive repo at branch/commit ($commit_ish)."
 hive_repo_spot="$PWD/hive"
 git clone --no-progress "$hive_repo" "hive"
 rc=$?
@@ -47,7 +47,7 @@ git checkout $branch
 git -c advice.detachedHead=false checkout "$commit_ish"
 rc=$?
 if [[ $rc -ne 0 ]]; then
-   >&2 echo "Error: Could not checkout branch/commit $ommit_ish (rc: $rc)."
+   >&2 echo "Error: Could not checkout branch/commit $commit_ish (rc: $rc)."
    exit 3
 fi
 cd ..
@@ -86,7 +86,8 @@ fi
 cd "$start_cwd"
 mkdir -p "$output_dir"
 echo "Copying generated bundle manifests to output directory."
-cp -p $generated_bundle_dir/* $output_dir
+cp -p $generated_bundle_dir/**/* $output_dir
+
 rc=$?
 if [[ $rc -ne 0 ]]; then
    >&2 echo "Error: Error copying generated bundle manifests(rc: $rc)."
