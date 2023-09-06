@@ -5,6 +5,8 @@ metadata:
   annotations:
     service.beta.openshift.io/serving-cert-secret-name: console-mce-console-certs
   name: console-mce-console
+  labels:
+    app: console-mce
 spec:
   ports:
     - port: 3000
