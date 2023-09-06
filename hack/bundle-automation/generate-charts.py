@@ -125,9 +125,23 @@ def copyHelmChart(destinationChartPath, repo, chart, chartVersion):
     destinationTemplateDir = os.path.join(destinationChartPath, "templates")
     os.makedirs(destinationTemplateDir)
 
+    chartYamlPath = os.path.join(chartPath, "Chart.yaml")
+    if not os.path.exists(chartYamlPath):
+        logging.info("No Chart.yaml for chart: ", chartName)
+        return
+
+    # Update chart version if specified before rendering templates
+    if chartVersion != "":
+        with open(chartYamlPath, 'r') as f:
+            chartYaml = yaml.safe_load(f)
+        chartYaml['version'] = chartVersion
+        with open(chartYamlPath, 'w') as f:
+            yaml.dump(chartYaml, f, width=float("inf"))
+
     specificValues = os.path.join(os.path.dirname(os.path.realpath(__file__)), "chart-values", chart['name'], "values.yaml")
     if os.path.exists(specificValues):
         shutil.copyfile(specificValues, os.path.join(chartPath, "values.yaml"))
+
     helmTemplateOutput = subprocess.getoutput(['helm template '+ chartPath])
     yamlList = helmTemplateOutput.split('---')
     for outputContent in yamlList:
@@ -139,18 +153,6 @@ def copyHelmChart(destinationChartPath, repo, chart, chartVersion):
         a_file = open(newFilePath, "w")
         a_file.writelines(outputContent)
         a_file.close()
-
-    chartYamlPath = os.path.join(chartPath, "Chart.yaml")
-    if not os.path.exists(chartYamlPath):
-        logging.info("No Chart.yaml for chart: ", chartName)
-        return
-
-    if chartVersion != "":
-        with open(chartYamlPath, 'r') as f:
-            chartYaml = yaml.safe_load(f)
-        chartYaml['version'] = chartVersion
-        with open(chartYamlPath, 'w') as f:
-            yaml.dump(chartYaml, f, width=float("inf"))
 
     shutil.copyfile(chartYamlPath, os.path.join(destinationChartPath, "Chart.yaml"))
 

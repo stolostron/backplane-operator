@@ -20,4 +20,4 @@ spec:
   - group: addon.open-cluster-management.io
     resource: addontemplates
     defaultConfig:
-      name: managed-serviceaccount-0.4.0
+      name: managed-serviceaccount-2.4
