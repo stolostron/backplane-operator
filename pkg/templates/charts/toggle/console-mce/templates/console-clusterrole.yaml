@@ -199,6 +199,7 @@ rules:
   - policysets
   - subscriptions
   - subscriptionreports
+  - multiclusterapplicationsetreports
   verbs:
   - list
   - watch
