@@ -895,6 +895,7 @@ rules:
   - channels
   - gitopsclusters
   - helmreleases
+  - multiclusterapplicationsetreports
   - placementbindings
   - placementrules
   - policies
