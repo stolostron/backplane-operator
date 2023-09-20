@@ -29,6 +29,8 @@ import (
 	configv1 "github.com/openshift/api/config/v1"
 	operatorv1 "github.com/openshift/api/operator/v1"
 	hiveconfig "github.com/openshift/hive/apis/hive/v1"
+	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
+	operatorsapiv2 "github.com/operator-framework/api/pkg/operators/v2"
 	admissionregistration "k8s.io/api/admissionregistration/v1"
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 
@@ -118,6 +120,7 @@ var _ = BeforeSuite(func() {
 
 	err = monitoringv1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
+	Expect(olmv1.AddToScheme(scheme.Scheme)).Should(Succeed())
 
 	err = configv1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
@@ -151,10 +154,13 @@ var _ = BeforeSuite(func() {
 		HealthProbeBindAddress: "0",
 	})
 	Expect(err).ToNot(HaveOccurred())
+	upgradeableCondition, _ := utils.NewOperatorCondition(k8sClient, operatorsapiv2.Upgradeable)
+	Expect(err).ToNot(HaveOccurred())
 	reconciler = MultiClusterEngineReconciler{
-		Client:        k8sManager.GetClient(),
-		Scheme:        k8sManager.GetScheme(),
-		StatusManager: &status.StatusTracker{Client: k8sManager.GetClient()},
+		Client:          k8sManager.GetClient(),
+		Scheme:          k8sManager.GetScheme(),
+		StatusManager:   &status.StatusTracker{Client: k8sManager.GetClient()},
+		UpgradeableCond: upgradeableCondition,
 	}
 	err = (reconciler).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
