@@ -171,7 +171,9 @@ func TestRender(t *testing.T) {
 			containsHTTPS = false
 			containsNO = false
 		}
-		if template.GetKind() == "AddOnDeploymentConfig" {
+		if template.GetKind() == "AddOnDeploymentConfig" &&
+			// managed service account addon deployment config does not need a node placement config
+			template.GetName() != "managed-serviceaccount-addon-deploy-config" {
 			addonDep := &addonv1alpha1.AddOnDeploymentConfig{}
 			err := runtime.DefaultUnstructuredConverter.FromUnstructured(template.Object, addonDep)
 			if err != nil {
