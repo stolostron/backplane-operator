@@ -1,0 +1,9 @@
+
+# Source: managed-serviceaccount/templates/addondeploymentconfig.yaml
+apiVersion: addon.open-cluster-management.io/v1alpha1
+kind: AddOnDeploymentConfig
+metadata:
+  name: managed-serviceaccount-addon-deploy-config
+  namespace: default
+spec:
+  agentInstallNamespace: open-cluster-management-agent-addon

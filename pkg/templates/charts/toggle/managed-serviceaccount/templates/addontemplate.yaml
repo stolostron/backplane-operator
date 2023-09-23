@@ -7,6 +7,12 @@ spec:
   agentSpec:
     workload:
       manifests:
+      - apiVersion: v1
+        kind: Namespace
+        metadata:
+          annotations:
+            addon.open-cluster-management.io/deletion-orphan: ''
+          name: '{{INSTALL_NAMESPACE}}'
       - apiVersion: rbac.authorization.k8s.io/v1
         kind: ClusterRole
         metadata:
