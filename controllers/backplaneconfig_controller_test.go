@@ -77,6 +77,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 		hiveConfig             *unstructured.Unstructured
 		clusterManagementAddon *unstructured.Unstructured
 		addonTemplate          *unstructured.Unstructured
+		addonDeploymentConfig  *unstructured.Unstructured
 		tests                  testList
 		msaTests               testList
 		secondTests            testList
@@ -199,6 +200,13 @@ var _ = Describe("BackplaneConfig controller", func() {
 			Kind:    "AddOnTemplate",
 		})
 
+		addonDeploymentConfig = &unstructured.Unstructured{}
+		addonDeploymentConfig.SetGroupVersionKind(schema.GroupVersionKind{
+			Group:   "addon.open-cluster-management.io",
+			Version: "v1alpha1",
+			Kind:    "AddOnDeploymentConfig",
+		})
+
 		tests = testList{
 			{
 				Name:           BackplaneConfigTestName,
@@ -311,6 +319,14 @@ var _ = Describe("BackplaneConfig controller", func() {
 		}
 
 		msaTests = testList{
+			{
+				Name: "Managed-ServiceAccount Addon Deployment Config",
+				NamespacedName: types.NamespacedName{
+					Name:      "managed-serviceaccount-addon-deploy-config",
+					Namespace: DestinationNamespace},
+				ResourceType: addonDeploymentConfig,
+				Expected:     nil,
+			},
 			{
 				Name:           "Managed-ServiceAccount Addon Template",
 				NamespacedName: types.NamespacedName{Name: "managed-serviceaccount"},

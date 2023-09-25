@@ -56,6 +56,26 @@ def parse_image_ref(image_ref):
 
    return parsed_ref
 
+
+def updateAddOnDeploymentConfig(yamlContent):
+    yamlContent['metadata']['namespace'] = '{{ .Values.global.namespace }}'
+
+
+def updateClusterManagementAddOn(yamlContent):
+    if 'spec' not in yamlContent:
+        return
+    if 'supportedConfigs' not in yamlContent['spec']:
+        return
+    supportedConfigs = yamlContent['spec']['supportedConfigs']
+    for config in supportedConfigs:
+        if 'defaultConfig' not in config:
+            continue
+        defaultConfig = config['defaultConfig']
+        if 'namespace' not in defaultConfig:
+            continue
+        defaultConfig['namespace'] = '{{ .Values.global.namespace }}'
+
+
 def updateServiceAccount(yamlContent):
     yamlContent['metadata'].pop('namespace')
 
@@ -95,7 +115,13 @@ def updateResources(outputDir, repo, chart):
         with open(filePath, 'r') as f:
             yamlContent = yaml.safe_load(f)
         kind = yamlContent["kind"]
-        if kind == "ServiceAccount":
+        if kind == "AddOnDeploymentConfig":
+            logging.info(" Updating AddOnDeploymentConfig!")
+            updateAddOnDeploymentConfig(yamlContent)
+        elif kind == "ClusterManagementAddOn":
+            logging.info(" Updating ClusterManagementAddOn!")
+            updateClusterManagementAddOn(yamlContent)
+        elif kind == "ServiceAccount":
             logging.info(" Updating ServiceAccount!")
             updateServiceAccount(yamlContent)
         elif kind == "ClusterRoleBinding":

@@ -7,6 +7,12 @@ spec:
   agentSpec:
     workload:
       manifests:
+      - apiVersion: v1
+        kind: Namespace
+        metadata:
+          annotations:
+            addon.open-cluster-management.io/deletion-orphan: ''
+          name: '{{ `{{INSTALL_NAMESPACE}}` }}'
       - apiVersion: rbac.authorization.k8s.io/v1
         kind: ClusterRole
         metadata:
@@ -127,9 +133,7 @@ spec:
   registration:
   - kubeClient:
       hubPermissions:
-      - roleRef:
-          apiGroup: rbac.authorization.k8s.io
-          kind: ClusterRole
-          name: managed-serviceaccount-addon-agent
+      - currentCluster:
+          clusterRoleName: managed-serviceaccount-addon-agent
         type: CurrentCluster
     type: KubeClient
