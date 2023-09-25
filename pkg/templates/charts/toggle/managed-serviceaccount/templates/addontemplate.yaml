@@ -133,9 +133,7 @@ spec:
   registration:
   - kubeClient:
       hubPermissions:
-      - roleRef:
-          apiGroup: rbac.authorization.k8s.io
-          kind: ClusterRole
-          name: managed-serviceaccount-addon-agent
+      - currentCluster:
+          clusterRoleName: managed-serviceaccount-addon-agent
         type: CurrentCluster
     type: KubeClient
