@@ -15,6 +15,9 @@ import (
 
 const (
 	UnitTestEnvVar = "UNIT_TEST"
+
+	// OpenShiftClusterMonitoringLabel is the label for OpenShift cluster monitoring.
+	OpenShiftClusterMonitoringLabel = "openshift.io/cluster-monitoring"
 )
 
 var onComponents = []string{
