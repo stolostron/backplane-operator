@@ -127,8 +127,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 		// Create target namespace
 		err = k8sClient.Create(context.Background(), &corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:   DestinationNamespace,
-				Labels: make(map[string]string),
+				Name: DestinationNamespace,
 			},
 			Spec: corev1.NamespaceSpec{},
 		})
