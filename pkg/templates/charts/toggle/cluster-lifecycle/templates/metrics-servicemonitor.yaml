@@ -4,7 +4,7 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: clusterlifecycle-state-metrics-v2
-  namespace: openshift-monitoring
+  namespace: {{ .Values.global.namespace }}
 spec:
   endpoints:
   - interval: 60s
