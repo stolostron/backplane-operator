@@ -128,7 +128,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 		err = k8sClient.Create(context.Background(), &corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:   DestinationNamespace,
-				Labels: map[string]string{},
+				Labels: make(map[string]string),
 			},
 			Spec: corev1.NamespaceSpec{},
 		})
