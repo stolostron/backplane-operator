@@ -447,7 +447,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 					ctx := context.Background()
 					u := &unstructured.Unstructured{}
 					u.SetName("clusterlifecycle-state-metrics-v2")
-					u.SetNamespace("openshift-monitoring")
+					u.SetNamespace(DestinationNamespace)
 					u.SetGroupVersionKind(schema.GroupVersionKind{
 						Group:   "monitoring.coreos.com",
 						Kind:    "ServiceMonitor",
@@ -459,7 +459,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 					ctx := context.Background()
 					namespacedName := types.NamespacedName{
 						Name:      "clusterlifecycle-state-metrics-v2",
-						Namespace: "openshift-monitoring",
+						Namespace: DestinationNamespace,
 					}
 					resourceType := &monitoringv1.ServiceMonitor{}
 					return k8sClient.Get(ctx, namespacedName, resourceType)
