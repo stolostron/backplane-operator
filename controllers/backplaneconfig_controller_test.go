@@ -44,6 +44,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -379,7 +380,6 @@ var _ = Describe("BackplaneConfig controller", func() {
 		Context("and no image pull policy is specified", func() {
 			It("should deploy sub components", func() {
 				createCtx := context.Background()
-				By("creating the backplane config")
 				backplaneConfig := &v1.MultiClusterEngine{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "multicluster.openshift.io/v1",
@@ -393,6 +393,12 @@ var _ = Describe("BackplaneConfig controller", func() {
 						ImagePullSecret: "testsecret",
 					},
 				}
+
+				By("ensuring that no openshift.io/cluster-monitoring label is enabled if MCE does not exist")
+				res, _ := reconciler.ensureOpenShiftNamespaceLabel(createCtx, backplaneConfig)
+				Expect(res).To(Equal(ctrl.Result{Requeue: true}))
+
+				By("creating the backplane config")
 				Expect(k8sClient.Create(createCtx, backplaneConfig)).Should(Succeed())
 
 				By("ensuring each deployment and config is created")
@@ -978,7 +984,6 @@ var _ = Describe("BackplaneConfig controller", func() {
 
 					g.Expect(existingMCE.Status.Phase).To(Not(Equal(v1.MultiClusterEnginePhaseError)))
 				}, timeout, interval).Should(Succeed())
-
 			})
 		})
 
@@ -1033,6 +1038,5 @@ var _ = Describe("BackplaneConfig controller", func() {
 
 			})
 		})
-
 	})
 })
