@@ -2,11 +2,12 @@
 - repo_name: generate-hive-bundle
   gen_command: ./hack/bundle-automation/gen-hive-bundle.sh
   branch: mce-2.2
-  sha: 7f0e57561a44cbd062368d1c2a8e0f4e1825bf15
+  sha: 06a8646ad015c11a70b2292a8eac65192b880717
   bundlePath: /tmp/hive-operator-manifests
   name: hive-operator
   imageMappings:
      hive: openshift_hive
+
 - repo_name: "community-operators-prod"
   github_ref: "https://github.com/redhat-openshift-ecosystem/community-operators-prod.git"
   operators:
@@ -20,6 +21,7 @@
         assisted-installer-controller: assisted_installer_controller
         assisted-installer: assisted_installer
         assisted-image-service: assisted_image_service
+
 - repo_name: registration-operator
   github_ref: "https://github.com/stolostron/registration-operator.git"
   branch: "backplane-2.2"
@@ -30,6 +32,7 @@
         registration-operator: registration_operator
       exclusions:
         - readOnlyRootFilesystem
+
 - repo_name: discovery-operator
   github_ref: "https://github.com/stolostron/discovery.git"
   branch: "backplane-2.2"
