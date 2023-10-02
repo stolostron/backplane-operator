@@ -47,9 +47,9 @@ jobs:
         id: job_status
         run: |
           if [[ ${{ steps.generate_chart.outcome }} == 'failure' ]]; then
-            echo "::set-output name=status::failure"
+            echo "status=failure" >> $GITHUB_OUTPUT
           else
-            echo "::set-output name=status::success"
+            echo "status=success" >> $GITHUB_OUTPUT
           fi
 
       - name: Send Slack Message on Failure
