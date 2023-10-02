@@ -56,6 +56,7 @@ var resources = []string{
 	"ManagedProxyConfiguration",
 	"ManagedProxyServiceResolver",
 	"MutatingWebhookConfiguration",
+	"PrometheusRule",
 	"Role",
 	"RoleBinding",
 	"Route",
