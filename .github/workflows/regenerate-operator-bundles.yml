@@ -34,9 +34,10 @@ jobs:
 
       # Runs a set of commands using the runners shell
       - name: Lint Operator Bundles
+        id: lint_bundle
         run: |
-          make lint-operator-bundles
-          
+          make lint-operator-bundles          
+
       # Runs a set of commands using the runners shell
       - name: Regenerate Operator Bundles
         id: generate_bundle
@@ -46,7 +47,7 @@ jobs:
       - name: Check Job Status
         id: job_status
         run: |
-          if [[ ${{ steps.generate_bundle.outcome }} == 'failure' ]]; then
+          if [[ ${{ steps.generate_bundle.outcome }} == 'failure' || $ {{ steps.lint_bundle.outcome }} == 'failure' ]]; then
             echo "status=failure" >> $GITHUB_OUTPUT
           else
             echo "status=success" >> $GITHUB_OUTPUT

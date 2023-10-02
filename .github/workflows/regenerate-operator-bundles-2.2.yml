@@ -47,7 +47,7 @@ jobs:
       - name: Check Job Status
         id: job_status
         run: |
-          if [[ ${{ steps.generate_bundle.outcome }} == 'failure' ]]; then
+          if [[ ${{ steps.generate_bundle.outcome }} == 'failure' || $ {{ steps.lint_bundle.outcome }} == 'failure' ]]; then
             echo "status=failure" >> $GITHUB_OUTPUT
           else
             echo "status=success" >> $GITHUB_OUTPUT
