@@ -641,13 +641,19 @@ def getCSVPath(repo, operator):
         manifestsPath = os.path.join(bundlePath, "manifests")
 
     for filename in os.listdir(manifestsPath):
+        logging.info("Checking manifestPath file: " + filename)
+
         if not filename.endswith(".yaml"): 
             continue
+
         filepath = os.path.join(manifestsPath, filename)
         with open(filepath, 'r') as f:
             resourceFile = yaml.safe_load(f)
 
-        if resourceFile["kind"] == "ClusterServiceVersion":
+        if "kind" not in resourceFile:
+            continue
+
+        elif resourceFile["kind"] == "ClusterServiceVersion":
             return filepath
 
 def main():
