@@ -48,6 +48,10 @@ spec:
         - name: NO_PROXY
           value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
 {{- end }}
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
         image: '{{ .Values.global.imageOverrides.registration_operator }}'
         imagePullPolicy: '{{ .Values.global.pullPolicy }}'
         livenessProbe:
@@ -66,8 +70,8 @@ spec:
           initialDelaySeconds: 2
         resources:
           requests:
-            cpu: 100m
-            memory: 128Mi
+            cpu: 2m
+            memory: 16Mi
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
