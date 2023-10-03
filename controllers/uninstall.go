@@ -8,6 +8,8 @@ import (
 
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 	"github.com/stolostron/backplane-operator/pkg/toggle"
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -131,4 +133,34 @@ func (r *MultiClusterEngineReconciler) uninstall(backplaneConfig *backplanev1.Mu
 		return false, err
 	}
 	return false, nil
+}
+
+// removeLegacyCLCPrometheusConfig will remove the CLC PrometheusRule and ServiceMonitor in the openshift-monitoring
+// namespace. This configuration should be in the controller namespace instead.
+func (r *MultiClusterEngineReconciler) removeLegacyCLCPrometheusConfig(ctx context.Context) error {
+	log := log.FromContext(ctx)
+	obj := &unstructured.Unstructured{}
+	obj.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "monitoring.coreos.com",
+		Kind:    "ServiceMonitor",
+		Version: "v1",
+	})
+	obj.SetName("clusterlifecycle-state-metrics-v2")
+	obj.SetNamespace("openshift-monitoring")
+
+	err := r.Client.Delete(ctx, obj)
+	if err != nil {
+		if !errors.IsNotFound(err) && !apimeta.IsNoMatchError(err) {
+			log.Error(
+				err,
+				"Error while deleting ServiceMonitor: clusterlifecycle-state-metrics-v2",
+			)
+
+			return err
+		}
+	} else {
+		log.Info("Deleted the legacy CLC Prometheus configuration", "kind", "ServiceMonitor", "name", obj.GetName())
+	}
+
+	return nil
 }

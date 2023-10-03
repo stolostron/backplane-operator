@@ -306,6 +306,11 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return result, err
 	}
 
+	err = r.removeLegacyCLCPrometheusConfig(ctx)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
 	result, err = r.ensureToggleableComponents(ctx, backplaneConfig)
 	if err != nil {
 		return result, err

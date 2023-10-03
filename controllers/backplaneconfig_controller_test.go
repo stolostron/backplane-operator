@@ -1051,5 +1051,64 @@ var _ = Describe("BackplaneConfig controller", func() {
 
 			})
 		})
+		Context("Legacy clean up tasks", func() {
+			It("Removes the legacy CLC Prometheus configuration", func() {
+				By("creating the backplane config with nonexistant secret")
+				backplaneConfig := &v1.MultiClusterEngine{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "multicluster.openshift.io/v1",
+						Kind:       "MultiClusterEngine",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: BackplaneConfigName,
+					},
+					Spec: v1.MultiClusterEngineSpec{
+						TargetNamespace: DestinationNamespace,
+						ImagePullSecret: "nonexistant",
+					},
+				}
+				createCtx := context.Background()
+				Expect(k8sClient.Create(createCtx, backplaneConfig)).Should(Succeed())
+				By("Creating the legacy CLC ServiceMonitor")
+				sm := &unstructured.Unstructured{
+					Object: map[string]interface{}{
+						"spec": map[string]interface{}{
+							"endpoints": []interface{}{
+								map[string]interface{}{
+									"path": "/some/path",
+								},
+							},
+							"selector": map[string]interface{}{
+								"matchLabels": map[string]interface{}{
+									"app": "grc",
+								},
+							},
+						},
+					},
+				}
+				sm.SetGroupVersionKind(schema.GroupVersionKind{
+					Group:   "monitoring.coreos.com",
+					Kind:    "ServiceMonitor",
+					Version: "v1",
+				})
+				sm.SetName("clusterlifecycle-state-metrics-v2")
+				sm.SetNamespace("openshift-monitoring")
+
+				err := k8sClient.Create(context.TODO(), sm)
+				Expect(err).To(BeNil())
+
+				By("Running the cleanup of the legacy Prometheus configuration")
+				err = reconciler.removeLegacyCLCPrometheusConfig(context.TODO())
+				Expect(err).To(BeNil())
+
+				By("Verifying that the legacy CLC ServiceMonitor is deleted")
+				err = k8sClient.Get(context.TODO(), client.ObjectKeyFromObject(sm), sm)
+				Expect(errors.IsNotFound(err)).To(BeTrue())
+
+				By("Running the cleanup of the legacy Prometheus configuration again should do nothing")
+				err = reconciler.removeLegacyCLCPrometheusConfig(context.TODO())
+				Expect(err).To(BeNil())
+			})
+		})
 	})
 })
