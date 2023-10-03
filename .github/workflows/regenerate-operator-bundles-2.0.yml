@@ -35,12 +35,14 @@ jobs:
 
       # Runs a set of commands using the runners shell
       - name: Lint Operator Bundles
+        continue-on-error: true
         id: lint_bundle
         run: |
           make lint-operator-bundles
           
       # Runs a set of commands using the runners shell
       - name: Regenerate Operator Bundles
+        continue-on-error: true
         id: generate_bundle
         run: |
           make regenerate-operator-bundles
@@ -69,6 +71,8 @@ jobs:
           curl -X POST -H "Content-type: application/json" --data "{
             \"text\": \"$SLACK_MESSAGE\"
           }" $SLACK_WEBHOOK_URL
+
+          exit 1
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v3
