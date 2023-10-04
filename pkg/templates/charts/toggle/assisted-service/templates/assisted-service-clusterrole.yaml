@@ -78,6 +78,7 @@ rules:
   resources:
   - namespaces
   verbs:
+  - create
   - get
   - list
   - watch
@@ -310,6 +311,12 @@ rules:
   verbs:
   - create
 - apiGroups:
+  - cluster.open-cluster-management.io
+  resources:
+  - managedclustersets/join
+  verbs:
+  - create
+- apiGroups:
   - config.openshift.io
   resources:
   - clusteroperators
@@ -325,6 +332,12 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - config.openshift.io
+  resources:
+  - dnses
+  verbs:
+  - get
 - apiGroups:
   - config.openshift.io
   resources:
@@ -462,6 +475,7 @@ rules:
   resources:
   - clusterimagesets
   verbs:
+  - create
   - get
   - list
   - watch
