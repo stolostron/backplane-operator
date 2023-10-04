@@ -5,6 +5,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 	"github.com/stolostron/backplane-operator/pkg/toggle"
@@ -135,32 +136,63 @@ func (r *MultiClusterEngineReconciler) uninstall(backplaneConfig *backplanev1.Mu
 	return false, nil
 }
 
-// removeLegacyCLCPrometheusConfig will remove the CLC PrometheusRule and ServiceMonitor in the openshift-monitoring
-// namespace. This configuration should be in the controller namespace instead.
-func (r *MultiClusterEngineReconciler) removeLegacyCLCPrometheusConfig(ctx context.Context) error {
+/*
+removeLegacyPrometheusConfigurations will remove the specified kind of configuration
+(PrometheusRule or ServiceMonitor) in the target namespace. This configuration should be in the controller namespace
+instead.
+*/
+func (r *MultiClusterEngineReconciler) removeLegacyPrometheusConfigurations(ctx context.Context,
+	targetNamespace string, kind string) error {
 	log := log.FromContext(ctx)
+
 	obj := &unstructured.Unstructured{}
 	obj.SetGroupVersionKind(schema.GroupVersionKind{
 		Group:   "monitoring.coreos.com",
-		Kind:    "ServiceMonitor",
+		Kind:    kind,
 		Version: "v1",
 	})
-	obj.SetName("clusterlifecycle-state-metrics-v2")
-	obj.SetNamespace("openshift-monitoring")
 
-	err := r.Client.Delete(ctx, obj)
-	if err != nil {
-		if !errors.IsNotFound(err) && !apimeta.IsNoMatchError(err) {
-			log.Error(
-				err,
-				"Error while deleting ServiceMonitor: clusterlifecycle-state-metrics-v2",
-			)
+	var configType string
+	switch kind {
+	case "PrometheusRule":
+		configType = "PrometheusRule"
 
-			return err
-		}
-	} else {
-		log.Info("Deleted the legacy CLC Prometheus configuration", "kind", "ServiceMonitor", "name", obj.GetName())
+	case "ServiceMonitor":
+		configType = "ServiceMonitor"
+
+	default:
+		return fmt.Errorf("Unsupported kind detected when trying to remove legacy configuration: %s", kind)
 	}
 
+	for _, c := range backplanev1.MCEComponents {
+		res, err := func() (string, error) {
+			if configType == "PrometheusRule" {
+				return backplanev1.GetPrometheusRulesName(c)
+			}
+			return backplanev1.GetServiceMonitorName(c)
+		}()
+
+		if err != nil {
+			continue
+		}
+
+		obj.SetName(res)
+		obj.SetNamespace(targetNamespace)
+
+		err = r.Client.Delete(ctx, obj)
+		if err != nil {
+			if !errors.IsNotFound(err) && !apimeta.IsNoMatchError(err) {
+				log.Error(
+					err,
+					fmt.Sprintf("Error while deleting the legacy %s configuration", configType),
+					"kind", kind,
+					"name", obj.GetName(),
+				)
+				return err
+			}
+		} else {
+			log.Info(fmt.Sprintf("Deleted the legacy %s configuration: %s", configType, obj.GetName()))
+		}
+	}
 	return nil
 }

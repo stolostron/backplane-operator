@@ -18,40 +18,76 @@ limitations under the License.
 
 package v1
 
+import "fmt"
+
 const (
-	ManagedServiceAccount        = "managedserviceaccount"
-	ManagedServiceAccountPreview = "managedserviceaccount-preview"
-	ConsoleMCE                   = "console-mce"
-	Discovery                    = "discovery"
-	Hive                         = "hive"
 	AssistedService              = "assisted-service"
 	ClusterLifecycle             = "cluster-lifecycle"
 	ClusterManager               = "cluster-manager"
-	ServerFoundation             = "server-foundation"
-	HyperShift                   = "hypershift"
-	HyperShiftPreview            = "hypershift-preview"
 	ClusterProxyAddon            = "cluster-proxy-addon"
+	ConsoleMCE                   = "console-mce"
+	Discovery                    = "discovery"
+	Hive                         = "hive"
+	HyperShift                   = "hypershift"
 	HypershiftLocalHosting       = "hypershift-local-hosting"
+	HyperShiftPreview            = "hypershift-preview"
 	LocalCluster                 = "local-cluster"
+	ManagedServiceAccount        = "managedserviceaccount"
+	ManagedServiceAccountPreview = "managedserviceaccount-preview"
+	ServerFoundation             = "server-foundation"
 )
 
 var allComponents = []string{
 	AssistedService,
 	ClusterLifecycle,
 	ClusterManager,
+	ClusterProxyAddon,
+	ConsoleMCE,
 	Discovery,
 	Hive,
-	ServerFoundation,
-	ConsoleMCE,
+	HyperShift,
+	HypershiftLocalHosting,
+	HyperShiftPreview,
+	LocalCluster,
 	ManagedServiceAccount,
 	ManagedServiceAccountPreview,
-	HyperShift,
-	HyperShiftPreview,
-	HypershiftLocalHosting,
-	ClusterProxyAddon,
-	LocalCluster,
+	ServerFoundation,
 }
 
+// MCEComponents is a slice containing component names specific to the "MCE" category.
+var MCEComponents = []string{
+	AssistedService,
+	ClusterLifecycle,
+	ClusterManager,
+	ClusterProxyAddon,
+	ConsoleMCE,
+	Discovery,
+	Hive,
+	HyperShift,
+	HypershiftLocalHosting,
+	ManagedServiceAccount,
+	ServerFoundation,
+}
+
+var LegacyPrometheusKind = []string{"PrometheusRule", "ServiceMonitor"}
+
+// MCEPrometheusRules is a map that associates certain component names with their corresponding prometheus rules.
+var MCEPrometheusRules = map[string]string{
+	ConsoleMCE: "acm-console-prometheus-rules",
+	// Add other components here when PrometheusRules is required.
+}
+
+// MCEServiceMonitors is a map that associates certain component names with their corresponding service monitors.
+var MCEServiceMonitors = map[string]string{
+	ClusterLifecycle: "clusterlifecycle-state-metrics-v2",
+	ConsoleMCE:       "console-mce-monitor",
+	// Add other components here when ServiceMonitors is required.
+}
+
+/*
+ComponentPresent checks if a component with the given name is present in the MultiClusterEngine's Overrides.
+Returns true if the component is present, otherwise false.
+*/
 func (mce *MultiClusterEngine) ComponentPresent(s string) bool {
 	if mce.Spec.Overrides == nil {
 		return false
@@ -64,6 +100,10 @@ func (mce *MultiClusterEngine) ComponentPresent(s string) bool {
 	return false
 }
 
+/*
+Enabled checks if a component with the given name is enabled in the MultiClusterEngine's Overrides.
+Returns true if the component is enabled, otherwise false.
+*/
 func (mce *MultiClusterEngine) Enabled(s string) bool {
 	if mce.Spec.Overrides == nil {
 		return false
@@ -73,10 +113,13 @@ func (mce *MultiClusterEngine) Enabled(s string) bool {
 			return c.Enabled
 		}
 	}
-
 	return false
 }
 
+/*
+Enable enables a component with the given name in the MultiClusterEngine's Overrides.
+If the component is not present, it adds it and sets it as enabled.
+*/
 func (mce *MultiClusterEngine) Enable(s string) {
 	if mce.Spec.Overrides == nil {
 		mce.Spec.Overrides = &Overrides{}
@@ -93,7 +136,10 @@ func (mce *MultiClusterEngine) Enable(s string) {
 	})
 }
 
-// Prune removes the component from the component list. Returns true if changes are made
+/*
+Prune removes a component with the given name from the MultiClusterEngine's Overrides.
+Returns true if the component is pruned, indicating changes were made.
+*/
 func (mce *MultiClusterEngine) Prune(s string) bool {
 	if mce.Spec.Overrides == nil {
 		return false
@@ -115,6 +161,10 @@ func (mce *MultiClusterEngine) Prune(s string) bool {
 	return false
 }
 
+/*
+Disable disables a component with the given name in the MultiClusterEngine's Overrides.
+If the component is not present, it adds it and sets it as disabled.
+*/
 func (mce *MultiClusterEngine) Disable(s string) {
 	if mce.Spec.Overrides == nil {
 		mce.Spec.Overrides = &Overrides{}
@@ -131,7 +181,10 @@ func (mce *MultiClusterEngine) Disable(s string) {
 	})
 }
 
-// a component is valid if its name matches a known component
+/*
+validComponent checks if a ComponentConfig is valid by comparing its name to a list of known component names.
+Returns true if the component is valid, otherwise false.
+*/
 func validComponent(c ComponentConfig) bool {
 	for _, name := range allComponents {
 		if c.Name == name {
@@ -141,6 +194,10 @@ func validComponent(c ComponentConfig) bool {
 	return false
 }
 
+/*
+IsInHostedMode checks if the MultiClusterEngine has an annotation indicating it is in hosted mode.
+Returns true if the annotation is present and its value is "ModeHosted," otherwise false.
+*/
 func IsInHostedMode(mce *MultiClusterEngine) bool {
 	a := mce.GetAnnotations()
 	if a == nil {
@@ -150,4 +207,30 @@ func IsInHostedMode(mce *MultiClusterEngine) bool {
 		return true
 	}
 	return false
+}
+
+/*
+GetLegacyPrometheusKind returns a list of legacy kind resources that are required to be removed before updating to
+ACM 2.9 and later.
+*/
+func GetLegacyPrometheusKind() []string {
+	return LegacyPrometheusKind
+}
+
+// GetPrometheusRulesName returns the name of the PrometheusRules based on the provided component name.
+func GetPrometheusRulesName(component string) (string, error) {
+	if val, ok := MCEPrometheusRules[component]; !ok {
+		return val, fmt.Errorf("failed to find PrometheusRules name for: %s component", component)
+	} else {
+		return val, nil
+	}
+}
+
+// GetServiceMonitorName returns the name of the ServiceMonitors based on the provided component name.
+func GetServiceMonitorName(component string) (string, error) {
+	if val, ok := MCEServiceMonitors[component]; !ok {
+		return val, fmt.Errorf("failed to find ServiceMonitors name for: %s component", component)
+	} else {
+		return val, nil
+	}
 }
