@@ -31,6 +31,7 @@ import (
 
 	configv1 "github.com/openshift/api/config/v1"
 
+	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 	v1 "github.com/stolostron/backplane-operator/api/v1"
 	"github.com/stolostron/backplane-operator/pkg/utils"
 
@@ -1097,17 +1098,24 @@ var _ = Describe("BackplaneConfig controller", func() {
 				err := k8sClient.Create(context.TODO(), sm)
 				Expect(err).To(BeNil())
 
+				legacyResourceKind := backplanev1.GetLegacyPrometheusKind()
+				ns := "openshift-monitoring"
+
 				By("Running the cleanup of the legacy Prometheus configuration")
-				err = reconciler.removeLegacyCLCPrometheusConfig(context.TODO())
-				Expect(err).To(BeNil())
+				for _, kind := range legacyResourceKind {
+					err = reconciler.removeLegacyPrometheusConfigurations(context.TODO(), ns, kind)
+					Expect(err).To(BeNil())
+				}
 
 				By("Verifying that the legacy CLC ServiceMonitor is deleted")
 				err = k8sClient.Get(context.TODO(), client.ObjectKeyFromObject(sm), sm)
 				Expect(errors.IsNotFound(err)).To(BeTrue())
 
 				By("Running the cleanup of the legacy Prometheus configuration again should do nothing")
-				err = reconciler.removeLegacyCLCPrometheusConfig(context.TODO())
-				Expect(err).To(BeNil())
+				for _, kind := range legacyResourceKind {
+					err = reconciler.removeLegacyPrometheusConfigurations(context.TODO(), ns, kind)
+					Expect(err).To(BeNil())
+				}
 			})
 		})
 	})

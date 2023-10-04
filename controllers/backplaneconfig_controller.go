@@ -306,9 +306,8 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return result, err
 	}
 
-	err = r.removeLegacyCLCPrometheusConfig(ctx)
-	if err != nil {
-		return ctrl.Result{}, err
+	for _, kind := range backplanev1.GetLegacyPrometheusKind() {
+		err = r.removeLegacyPrometheusConfigurations(ctx, "openshift-monitoring", kind)
 	}
 
 	result, err = r.ensureToggleableComponents(ctx, backplaneConfig)
