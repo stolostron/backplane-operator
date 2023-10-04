@@ -11,7 +11,7 @@
   github_ref: "https://github.com/redhat-openshift-ecosystem/community-operators-prod.git"
   operators:
     - name: "assisted-service"
-      channel: "ocm-2.9"
+      channel: "ocm-2.10"
       bundles-directory: "operators/assisted-service-operator/"
       imageMappings:
         assisted-service: assisted_service
