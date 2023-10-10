@@ -301,7 +301,7 @@ package main
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles;rolebindings,verbs=get;list;watch;create;update;delete
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles;rolebindings,verbs=get;list;watch;create;update;patch
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles;rolebindings;clusterroles;clusterrolebindings,verbs=get;list;watch;create;update;delete
-//+kubebuilder:rbac:groups=rbac.authorization.k8s.io;"",resources=roles;rolebindings;clusterroles;clusterrolebindings,verbs=create;get
+//+kubebuilder:rbac:groups=rbac.authorization.k8s.io;"",resources=roles;rolebindings;clusterroles;clusterrolebindings;namespaces,verbs=create;get
 //+kubebuilder:rbac:groups=register.open-cluster-management.io,resources=managedclusters/accept,verbs=update
 //+kubebuilder:rbac:groups=register.open-cluster-management.io,resources=managedclusters/accept,verbs=update
 //+kubebuilder:rbac:groups=register.open-cluster-management.io,resources=managedclusters/clientcertificates,verbs=renew

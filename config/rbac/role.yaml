@@ -430,6 +430,7 @@ rules:
   resources:
   - clusterrolebindings
   - clusterroles
+  - namespaces
   - rolebindings
   - roles
   verbs:

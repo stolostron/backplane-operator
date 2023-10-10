@@ -14,7 +14,7 @@ rules:
   verbs: ["get"]
 
 - apiGroups: ["rbac.authorization.k8s.io",""]
-  resources: ["roles","rolebindings", "clusterroles", "clusterrolebindings"]
+  resources: ["roles","rolebindings", "clusterroles", "clusterrolebindings", "namespaces"]
   verbs: ["create","get"]
 
 - apiGroups: ["hive.openshift.io"]
