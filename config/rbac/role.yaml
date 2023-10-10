@@ -198,6 +198,7 @@ rules:
   resources:
   - namespaces
   verbs:
+  - create
   - delete
   - get
   - list
@@ -427,6 +428,8 @@ rules:
   - ""
   - rbac.authorization.k8s.io
   resources:
+  - clusterrolebindings
+  - clusterroles
   - rolebindings
   - roles
   verbs:
@@ -1409,6 +1412,12 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - config.openshift.io
+  resources:
+  - dnses
+  verbs:
+  - get
 - apiGroups:
   - config.openshift.io
   resources:
