@@ -48,6 +48,7 @@ rules:
   - cluster.open-cluster-management.io
   resources:
   - clustercurators
+  - managedclusters
   verbs:
   - create
   - delete
@@ -100,3 +101,14 @@ rules:
   - get
   - create
   - update
+- apiGroups:
+  - hypershift.openshift.io
+  resources:
+  - hostedclusters
+  - nodepools
+  verbs:
+  - get
+  - patch
+  - delete
+  - update
+  - list

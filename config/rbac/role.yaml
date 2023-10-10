@@ -1206,6 +1206,7 @@ rules:
   - cluster.open-cluster-management.io
   resources:
   - clustercurators
+  - clustercurators/status
   verbs:
   - create
   - delete
@@ -1218,7 +1219,7 @@ rules:
   - cluster.open-cluster-management.io
   resources:
   - clustercurators
-  - clustercurators/status
+  - managedclusters
   verbs:
   - create
   - delete
@@ -1756,7 +1757,11 @@ rules:
   - hostedclusters
   - nodepools
   verbs:
+  - delete
+  - get
   - list
+  - patch
+  - update
   - watch
 - apiGroups:
   - imageregistry.open-cluster-management.io
