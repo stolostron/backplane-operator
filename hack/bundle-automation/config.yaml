@@ -1,11 +1,13 @@
 - repo_name: generate-hive-bundle
   gen_command: ./hack/bundle-automation/gen-hive-bundle.sh
   branch: mce-2.4
-  sha: 4418e43e27a3bffdac6192a0c4a5f581146f5d00
+  sha: bcbe8574a970871399b30127082c6d2e8185e866
   bundlePath: /tmp/hive-operator-manifests
   name: hive-operator
   imageMappings:
-     hive: openshift_hive
+    hive: openshift_hive
+  imageRepoOverride: stolostron
+  imageTagOverride: 2.4-bcbe8574a970871399b30127082c6d2e8185e866
 
 - repo_name: "community-operators-prod"
   github_ref: "https://github.com/redhat-openshift-ecosystem/community-operators-prod.git"
