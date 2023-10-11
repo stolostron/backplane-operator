@@ -14,8 +14,8 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    createdAt: "2023-09-26T20:15:34Z"
-    operators.operatorframework.io/builder: operator-sdk-v1.29.0
+    createdAt: "2023-10-10T19:29:32Z"
+    operators.operatorframework.io/builder: operator-sdk-v1.32.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
   name: multicluster-engine.v0.0.1
   namespace: placeholder
@@ -267,6 +267,7 @@ spec:
           resources:
           - namespaces
           verbs:
+          - create
           - delete
           - get
           - list
@@ -496,6 +497,9 @@ spec:
           - ""
           - rbac.authorization.k8s.io
           resources:
+          - clusterrolebindings
+          - clusterroles
+          - namespaces
           - rolebindings
           - roles
           verbs:
@@ -1271,6 +1275,7 @@ spec:
           - cluster.open-cluster-management.io
           resources:
           - clustercurators
+          - clustercurators/status
           verbs:
           - create
           - delete
@@ -1283,7 +1288,7 @@ spec:
           - cluster.open-cluster-management.io
           resources:
           - clustercurators
-          - clustercurators/status
+          - managedclusters
           verbs:
           - create
           - delete
@@ -1478,6 +1483,12 @@ spec:
           - get
           - list
           - watch
+        - apiGroups:
+          - config.openshift.io
+          resources:
+          - dnses
+          verbs:
+          - get
         - apiGroups:
           - config.openshift.io
           resources:
@@ -1815,7 +1826,11 @@ spec:
           - hostedclusters
           - nodepools
           verbs:
+          - delete
+          - get
           - list
+          - patch
+          - update
           - watch
         - apiGroups:
           - imageregistry.open-cluster-management.io

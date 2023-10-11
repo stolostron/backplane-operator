@@ -198,6 +198,7 @@ rules:
   resources:
   - namespaces
   verbs:
+  - create
   - delete
   - get
   - list
@@ -427,6 +428,9 @@ rules:
   - ""
   - rbac.authorization.k8s.io
   resources:
+  - clusterrolebindings
+  - clusterroles
+  - namespaces
   - rolebindings
   - roles
   verbs:
@@ -1202,6 +1206,7 @@ rules:
   - cluster.open-cluster-management.io
   resources:
   - clustercurators
+  - clustercurators/status
   verbs:
   - create
   - delete
@@ -1214,7 +1219,7 @@ rules:
   - cluster.open-cluster-management.io
   resources:
   - clustercurators
-  - clustercurators/status
+  - managedclusters
   verbs:
   - create
   - delete
@@ -1409,6 +1414,12 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - config.openshift.io
+  resources:
+  - dnses
+  verbs:
+  - get
 - apiGroups:
   - config.openshift.io
   resources:
@@ -1746,7 +1757,11 @@ rules:
   - hostedclusters
   - nodepools
   verbs:
+  - delete
+  - get
   - list
+  - patch
+  - update
   - watch
 - apiGroups:
   - imageregistry.open-cluster-management.io
