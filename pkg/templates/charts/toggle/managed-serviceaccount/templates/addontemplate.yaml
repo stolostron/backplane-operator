@@ -53,7 +53,6 @@ spec:
             spec:
               containers:
               - args:
-                - --leader-elect=true
                 - --cluster-name={{ `{{CLUSTER_NAME}}` }}
                 - --kubeconfig={{ `{{HUB_KUBECONFIG}}` }}
                 - --feature-gates=EphemeralIdentity=true
