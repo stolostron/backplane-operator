@@ -16,8 +16,7 @@ me=$(basename "$0")
 branch="$1"
 commit_ish="$2"
 output_dir="$3"
-image_repo="$4"
-image_tag_override="$5"
+
 if [[ -z "$output_dir" ]]; then
    >&2 echo "Syntax: $me <commit_ish> <output_path>"
    exit 5
@@ -66,7 +65,9 @@ fi
 mkdir bundle
 cd bundle
 echo "Running Hive bundle-gen tool ($gen_tool)."
-python3 ../hive/$gen_tool --hive-repo "$hive_repo_spot" --commit "$commit_ish" --dummy-bundle "$branch" --image-repo "$image_repo" --image-tag-override "$image_tag_override"
+python3 ../hive/$gen_tool --hive-repo "$hive_repo_spot" --commit "$commit_ish" --dummy-bundle "$branch" \
+   --image-repo disable-image-validation
+
 # Note: We point the bundle-gen tool at the local repo we already checked out
 # since we know that it contains the Git SHA we are using for input.
 rc=$?
