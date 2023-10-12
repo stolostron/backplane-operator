@@ -499,6 +499,11 @@ spec:
                         required:
                         - diskSizeGB
                         type: object
+                      resourcePool:
+                        description: ResourcePool is the name of the resource pool
+                          that will be used for virtual machines. If it is not present,
+                          a default value will be used.
+                        type: string
                     required:
                     - coresPerSocket
                     - cpus
@@ -653,15 +658,12 @@ spec:
                     out taints are mutually exclusive by key+effect, not simply by
                     key.)
                   properties:
-                    effect:omitempty:
+                    effect:
                       description: Effect matches corev1.Taint.Effect.
                       type: string
-                    key:omitempty:
+                    key:
                       description: Key matches corev1.Taint.Key.
                       type: string
-                  required:
-                  - effect:omitempty
-                  - key:omitempty
                   type: object
                 type: array
               replicas:
