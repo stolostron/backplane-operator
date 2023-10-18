@@ -66,7 +66,7 @@ mkdir bundle
 cd bundle
 echo "Running Hive bundle-gen tool ($gen_tool)."
 python3 ../hive/$gen_tool --hive-repo "$hive_repo_spot" --commit "$commit_ish" --dummy-bundle "$branch" \
-   --image-repo disable-image-validation
+   --image-repo dummy.io/disable-image-validation/hive
 
 # Note: We point the bundle-gen tool at the local repo we already checked out
 # since we know that it contains the Git SHA we are using for input.

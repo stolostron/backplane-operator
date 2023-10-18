@@ -6,7 +6,6 @@
   name: hive-operator
   imageMappings:
     hive: openshift_hive
-    disable-image-validation: openshift_hive
 
 - repo_name: "community-operators-prod"
   github_ref: "https://github.com/redhat-openshift-ecosystem/community-operators-prod.git"
