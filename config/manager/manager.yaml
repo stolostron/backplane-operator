@@ -21,7 +21,29 @@ spec:
     metadata:
       labels:
         control-plane: backplane-operator
+        ocm-antiaffinity-selector: backplane-operator
     spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - backplane-operator
+              topologyKey: topology.kubernetes.io/zone
+            weight: 70
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - backplane-operator
+              topologyKey: kubernetes.io/hostname
+            weight: 35
       containers:
       - args:
         - --leader-elect
@@ -56,6 +78,9 @@ spec:
             memory: 20Mi
         securityContext:
           allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
           privileged: false
           readOnlyRootFilesystem: true
         volumeMounts:
@@ -64,6 +89,8 @@ spec:
           readOnly: true
       securityContext:
         runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       serviceAccountName: multicluster-engine-operator
       terminationGracePeriodSeconds: 10
       volumes:
