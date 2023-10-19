@@ -6,9 +6,6 @@
   name: hive-operator
   imageMappings:
     hive: openshift_hive
-    stolostron: openshift_hive
-  imageRepoOverride: stolostron
-  imageTagOverride: 2.4-local-30c82d3f1a0ef1edaedcbed9d92b840732ad2e75
 
 - repo_name: "community-operators-prod"
   github_ref: "https://github.com/redhat-openshift-ecosystem/community-operators-prod.git"
