@@ -32,7 +32,7 @@ cd "$tmp_dir"
 
 # Clone the Hive operator repo at specified commit/branch.
 
-echo "Cloning/checking out HIve repo at branch/commit ($commit_ish)."
+echo "Cloning/checking out Hive repo at branch/commit ($commit_ish)."
 hive_repo_spot="$PWD/hive"
 git clone --no-progress "$hive_repo" "hive"
 rc=$?
@@ -63,7 +63,9 @@ fi
 mkdir bundle
 cd bundle
 echo "Running Hive bundle-gen tool ($gen_tool)."
-python3 ../hive/$gen_tool --hive-repo "$hive_repo_spot" --dummy-bundle "$commit_ish"
+python3 ../hive/$gen_tool --hive-repo "$hive_repo_spot" --commit "$commit_ish" --dummy-bundle "$branch" \
+   --image-repo dummy.io/disable-image-validation/hive
+
 # Note: We point the bundle-gen tool at the local repo we already checked out
 # since we know that it contains the Git SHA we are using for input.
 rc=$?
