@@ -6,12 +6,13 @@
   name: hive-operator
   imageMappings:
      hive: openshift_hive
+
 - repo_name: "community-operators-prod"
   github_ref: "https://github.com/redhat-openshift-ecosystem/community-operators-prod.git"
   operators:
     - name: "assisted-service"
       channel: "ocm-2.6"
-      package-yml: "operators/assisted-service-operator/assisted-service.package.yaml"
+      bundles-directory: operators/assisted-service-operator
       imageMappings:
         assisted-service: assisted_service
         postgresql-12-centos7: postgresql_12
@@ -19,6 +20,7 @@
         assisted-installer-controller: assisted_installer_controller
         assisted-installer: assisted_installer
         assisted-image-service: assisted_image_service
+
 - repo_name: registration-operator
   github_ref: "https://github.com/stolostron/registration-operator.git"
   branch: "backplane-2.1"
@@ -29,6 +31,7 @@
         registration-operator: registration_operator
       exclusions:
         - readOnlyRootFilesystem
+
 - repo_name: discovery-operator
   github_ref: "https://github.com/stolostron/discovery.git"
   branch: "backplane-2.1"
