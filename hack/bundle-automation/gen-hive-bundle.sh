@@ -31,7 +31,7 @@ cd "$tmp_dir"
 
 # Clone the Hive operator repo at specified commit/branch.
 
-echo "Cloning/checking out HIve repo at branch/commit ($commit_ish)."
+echo "Cloning/checking out Hive repo at branch/commit ($commit_ish)."
 hive_repo_spot="$PWD/hive"
 git clone --no-progress "$hive_repo" "hive"
 rc=$?
