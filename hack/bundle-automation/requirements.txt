@@ -2,3 +2,6 @@ pyyaml
 gitpython
 requests
 urllib3
+packaging
+semver
+chardet
