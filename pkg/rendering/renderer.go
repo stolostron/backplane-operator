@@ -3,7 +3,6 @@
 package renderer
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -21,7 +20,7 @@ import (
 	"helm.sh/helm/v3/pkg/engine"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"sigs.k8s.io/controller-runtime/pkg/log"
+	log "k8s.io/klog/v2"
 	"sigs.k8s.io/yaml"
 )
 
@@ -183,7 +182,6 @@ func RenderCRDs(crdDir string) ([]*unstructured.Unstructured, []error) {
 }
 
 func RenderCharts(chartDir string, backplaneConfig *v1.MultiClusterEngine, images map[string]string) ([]*unstructured.Unstructured, []error) {
-	log := log.FromContext(context.Background())
 	var templates []*unstructured.Unstructured
 	errs := []error{}
 	if val, ok := os.LookupEnv("DIRECTORY_OVERRIDE"); ok {
@@ -208,7 +206,6 @@ func RenderCharts(chartDir string, backplaneConfig *v1.MultiClusterEngine, image
 }
 
 func RenderChart(chartPath string, backplaneConfig *v1.MultiClusterEngine, images map[string]string) ([]*unstructured.Unstructured, []error) {
-	log := log.FromContext(context.Background())
 	errs := []error{}
 	if val, ok := os.LookupEnv("DIRECTORY_OVERRIDE"); ok {
 		chartPath = path.Join(val, chartPath)
@@ -232,7 +229,6 @@ func RenderChartWithNamespace(chartPath string, backplaneConfig *v1.MultiCluster
 }
 
 func renderTemplates(chartPath string, backplaneConfig *v1.MultiClusterEngine, images map[string]string) ([]*unstructured.Unstructured, []error) {
-	log := log.FromContext(context.Background())
 	var templates []*unstructured.Unstructured
 	errs := []error{}
 	chart, err := loader.Load(chartPath)

@@ -28,10 +28,10 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/discovery"
+	log "k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	cl "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
@@ -40,10 +40,8 @@ const (
 	DefaultTargetNamespace = "multicluster-engine"
 )
 
-// log is for logging in this package.
 var (
-	backplaneconfiglog = logf.Log.WithName("backplaneconfig-resource")
-	Client             cl.Client
+	Client cl.Client
 
 	ErrInvalidComponent    = errors.New("invalid component config")
 	ErrInvalidNamespace    = errors.New("invalid TargetNamespace")
@@ -146,7 +144,7 @@ var _ webhook.Defaulter = &MultiClusterEngine{}
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type
 func (r *MultiClusterEngine) Default() {
-	backplaneconfiglog.Info("default", "name", r.Name)
+	log.Info("default", "name", r.Name)
 	if r.Spec.TargetNamespace == "" {
 		r.Spec.TargetNamespace = DefaultTargetNamespace
 	}
@@ -157,7 +155,7 @@ var _ webhook.Validator = &MultiClusterEngine{}
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (r *MultiClusterEngine) ValidateCreate() (admission.Warnings, error) {
 	ctx := context.Background()
-	backplaneconfiglog.Info("validate create", "name", r.Name)
+	log.Info("validate create", "name", r.Name)
 
 	if (r.Spec.AvailabilityConfig != HABasic) && (r.Spec.AvailabilityConfig != HAHigh) && (r.Spec.AvailabilityConfig != "") {
 		return nil, ErrInvalidAvailability
@@ -198,10 +196,10 @@ func (r *MultiClusterEngine) ValidateCreate() (admission.Warnings, error) {
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
 func (r *MultiClusterEngine) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
-	backplaneconfiglog.Info("validate update", "name", r.Name)
+	log.Info("validate update", "name", r.Name)
 
 	oldMCE := old.(*MultiClusterEngine)
-	backplaneconfiglog.Info(oldMCE.Spec.TargetNamespace)
+	log.Info(oldMCE.Spec.TargetNamespace)
 	if (r.Spec.TargetNamespace != oldMCE.Spec.TargetNamespace) && (oldMCE.Spec.TargetNamespace != "") {
 		return nil, fmt.Errorf("%w: changes cannot be made to target namespace", ErrInvalidNamespace)
 	}
@@ -269,7 +267,7 @@ func (r *MultiClusterEngine) ValidateUpdate(old runtime.Object) (admission.Warni
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
 func (r *MultiClusterEngine) ValidateDelete() (admission.Warnings, error) {
 	// TODO(user): fill in your validation logic upon object deletion.
-	backplaneconfiglog.Info("validate delete", "name", r.Name)
+	log.Info("validate delete", "name", r.Name)
 	ctx := context.Background()
 
 	cfg, err := config.GetConfig()
