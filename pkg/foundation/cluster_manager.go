@@ -20,8 +20,8 @@ import (
 	v1 "github.com/stolostron/backplane-operator/api/v1"
 	"github.com/stolostron/backplane-operator/pkg/utils"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	log "k8s.io/klog/v2"
 	ocmapiv1 "open-cluster-management.io/api/operator/v1"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const (
@@ -59,7 +59,6 @@ func AddonManagerImage(overrides map[string]string) string {
 }
 
 func ClusterManager(m *v1.MultiClusterEngine, overrides map[string]string) *unstructured.Unstructured {
-	log := log.FromContext(context.Background())
 
 	cmTolerations := []corev1.Toleration{}
 	if m.Spec.Tolerations != nil {
