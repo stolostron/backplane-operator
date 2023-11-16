@@ -167,9 +167,9 @@ func (r *MultiClusterEngineReconciler) removeLegacyPrometheusConfigurations(ctx 
 	for _, c := range backplanev1.MCEComponents {
 		res, err := func() (string, error) {
 			if configType == "PrometheusRule" {
-				return backplanev1.GetPrometheusRulesName(c)
+				return backplanev1.GetLegacyPrometheusRulesName(c)
 			}
-			return backplanev1.GetServiceMonitorName(c)
+			return backplanev1.GetLegacyServiceMonitorName(c)
 		}()
 
 		if err != nil {

@@ -47,6 +47,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -78,6 +79,8 @@ const (
 
 	trustBundleNameEnvVar  = "TRUSTED_CA_BUNDLE"
 	defaultTrustBundleName = "trusted-ca-bundle"
+
+	controlPlane = "backplane-operator"
 )
 
 //+kubebuilder:rbac:groups=multicluster.openshift.io,resources=multiclusterengines,verbs=get;list;watch;create;update;patch;delete
@@ -234,7 +237,7 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		MultiClusterEngine to avoid conflicts with the openshift-* namespace when deploying PrometheusRules and
 		ServiceMonitors in ACM and MCE.
 	*/
-	result, err = r.ensureOpenShiftNamespaceLabel(ctx, backplaneConfig)
+	_, err = r.ensureOpenShiftNamespaceLabel(ctx, backplaneConfig)
 	if err != nil {
 		log.Error(err, "Failed to add to %s label to namespace: %s", utils.OpenShiftClusterMonitoringLabel,
 			backplaneConfig.Spec.TargetNamespace)
@@ -307,7 +310,7 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}
 
 	for _, kind := range backplanev1.GetLegacyPrometheusKind() {
-		err = r.removeLegacyPrometheusConfigurations(ctx, "openshift-monitoring", kind)
+		_ = r.removeLegacyPrometheusConfigurations(ctx, "openshift-monitoring", kind)
 	}
 
 	result, err = r.ensureToggleableComponents(ctx, backplaneConfig)
@@ -316,6 +319,16 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}
 
 	result, err = r.createTrustBundleConfigmap(ctx, backplaneConfig)
+	if err != nil {
+		return result, err
+	}
+
+	result, err = r.createMetricsService(ctx, backplaneConfig)
+	if err != nil {
+		return result, err
+	}
+
+	result, err = r.createMetricsServiceMonitor(ctx, backplaneConfig)
 	if err != nil {
 		return result, err
 	}
@@ -440,7 +453,8 @@ func (r *MultiClusterEngineReconciler) SetupWithManager(mgr ctrl.Manager) error 
 
 // createTrustBundleConfigmap creates a configmap that will be injected with the
 // trusted CA bundle for use with the OCP cluster wide proxy
-func (r *MultiClusterEngineReconciler) createTrustBundleConfigmap(ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+func (r *MultiClusterEngineReconciler) createTrustBundleConfigmap(ctx context.Context,
+	mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 
 	// Get Trusted Bundle configmap name
@@ -491,6 +505,141 @@ func (r *MultiClusterEngineReconciler) createTrustBundleConfigmap(ctx context.Co
 		return ctrl.Result{RequeueAfter: requeuePeriod}, err
 	}
 	// Configmap created successfully
+	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterEngineReconciler) createMetricsService(ctx context.Context,
+	mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+	log := log.FromContext(ctx)
+
+	const Port = 8080
+
+	sName := utils.MCEOperatorMetricsServiceName
+	sNamespace := mce.Spec.TargetNamespace
+
+	namespacedName := types.NamespacedName{
+		Name:      sName,
+		Namespace: sNamespace,
+	}
+
+	// Check if service exists
+	if err := r.Client.Get(ctx, namespacedName, &corev1.Service{}); err != nil {
+		if !apierrors.IsNotFound(err) {
+			// Unknown error. Requeue
+			log.Error(err, fmt.Sprintf("error while getting multicluster-engine metrics service: %s/%s",
+				sNamespace, sName))
+			return ctrl.Result{RequeueAfter: requeuePeriod}, err
+		}
+
+		// Create metrics service
+		s := &corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      sName,
+				Namespace: sNamespace,
+				Labels: map[string]string{
+					"control-plane": controlPlane,
+				},
+			},
+			Spec: corev1.ServiceSpec{
+				Ports: []corev1.ServicePort{
+					{
+						Name:       "metrics",
+						Port:       int32(Port),
+						Protocol:   "TCP",
+						TargetPort: intstr.FromInt(Port),
+					},
+				},
+				Selector: map[string]string{
+					"control-plane": controlPlane,
+				},
+			},
+		}
+
+		if err = ctrl.SetControllerReference(mce, s, r.Scheme); err != nil {
+			return ctrl.Result{}, pkgerrors.Wrapf(
+				err, "error setting controller reference on metrics service: %s", sName,
+			)
+		}
+
+		if err = r.Client.Create(ctx, s); err != nil {
+			// Error creating metrics service
+			log.Error(err, fmt.Sprintf("error creating multicluster-engine metrics service: %s", sName))
+			return ctrl.Result{RequeueAfter: requeuePeriod}, err
+		}
+
+		log.Info(fmt.Sprintf("Created multicluster-engine metrics service: %s", sName))
+	}
+
+	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterEngineReconciler) createMetricsServiceMonitor(ctx context.Context,
+	mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+	log := log.FromContext(ctx)
+
+	smName := utils.MCEOperatorMetricsServiceMonitorName
+	smNamespace := mce.Spec.TargetNamespace
+
+	namespacedName := types.NamespacedName{
+		Name:      smName,
+		Namespace: smNamespace,
+	}
+
+	// Check if service exists
+	if err := r.Client.Get(ctx, namespacedName, &monitorv1.ServiceMonitor{}); err != nil {
+		if !apierrors.IsNotFound(err) {
+			// Unknown error. Requeue
+			log.Error(err, fmt.Sprintf("error while getting multicluster-engine metrics service: %s/%s",
+				smNamespace, smName))
+			return ctrl.Result{RequeueAfter: requeuePeriod}, err
+		}
+
+		// Create metrics service
+		sm := &monitorv1.ServiceMonitor{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      smName,
+				Namespace: smNamespace,
+				Labels: map[string]string{
+					"control-plane": controlPlane,
+				},
+			},
+			Spec: monitorv1.ServiceMonitorSpec{
+				Endpoints: []monitorv1.Endpoint{
+					{
+						BearerTokenFile: "/var/run/secrets/kubernetes.io/serviceaccount/token",
+						BearerTokenSecret: corev1.SecretKeySelector{
+							Key: "",
+						},
+						Port: "metrics",
+					},
+				},
+				NamespaceSelector: monitorv1.NamespaceSelector{
+					MatchNames: []string{
+						mce.Spec.TargetNamespace,
+					},
+				},
+				Selector: metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"control-plane": controlPlane,
+					},
+				},
+			},
+		}
+
+		if err = ctrl.SetControllerReference(mce, sm, r.Scheme); err != nil {
+			return ctrl.Result{}, pkgerrors.Wrapf(
+				err, "error setting controller reference on multicluster-engine metrics servicemonitor: %s", smName)
+		}
+
+		if err = r.Client.Create(ctx, sm); err != nil {
+			// Error creating metrics servicemonitor
+			log.Error(err, fmt.Sprintf("error creating metrics servicemonitor: %s", smName))
+			return ctrl.Result{RequeueAfter: requeuePeriod}, err
+		}
+
+		log.Info(fmt.Sprintf("Created multicluster-engine metrics servicemonitor: %s", smName))
+	}
+
 	return ctrl.Result{}, nil
 }
 
