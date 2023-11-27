@@ -71,14 +71,14 @@ var MCEComponents = []string{
 
 var LegacyPrometheusKind = []string{"PrometheusRule", "ServiceMonitor"}
 
-// MCEPrometheusRules is a map that associates certain component names with their corresponding prometheus rules.
-var MCEPrometheusRules = map[string]string{
+// MCELegacyPrometheusRules is a map that associates certain component names with their corresponding prometheus rules.
+var MCELegacyPrometheusRules = map[string]string{
 	ConsoleMCE: "acm-console-prometheus-rules",
 	// Add other components here when PrometheusRules is required.
 }
 
-// MCEServiceMonitors is a map that associates certain component names with their corresponding service monitors.
-var MCEServiceMonitors = map[string]string{
+// MCELegacyServiceMonitors is a map that associates certain component names with their corresponding service monitors.
+var MCELegacyServiceMonitors = map[string]string{
 	ClusterLifecycle: "clusterlifecycle-state-metrics-v2",
 	ConsoleMCE:       "console-mce-monitor",
 	// Add other components here when ServiceMonitors is required.
@@ -217,18 +217,18 @@ func GetLegacyPrometheusKind() []string {
 	return LegacyPrometheusKind
 }
 
-// GetPrometheusRulesName returns the name of the PrometheusRules based on the provided component name.
-func GetPrometheusRulesName(component string) (string, error) {
-	if val, ok := MCEPrometheusRules[component]; !ok {
+// GetLegacyPrometheusRulesName returns the name of the PrometheusRules based on the provided component name.
+func GetLegacyPrometheusRulesName(component string) (string, error) {
+	if val, ok := MCELegacyPrometheusRules[component]; !ok {
 		return val, fmt.Errorf("failed to find PrometheusRules name for: %s component", component)
 	} else {
 		return val, nil
 	}
 }
 
-// GetServiceMonitorName returns the name of the ServiceMonitors based on the provided component name.
-func GetServiceMonitorName(component string) (string, error) {
-	if val, ok := MCEServiceMonitors[component]; !ok {
+// GetLegacyServiceMonitorName returns the name of the ServiceMonitors based on the provided component name.
+func GetLegacyServiceMonitorName(component string) (string, error) {
+	if val, ok := MCELegacyServiceMonitors[component]; !ok {
 		return val, fmt.Errorf("failed to find ServiceMonitors name for: %s component", component)
 	} else {
 		return val, nil
