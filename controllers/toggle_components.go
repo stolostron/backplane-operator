@@ -15,6 +15,7 @@ import (
 	"github.com/stolostron/backplane-operator/pkg/status"
 	"github.com/stolostron/backplane-operator/pkg/toggle"
 	"github.com/stolostron/backplane-operator/pkg/utils"
+	"github.com/stolostron/backplane-operator/pkg/version"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -55,6 +56,7 @@ func (r *MultiClusterEngineReconciler) ensureConsoleMCE(ctx context.Context, bac
 
 	// Applies all templates
 	for _, template := range templates {
+		applyReleaseVersionAnnotation(template)
 		result, err := r.applyTemplate(ctx, backplaneConfig, template)
 		if err != nil {
 			return result, err
@@ -156,6 +158,7 @@ func (r *MultiClusterEngineReconciler) ensureManagedServiceAccount(ctx context.C
 	// Applies all templates
 	missingCRDErrorOccured := false
 	for _, template := range templates {
+		applyReleaseVersionAnnotation(template)
 		result, err := r.applyTemplate(ctx, backplaneConfig, template)
 		if err != nil {
 			if apimeta.IsNoMatchError(errors.Unwrap(err)) || apierrors.IsNotFound(err) {
@@ -313,6 +316,7 @@ func (r *MultiClusterEngineReconciler) ensureDiscovery(ctx context.Context, back
 
 	// Applies all templates
 	for _, template := range templates {
+		applyReleaseVersionAnnotation(template)
 		result, err := r.applyTemplate(ctx, backplaneConfig, template)
 		if err != nil {
 			return result, err
@@ -366,6 +370,7 @@ func (r *MultiClusterEngineReconciler) ensureHive(ctx context.Context, backplane
 
 	// Applies all templates
 	for _, template := range templates {
+		applyReleaseVersionAnnotation(template)
 		result, err := r.applyTemplate(ctx, backplaneConfig, template)
 		if err != nil {
 			return result, err
@@ -446,6 +451,7 @@ func (r *MultiClusterEngineReconciler) ensureAssistedService(ctx context.Context
 
 	// Applies all templates
 	for _, template := range templates {
+		applyReleaseVersionAnnotation(template)
 		result, err := r.applyTemplate(ctx, backplaneConfig, template)
 		if err != nil {
 			return result, err
@@ -510,6 +516,7 @@ func (r *MultiClusterEngineReconciler) ensureServerFoundation(ctx context.Contex
 
 	// Applies all templates
 	for _, template := range templates {
+		applyReleaseVersionAnnotation(template)
 		result, err := r.applyTemplate(ctx, backplaneConfig, template)
 		if err != nil {
 			return result, err
@@ -581,6 +588,7 @@ func (r *MultiClusterEngineReconciler) ensureClusterLifecycle(ctx context.Contex
 
 	// Applies all templates
 	for _, template := range templates {
+		applyReleaseVersionAnnotation(template)
 		result, err := r.applyTemplate(ctx, backplaneConfig, template)
 		if err != nil {
 			return result, err
@@ -646,6 +654,7 @@ func (r *MultiClusterEngineReconciler) ensureClusterManager(ctx context.Context,
 
 	// Applies all templates
 	for _, template := range templates {
+		applyReleaseVersionAnnotation(template)
 		result, err := r.applyTemplate(ctx, backplaneConfig, template)
 		if err != nil {
 			return result, err
@@ -744,6 +753,7 @@ func (r *MultiClusterEngineReconciler) ensureHyperShift(ctx context.Context, bac
 	// Applies all templates
 	missingCRDErrorOccured := false
 	for _, template := range templates {
+		applyReleaseVersionAnnotation(template)
 		result, err := r.applyTemplate(ctx, backplaneConfig, template)
 		if err != nil {
 			if apimeta.IsNoMatchError(errors.Unwrap(err)) || apierrors.IsNotFound(err) {
@@ -887,6 +897,7 @@ func (r *MultiClusterEngineReconciler) applyHypershiftLocalHosting(ctx context.C
 	if err != nil {
 		return ctrl.Result{RequeueAfter: requeuePeriod}, err
 	}
+	applyReleaseVersionAnnotation(addon)
 	result, err := r.applyTemplate(ctx, backplaneConfig, addon)
 	if err != nil {
 		if apimeta.IsNoMatchError(errors.Unwrap(err)) || apierrors.IsNotFound(errors.Unwrap(err)) {
@@ -972,6 +983,7 @@ func (r *MultiClusterEngineReconciler) ensureClusterProxyAddon(ctx context.Conte
 	// Applies all templates
 	missingCRDErrorOccured := false
 	for _, template := range templates {
+		applyReleaseVersionAnnotation(template)
 		result, err := r.applyTemplate(ctx, backplaneConfig, template)
 		if err != nil {
 			if apimeta.IsNoMatchError(errors.Unwrap(err)) || apierrors.IsNotFound(errors.Unwrap(err)) {
@@ -1172,6 +1184,7 @@ func (r *MultiClusterEngineReconciler) ensureLocalCluster(ctx context.Context, m
 		delete(annotations, utils.AnnotationNodeSelector)
 	}
 	managedCluster.SetAnnotations(annotations)
+	applyReleaseVersionAnnotation(managedCluster)
 
 	log.Info("Updating ManagedCluster CR")
 	err = r.Client.Update(ctx, managedCluster)
@@ -1278,4 +1291,15 @@ func clusterManagementAddOnNotFoundStatus(name, namespace string) status.StatusR
 			Message:   "Waiting for ClusterManagementAddOn CRD to be available",
 		},
 	}
+}
+
+// applyReleaseVersionAnnotation applies the semver version the operator is reconciling
+// towards annotation to the resource template
+func applyReleaseVersionAnnotation(template *unstructured.Unstructured) {
+	annotations := template.GetAnnotations()
+	if annotations == nil {
+		annotations = make(map[string]string)
+	}
+	annotations[utils.AnnotationReleaseVersion] = version.Version
+	template.SetAnnotations(annotations)
 }

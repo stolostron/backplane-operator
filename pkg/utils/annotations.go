@@ -26,6 +26,9 @@ var (
 
 	// AnnotationKubeconfig is the secret name residing in targetcontaining the kubeconfig to access the remote cluster
 	AnnotationKubeconfig = "mce-kubeconfig"
+
+	// AnnotationReleaseVersion indicates the release version that should be applied to all resources managed by backplane operator
+	AnnotationReleaseVersion = "installer.multicluster.openshift.io/release-version"
 )
 
 // IsPaused returns true if the multiclusterengine instance is labeled as paused, and false otherwise
