@@ -137,7 +137,7 @@ func main() {
 		"The duration the clients should wait between attempting acquisition and renewal "+
 		"of a leadership. This is only applicable if leader election is enabled.")
 	// Initialize the logger.
-	log.InitFlags(nil)
+	log.InitFlags(flag.CommandLine)
 	flag.Parse()
 	defer log.Flush()
 
