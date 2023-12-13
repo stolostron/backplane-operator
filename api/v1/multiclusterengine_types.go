@@ -143,6 +143,7 @@ type PhaseType string
 
 const (
 	MultiClusterEnginePhaseProgressing   PhaseType = "Progressing"
+	MultiClusterEnginePhasePaused        PhaseType = "Paused"
 	MultiClusterEnginePhaseAvailable     PhaseType = "Available"
 	MultiClusterEnginePhaseUninstalling  PhaseType = "Uninstalling"
 	MultiClusterEnginePhaseError         PhaseType = "Error"
