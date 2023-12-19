@@ -123,6 +123,7 @@ package main
 //+kubebuilder:rbac:groups=apiregistration.k8s.io,resources=apiservices,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=apiregistration.k8s.io,resources=apiservices,verbs=create;get;list;update;watch;patch;delete
 //+kubebuilder:rbac:groups=apiregistration.k8s.io,resources=apiservices;apiservices/finalizers,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=app.k8s.io,resources=applications,verbs=list;watch
 //+kubebuilder:rbac:groups=apps,resources=deployments,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=apps,resources=deployments,verbs=create;get;list;update;watch;patch;delete
 //+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch
@@ -134,8 +135,10 @@ package main
 //+kubebuilder:rbac:groups=apps,resources=replicasets,verbs=get
 //+kubebuilder:rbac:groups=apps,resources=replicasets;deployments,verbs=get;list;watch;create;update;patch
 //+kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=create;delete;get;list;patch;update;watch
+//+kubebuilder:rbac:groups=apps.open-cluster-management.io,resources=channels;gitopsclusters;helmreleases;placementrules;subscriptions;subscriptionreports;multiclusterapplicationsetreports,verbs=list;watch
 //+kubebuilder:rbac:groups=apps.open-cluster-management.io,resources=deployables;deployables/status,verbs=get;list;watch;update;patch
 //+kubebuilder:rbac:groups=apps.openshift.io,resources=deploymentconfigs,verbs=get;list;watch
+//+kubebuilder:rbac:groups=argoproj.io,resources=applications;applicationsets;argocds,verbs=list;watch
 //+kubebuilder:rbac:groups=authentication.k8s.io,resources=tokenrequests;tokenreviews,verbs=create
 //+kubebuilder:rbac:groups=authentication.k8s.io,resources=tokenreviews,verbs=create
 //+kubebuilder:rbac:groups=authentication.k8s.io,resources=tokenreviews,verbs=create
@@ -284,7 +287,7 @@ package main
 //+kubebuilder:rbac:groups=operator.open-cluster-management.io,resources=multiclusterhubs,verbs=get;list;watch
 //+kubebuilder:rbac:groups=operators.coreos.com,resources=clusterserviceversions,verbs=get;list
 //+kubebuilder:rbac:groups=operators.coreos.com,resources=subscriptions,verbs=get;list;watch
-//+kubebuilder:rbac:groups=policy.open-cluster-management.io;app.k8s.io;apps.open-cluster-management.io;argoproj.io,resources=applications;applicationsets;appprojects;argocds;channels;gitopsclusters;helmreleases;placementrules;placementbindings;policies;policyautomations;policysets;subscriptions;subscriptionreports;multiclusterapplicationsetreports,verbs=list;watch
+//+kubebuilder:rbac:groups=policy.open-cluster-management.io,resources=placementbindings;policies;policyautomations;policysets,verbs=list;watch
 //+kubebuilder:rbac:groups=proxy.open-cluster-management.io,resources=clusterstatuses/aggregator,verbs=get;create
 //+kubebuilder:rbac:groups=proxy.open-cluster-management.io,resources=clusterstatuses/aggregator,verbs=get;create
 //+kubebuilder:rbac:groups=proxy.open-cluster-management.io,resources=managedproxyconfigurations;managedproxyconfigurations/status;managedproxyconfigurations/finalizers;managedproxyserviceresolvers;managedproxyserviceresolvers/status;managedproxyserviceresolvers/finalizers,verbs=*
