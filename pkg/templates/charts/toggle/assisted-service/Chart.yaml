@@ -1,7 +1,10 @@
+# Copyright (c) 2024 Red Hat, Inc.
+# Copyright Contributors to the Open Cluster Management project
+
 apiVersion: v2
-appVersion: 1.16.0
+appVersion: 2.5.0
 description: The Infrastructure Operator for Red Hat OpenShift is responsible for
   managing the deployment of the Assisted Service.
 name: assisted-service
 type: application
-version: 2.3.0
+version: 2.5.0
