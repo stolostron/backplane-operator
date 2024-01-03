@@ -78,14 +78,11 @@ spec:
             drop:
             - ALL
           privileged: false
-          runAsNonRoot: true
           readOnlyRootFilesystem: true
+          runAsNonRoot: true
         volumeMounts:
-        - name: tmpdir
-          mountPath: /tmp
-      volumes:
-        - name: tmpdir
-          emptyDir: { }
+        - mountPath: /tmp
+          name: tmpdir
       hostIPC: false
       hostNetwork: false
       hostPID: false
@@ -114,3 +111,6 @@ spec:
         {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
         {{- end }}
 {{- end }}
+      volumes:
+      - emptyDir: {}
+        name: tmpdir
