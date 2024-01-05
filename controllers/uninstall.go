@@ -143,7 +143,7 @@ instead.
 */
 func (r *MultiClusterEngineReconciler) removeLegacyPrometheusConfigurations(ctx context.Context,
 	targetNamespace string, kind string) error {
-	log := log.FromContext(ctx)
+	log := log.Log.WithName("reconcile")
 
 	obj := &unstructured.Unstructured{}
 	obj.SetGroupVersionKind(schema.GroupVersionKind{
