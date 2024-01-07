@@ -20,7 +20,7 @@ package main
 //+kubebuilder:rbac:groups="",resources=configmaps/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups="",resources=configmaps/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups="",resources=configmaps;jobs;namespaces;pods;secrets,verbs=list;watch
-//+kubebuilder:rbac:groups="",resources=configmaps;namespaces;serviceaccounts;services;pods,verbs=create;get;list;update;watch;patch;delete;deletecollection
+//+kubebuilder:rbac:groups="",resources=configmaps;namespaces;serviceaccounts;services,verbs=create;get;list;update;watch;patch;delete;deletecollection
 //+kubebuilder:rbac:groups="",resources=configmaps;secrets,verbs=*
 //+kubebuilder:rbac:groups="",resources=configmaps;secrets,verbs=*
 //+kubebuilder:rbac:groups="",resources=events,verbs=create
@@ -36,6 +36,7 @@ package main
 //+kubebuilder:rbac:groups="",resources=nodes,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",resources=nodes;pods;endpoints;services;secrets,verbs=get;watch;list
 //+kubebuilder:rbac:groups="",resources=persistentvolumeclaims,verbs=create;delete;get;list;patch;update;watch
+//+kubebuilder:rbac:groups="",resources=pods,verbs=get
 //+kubebuilder:rbac:groups="",resources=pods,verbs=list
 //+kubebuilder:rbac:groups="",resources=pods;nodes,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",resources=pods;pods/log,verbs=get;list;watch
