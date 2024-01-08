@@ -3,7 +3,6 @@
 package foundation
 
 import (
-	"context"
 	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
@@ -22,7 +21,7 @@ func hostedName(m *v1.MultiClusterEngine) string {
 
 // HostedClusterManager returns the ClusterManager in hosted mode
 func HostedClusterManager(m *v1.MultiClusterEngine, overrides map[string]string) *unstructured.Unstructured {
-	log := log.FromContext(context.Background())
+	log := log.Log.WithName("reconcile")
 
 	cmTolerations := []corev1.Toleration{}
 	if m.Spec.Tolerations != nil {
