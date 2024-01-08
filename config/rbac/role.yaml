@@ -106,7 +106,6 @@ rules:
   resources:
   - configmaps
   - namespaces
-  - pods
   - serviceaccounts
   - services
   verbs:
@@ -256,6 +255,7 @@ rules:
   resources:
   - pods
   verbs:
+  - get
   - list
 - apiGroups:
   - ""
