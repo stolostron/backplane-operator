@@ -1439,7 +1439,7 @@ func (r *MultiClusterEngineReconciler) InitScheduler() {
 }
 
 func (r *MultiClusterEngineReconciler) ScheduleOperatorControllerResync(ctx context.Context, req ctrl.Request) {
-	log := log.FromContext(ctx)
+	log := log.Log.WithName("reconcile")
 
 	if ok := scheduler.IsRunning(); !ok {
 		_, err := scheduler.Tag(cronResyncTag).Every(reconciliationInterval).Minutes().Do(r.Reconcile, ctx, req)
