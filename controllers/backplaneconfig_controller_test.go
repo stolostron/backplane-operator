@@ -27,12 +27,10 @@ import (
 
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
 	configv1 "github.com/openshift/api/config/v1"
 
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
-	v1 "github.com/stolostron/backplane-operator/api/v1"
 	"github.com/stolostron/backplane-operator/pkg/utils"
 
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
@@ -86,15 +84,15 @@ var _ = Describe("BackplaneConfig controller", func() {
 	)
 
 	AfterEach(func() {
-		Expect(k8sClient.Delete(context.Background(), &v1.MultiClusterEngine{
+		Expect(k8sClient.Delete(context.Background(), &backplanev1.MultiClusterEngine{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: BackplaneConfigName,
 			},
 		})).To(Succeed())
 		Eventually(func() bool {
-			foundMCE := &v1.MultiClusterEngine{}
+			foundMCE := &backplanev1.MultiClusterEngine{}
 			err := k8sClient.Get(context.TODO(), types.NamespacedName{Name: BackplaneConfigName}, foundMCE)
-			return apierrors.IsNotFound(err)
+			return errors.IsNotFound(err)
 		}, timeout, interval).Should(BeTrue())
 		Expect(k8sClient.Delete(context.Background(), &configv1.ClusterVersion{
 			ObjectMeta: metav1.ObjectMeta{
@@ -168,7 +166,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 		}
 		Eventually(func() error {
 			err := k8sClient.Create(context.TODO(), testsecret)
-			if apierrors.IsAlreadyExists(err) {
+			if errors.IsAlreadyExists(err) {
 				return nil
 			}
 			return err
@@ -213,7 +211,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 			{
 				Name:           BackplaneConfigTestName,
 				NamespacedName: types.NamespacedName{Name: BackplaneConfigName},
-				ResourceType:   &v1.MultiClusterEngine{},
+				ResourceType:   &backplanev1.MultiClusterEngine{},
 				Expected:       nil,
 			},
 			{
@@ -364,7 +362,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 			{
 				Name:           BackplaneConfigTestName,
 				NamespacedName: types.NamespacedName{Name: BackplaneConfigName},
-				ResourceType:   &v1.MultiClusterEngine{},
+				ResourceType:   &backplanev1.MultiClusterEngine{},
 				Expected:       nil,
 			},
 			// {
@@ -377,11 +375,10 @@ var _ = Describe("BackplaneConfig controller", func() {
 	})
 
 	When("creating a new BackplaneConfig", func() {
-
 		Context("and no image pull policy is specified", func() {
 			It("should deploy sub components", func() {
 				createCtx := context.Background()
-				backplaneConfig := &v1.MultiClusterEngine{
+				backplaneConfig := &backplanev1.MultiClusterEngine{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "multicluster.openshift.io/v1",
 						Kind:       "MultiClusterEngine",
@@ -389,7 +386,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 					ObjectMeta: metav1.ObjectMeta{
 						Name: BackplaneConfigName,
 					},
-					Spec: v1.MultiClusterEngineSpec{
+					Spec: backplanev1.MultiClusterEngineSpec{
 						TargetNamespace: DestinationNamespace,
 						ImagePullSecret: "testsecret",
 					},
@@ -399,7 +396,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 				Expect(k8sClient.Create(createCtx, backplaneConfig)).Should(Succeed())
 
 				By("ensuring that no openshift.io/cluster-monitoring label is enabled if MCE does not exist")
-				backplaneConfig2 := &v1.MultiClusterEngine{
+				backplaneConfig2 := &backplanev1.MultiClusterEngine{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "multicluster.openshift.io/v1",
 						Kind:       "MultiClusterEngine",
@@ -407,7 +404,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 					ObjectMeta: metav1.ObjectMeta{
 						Name: BackplaneConfigName,
 					},
-					Spec: v1.MultiClusterEngineSpec{
+					Spec: backplanev1.MultiClusterEngineSpec{
 						TargetNamespace: "test-n2",
 					},
 				}
@@ -495,6 +492,21 @@ var _ = Describe("BackplaneConfig controller", func() {
 					res := &corev1.ConfigMap{}
 					g.Expect(k8sClient.Get(ctx, namespacedName, res)).To(Succeed())
 				}, timeout, interval).Should(Succeed())
+
+				By("Pausing MCE to pause reconcilation")
+				Eventually(func() bool {
+					annotations := backplaneConfig.GetAnnotations()
+					if annotations == nil {
+						annotations = make(map[string]string)
+					}
+
+					annotations[utils.AnnotationMCEPause] = "true"
+					backplaneConfig.Annotations = annotations
+					_ = k8sClient.Update(ctx, backplaneConfig)
+
+					reconciler.StopScheduleOperatorControllerResync()
+					return utils.IsPaused(backplaneConfig) && !scheduler.IsRunning()
+				}, timeout, interval).Should(BeTrue())
 			})
 		})
 
@@ -504,7 +516,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 				defer os.Unsetenv("ACM_HUB_OCP_VERSION")
 				createCtx := context.Background()
 				By("creating the backplane config")
-				backplaneConfig := &v1.MultiClusterEngine{
+				backplaneConfig := &backplanev1.MultiClusterEngine{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "multicluster.openshift.io/v1",
 						Kind:       "MultiClusterEngine",
@@ -512,7 +524,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 					ObjectMeta: metav1.ObjectMeta{
 						Name: BackplaneConfigName,
 					},
-					Spec: v1.MultiClusterEngineSpec{
+					Spec: backplanev1.MultiClusterEngineSpec{
 						TargetNamespace: DestinationNamespace,
 						ImagePullSecret: "testsecret",
 					},
@@ -535,7 +547,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 			It("should deploy sub components", func() {
 				createCtx := context.Background()
 				By("creating the backplane config")
-				backplaneConfig := &v1.MultiClusterEngine{
+				backplaneConfig := &backplanev1.MultiClusterEngine{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "multicluster.openshift.io/v1",
 						Kind:       "MultiClusterEngine",
@@ -543,37 +555,37 @@ var _ = Describe("BackplaneConfig controller", func() {
 					ObjectMeta: metav1.ObjectMeta{
 						Name: BackplaneConfigName,
 					},
-					Spec: v1.MultiClusterEngineSpec{
+					Spec: backplanev1.MultiClusterEngineSpec{
 						TargetNamespace: DestinationNamespace,
 						ImagePullSecret: "testsecret",
-						Overrides: &v1.Overrides{
-							Components: []v1.ComponentConfig{
+						Overrides: &backplanev1.Overrides{
+							Components: []backplanev1.ComponentConfig{
 								{
-									Name:    v1.ConsoleMCE,
+									Name:    backplanev1.ConsoleMCE,
 									Enabled: true,
 								},
 								{
-									Name:    v1.ServerFoundation,
+									Name:    backplanev1.ServerFoundation,
 									Enabled: true,
 								},
 								{
-									Name:    v1.HyperShift,
+									Name:    backplanev1.HyperShift,
 									Enabled: true,
 								},
 								{
-									Name:    v1.Hive,
+									Name:    backplanev1.Hive,
 									Enabled: false,
 								},
 								{
-									Name:    v1.ClusterManager,
+									Name:    backplanev1.ClusterManager,
 									Enabled: false,
 								},
 								{
-									Name:    v1.ClusterLifecycle,
+									Name:    backplanev1.ClusterLifecycle,
 									Enabled: false,
 								},
 								{
-									Name:    v1.ManagedServiceAccount,
+									Name:    backplanev1.ManagedServiceAccount,
 									Enabled: false,
 								},
 							},
@@ -598,7 +610,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 		Context("and an image pull policy is specified in an override", func() {
 			It("should deploy sub components with the image pull policy in the override", func() {
 				By("creating the backplane config with an image pull policy override")
-				backplaneConfig := &v1.MultiClusterEngine{
+				backplaneConfig := &backplanev1.MultiClusterEngine{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "multicluster.openshift.io/v1",
 						Kind:       "MultiClusterEngine",
@@ -606,10 +618,10 @@ var _ = Describe("BackplaneConfig controller", func() {
 					ObjectMeta: metav1.ObjectMeta{
 						Name: BackplaneConfigName,
 					},
-					Spec: v1.MultiClusterEngineSpec{
+					Spec: backplanev1.MultiClusterEngineSpec{
 						TargetNamespace: DestinationNamespace,
 						ImagePullSecret: "testsecret",
-						Overrides: &v1.Overrides{
+						Overrides: &backplanev1.Overrides{
 							ImagePullPolicy: corev1.PullAlways,
 						},
 					},
@@ -652,7 +664,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 		Context("and enable ManagedServiceAccount", func() {
 			It("should deploy sub components", func() {
 				By("creating the backplane config")
-				backplaneConfig := &v1.MultiClusterEngine{
+				backplaneConfig := &backplanev1.MultiClusterEngine{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "multicluster.openshift.io/v1",
 						Kind:       "MultiClusterEngine",
@@ -660,12 +672,12 @@ var _ = Describe("BackplaneConfig controller", func() {
 					ObjectMeta: metav1.ObjectMeta{
 						Name: BackplaneConfigName,
 					},
-					Spec: v1.MultiClusterEngineSpec{
+					Spec: backplanev1.MultiClusterEngineSpec{
 						TargetNamespace: DestinationNamespace,
-						Overrides: &v1.Overrides{
-							Components: []v1.ComponentConfig{
+						Overrides: &backplanev1.Overrides{
+							Components: []backplanev1.ComponentConfig{
 								{
-									Name:    v1.ManagedServiceAccount,
+									Name:    backplanev1.ManagedServiceAccount,
 									Enabled: true,
 								},
 							},
@@ -753,7 +765,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 		Context("and components are defined multiple times in overrides", func() {
 			It("should deduplicate the component list in the override", func() {
 				By("creating the backplane config with repeated component")
-				backplaneConfig := &v1.MultiClusterEngine{
+				backplaneConfig := &backplanev1.MultiClusterEngine{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "multicluster.openshift.io/v1",
 						Kind:       "MultiClusterEngine",
@@ -761,22 +773,22 @@ var _ = Describe("BackplaneConfig controller", func() {
 					ObjectMeta: metav1.ObjectMeta{
 						Name: BackplaneConfigName,
 					},
-					Spec: v1.MultiClusterEngineSpec{
+					Spec: backplanev1.MultiClusterEngineSpec{
 						TargetNamespace: DestinationNamespace,
 						ImagePullSecret: "testsecret",
-						Overrides: &v1.Overrides{
+						Overrides: &backplanev1.Overrides{
 							ImagePullPolicy: corev1.PullAlways,
-							Components: []v1.ComponentConfig{
+							Components: []backplanev1.ComponentConfig{
 								{
-									Name:    v1.Discovery,
+									Name:    backplanev1.Discovery,
 									Enabled: true,
 								},
 								{
-									Name:    v1.Discovery,
+									Name:    backplanev1.Discovery,
 									Enabled: true,
 								},
 								{
-									Name:    v1.Discovery,
+									Name:    backplanev1.Discovery,
 									Enabled: false,
 								},
 							},
@@ -791,19 +803,19 @@ var _ = Describe("BackplaneConfig controller", func() {
 					multiClusterEngine := types.NamespacedName{
 						Name: BackplaneConfigName,
 					}
-					existingMCE := &v1.MultiClusterEngine{}
+					existingMCE := &backplanev1.MultiClusterEngine{}
 					g.Expect(k8sClient.Get(context.TODO(), multiClusterEngine, existingMCE)).To(Succeed(), "Failed to create new MCE")
 
 					g.Expect(existingMCE.Spec.Overrides).To(Not(BeNil()))
 					componentCount := 0
 					for _, c := range existingMCE.Spec.Overrides.Components {
-						if c.Name == v1.Discovery {
+						if c.Name == backplanev1.Discovery {
 							componentCount++
 						}
 					}
 					g.Expect(componentCount).To(Equal(1), "Duplicate component still present")
 
-					g.Expect(existingMCE.Enabled(v1.Discovery)).To(BeFalse(), "Not using last defined config in components")
+					g.Expect(existingMCE.Enabled(backplanev1.Discovery)).To(BeFalse(), "Not using last defined config in components")
 
 				}, timeout, interval).Should(Succeed())
 
@@ -814,7 +826,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 			It("should deploy images with a custom image repository", func() {
 				imageRepo := "quay.io/testrepo"
 				By("creating the backplane config with the image repository annotation")
-				backplaneConfig := &v1.MultiClusterEngine{
+				backplaneConfig := &backplanev1.MultiClusterEngine{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "multicluster.openshift.io/v1",
 						Kind:       "MultiClusterEngine",
@@ -825,7 +837,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 							"imageRepository": imageRepo,
 						},
 					},
-					Spec: v1.MultiClusterEngineSpec{
+					Spec: backplanev1.MultiClusterEngineSpec{
 						TargetNamespace: DestinationNamespace,
 						ImagePullSecret: "testsecret",
 					},
@@ -882,7 +894,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 				Expect(k8sClient.Create(context.TODO(), testCM)).To(Succeed())
 
 				By("creating the backplane config with the configmap override annotation")
-				backplaneConfig := &v1.MultiClusterEngine{
+				backplaneConfig := &backplanev1.MultiClusterEngine{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "multicluster.openshift.io/v1",
 						Kind:       "MultiClusterEngine",
@@ -893,7 +905,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 							"imageOverridesCM": "test",
 						},
 					},
-					Spec: v1.MultiClusterEngineSpec{
+					Spec: backplanev1.MultiClusterEngineSpec{
 						TargetNamespace: DestinationNamespace,
 						ImagePullSecret: "testsecret",
 					},
@@ -918,7 +930,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 		Context("and imagePullSecret is missing", func() {
 			It("should error due to missing secret", func() {
 				By("creating the backplane config with nonexistant secret")
-				backplaneConfig := &v1.MultiClusterEngine{
+				backplaneConfig := &backplanev1.MultiClusterEngine{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "multicluster.openshift.io/v1",
 						Kind:       "MultiClusterEngine",
@@ -926,7 +938,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 					ObjectMeta: metav1.ObjectMeta{
 						Name: BackplaneConfigName,
 					},
-					Spec: v1.MultiClusterEngineSpec{
+					Spec: backplanev1.MultiClusterEngineSpec{
 						TargetNamespace: DestinationNamespace,
 						ImagePullSecret: "nonexistant",
 					},
@@ -939,10 +951,10 @@ var _ = Describe("BackplaneConfig controller", func() {
 					multiClusterEngine := types.NamespacedName{
 						Name: BackplaneConfigName,
 					}
-					existingMCE := &v1.MultiClusterEngine{}
+					existingMCE := &backplanev1.MultiClusterEngine{}
 					g.Expect(k8sClient.Get(context.TODO(), multiClusterEngine, existingMCE)).To(Succeed(), "Failed to get MCE")
 
-					g.Expect(existingMCE.Status.Phase).To(Equal(v1.MultiClusterEnginePhaseError))
+					g.Expect(existingMCE.Status.Phase).To(Equal(backplanev1.MultiClusterEnginePhaseError))
 				}, timeout, interval).Should(Succeed())
 
 			})
@@ -953,7 +965,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 				By("creating the backplane config with nonexistant secret")
 				os.Setenv("ACM_HUB_OCP_VERSION", "4.9.0")
 				defer os.Unsetenv("ACM_HUB_OCP_VERSION")
-				backplaneConfig := &v1.MultiClusterEngine{
+				backplaneConfig := &backplanev1.MultiClusterEngine{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "multicluster.openshift.io/v1",
 						Kind:       "MultiClusterEngine",
@@ -961,7 +973,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 					ObjectMeta: metav1.ObjectMeta{
 						Name: BackplaneConfigName,
 					},
-					Spec: v1.MultiClusterEngineSpec{
+					Spec: backplanev1.MultiClusterEngineSpec{
 						TargetNamespace: DestinationNamespace,
 						ImagePullSecret: "testsecret",
 					},
@@ -974,17 +986,17 @@ var _ = Describe("BackplaneConfig controller", func() {
 					multiClusterEngine := types.NamespacedName{
 						Name: BackplaneConfigName,
 					}
-					existingMCE := &v1.MultiClusterEngine{}
+					existingMCE := &backplanev1.MultiClusterEngine{}
 					g.Expect(k8sClient.Get(context.TODO(), multiClusterEngine, existingMCE)).To(Succeed(), "Failed to get MCE")
 
-					g.Expect(existingMCE.Status.Phase).To(Equal(v1.MultiClusterEnginePhaseError))
+					g.Expect(existingMCE.Status.Phase).To(Equal(backplanev1.MultiClusterEnginePhaseError))
 				}, timeout, interval).Should(Succeed())
 
 				By("ensuring MCE no longer reports error in Phase when annotated")
 				multiClusterEngine := types.NamespacedName{
 					Name: BackplaneConfigName,
 				}
-				existingMCE := &v1.MultiClusterEngine{}
+				existingMCE := &backplanev1.MultiClusterEngine{}
 				Expect(k8sClient.Get(context.TODO(), multiClusterEngine, existingMCE)).To(Succeed(), "Failed to get MCE")
 				existingMCE.SetAnnotations(map[string]string{utils.AnnotationIgnoreOCPVersion: "true"})
 				Expect(k8sClient.Update(context.TODO(), existingMCE)).To(Succeed(), "Failed to get MCE")
@@ -993,10 +1005,10 @@ var _ = Describe("BackplaneConfig controller", func() {
 					multiClusterEngine := types.NamespacedName{
 						Name: BackplaneConfigName,
 					}
-					existingMCE := &v1.MultiClusterEngine{}
+					existingMCE := &backplanev1.MultiClusterEngine{}
 					g.Expect(k8sClient.Get(context.TODO(), multiClusterEngine, existingMCE)).To(Succeed(), "Failed to get MCE")
 
-					g.Expect(existingMCE.Status.Phase).To(Not(Equal(v1.MultiClusterEnginePhaseError)))
+					g.Expect(existingMCE.Status.Phase).To(Not(Equal(backplanev1.MultiClusterEnginePhaseError)))
 				}, timeout, interval).Should(Succeed())
 			})
 		})
@@ -1016,22 +1028,22 @@ var _ = Describe("BackplaneConfig controller", func() {
 				}
 				Eventually(func() error {
 					err := k8sClient.Create(context.TODO(), testconfigsecret)
-					if apierrors.IsAlreadyExists(err) {
+					if errors.IsAlreadyExists(err) {
 						return nil
 					}
 					return err
 				}, timeout, interval).Should(Succeed())
 
-				backplaneConfig := &v1.MultiClusterEngine{
+				backplaneConfig := &backplanev1.MultiClusterEngine{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "multicluster.openshift.io/v1",
 						Kind:       "MultiClusterEngine",
 					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:        BackplaneConfigName,
-						Annotations: map[string]string{"deploymentmode": string(v1.ModeHosted), "mce-kubeconfig": "test"},
+						Annotations: map[string]string{"deploymentmode": string(backplanev1.ModeHosted), "mce-kubeconfig": "test"},
 					},
-					Spec: v1.MultiClusterEngineSpec{
+					Spec: backplanev1.MultiClusterEngineSpec{
 						TargetNamespace: DestinationNamespace,
 						ImagePullSecret: "testsecret",
 					},
@@ -1044,10 +1056,10 @@ var _ = Describe("BackplaneConfig controller", func() {
 					multiClusterEngine := types.NamespacedName{
 						Name: BackplaneConfigName,
 					}
-					existingMCE := &v1.MultiClusterEngine{}
+					existingMCE := &backplanev1.MultiClusterEngine{}
 					g.Expect(k8sClient.Get(context.TODO(), multiClusterEngine, existingMCE)).To(Succeed(), "Failed to get MCE")
 
-					g.Expect(existingMCE.Status.Phase).To(Equal(v1.MultiClusterEnginePhaseError), "MCE should fail getting a kubeconfig secret")
+					g.Expect(existingMCE.Status.Phase).To(Equal(backplanev1.MultiClusterEnginePhaseError), "MCE should fail getting a kubeconfig secret")
 				}, timeout, interval).Should(Succeed())
 
 			})
@@ -1055,7 +1067,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 		Context("Legacy clean up tasks", func() {
 			It("Removes the legacy CLC Prometheus configuration", func() {
 				By("creating the backplane config with nonexistant secret")
-				backplaneConfig := &v1.MultiClusterEngine{
+				backplaneConfig := &backplanev1.MultiClusterEngine{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "multicluster.openshift.io/v1",
 						Kind:       "MultiClusterEngine",
@@ -1063,7 +1075,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 					ObjectMeta: metav1.ObjectMeta{
 						Name: BackplaneConfigName,
 					},
-					Spec: v1.MultiClusterEngineSpec{
+					Spec: backplanev1.MultiClusterEngineSpec{
 						TargetNamespace: DestinationNamespace,
 						ImagePullSecret: "nonexistant",
 					},
