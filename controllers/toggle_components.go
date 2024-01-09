@@ -1076,10 +1076,7 @@ func (r *MultiClusterEngineReconciler) ensureLocalCluster(ctx context.Context, m
 	}
 
 	nsn := types.NamespacedName{Name: "local-cluster", Namespace: mce.Spec.TargetNamespace}
-	lcs := status.LocalClusterStatus{
-		NamespacedName: nsn,
-		Enabled:        true,
-	}
+	lcs := status.LocalClusterStatus{NamespacedName: nsn, Enabled: true}
 	r.StatusManager.RemoveComponent(lcs)
 	r.StatusManager.AddComponent(lcs)
 
@@ -1197,7 +1194,6 @@ func (r *MultiClusterEngineReconciler) ensureLocalCluster(ctx context.Context, m
 		log.Error(err, "Failed to update ManagedCluster CR")
 		return ctrl.Result{}, err
 	}
-
 	return ctrl.Result{}, err
 }
 
