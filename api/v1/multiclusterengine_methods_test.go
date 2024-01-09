@@ -109,7 +109,7 @@ func TestGetLegacyPrometheusKind(t *testing.T) {
 	}
 }
 
-func TestGetPrometheusRulesName(t *testing.T) {
+func TestGetLegacyPrometheusRulesName(t *testing.T) {
 	tests := []struct {
 		name      string
 		component string
@@ -118,30 +118,30 @@ func TestGetPrometheusRulesName(t *testing.T) {
 		{
 			name:      "console PrometheusRule",
 			component: api.ConsoleMCE,
-			want:      api.MCEPrometheusRules[api.ConsoleMCE],
+			want:      api.MCELegacyPrometheusRules[api.ConsoleMCE],
 		},
 		{
 			name:      "unknown PrometheusRule",
 			component: "unknown",
-			want:      api.MCEPrometheusRules["unknown"],
+			want:      api.MCELegacyPrometheusRules["unknown"],
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := api.GetPrometheusRulesName(tt.component)
+			got, err := api.GetLegacyPrometheusRulesName(tt.component)
 			if err != nil && tt.component != "unknown" {
-				t.Errorf("GetPrometheusRulesName(%v) = %v, want: %v", tt.component, err.Error(), tt.want)
+				t.Errorf("GetLegacyPrometheusRulesName(%v) = %v, want: %v", tt.component, err.Error(), tt.want)
 			}
 
 			if got != tt.want {
-				t.Errorf("GetPrometheusRulesName(%v) = %v, want: %v", tt.component, got, tt.want)
+				t.Errorf("GetLegacyPrometheusRulesName(%v) = %v, want: %v", tt.component, got, tt.want)
 			}
 		})
 	}
 }
 
-func TestGetServiceMonitorName(t *testing.T) {
+func TestGetLegacyServiceMonitorName(t *testing.T) {
 	tests := []struct {
 		name      string
 		component string
@@ -150,24 +150,24 @@ func TestGetServiceMonitorName(t *testing.T) {
 		{
 			name:      "console ServiceMonitor",
 			component: api.ConsoleMCE,
-			want:      api.MCEServiceMonitors[api.ConsoleMCE],
+			want:      api.MCELegacyServiceMonitors[api.ConsoleMCE],
 		},
 		{
 			name:      "unknown ServiceMonitor",
 			component: "unknown",
-			want:      api.MCEServiceMonitors["unknown"],
+			want:      api.MCELegacyServiceMonitors["unknown"],
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := api.GetServiceMonitorName(tt.component)
+			got, err := api.GetLegacyServiceMonitorName(tt.component)
 			if err != nil && tt.component != "unknown" {
-				t.Errorf("GetServiceMonitorName(%v) = %v, want: %v", tt.component, err.Error(), tt.want)
+				t.Errorf("GetLegacyServiceMonitorName(%v) = %v, want: %v", tt.component, err.Error(), tt.want)
 			}
 
 			if got != tt.want {
-				t.Errorf("GetServiceMonitorName(%v) = %v, want: %v", tt.component, got, tt.want)
+				t.Errorf("GetLegacyServiceMonitorName(%v) = %v, want: %v", tt.component, got, tt.want)
 			}
 		})
 	}

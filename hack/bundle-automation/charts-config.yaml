@@ -1,7 +1,7 @@
 
 - repo_name: "managed-serviceaccount"
   github_ref: "https://github.com/stolostron/managed-serviceaccount.git"
-  branch: "backplane-2.4"
+  branch: "backplane-2.5"
   charts:
     - name: "managed-serviceaccount"
       chart-path: "charts/managed-serviceaccount"
@@ -11,7 +11,7 @@
       inclusions:
         - "pullSecretOverride"
       skipRBACOverrides: true
-      updateChartVersion: true # the chart version will be retrieved from trimmed branch name, e.g. backplane-2.4 -> 2.4
+      updateChartVersion: true # the chart version will be retrieved from trimmed branch name, e.g. backplane-2.5 -> 2.5
       escape-template-variables:
         - "CLUSTER_NAME"
         - "HUB_KUBECONFIG"

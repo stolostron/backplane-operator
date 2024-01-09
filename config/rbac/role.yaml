@@ -106,7 +106,6 @@ rules:
   resources:
   - configmaps
   - namespaces
-  - pods
   - serviceaccounts
   - services
   verbs:
@@ -256,6 +255,7 @@ rules:
   resources:
   - pods
   verbs:
+  - get
   - list
 - apiGroups:
   - ""
@@ -888,25 +888,8 @@ rules:
   - watch
 - apiGroups:
   - app.k8s.io
-  - apps.open-cluster-management.io
-  - argoproj.io
-  - policy.open-cluster-management.io
   resources:
   - applications
-  - applicationsets
-  - appprojects
-  - argocds
-  - channels
-  - gitopsclusters
-  - helmreleases
-  - multiclusterapplicationsetreports
-  - placementbindings
-  - placementrules
-  - policies
-  - policyautomations
-  - policysets
-  - subscriptionreports
-  - subscriptions
   verbs:
   - list
   - watch
@@ -997,6 +980,19 @@ rules:
 - apiGroups:
   - apps.open-cluster-management.io
   resources:
+  - channels
+  - gitopsclusters
+  - helmreleases
+  - multiclusterapplicationsetreports
+  - placementrules
+  - subscriptionreports
+  - subscriptions
+  verbs:
+  - list
+  - watch
+- apiGroups:
+  - apps.open-cluster-management.io
+  resources:
   - deployables
   - deployables/status
   verbs:
@@ -1011,6 +1007,15 @@ rules:
   - deploymentconfigs
   verbs:
   - get
+  - list
+  - watch
+- apiGroups:
+  - argoproj.io
+  resources:
+  - applications
+  - applicationsets
+  - argocds
+  verbs:
   - list
   - watch
 - apiGroups:
@@ -1999,6 +2004,16 @@ rules:
   - subscriptions
   verbs:
   - get
+  - list
+  - watch
+- apiGroups:
+  - policy.open-cluster-management.io
+  resources:
+  - placementbindings
+  - policies
+  - policyautomations
+  - policysets
+  verbs:
   - list
   - watch
 - apiGroups:

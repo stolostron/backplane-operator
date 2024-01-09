@@ -10,7 +10,6 @@ rules:
   - namespaces
   - serviceaccounts
   - services
-  - pods
   verbs:
   - create
   - get
@@ -20,6 +19,12 @@ rules:
   - patch
   - delete
   - deletecollection
+- apiGroups:
+  - ''
+  resources:
+  - pods
+  verbs:
+  - get
 - apiGroups:
   - ''
   resourceNames:

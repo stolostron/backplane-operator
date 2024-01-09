@@ -20,6 +20,20 @@ const (
 	OpenShiftClusterMonitoringLabel = "openshift.io/cluster-monitoring"
 )
 
+const (
+	/*
+	   MCEOperatorMetricsServiceName is the name of the service used to expose the metrics
+	   endpoint for the multicluster-engine-operator.
+	*/
+	MCEOperatorMetricsServiceName = "multicluster-engine-operator-metrics"
+
+	/*
+	   MCEOperatorMetricsServiceMonitorName is the name of the service monitor used to expose
+	   the metrics for the multicluster-engine-operator.
+	*/
+	MCEOperatorMetricsServiceMonitorName = "multicluster-engine-operator-metrics"
+)
+
 var onComponents = []string{
 	backplanev1.AssistedService,
 	backplanev1.ClusterLifecycle,

@@ -3,7 +3,6 @@
 package renderer
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -183,7 +182,7 @@ func RenderCRDs(crdDir string) ([]*unstructured.Unstructured, []error) {
 }
 
 func RenderCharts(chartDir string, backplaneConfig *v1.MultiClusterEngine, images map[string]string) ([]*unstructured.Unstructured, []error) {
-	log := log.FromContext(context.Background())
+	log := log.Log.WithName("reconcile")
 	var templates []*unstructured.Unstructured
 	errs := []error{}
 	if val, ok := os.LookupEnv("DIRECTORY_OVERRIDE"); ok {
@@ -208,7 +207,7 @@ func RenderCharts(chartDir string, backplaneConfig *v1.MultiClusterEngine, image
 }
 
 func RenderChart(chartPath string, backplaneConfig *v1.MultiClusterEngine, images map[string]string) ([]*unstructured.Unstructured, []error) {
-	log := log.FromContext(context.Background())
+	log := log.Log.WithName("reconcile")
 	errs := []error{}
 	if val, ok := os.LookupEnv("DIRECTORY_OVERRIDE"); ok {
 		chartPath = path.Join(val, chartPath)
@@ -232,7 +231,7 @@ func RenderChartWithNamespace(chartPath string, backplaneConfig *v1.MultiCluster
 }
 
 func renderTemplates(chartPath string, backplaneConfig *v1.MultiClusterEngine, images map[string]string) ([]*unstructured.Unstructured, []error) {
-	log := log.FromContext(context.Background())
+	log := log.Log.WithName("reconcile")
 	var templates []*unstructured.Unstructured
 	errs := []error{}
 	chart, err := loader.Load(chartPath)

@@ -48,6 +48,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -79,6 +80,8 @@ const (
 
 	trustBundleNameEnvVar  = "TRUSTED_CA_BUNDLE"
 	defaultTrustBundleName = "trusted-ca-bundle"
+
+	controlPlane = "backplane-operator"
 )
 
 var (
@@ -149,7 +152,7 @@ var (
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (retRes ctrl.Result, retErr error) {
-	log := log.FromContext(ctx)
+	log := log.Log.WithName("reconcile")
 	log.Info("Reconciling MultiClusterEngine")
 
 	// Initalize sceduler instance for operator resync cronjob.
@@ -329,7 +332,7 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}
 
 	for _, kind := range backplanev1.GetLegacyPrometheusKind() {
-		err = r.removeLegacyPrometheusConfigurations(ctx, "openshift-monitoring", kind)
+		_ = r.removeLegacyPrometheusConfigurations(ctx, "openshift-monitoring", kind)
 	}
 
 	result, err = r.ensureToggleableComponents(ctx, backplaneConfig)
@@ -338,6 +341,16 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}
 
 	result, err = r.createTrustBundleConfigmap(ctx, backplaneConfig)
+	if err != nil {
+		return result, err
+	}
+
+	result, err = r.createMetricsService(ctx, backplaneConfig)
+	if err != nil {
+		return result, err
+	}
+
+	result, err = r.createMetricsServiceMonitor(ctx, backplaneConfig)
 	if err != nil {
 		return result, err
 	}
@@ -462,8 +475,9 @@ func (r *MultiClusterEngineReconciler) SetupWithManager(mgr ctrl.Manager) error 
 
 // createTrustBundleConfigmap creates a configmap that will be injected with the
 // trusted CA bundle for use with the OCP cluster wide proxy
-func (r *MultiClusterEngineReconciler) createTrustBundleConfigmap(ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
+func (r *MultiClusterEngineReconciler) createTrustBundleConfigmap(ctx context.Context,
+	mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+	log := log.Log.WithName("reconcile")
 
 	// Get Trusted Bundle configmap name
 	trustBundleName := defaultTrustBundleName
@@ -516,9 +530,144 @@ func (r *MultiClusterEngineReconciler) createTrustBundleConfigmap(ctx context.Co
 	return ctrl.Result{}, nil
 }
 
+func (r *MultiClusterEngineReconciler) createMetricsService(ctx context.Context,
+	mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+	log := log.Log.WithName("reconcile")
+
+	const Port = 8080
+
+	sName := utils.MCEOperatorMetricsServiceName
+	sNamespace := mce.Spec.TargetNamespace
+
+	namespacedName := types.NamespacedName{
+		Name:      sName,
+		Namespace: sNamespace,
+	}
+
+	// Check if service exists
+	if err := r.Client.Get(ctx, namespacedName, &corev1.Service{}); err != nil {
+		if !apierrors.IsNotFound(err) {
+			// Unknown error. Requeue
+			log.Error(err, fmt.Sprintf("error while getting multicluster-engine metrics service: %s/%s",
+				sNamespace, sName))
+			return ctrl.Result{RequeueAfter: requeuePeriod}, err
+		}
+
+		// Create metrics service
+		s := &corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      sName,
+				Namespace: sNamespace,
+				Labels: map[string]string{
+					"control-plane": controlPlane,
+				},
+			},
+			Spec: corev1.ServiceSpec{
+				Ports: []corev1.ServicePort{
+					{
+						Name:       "metrics",
+						Port:       int32(Port),
+						Protocol:   "TCP",
+						TargetPort: intstr.FromInt(Port),
+					},
+				},
+				Selector: map[string]string{
+					"control-plane": controlPlane,
+				},
+			},
+		}
+
+		if err = ctrl.SetControllerReference(mce, s, r.Scheme); err != nil {
+			return ctrl.Result{}, pkgerrors.Wrapf(
+				err, "error setting controller reference on metrics service: %s", sName,
+			)
+		}
+
+		if err = r.Client.Create(ctx, s); err != nil {
+			// Error creating metrics service
+			log.Error(err, fmt.Sprintf("error creating multicluster-engine metrics service: %s", sName))
+			return ctrl.Result{RequeueAfter: requeuePeriod}, err
+		}
+
+		log.Info(fmt.Sprintf("Created multicluster-engine metrics service: %s", sName))
+	}
+
+	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterEngineReconciler) createMetricsServiceMonitor(ctx context.Context,
+	mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+	log := log.Log.WithName("reconcile")
+
+	smName := utils.MCEOperatorMetricsServiceMonitorName
+	smNamespace := mce.Spec.TargetNamespace
+
+	namespacedName := types.NamespacedName{
+		Name:      smName,
+		Namespace: smNamespace,
+	}
+
+	// Check if service exists
+	if err := r.Client.Get(ctx, namespacedName, &monitorv1.ServiceMonitor{}); err != nil {
+		if !apierrors.IsNotFound(err) {
+			// Unknown error. Requeue
+			log.Error(err, fmt.Sprintf("error while getting multicluster-engine metrics service: %s/%s",
+				smNamespace, smName))
+			return ctrl.Result{RequeueAfter: requeuePeriod}, err
+		}
+
+		// Create metrics service
+		sm := &monitorv1.ServiceMonitor{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      smName,
+				Namespace: smNamespace,
+				Labels: map[string]string{
+					"control-plane": controlPlane,
+				},
+			},
+			Spec: monitorv1.ServiceMonitorSpec{
+				Endpoints: []monitorv1.Endpoint{
+					{
+						BearerTokenFile: "/var/run/secrets/kubernetes.io/serviceaccount/token",
+						BearerTokenSecret: corev1.SecretKeySelector{
+							Key: "",
+						},
+						Port: "metrics",
+					},
+				},
+				NamespaceSelector: monitorv1.NamespaceSelector{
+					MatchNames: []string{
+						mce.Spec.TargetNamespace,
+					},
+				},
+				Selector: metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"control-plane": controlPlane,
+					},
+				},
+			},
+		}
+
+		if err = ctrl.SetControllerReference(mce, sm, r.Scheme); err != nil {
+			return ctrl.Result{}, pkgerrors.Wrapf(
+				err, "error setting controller reference on multicluster-engine metrics servicemonitor: %s", smName)
+		}
+
+		if err = r.Client.Create(ctx, sm); err != nil {
+			// Error creating metrics servicemonitor
+			log.Error(err, fmt.Sprintf("error creating metrics servicemonitor: %s", smName))
+			return ctrl.Result{RequeueAfter: requeuePeriod}, err
+		}
+
+		log.Info(fmt.Sprintf("Created multicluster-engine metrics servicemonitor: %s", smName))
+	}
+
+	return ctrl.Result{}, nil
+}
+
 // DeployAlwaysSubcomponents ensures all subcomponents exist
 func (r *MultiClusterEngineReconciler) DeployAlwaysSubcomponents(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
+	log := log.Log.WithName("reconcile")
 
 	chartsDir := renderer.AlwaysChartsDir
 	// Renders all templates from charts
@@ -771,7 +920,7 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 			errorMessages = append(errorMessages, fmt.Sprintf("error ensuring %s: %s", k, v.Error()))
 		}
 		combinedError := fmt.Sprintf(": %s", strings.Join(errorMessages, "; "))
-		log.FromContext(ctx).Error(errors.New("Errors applying components"), combinedError)
+		log.Log.WithName("reconcile").Error(errors.New("Errors applying components"), combinedError)
 		return ctrl.Result{RequeueAfter: requeuePeriod}, errors.New(combinedError)
 	}
 	if requeue {
@@ -809,7 +958,7 @@ func (r *MultiClusterEngineReconciler) applyTemplate(ctx context.Context, backpl
 // deleteTemplate return true if resource does not exist and returns an error if a GET or DELETE errors unexpectedly. A false response without error
 // means the resource is in the process of deleting.
 func (r *MultiClusterEngineReconciler) deleteTemplate(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine, template *unstructured.Unstructured) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
+	log := log.Log.WithName("reconcile")
 	err := r.Client.Get(ctx, types.NamespacedName{Name: template.GetName(), Namespace: template.GetNamespace()}, template)
 
 	if err != nil && (apierrors.IsNotFound(err) || apimeta.IsNoMatchError(err)) {
@@ -833,7 +982,7 @@ func (r *MultiClusterEngineReconciler) deleteTemplate(ctx context.Context, backp
 }
 
 func (r *MultiClusterEngineReconciler) ensureCustomResources(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
+	log := log.Log.WithName("reconcile")
 
 	if foundation.CanInstallAddons(ctx, r.Client) {
 		addonTemplates, err := foundation.GetAddons()
@@ -862,7 +1011,7 @@ func (r *MultiClusterEngineReconciler) ensureCustomResources(ctx context.Context
 func (r *MultiClusterEngineReconciler) ensureOpenShiftNamespaceLabel(ctx context.Context,
 	backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 
-	log := log.FromContext(ctx)
+	log := log.Log.WithName("reconcile")
 	existingNs := &corev1.Namespace{}
 
 	err := r.Client.Get(ctx, types.NamespacedName{Name: backplaneConfig.Spec.TargetNamespace}, existingNs)
@@ -893,7 +1042,7 @@ func (r *MultiClusterEngineReconciler) ensureOpenShiftNamespaceLabel(ctx context
 }
 
 func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) error {
-	log := log.FromContext(ctx)
+	log := log.Log.WithName("reconcile")
 
 	ocpConsole, err := r.CheckConsole(ctx)
 	if err != nil {
@@ -1032,7 +1181,7 @@ func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Conte
 }
 
 func (r *MultiClusterEngineReconciler) getBackplaneConfig(ctx context.Context, req ctrl.Request) (*backplanev1.MultiClusterEngine, error) {
-	log := log.FromContext(ctx)
+	log := log.Log.WithName("reconcile")
 	backplaneConfig := &backplanev1.MultiClusterEngine{}
 	err := r.Client.Get(ctx, req.NamespacedName, backplaneConfig)
 	if err != nil {
@@ -1051,7 +1200,7 @@ func (r *MultiClusterEngineReconciler) getBackplaneConfig(ctx context.Context, r
 
 // ensureUnstructuredResource ensures that the unstructured resource is applied in the cluster properly
 func (r *MultiClusterEngineReconciler) ensureUnstructuredResource(ctx context.Context, bpc *backplanev1.MultiClusterEngine, u *unstructured.Unstructured) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
+	log := log.Log.WithName("reconcile")
 
 	found := &unstructured.Unstructured{}
 	found.SetGroupVersionKind(u.GroupVersionKind())
@@ -1087,7 +1236,7 @@ func (r *MultiClusterEngineReconciler) ensureUnstructuredResource(ctx context.Co
 }
 
 func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
+	log := log.Log.WithName("reconcile")
 
 	updateNecessary := false
 	if !utils.AvailabilityConfigIsValid(m.Spec.AvailabilityConfig) {
@@ -1188,7 +1337,7 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 }
 
 func (r *MultiClusterEngineReconciler) validateNamespace(ctx context.Context, m *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
+	log := log.Log.WithName("reconcile")
 	newNs := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: m.Spec.TargetNamespace,
@@ -1239,7 +1388,7 @@ func (r *MultiClusterEngineReconciler) validateImagePullSecret(ctx context.Conte
 }
 
 func (r *MultiClusterEngineReconciler) getClusterVersion(ctx context.Context) (string, error) {
-	log := log.FromContext(ctx)
+	log := log.Log.WithName("reconcile")
 	// If Unit test
 	if val, ok := os.LookupEnv("UNIT_TEST"); ok && val == "true" {
 		if _, exists := os.LookupEnv("ACM_HUB_OCP_VERSION"); exists {
@@ -1265,7 +1414,7 @@ func (r *MultiClusterEngineReconciler) getClusterVersion(ctx context.Context) (s
 //+kubebuilder:rbac:groups="config.openshift.io",resources="ingresses",verbs=get;list;watch
 
 func (r *MultiClusterEngineReconciler) getClusterIngressDomain(ctx context.Context, mce *backplanev1.MultiClusterEngine) (string, error) {
-	log := log.FromContext(ctx)
+	log := log.Log.WithName("reconcile")
 	// If Unit test
 	if val, ok := os.LookupEnv("UNIT_TEST"); ok && val == "true" {
 		return "apps.installer-test-cluster.dev00.red-chesterfield.com", nil

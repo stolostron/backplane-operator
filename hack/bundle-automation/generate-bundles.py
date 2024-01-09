@@ -723,13 +723,11 @@ def main():
                 branch = repo["branch"]
                 sha = repo["sha"]
                 bundlePath = repo["bundlePath"]
-                imageRepoOverride = repo["imageRepoOverride"]
-                imageTagOverride = repo["imageTagOverride"]
 
             except KeyError:
                 logging.critical("branch and bundlePath are required for tool-generated bundles")
                 exit(1)
-            cmd = "%s %s %s %s %s %s" % (repo["gen_command"], branch, sha, bundlePath, imageRepoOverride, imageTagOverride)
+            cmd = "%s %s %s %s" % (repo["gen_command"], branch, sha, bundlePath)
 
             logging.info("Running bundle-gen tool: %s", cmd)
             rc = os.system(cmd)

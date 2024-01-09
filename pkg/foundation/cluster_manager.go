@@ -59,7 +59,7 @@ func AddonManagerImage(overrides map[string]string) string {
 }
 
 func ClusterManager(m *v1.MultiClusterEngine, overrides map[string]string) *unstructured.Unstructured {
-	log := log.FromContext(context.Background())
+	log := log.Log.WithName("reconcile")
 
 	cmTolerations := []corev1.Toleration{}
 	if m.Spec.Tolerations != nil {
