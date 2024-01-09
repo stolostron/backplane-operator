@@ -1066,7 +1066,8 @@ func (r *MultiClusterEngineReconciler) CheckConsole(ctx context.Context) (bool, 
 	return false, nil
 }
 
-func (r *MultiClusterEngineReconciler) ensureLocalCluster(ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+func (r *MultiClusterEngineReconciler) ensureLocalCluster(ctx context.Context, mce *backplanev1.MultiClusterEngine) (
+	ctrl.Result, error) {
 	log := log.Log.WithName("reconcile")
 
 	if utils.IsUnitTest() {
