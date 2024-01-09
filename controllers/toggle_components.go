@@ -1171,6 +1171,10 @@ func (r *MultiClusterEngineReconciler) ensureLocalCluster(ctx context.Context, m
 
 	log.Info("Setting annotations on ManagedCluster CR")
 	annotations := managedCluster.GetAnnotations()
+	if annotations == nil {
+		annotations = make(map[string]string)
+	}
+
 	if len(mce.Spec.NodeSelector) > 0 {
 		log.Info("Adding NodeSelector annotation")
 		nodeSelector, err := json.Marshal(mce.Spec.NodeSelector)
