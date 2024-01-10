@@ -1066,7 +1066,8 @@ func (r *MultiClusterEngineReconciler) CheckConsole(ctx context.Context) (bool, 
 	return false, nil
 }
 
-func (r *MultiClusterEngineReconciler) ensureLocalCluster(ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+func (r *MultiClusterEngineReconciler) ensureLocalCluster(ctx context.Context, mce *backplanev1.MultiClusterEngine) (
+	ctrl.Result, error) {
 	log := log.Log.WithName("reconcile")
 
 	if utils.IsUnitTest() {
@@ -1075,10 +1076,7 @@ func (r *MultiClusterEngineReconciler) ensureLocalCluster(ctx context.Context, m
 	}
 
 	nsn := types.NamespacedName{Name: "local-cluster", Namespace: mce.Spec.TargetNamespace}
-	lcs := status.LocalClusterStatus{
-		NamespacedName: nsn,
-		Enabled:        true,
-	}
+	lcs := status.LocalClusterStatus{NamespacedName: nsn, Enabled: true}
 	r.StatusManager.RemoveComponent(lcs)
 	r.StatusManager.AddComponent(lcs)
 
@@ -1171,6 +1169,10 @@ func (r *MultiClusterEngineReconciler) ensureLocalCluster(ctx context.Context, m
 
 	log.Info("Setting annotations on ManagedCluster CR")
 	annotations := managedCluster.GetAnnotations()
+	if annotations == nil {
+		annotations = make(map[string]string)
+	}
+
 	if len(mce.Spec.NodeSelector) > 0 {
 		log.Info("Adding NodeSelector annotation")
 		nodeSelector, err := json.Marshal(mce.Spec.NodeSelector)
@@ -1192,7 +1194,6 @@ func (r *MultiClusterEngineReconciler) ensureLocalCluster(ctx context.Context, m
 		log.Error(err, "Failed to update ManagedCluster CR")
 		return ctrl.Result{}, err
 	}
-
 	return ctrl.Result{}, err
 }
 
