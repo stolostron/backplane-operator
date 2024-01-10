@@ -26,6 +26,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-co-op/gocron"
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 	"github.com/stolostron/backplane-operator/pkg/foundation"
 	"github.com/stolostron/backplane-operator/pkg/images"
@@ -81,6 +82,12 @@ const (
 	defaultTrustBundleName = "trusted-ca-bundle"
 
 	controlPlane = "backplane-operator"
+)
+
+var (
+	scheduler              *gocron.Scheduler
+	cronResyncTag          = "multiclusterengine-operator-resync"
+	reconciliationInterval = 10 // minutes
 )
 
 //+kubebuilder:rbac:groups=multicluster.openshift.io,resources=multiclusterengines,verbs=get;list;watch;create;update;patch;delete
@@ -146,6 +153,14 @@ const (
 // move the current state of the cluster closer to the desired state.
 func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (retRes ctrl.Result, retErr error) {
 	log := log.Log.WithName("reconcile")
+	log.Info("Reconciling MultiClusterEngine")
+
+	// Initalize sceduler instance for operator resync cronjob.
+	if scheduler == nil {
+		log.Info("Setting up scheduler for operator resync")
+		r.InitScheduler()
+	}
+
 	// Fetch the BackplaneConfig instance
 	backplaneConfig, err := r.getBackplaneConfig(ctx, req)
 	if err != nil && !apierrors.IsNotFound(err) {
@@ -287,6 +302,11 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 	// Do not reconcile objects if this instance of mce is labeled "paused"
 	if utils.IsPaused(backplaneConfig) {
 		log.Info("MultiClusterEngine reconciliation is paused. Nothing more to do.")
+		if ok := scheduler.IsRunning(); ok {
+			log.Info("Pausing MultiClusterEngine operator controller resync job.")
+			go r.StopScheduleOperatorControllerResync()
+		}
+
 		cond := status.NewCondition(
 			backplanev1.MultiClusterEngineProgressing,
 			metav1.ConditionUnknown,
@@ -295,6 +315,8 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		)
 		r.StatusManager.AddCondition(cond)
 		return ctrl.Result{}, nil
+	} else if ok := scheduler.IsRunning(); !ok {
+		defer r.ScheduleOperatorControllerResync(ctx, req)
 	}
 
 	result, err = r.DeployAlwaysSubcomponents(ctx, backplaneConfig)
@@ -1410,4 +1432,33 @@ func (r *MultiClusterEngineReconciler) getClusterIngressDomain(ctx context.Conte
 		return "", fmt.Errorf("Domain not found or empty in Ingress")
 	}
 	return clusterIngress.Spec.Domain, nil
+}
+
+func (r *MultiClusterEngineReconciler) InitScheduler() {
+	scheduler = gocron.NewScheduler(time.UTC)
+}
+
+func (r *MultiClusterEngineReconciler) ScheduleOperatorControllerResync(ctx context.Context, req ctrl.Request) {
+	log := log.Log.WithName("reconcile")
+
+	if ok := scheduler.IsRunning(); !ok {
+		_, err := scheduler.Tag(cronResyncTag).Every(reconciliationInterval).Minutes().Do(r.Reconcile, ctx, req)
+
+		if err != nil {
+			log.Error(err, "failed to schedule scheduler job for operator controller resync")
+		} else {
+			log.Info(fmt.Sprintf("Starting scheduler job for operator controller. Reconciling every %v minutes",
+				reconciliationInterval))
+			scheduler.StartAsync()
+		}
+	}
+}
+
+// StopScheduleOperatorControllerResync ...
+func (r *MultiClusterEngineReconciler) StopScheduleOperatorControllerResync() {
+	scheduler.Stop()
+
+	if ok := scheduler.IsRunning(); !ok {
+		r.InitScheduler()
+	}
 }
