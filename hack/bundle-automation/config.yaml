@@ -1,0 +1,42 @@
+- repo_name: generate-hive-bundle
+  gen_command: ./hack/bundle-automation/gen-hive-bundle.sh
+  branch: mce-2.4
+  sha: e3f9aed5bf2a2b43aa05621864fd37c71c38afda
+  bundlePath: /tmp/hive-operator-manifests
+  name: hive-operator
+  imageMappings:
+    hive: openshift_hive
+
+- repo_name: assisted-service
+  github_ref: "https://github.com/openshift/assisted-service.git"
+  branch: "release-ocm-2.10"
+  operators:
+    - name: assisted-service
+      bundlePath: "deploy/olm-catalog/manifests/"
+      imageMappings:
+        assisted-service: assisted_service
+        postgresql-12-centos7: postgresql_12
+        assisted-installer-agent: assisted_installer_agent
+        assisted-installer-controller: assisted_installer_controller
+        assisted-installer: assisted_installer
+        assisted-image-service: assisted_image_service
+
+- repo_name: registration-operator
+  github_ref: "https://github.com/stolostron/ocm.git"
+  branch: "backplane-2.5"
+  operators:
+    - name: cluster-manager
+      bundlePath: "deploy/cluster-manager/olm-catalog/cluster-manager/manifests/"
+      imageMappings:
+        registration-operator: registration_operator
+      exclusions:
+        - readOnlyRootFilesystem
+
+- repo_name: discovery-operator
+  github_ref: "https://github.com/stolostron/discovery.git"
+  branch: "backplane-2.5"
+  operators:
+    - name: discovery-operator
+      bundlePath: "bundle/manifests/"
+      imageMappings:
+        discovery-operator: discovery_operator
