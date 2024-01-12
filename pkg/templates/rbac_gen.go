@@ -277,6 +277,7 @@ package main
 //+kubebuilder:rbac:groups=metal3.io,resources=preprovisioningimages/status,verbs=get;patch;update
 //+kubebuilder:rbac:groups=metal3.io,resources=provisionings,verbs=get
 //+kubebuilder:rbac:groups=migration.k8s.io,resources=storageversionmigrations,verbs=create;get;list;update;watch;patch;delete
+//+kubebuilder:rbac:groups=migration.k8s.io,resources=storageversionmigrations/status,verbs=patch
 //+kubebuilder:rbac:groups=monitoring.coreos.com,resources=prometheusrules;servicemonitors,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=monitoring.coreos.com,resources=servicemonitors,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=monitoring.coreos.com,resources=servicemonitors,verbs=get;create
