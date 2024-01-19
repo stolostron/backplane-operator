@@ -34,6 +34,7 @@ import (
 	"github.com/stolostron/backplane-operator/pkg/status"
 	"github.com/stolostron/backplane-operator/pkg/utils"
 	"github.com/stolostron/backplane-operator/pkg/version"
+	"k8s.io/client-go/util/retry"
 	clustermanager "open-cluster-management.io/api/operator/v1"
 
 	configv1 "github.com/openshift/api/config/v1"
@@ -317,6 +318,31 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return ctrl.Result{}, nil
 	} else if ok := scheduler.IsRunning(); !ok {
 		defer r.ScheduleOperatorControllerResync(ctx, req)
+	}
+
+	crdsDir := "pkg/templates/crds"
+	crds, errs := renderer.RenderCRDs(crdsDir, backplaneConfig)
+	if len(errs) > 0 {
+		for _, err := range errs {
+
+			return result, err
+		}
+	}
+
+	// udpate CRDs with retrygo
+	for i := range crds {
+		_, conversion, _ := unstructured.NestedMap(crds[i].Object, "spec", "conversion", "webhook")
+		if conversion {
+			retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+				crd := crds[i]
+				e := ensureCRD(context.TODO(), r.Client, crd)
+				return e
+			})
+			if retryErr != nil {
+				log.Error(retryErr, "Failed to apply CRD")
+				return result, retryErr
+			}
+		}
 	}
 
 	result, err = r.DeployAlwaysSubcomponents(ctx, backplaneConfig)
@@ -1461,4 +1487,30 @@ func (r *MultiClusterEngineReconciler) StopScheduleOperatorControllerResync() {
 	if ok := scheduler.IsRunning(); !ok {
 		r.InitScheduler()
 	}
+}
+
+func ensureCRD(ctx context.Context, c client.Client, crd *unstructured.Unstructured) error {
+	existingCRD := &unstructured.Unstructured{}
+	existingCRD.SetGroupVersionKind(crd.GroupVersionKind())
+	err := c.Get(ctx, types.NamespacedName{Name: crd.GetName()}, existingCRD)
+	if err != nil && apierrors.IsNotFound(err) {
+		// CRD not found. Create and return
+		err = c.Create(ctx, crd)
+		if err != nil {
+			return fmt.Errorf("error creating CRD '%s': %w", crd.GetName(), err)
+		}
+	} else if err != nil {
+		return fmt.Errorf("error getting CRD '%s': %w", crd.GetName(), err)
+	} else if err == nil {
+		// CRD already exists. Update and return
+		if utils.AnnotationPresent(utils.AnnotationMCEIgnore, existingCRD) {
+			return nil
+		}
+		crd.SetResourceVersion(existingCRD.GetResourceVersion())
+		err = c.Update(ctx, crd)
+		if err != nil {
+			return fmt.Errorf("error updating CRD '%s': %w", crd.GetName(), err)
+		}
+	}
+	return nil
 }

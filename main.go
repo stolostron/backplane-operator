@@ -221,7 +221,7 @@ func main() {
 
 	// Render CRD templates
 	crdsDir := crdsDir
-	crds, errs := renderer.RenderCRDs(crdsDir)
+	crds, errs := renderer.RenderCoreCRDs(crdsDir)
 	if len(errs) > 0 {
 		for _, err := range errs {
 			setupLog.Info(err.Error())
