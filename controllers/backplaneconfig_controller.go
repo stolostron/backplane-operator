@@ -722,6 +722,24 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 		}
 	}
 
+	if backplaneConfig.Enabled(backplanev1.ClusterRelocation) {
+		result, err := r.ensureClusterRelocation(ctx, backplaneConfig)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.ClusterRelocation] = err
+		}
+	} else {
+		result, err := r.ensureNoClusterRelocation(ctx, backplaneConfig)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.ClusterRelocation] = err
+		}
+	}
+
 	if backplaneConfig.Enabled(backplanev1.HyperShift) {
 		result, err := r.ensureHyperShift(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {

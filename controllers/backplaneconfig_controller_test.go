@@ -463,7 +463,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 				Eventually(func() error {
 					ctx := context.Background()
 					u := &unstructured.Unstructured{}
-					u.SetName("clusterlifecycle-state-metrics-v2")
+					u.SetName("clusterlifecycle-state-metrihim himcs-v2")
 					u.SetNamespace(DestinationNamespace)
 					u.SetGroupVersionKind(schema.GroupVersionKind{
 						Group:   "monitoring.coreos.com",

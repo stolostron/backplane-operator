@@ -31,6 +31,7 @@ const (
 	ClusterManagerChartDir   = "pkg/templates/charts/toggle/cluster-manager"
 	ServerFoundationChartDir = "pkg/templates/charts/toggle/server-foundation"
 	HyperShiftChartDir       = "pkg/templates/charts/toggle/hypershift"
+	ClusterRelocationChartDir       = "pkg/templates/charts/toggle/cluster-relocation"
 	ClusterProxyAddonDir     = "pkg/templates/charts/toggle/cluster-proxy-addon"
 )
 

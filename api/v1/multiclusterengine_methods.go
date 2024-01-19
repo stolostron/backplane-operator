@@ -35,6 +35,7 @@ const (
 	ManagedServiceAccount        = "managedserviceaccount"
 	ManagedServiceAccountPreview = "managedserviceaccount-preview"
 	ServerFoundation             = "server-foundation"
+	ClusterRelocation			 = "cluster-relocation"
 )
 
 var allComponents = []string{
@@ -67,6 +68,7 @@ var MCEComponents = []string{
 	HypershiftLocalHosting,
 	ManagedServiceAccount,
 	ServerFoundation,
+	ClusterRelocation,
 }
 
 var LegacyPrometheusKind = []string{"PrometheusRule", "ServiceMonitor"}

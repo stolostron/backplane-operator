@@ -493,6 +493,70 @@ func (r *MultiClusterEngineReconciler) ensureNoAssistedService(ctx context.Conte
 	return ctrl.Result{}, nil
 }
 
+func (r *MultiClusterEngineReconciler) ensureClusterRelocation(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+	targetNamespace := backplaneConfig.Spec.TargetNamespace
+	if backplaneConfig.Spec.Overrides != nil && backplaneConfig.Spec.Overrides.InfrastructureCustomNamespace != "" {
+		targetNamespace = backplaneConfig.Spec.Overrides.InfrastructureCustomNamespace
+	}
+
+	namespacedName := types.NamespacedName{Name: "cluster-relocation-operator", Namespace: targetNamespace}
+	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
+	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
+
+	log := log.Log.WithName("reconcile")
+
+	templates, errs := renderer.RenderChartWithNamespace(toggle.ClusterRelocationChartDir, backplaneConfig, r.Images, targetNamespace)
+	if len(errs) > 0 {
+		for _, err := range errs {
+			log.Info(err.Error())
+		}
+		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+	}
+
+	// Applies all templates
+	for _, template := range templates {
+		applyReleaseVersionAnnotation(template)
+		result, err := r.applyTemplate(ctx, backplaneConfig, template)
+		if err != nil {
+			return result, err
+		}
+	}
+
+	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterEngineReconciler) ensureNoClusterRelocation(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+	targetNamespace := backplaneConfig.Spec.TargetNamespace
+	if backplaneConfig.Spec.Overrides != nil && backplaneConfig.Spec.Overrides.InfrastructureCustomNamespace != "" {
+		targetNamespace = backplaneConfig.Spec.Overrides.InfrastructureCustomNamespace
+	}
+	namespacedName := types.NamespacedName{Name: "cluster-relocation-operator", Namespace: targetNamespace}
+
+	log := log.Log.WithName("reconcile")
+
+	// Renders all templates from charts
+	templates, errs := renderer.RenderChartWithNamespace(toggle.ClusterRelocationChartDir, backplaneConfig, r.Images, targetNamespace)
+	if len(errs) > 0 {
+		for _, err := range errs {
+			log.Info(err.Error())
+		}
+		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+	}
+
+	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
+	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
+
+	// Deletes all templates
+	for _, template := range templates {
+		result, err := r.deleteTemplate(ctx, backplaneConfig, template)
+		if err != nil {
+			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
+			return result, err
+		}
+	}
+	return ctrl.Result{}, nil
+}
+
 func (r *MultiClusterEngineReconciler) ensureServerFoundation(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 	namespacedName := types.NamespacedName{Name: "ocm-controller", Namespace: backplaneConfig.Spec.TargetNamespace}
 	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
