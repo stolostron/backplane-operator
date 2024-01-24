@@ -1878,12 +1878,6 @@ rules:
   - update
   - watch
 - apiGroups:
-  - migration.k8s.io
-  resources:
-  - storageversionmigrations/status
-  verbs:
-  - patch
-- apiGroups:
   - monitoring.coreos.com
   resources:
   - prometheusrules
