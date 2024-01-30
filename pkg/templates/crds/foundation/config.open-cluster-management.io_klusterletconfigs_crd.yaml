@@ -45,12 +45,6 @@ spec:
                   ConfigMap in the cluster namespace;'
                 format: byte
                 type: string
-              hubKubeAPIServerEndpoint:
-                description: HubKubeAPIServerURL is the URL of the hub Kube API server.
-                  If not present, the .status.apiServerURL of Infrastructure/cluster
-                  will be used as the default value. e.g. `oc get infrastructure cluster
-                  -o jsonpath='{.status.apiServerURL}'`
-                type: string
               hubKubeAPIServerProxyConfig:
                 description: HubKubeAPIServerProxyConfig holds proxy settings for
                   connections between klusterlet/add-on agents on the managed cluster
@@ -73,6 +67,12 @@ spec:
                       set.
                     type: string
                 type: object
+              hubKubeAPIServerURL:
+                description: HubKubeAPIServerURL is the URL of the hub Kube API server.
+                  If not present, the .status.apiServerURL of Infrastructure/cluster
+                  will be used as the default value. e.g. `oc get infrastructure cluster
+                  -o jsonpath='{.status.apiServerURL}'`
+                type: string
               nodePlacement:
                 description: NodePlacement enables explicit control over the scheduling
                   of the agent components. If the placement is nil, the placement
