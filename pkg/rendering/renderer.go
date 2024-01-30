@@ -171,44 +171,11 @@ func RenderCRDs(crdDir string, backplaneConfig *v1.MultiClusterEngine) ([]*unstr
 		if err = yaml.Unmarshal(bytesFile, crd); err != nil {
 			errs = append(errs, fmt.Errorf("%s - error unmarshalling file to unstructured: %v", info.Name(), err.Error()))
 		}
-		_, conversion, _ := unstructured.NestedMap(crd.Object, "spec", "conversion", "webhook", "clientConfig", "service")
-		if conversion {
-			crd.Object["spec"].(map[string]interface{})["conversion"].(map[string]interface{})["webhook"].(map[string]interface{})["clientConfig"].(map[string]interface{})["service"].(map[string]interface{})["namespace"] = backplaneConfig.Spec.TargetNamespace
-		}
-		crds = append(crds, crd)
-		return nil
-	})
-	if err != nil {
-		return crds, errs
-	}
-
-	return crds, errs
-}
-
-func RenderCoreCRDs(crdDir string) ([]*unstructured.Unstructured, []error) {
-	var crds []*unstructured.Unstructured
-	errs := []error{}
-
-	if val, ok := os.LookupEnv("DIRECTORY_OVERRIDE"); ok {
-		crdDir = path.Join(val, crdDir)
-	}
-
-	// Read CRD files
-	err := filepath.Walk(crdDir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			fmt.Println(err.Error())
-			return err
-		}
-		crd := &unstructured.Unstructured{}
-		if info == nil || info.IsDir() {
-			return nil
-		}
-		bytesFile, e := ioutil.ReadFile(path)
-		if e != nil {
-			errs = append(errs, fmt.Errorf("%s - error reading file: %v", info.Name(), err.Error()))
-		}
-		if err = yaml.Unmarshal(bytesFile, crd); err != nil {
-			errs = append(errs, fmt.Errorf("%s - error unmarshalling file to unstructured: %v", info.Name(), err.Error()))
+		if backplaneConfig != nil {
+			_, conversion, _ := unstructured.NestedMap(crd.Object, "spec", "conversion", "webhook", "clientConfig", "service")
+			if conversion {
+				crd.Object["spec"].(map[string]interface{})["conversion"].(map[string]interface{})["webhook"].(map[string]interface{})["clientConfig"].(map[string]interface{})["service"].(map[string]interface{})["namespace"] = backplaneConfig.Spec.TargetNamespace
+			}
 		}
 		crds = append(crds, crd)
 		return nil

@@ -338,7 +338,7 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 
 	// udpate CRDs with retrygo
 	for i := range crds {
-		_, conversion, _ := unstructured.NestedMap(crds[i].Object, "spec", "conversion", "webhook")
+		_, conversion, _ := unstructured.NestedMap(crds[i].Object, "spec", "conversion", "webhook", "clientConfig", "service")
 		if conversion {
 			retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 				crd := crds[i]
