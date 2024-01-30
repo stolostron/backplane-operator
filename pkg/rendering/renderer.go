@@ -171,10 +171,9 @@ func RenderCRDs(crdDir string, backplaneConfig *v1.MultiClusterEngine) ([]*unstr
 		if err = yaml.Unmarshal(bytesFile, crd); err != nil {
 			errs = append(errs, fmt.Errorf("%s - error unmarshalling file to unstructured: %v", info.Name(), err.Error()))
 		}
-		_, conversion, _ := unstructured.NestedMap(crd.Object, "spec", "conversion", "webhook")
+		_, conversion, _ := unstructured.NestedMap(crd.Object, "spec", "conversion", "webhook", "clientConfig", "service")
 		if conversion {
 			crd.Object["spec"].(map[string]interface{})["conversion"].(map[string]interface{})["webhook"].(map[string]interface{})["clientConfig"].(map[string]interface{})["service"].(map[string]interface{})["namespace"] = backplaneConfig.Spec.TargetNamespace
-			// crd.Object["spec"].(map[string]interface{})["names"].(map[string]interface{})["kind"] = backplaneConfig.Spec.TargetNamespace
 		}
 		crds = append(crds, crd)
 		return nil
