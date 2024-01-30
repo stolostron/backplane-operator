@@ -320,7 +320,14 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		defer r.ScheduleOperatorControllerResync(ctx, req)
 	}
 
-	crdsDir := "pkg/templates/crds"
+	var crdsDir string
+
+	if val, ok := os.LookupEnv("UNIT_TEST"); ok && val == "true" {
+		crdsDir = "test/unit-test-crds"
+	} else {
+
+		crdsDir = " pkg/templates/crds"
+	}
 	crds, errs := renderer.RenderCRDs(crdsDir, backplaneConfig)
 	if len(errs) > 0 {
 		for _, err := range errs {
