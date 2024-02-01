@@ -109,6 +109,13 @@ spec:
           - create
           - update
           - patch
+        - apiGroups:
+          - ''
+          resources:
+          - secrets
+          verbs:
+          - get
+          - list
       - apiVersion: rbac.authorization.k8s.io/v1
         kind: RoleBinding
         metadata:
