@@ -75,6 +75,30 @@ def updateClusterManagementAddOn(yamlContent):
             continue
         defaultConfig['namespace'] = '{{ .Values.global.namespace }}'
 
+# installAddonForAllClusters updates the clusterManagementAddOn to add a installStrategy
+# to install the addon for all clusters
+def installAddonForAllClusters(yamlContent):
+    if 'spec' not in yamlContent:
+        return
+    if 'installStrategy' in yamlContent['spec']:
+        # If installStrategy already exists, do nothing
+        return
+
+    # Create the installStrategy substructure
+    install_strategy = {
+        'placements': [{
+            'name': 'global', # Use the global placement to select all clusters
+            'namespace': 'open-cluster-management-global-set',
+            'rolloutStrategy': {
+                'type': 'All'
+            }
+        }],
+        'type': 'Placements'
+    }
+
+    # Assign the installStrategy to the yamlContent
+    yamlContent['spec']['installStrategy'] = install_strategy
+
 
 def updateServiceAccount(yamlContent):
     yamlContent['metadata'].pop('namespace')
@@ -121,6 +145,8 @@ def updateResources(outputDir, repo, chart):
         elif kind == "ClusterManagementAddOn":
             logging.info(" Updating ClusterManagementAddOn!")
             updateClusterManagementAddOn(yamlContent)
+            if chart['auto-install-for-all-clusters']:
+                installAddonForAllClusters(yamlContent)
         elif kind == "ServiceAccount":
             logging.info(" Updating ServiceAccount!")
             updateServiceAccount(yamlContent)

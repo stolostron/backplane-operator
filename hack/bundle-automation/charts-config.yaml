@@ -16,3 +16,4 @@
         - "CLUSTER_NAME"
         - "HUB_KUBECONFIG"
         - "INSTALL_NAMESPACE"
+      auto-install-for-all-clusters: true
