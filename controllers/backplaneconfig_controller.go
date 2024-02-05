@@ -982,7 +982,20 @@ func (r *MultiClusterEngineReconciler) applyTemplate(ctx context.Context, backpl
 		force := true
 		err := r.Client.Patch(ctx, template, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
 		if err != nil {
-			return ctrl.Result{}, fmt.Errorf("error applying object Name: %s Kind: %s Error: %w", template.GetName(), template.GetKind(), err)
+			errMessage := fmt.Errorf("error applying object Name: %s Kind: %s Error: %w", template.GetName(), template.GetKind(), err)
+
+			r.StatusManager.AddCondition(status.NewCondition(
+				backplanev1.MultiClusterEngineFailure, metav1.ConditionTrue,
+				status.ApplyFailedReason, errMessage.Error()))
+
+			if apierrors.IsInvalid(err) {
+				r.StatusManager.AddCondition(status.NewCondition(
+					backplanev1.MultiClusterEngineProgressing, metav1.ConditionFalse,
+					status.UnsupportedConfigReason, "operator cannot progress due to invalid configuration",
+				))
+			}
+
+			return ctrl.Result{}, errMessage
 		}
 	}
 	return ctrl.Result{}, nil

@@ -94,6 +94,7 @@ func (sm *StatusTracker) reportConditions() []bpv1.MultiClusterEngineCondition {
 
 func (sm *StatusTracker) reportPhase(mce bpv1.MultiClusterEngine, components []bpv1.ComponentCondition, conditions []bpv1.MultiClusterEngineCondition) bpv1.PhaseType {
 	progress := getCondition(conditions, bpv1.MultiClusterEngineProgressing)
+	failure := getCondition(conditions, bpv1.MultiClusterEngineFailure)
 
 	for _, condition := range conditions {
 		if condition.Reason == PausedReason {
@@ -102,7 +103,7 @@ func (sm *StatusTracker) reportPhase(mce bpv1.MultiClusterEngine, components []b
 	}
 
 	// If operator isn't progressing show error phase
-	if progress != nil && progress.Status == metav1.ConditionFalse {
+	if (progress != nil && progress.Status == metav1.ConditionFalse) || failure.Status == metav1.ConditionTrue {
 		return bpv1.MultiClusterEnginePhaseError
 	}
 

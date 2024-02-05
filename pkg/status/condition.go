@@ -7,6 +7,8 @@ import (
 )
 
 const (
+	// ApplyFailedReason is added when the hub fails to apply a resource
+	ApplyFailedReason = "FailedApplyingComponent"
 	// ComponentsAvailableReason is when all desired components are running successfully
 	ComponentsAvailableReason = "ComponentsAvailable"
 	// ComponentsUnavailableReason is when one or more components are in an unready state
