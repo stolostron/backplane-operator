@@ -103,7 +103,7 @@ func (sm *StatusTracker) reportPhase(mce bpv1.MultiClusterEngine, components []b
 	}
 
 	// If operator isn't progressing show error phase
-	if (progress != nil && progress.Status == metav1.ConditionFalse) || failure.Status == metav1.ConditionTrue {
+	if (progress != nil && progress.Status == metav1.ConditionFalse) || (failure != nil && failure.Status == metav1.ConditionTrue) {
 		return bpv1.MultiClusterEnginePhaseError
 	}
 
