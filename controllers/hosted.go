@@ -135,7 +135,7 @@ func (r *MultiClusterEngineReconciler) HostedReconcile(ctx context.Context, mce 
 
 	// Render CRD templates
 	crdsDir := "pkg/templates/hosted-crds"
-	crds, errs := renderer.RenderCRDs(crdsDir)
+	crds, errs := renderer.RenderCRDs(crdsDir, mce)
 	for _, err := range errs {
 		log.Info(err.Error())
 	}

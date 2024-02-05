@@ -14,6 +14,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	addonv1alpha1 "open-cluster-management.io/api/addon/v1alpha1"
 )
@@ -21,7 +22,7 @@ import (
 const (
 	chartsDir  = "pkg/templates/charts/toggle"
 	chartsPath = "pkg/templates/charts/toggle/managed-serviceaccount"
-	crdsDir    = "pkg/templates/crds"
+	crdsDir    = "../../hack/unit-test-crds"
 )
 
 func TestRender(t *testing.T) {
@@ -272,7 +273,7 @@ func TestRender(t *testing.T) {
 
 }
 
-func TestRenderCRDs(t *testing.T) {
+func TestRenderCoreCRDs(t *testing.T) {
 	tests := []struct {
 		name   string
 		crdDir string
@@ -285,7 +286,8 @@ func TestRenderCRDs(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, errs := RenderCRDs(tt.crdDir)
+			var backplaneConfig *backplane.MultiClusterEngine
+			got, errs := RenderCRDs(tt.crdDir, backplaneConfig)
 			if errs != nil && len(errs) > 1 {
 				t.Errorf("RenderCRDs() got = %v, want %v", errs, nil)
 			}
@@ -300,6 +302,53 @@ func TestRenderCRDs(t *testing.T) {
 				if u.GetAPIVersion() != apiVersion {
 					t.Errorf("RenderCRDs() got apiversion = %v, want apiversion %v", errs, apiVersion)
 				}
+			}
+		})
+	}
+}
+func TestRenderCRDs(t *testing.T) {
+	testBackplane := &backplane.MultiClusterEngine{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "testBackplane",
+		},
+		Spec: backplane.MultiClusterEngineSpec{},
+		Status: backplane.MultiClusterEngineStatus{
+			Phase: "",
+		},
+	}
+	tests := []struct {
+		name   string
+		crdDir string
+		want   []error
+	}{
+		{
+			name:   "Render CRDs directory",
+			crdDir: crdsDir,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, errs := RenderCRDs(tt.crdDir, testBackplane)
+			if errs != nil && len(errs) > 1 {
+				t.Errorf("RenderCRDs() got = %v, want %v", errs, nil)
+			}
+
+			for _, u := range got {
+				kind := "CustomResourceDefinition"
+				apiVersion := "apiextensions.k8s.io/v1"
+				if u.GetKind() != kind {
+					t.Errorf("RenderCRDs() got Kind = %v, want Kind %v", errs, kind)
+				}
+
+				if u.GetAPIVersion() != apiVersion {
+					t.Errorf("RenderCRDs() got apiversion = %v, want apiversion %v", errs, apiVersion)
+				}
+
+				namespace, conversion, _ := unstructured.NestedString(u.Object, "spec", "conversion", "webhook", "clientConfig", "service", "namespace")
+				if conversion && namespace != "" {
+					t.Errorf("did not properly set namespace")
+				}
+
 			}
 		})
 	}
