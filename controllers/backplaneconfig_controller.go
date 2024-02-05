@@ -988,13 +988,6 @@ func (r *MultiClusterEngineReconciler) applyTemplate(ctx context.Context, backpl
 				backplanev1.MultiClusterEngineFailure, metav1.ConditionTrue,
 				status.ApplyFailedReason, errMessage.Error()))
 
-			if apierrors.IsInvalid(err) {
-				r.StatusManager.AddCondition(status.NewCondition(
-					backplanev1.MultiClusterEngineProgressing, metav1.ConditionFalse,
-					status.UnsupportedConfigReason, "operator cannot progress due to invalid configuration",
-				))
-			}
-
 			return ctrl.Result{}, errMessage
 		}
 	}
