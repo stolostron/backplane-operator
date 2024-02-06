@@ -148,6 +148,7 @@ const (
 	MultiClusterEnginePhaseUninstalling  PhaseType = "Uninstalling"
 	MultiClusterEnginePhaseError         PhaseType = "Error"
 	MultiClusterEnginePhaseUnimplemented PhaseType = "Unimplemented"
+	MultiClusterEnginePhaseUpdating      PhaseType = "Updating"
 )
 
 type MultiClusterEngineConditionType string

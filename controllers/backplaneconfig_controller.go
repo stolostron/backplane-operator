@@ -989,7 +989,9 @@ func (r *MultiClusterEngineReconciler) applyTemplate(ctx context.Context, backpl
 			errMessage := fmt.Errorf(
 				"error applying object Name: %s Kind: %s Error: %w", template.GetName(), template.GetKind(), err)
 
-			condType := fmt.Sprintf("%v: %v", backplanev1.MultiClusterEngineComponentFailure, template.GetName())
+			condType := fmt.Sprintf("%v: %v (Kind:%v)", backplanev1.MultiClusterEngineComponentFailure,
+				template.GetName(), template.GetKind())
+
 			r.StatusManager.AddCondition(
 				status.NewCondition(
 					backplanev1.MultiClusterEngineConditionType(condType), metav1.ConditionTrue,
