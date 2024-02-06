@@ -22,17 +22,17 @@ const (
 	ConsoleMCEChartsDir           = "pkg/templates/charts/toggle/console-mce"
 	ManagedServiceAccountCRDPath  = "pkg/templates/managed-serviceaccount/crds"
 
-	DiscoveryChartDir        = "pkg/templates/charts/toggle/discovery-operator"
-	HostedImportChartDir     = "pkg/templates/charts/hosted/server-foundation"
-	HostingImportChartDir    = "pkg/templates/charts/hosting/server-foundation"
-	HiveChartDir             = "pkg/templates/charts/toggle/hive-operator"
-	AssistedServiceChartDir  = "pkg/templates/charts/toggle/assisted-service"
-	ClusterLifecycleChartDir = "pkg/templates/charts/toggle/cluster-lifecycle"
-	ClusterManagerChartDir   = "pkg/templates/charts/toggle/cluster-manager"
-	ServerFoundationChartDir = "pkg/templates/charts/toggle/server-foundation"
-	HyperShiftChartDir       = "pkg/templates/charts/toggle/hypershift"
-	ClusterRelocationChartDir       = "pkg/templates/charts/toggle/cluster-relocation"
-	ClusterProxyAddonDir     = "pkg/templates/charts/toggle/cluster-proxy-addon"
+	DiscoveryChartDir                 = "pkg/templates/charts/toggle/discovery-operator"
+	HostedImportChartDir              = "pkg/templates/charts/hosted/server-foundation"
+	HostingImportChartDir             = "pkg/templates/charts/hosting/server-foundation"
+	HiveChartDir                      = "pkg/templates/charts/toggle/hive-operator"
+	AssistedServiceChartDir           = "pkg/templates/charts/toggle/assisted-service"
+	ClusterLifecycleChartDir          = "pkg/templates/charts/toggle/cluster-lifecycle"
+	ClusterManagerChartDir            = "pkg/templates/charts/toggle/cluster-manager"
+	ServerFoundationChartDir          = "pkg/templates/charts/toggle/server-foundation"
+	HyperShiftChartDir                = "pkg/templates/charts/toggle/hypershift"
+	ImageBasedInstallOperatorChartDir = "pkg/templates/charts/toggle/image-based-install-operator"
+	ClusterProxyAddonDir              = "pkg/templates/charts/toggle/cluster-proxy-addon"
 )
 
 func EnabledStatus(namespacedName types.NamespacedName) status.StatusReporter {

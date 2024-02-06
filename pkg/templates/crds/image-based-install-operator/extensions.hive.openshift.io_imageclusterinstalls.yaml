@@ -1,0 +1,329 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.11.1
+  creationTimestamp: null
+  labels:
+    contracts.hive.openshift.io/clusterinstall: "true"
+  name: imageclusterinstalls.extensions.hive.openshift.io
+spec:
+  group: extensions.hive.openshift.io
+  names:
+    kind: ImageClusterInstall
+    listKind: ImageClusterInstallList
+    plural: imageclusterinstalls
+    singular: imageclusterinstall
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: ImageClusterInstall is the Schema for the imageclusterinstall
+          API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: ImageClusterInstallSpec defines the desired state of ImageClusterInstall
+            properties:
+              bareMetalHostRef:
+                description: BareMetalHostRef identifies a BareMetalHost object to
+                  be used to attach the configuration to the host.
+                properties:
+                  name:
+                    description: Name identifies the BareMetalHost within a namespace
+                    type: string
+                  namespace:
+                    description: Namespace identifies the namespace containing the
+                      referenced BareMetalHost
+                    type: string
+                required:
+                - name
+                - namespace
+                type: object
+              caBundleRef:
+                description: CABundle is a reference to a config map containing the
+                  new bundle of trusted certificates for the host. The tls-ca-bundle.pem
+                  entry in the config map will be written to /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem
+                properties:
+                  name:
+                    description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      TODO: Add other useful fields. apiVersion, kind, uid?'
+                    type: string
+                type: object
+                x-kubernetes-map-type: atomic
+              clusterDeploymentRef:
+                description: ClusterDeploymentRef is a reference to the ClusterDeployment.
+                properties:
+                  name:
+                    description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      TODO: Add other useful fields. apiVersion, kind, uid?'
+                    type: string
+                type: object
+                x-kubernetes-map-type: atomic
+              clusterMetadata:
+                description: ClusterMetadata contains metadata information about the
+                  installed cluster. This must be set as soon as all the information
+                  is available.
+                properties:
+                  adminKubeconfigSecretRef:
+                    description: AdminKubeconfigSecretRef references the secret containing
+                      the admin kubeconfig for this cluster.
+                    properties:
+                      name:
+                        description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                          TODO: Add other useful fields. apiVersion, kind, uid?'
+                        type: string
+                    type: object
+                    x-kubernetes-map-type: atomic
+                  adminPasswordSecretRef:
+                    description: AdminPasswordSecretRef references the secret containing
+                      the admin username/password which can be used to login to this
+                      cluster.
+                    properties:
+                      name:
+                        description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                          TODO: Add other useful fields. apiVersion, kind, uid?'
+                        type: string
+                    type: object
+                    x-kubernetes-map-type: atomic
+                  clusterID:
+                    description: ClusterID is a globally unique identifier for this
+                      cluster generated during installation. Used for reporting metrics
+                      among other places.
+                    type: string
+                  infraID:
+                    description: InfraID is an identifier for this cluster generated
+                      during installation and used for tagging/naming resources in
+                      cloud providers.
+                    type: string
+                  platform:
+                    description: Platform holds platform-specific cluster metadata
+                    properties:
+                      aws:
+                        description: AWS holds AWS-specific cluster metadata
+                        properties:
+                          hostedZoneRole:
+                            description: HostedZoneRole is the role to assume when
+                              performing operations on a hosted zone owned by another
+                              account.
+                            type: string
+                        type: object
+                      azure:
+                        description: Azure holds azure-specific cluster metadata
+                        properties:
+                          resourceGroupName:
+                            description: ResourceGroupName is the name of the resource
+                              group in which the cluster resources were created.
+                            type: string
+                        required:
+                        - resourceGroupName
+                        type: object
+                      gcp:
+                        description: GCP holds GCP-specific cluster metadata
+                        properties:
+                          networkProjectID:
+                            description: NetworkProjectID is used for shared VPC setups
+                            type: string
+                        type: object
+                    type: object
+                required:
+                - adminKubeconfigSecretRef
+                - clusterID
+                - infraID
+                type: object
+              extraManifestsRef:
+                description: ExtraManifestsRefs is list of config map references containing
+                  additional manifests to be applied to the relocated cluster.
+                items:
+                  description: LocalObjectReference contains enough information to
+                    let you locate the referenced object inside the same namespace.
+                  properties:
+                    name:
+                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                        TODO: Add other useful fields. apiVersion, kind, uid?'
+                      type: string
+                  type: object
+                  x-kubernetes-map-type: atomic
+                type: array
+              hostname:
+                description: Hostname is the desired hostname for the host
+                type: string
+              imageSetRef:
+                description: ImageSetRef is a reference to a ClusterImageSet.
+                properties:
+                  name:
+                    description: Name is the name of the ClusterImageSet that this
+                      refers to
+                    type: string
+                required:
+                - name
+                type: object
+              networkConfigRef:
+                description: NetworkConfigRef is the reference to a config map containing
+                  network configuration files if necessary. Keys should be of the
+                  form *.nmconnection and each represent an nmconnection file to be
+                  applied to the host.
+                properties:
+                  name:
+                    description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      TODO: Add other useful fields. apiVersion, kind, uid?'
+                    type: string
+                type: object
+                x-kubernetes-map-type: atomic
+              nodeIP:
+                description: NodeIP is the desired IP for the host
+                type: string
+              version:
+                description: 'Version is the target OCP version for the cluster TODO:
+                  should this use ImageSetRef?'
+                type: string
+            required:
+            - imageSetRef
+            type: object
+          status:
+            description: ImageClusterInstallStatus defines the observed state of ImageClusterInstall
+            properties:
+              bareMetalHostRef:
+                properties:
+                  name:
+                    description: Name identifies the BareMetalHost within a namespace
+                    type: string
+                  namespace:
+                    description: Namespace identifies the namespace containing the
+                      referenced BareMetalHost
+                    type: string
+                required:
+                - name
+                - namespace
+                type: object
+              conditions:
+                description: Conditions is a list of conditions associated with syncing
+                  to the cluster.
+                items:
+                  description: ClusterInstallCondition contains details for the current
+                    condition of a cluster install.
+                  properties:
+                    lastProbeTime:
+                      description: LastProbeTime is the last time we probed the condition.
+                      format: date-time
+                      type: string
+                    lastTransitionTime:
+                      description: LastTransitionTime is the last time the condition
+                        transitioned from one status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: Message is a human-readable message indicating
+                        details about last transition.
+                      type: string
+                    reason:
+                      description: Reason is a unique, one-word, CamelCase reason
+                        for the condition's last transition.
+                      type: string
+                    status:
+                      description: Status is the status of the condition.
+                      type: string
+                    type:
+                      description: Type is the type of the condition.
+                      type: string
+                  required:
+                  - status
+                  - type
+                  type: object
+                type: array
+              configConditions:
+                items:
+                  description: "Condition contains details for one aspect of the current
+                    state of this API Resource. --- This struct is intended for direct
+                    use as an array at the field path .status.conditions.  For example,
+                    \n type FooStatus struct{ // Represents the observations of a
+                    foo's current state. // Known .status.conditions.type are: \"Available\",
+                    \"Progressing\", and \"Degraded\" // +patchMergeKey=type // +patchStrategy=merge
+                    // +listType=map // +listMapKey=type Conditions []metav1.Condition
+                    `json:\"conditions,omitempty\" patchStrategy:\"merge\" patchMergeKey:\"type\"
+                    protobuf:\"bytes,1,rep,name=conditions\"` \n // other fields }"
+                  properties:
+                    lastTransitionTime:
+                      description: lastTransitionTime is the last time the condition
+                        transitioned from one status to another. This should be when
+                        the underlying condition changed.  If that is not known, then
+                        using the time when the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: message is a human readable message indicating
+                        details about the transition. This may be an empty string.
+                      maxLength: 32768
+                      type: string
+                    observedGeneration:
+                      description: observedGeneration represents the .metadata.generation
+                        that the condition was set based upon. For instance, if .metadata.generation
+                        is currently 12, but the .status.conditions[x].observedGeneration
+                        is 9, the condition is out of date with respect to the current
+                        state of the instance.
+                      format: int64
+                      minimum: 0
+                      type: integer
+                    reason:
+                      description: reason contains a programmatic identifier indicating
+                        the reason for the condition's last transition. Producers
+                        of specific condition types may define expected values and
+                        meanings for this field, and whether the values are considered
+                        a guaranteed API. The value should be a CamelCase string.
+                        This field may not be empty.
+                      maxLength: 1024
+                      minLength: 1
+                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                      type: string
+                    status:
+                      description: status of the condition, one of True, False, Unknown.
+                      enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                      type: string
+                    type:
+                      description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                        --- Many .condition.type values are consistent across resources
+                        like Available, but because arbitrary conditions can be useful
+                        (see .node.status.conditions), the ability to deconflict is
+                        important. The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+              installRestarts:
+                description: InstallRestarts is the total count of container restarts
+                  on the clusters install job.
+                type: integer
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: null
+  storedVersions: null

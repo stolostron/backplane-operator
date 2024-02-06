@@ -722,21 +722,21 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 		}
 	}
 
-	if backplaneConfig.Enabled(backplanev1.ClusterRelocation) {
-		result, err := r.ensureClusterRelocation(ctx, backplaneConfig)
+	if backplaneConfig.Enabled(backplanev1.ImageBasedInstallOperator) {
+		result, err := r.ensureImageBasedInstallOperator(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
 			requeue = true
 		}
 		if err != nil {
-			errs[backplanev1.ClusterRelocation] = err
+			errs[backplanev1.ImageBasedInstallOperator] = err
 		}
 	} else {
-		result, err := r.ensureNoClusterRelocation(ctx, backplaneConfig)
+		result, err := r.ensureNoImageBasedInstallOperator(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
 			requeue = true
 		}
 		if err != nil {
-			errs[backplanev1.ClusterRelocation] = err
+			errs[backplanev1.ImageBasedInstallOperator] = err
 		}
 	}
 

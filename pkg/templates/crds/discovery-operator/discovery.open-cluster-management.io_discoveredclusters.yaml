@@ -41,6 +41,10 @@ spec:
                 type: string
               cloudProvider:
                 type: string
+              ocpClusterId:
+                type: string
+              rhocmClusterId:
+                type: string
               console:
                 type: string
               creationTimestamp:

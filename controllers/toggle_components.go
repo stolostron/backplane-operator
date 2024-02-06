@@ -493,19 +493,16 @@ func (r *MultiClusterEngineReconciler) ensureNoAssistedService(ctx context.Conte
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterEngineReconciler) ensureClusterRelocation(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+func (r *MultiClusterEngineReconciler) ensureImageBasedInstallOperator(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 	targetNamespace := backplaneConfig.Spec.TargetNamespace
-	if backplaneConfig.Spec.Overrides != nil && backplaneConfig.Spec.Overrides.InfrastructureCustomNamespace != "" {
-		targetNamespace = backplaneConfig.Spec.Overrides.InfrastructureCustomNamespace
-	}
 
-	namespacedName := types.NamespacedName{Name: "cluster-relocation-operator", Namespace: targetNamespace}
+	namespacedName := types.NamespacedName{Name: "image-based-install-operator", Namespace: targetNamespace}
 	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
 
 	log := log.Log.WithName("reconcile")
 
-	templates, errs := renderer.RenderChartWithNamespace(toggle.ClusterRelocationChartDir, backplaneConfig, r.Images, targetNamespace)
+	templates, errs := renderer.RenderChartWithNamespace(toggle.ImageBasedInstallOperatorChartDir, backplaneConfig, r.Images, targetNamespace)
 	if len(errs) > 0 {
 		for _, err := range errs {
 			log.Info(err.Error())
@@ -525,17 +522,14 @@ func (r *MultiClusterEngineReconciler) ensureClusterRelocation(ctx context.Conte
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterEngineReconciler) ensureNoClusterRelocation(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+func (r *MultiClusterEngineReconciler) ensureNoImageBasedInstallOperator(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 	targetNamespace := backplaneConfig.Spec.TargetNamespace
-	if backplaneConfig.Spec.Overrides != nil && backplaneConfig.Spec.Overrides.InfrastructureCustomNamespace != "" {
-		targetNamespace = backplaneConfig.Spec.Overrides.InfrastructureCustomNamespace
-	}
-	namespacedName := types.NamespacedName{Name: "cluster-relocation-operator", Namespace: targetNamespace}
+	namespacedName := types.NamespacedName{Name: "image-based-install-operator", Namespace: targetNamespace}
 
 	log := log.Log.WithName("reconcile")
 
 	// Renders all templates from charts
-	templates, errs := renderer.RenderChartWithNamespace(toggle.ClusterRelocationChartDir, backplaneConfig, r.Images, targetNamespace)
+	templates, errs := renderer.RenderChartWithNamespace(toggle.ImageBasedInstallOperatorChartDir, backplaneConfig, r.Images, targetNamespace)
 	if len(errs) > 0 {
 		for _, err := range errs {
 			log.Info(err.Error())
