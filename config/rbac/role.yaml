@@ -1051,6 +1051,7 @@ rules:
   resources:
   - managedserviceaccounts
   verbs:
+  - create
   - delete
   - get
   - list

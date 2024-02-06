@@ -44,6 +44,9 @@ spec:
         - --agent-cafile=/var/run/klusterlet/ca.crt
         - --agent-certfile=/var/run/klusterlet/tls.crt
         - --agent-keyfile=/var/run/klusterlet/tls.key
+        - --proxy-service-cafile=/var/run/clusterproxy/service-ca.crt
+        - --proxy-service-name=cluster-proxy-addon-user
+        - --proxy-service-port=9092
         env:
 {{- if .Values.hubconfig.proxyConfigs }}
         - name: HTTP_PROXY
@@ -88,6 +91,8 @@ spec:
           name: klusterlet-certs
         - mountPath: /var/run/apiservice
           name: apiservice-certs
+        - mountPath: /var/run/clusterproxy
+          name: cluster-proxy-service-ca
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       schedulerName: default-scheduler
@@ -131,3 +136,7 @@ spec:
         secret:
           defaultMode: 420
           secretName: ocm-proxyserver
+      - name: cluster-proxy-service-ca
+        configMap:
+          defaultMode: 420
+          name: openshift-service-ca.crt
