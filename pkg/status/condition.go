@@ -2,6 +2,8 @@
 package status
 
 import (
+	"strings"
+
 	v1 "github.com/stolostron/backplane-operator/api/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -89,4 +91,29 @@ func filterOutCondition(conditions []v1.MultiClusterEngineCondition, condType v1
 		newConditions = append(newConditions, c)
 	}
 	return newConditions
+}
+
+// FilterOutConditionWithSubString returns a new slice of hub conditions without conditions with the provided type.
+func FilterOutConditionWithSubString(conditions []v1.MultiClusterEngineCondition, condType v1.MultiClusterEngineConditionType) []v1.MultiClusterEngineCondition {
+	var newConditions []v1.MultiClusterEngineCondition
+	for _, c := range conditions {
+		if strings.Contains(string(c.Type), string(condType)) {
+			continue
+		}
+		newConditions = append(newConditions, c)
+	}
+	return newConditions
+}
+
+/*
+ConditionPresentWithSubstring returns true or false if a MultiClusterEngineCondition is
+present with a target substring.
+*/
+func ConditionPresentWithSubstring(conditions []v1.MultiClusterEngineCondition, substring string) bool {
+	for _, c := range conditions {
+		if strings.Contains(string(c.Type), substring) {
+			return true
+		}
+	}
+	return false
 }

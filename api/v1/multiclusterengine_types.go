@@ -167,6 +167,11 @@ const (
 	*/
 	MultiClusterEngineProgressing MultiClusterEngineConditionType = "Progressing"
 	/*
+		ComponentFailure is added in a deployment when one of its pods fails to be created
+		or deleted.
+	*/
+	MultiClusterEngineComponentFailure MultiClusterEngineConditionType = "ComponentFailure"
+	/*
 		Failure is added in a deployment when one of its pods fails to be created
 		or deleted.
 	*/

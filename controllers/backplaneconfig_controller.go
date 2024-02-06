@@ -174,6 +174,10 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return ctrl.Result{}, nil
 	}
 
+	// reset the status conditions for failures that has occurred in previous iterations.
+	backplaneConfig.Status.Conditions = status.FilterOutConditionWithSubString(backplaneConfig.Status.Conditions,
+		backplanev1.MultiClusterEngineComponentFailure)
+
 	// reset status manager
 	r.StatusManager.Reset("")
 	for _, c := range backplaneConfig.Status.Conditions {
@@ -982,11 +986,15 @@ func (r *MultiClusterEngineReconciler) applyTemplate(ctx context.Context, backpl
 		force := true
 		err := r.Client.Patch(ctx, template, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
 		if err != nil {
-			errMessage := fmt.Errorf("error applying object Name: %s Kind: %s Error: %w", template.GetName(), template.GetKind(), err)
+			errMessage := fmt.Errorf(
+				"error applying object Name: %s Kind: %s Error: %w", template.GetName(), template.GetKind(), err)
 
-			r.StatusManager.AddCondition(status.NewCondition(
-				backplanev1.MultiClusterEngineFailure, metav1.ConditionTrue,
-				status.ApplyFailedReason, errMessage.Error()))
+			condType := fmt.Sprintf("%v: %v", backplanev1.MultiClusterEngineComponentFailure, template.GetName())
+			r.StatusManager.AddCondition(
+				status.NewCondition(
+					backplanev1.MultiClusterEngineConditionType(condType), metav1.ConditionTrue,
+					status.ApplyFailedReason, errMessage.Error()),
+			)
 
 			return ctrl.Result{}, errMessage
 		}
