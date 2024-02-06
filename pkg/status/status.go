@@ -116,6 +116,11 @@ func (sm *StatusTracker) reportPhase(mce bpv1.MultiClusterEngine, components []b
 		return bpv1.MultiClusterEnginePhaseError
 	}
 
+	// If status contains failure status return error
+	if ok := ConditionPresentWithSubstring(conditions, string(bpv1.MultiClusterEngineComponentFailure)); ok {
+		return bpv1.MultiClusterEnginePhaseError
+	}
+
 	// If a component isn't ready show progressing phase
 	if !allComponentsReady(components) {
 		return bpv1.MultiClusterEnginePhaseProgressing
