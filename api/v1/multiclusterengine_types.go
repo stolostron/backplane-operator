@@ -148,23 +148,35 @@ const (
 	MultiClusterEnginePhaseUninstalling  PhaseType = "Uninstalling"
 	MultiClusterEnginePhaseError         PhaseType = "Error"
 	MultiClusterEnginePhaseUnimplemented PhaseType = "Unimplemented"
+	MultiClusterEnginePhaseUpdating      PhaseType = "Updating"
 )
 
 type MultiClusterEngineConditionType string
 
 // These are valid conditions of the multiclusterengine.
 const (
-	// Available means the deployment is available, ie. at least the minimum available
-	// replicas required are up and running for at least minReadySeconds.
+	/*
+		Available means the deployment is available, ie. at least the minimum available
+		replicas required are up and running for at least minReadySeconds.
+	*/
 	MultiClusterEngineAvailable MultiClusterEngineConditionType = "Available"
-	// Progressing means the deployment is progressing. Progress for a deployment is
-	// considered when a new replica set is created or adopted, and when new pods scale
-	// up or old pods scale down. Progress is not estimated for paused deployments or
-	// when progressDeadlineSeconds is not specified.
+	/*
+		Progressing means the deployment is progressing. Progress for a deployment is
+		considered when a new replica set is created or adopted, and when new pods scale
+		up or old pods scale down. Progress is not estimated for paused deployments or
+		when progressDeadlineSeconds is not specified.
+	*/
 	MultiClusterEngineProgressing MultiClusterEngineConditionType = "Progressing"
-	// Failure is added in a deployment when one of its pods fails to be created
-	// or deleted.
-	MultiClusterEngineFailure MultiClusterEngineConditionType = "MultiClusterEngineFailure"
+	/*
+		ComponentFailure is added in a deployment when one of its pods fails to be created
+		or deleted.
+	*/
+	MultiClusterEngineComponentFailure MultiClusterEngineConditionType = "ComponentFailure"
+	/*
+		Failure is added in a deployment when one of its pods fails to be created
+		or deleted.
+	*/
+	MultiClusterEngineFailure MultiClusterEngineConditionType = "Failure"
 )
 
 type MultiClusterEngineCondition struct {

@@ -14,7 +14,7 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    createdAt: "2023-10-10T19:29:32Z"
+    createdAt: "2024-02-06T11:49:16Z"
     operators.operatorframework.io/builder: operator-sdk-v1.32.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
   name: multicluster-engine.v0.0.1
@@ -175,7 +175,6 @@ spec:
           resources:
           - configmaps
           - namespaces
-          - pods
           - serviceaccounts
           - services
           verbs:
@@ -325,6 +324,7 @@ spec:
           resources:
           - pods
           verbs:
+          - get
           - list
         - apiGroups:
           - ""
@@ -957,25 +957,8 @@ spec:
           - watch
         - apiGroups:
           - app.k8s.io
-          - apps.open-cluster-management.io
-          - argoproj.io
-          - policy.open-cluster-management.io
           resources:
           - applications
-          - applicationsets
-          - appprojects
-          - argocds
-          - channels
-          - gitopsclusters
-          - helmreleases
-          - multiclusterapplicationsetreports
-          - placementbindings
-          - placementrules
-          - policies
-          - policyautomations
-          - policysets
-          - subscriptionreports
-          - subscriptions
           verbs:
           - list
           - watch
@@ -1066,6 +1049,19 @@ spec:
         - apiGroups:
           - apps.open-cluster-management.io
           resources:
+          - channels
+          - gitopsclusters
+          - helmreleases
+          - multiclusterapplicationsetreports
+          - placementrules
+          - subscriptionreports
+          - subscriptions
+          verbs:
+          - list
+          - watch
+        - apiGroups:
+          - apps.open-cluster-management.io
+          resources:
           - deployables
           - deployables/status
           verbs:
@@ -1080,6 +1076,15 @@ spec:
           - deploymentconfigs
           verbs:
           - get
+          - list
+          - watch
+        - apiGroups:
+          - argoproj.io
+          resources:
+          - applications
+          - applicationsets
+          - argocds
+          verbs:
           - list
           - watch
         - apiGroups:
@@ -1432,6 +1437,15 @@ spec:
           - managedclustersets/join
           verbs:
           - create
+        - apiGroups:
+          - cluster.open-cluster-management.io
+          resources:
+          - placements
+          verbs:
+          - create
+          - get
+          - list
+          - watch
         - apiGroups:
           - cluster.open-cluster-management.io
           resources:
@@ -2071,6 +2085,16 @@ spec:
           - list
           - watch
         - apiGroups:
+          - policy.open-cluster-management.io
+          resources:
+          - placementbindings
+          - policies
+          - policyautomations
+          - policysets
+          verbs:
+          - list
+          - watch
+        - apiGroups:
           - proxy.open-cluster-management.io
           resources:
           - clusterstatuses/aggregator
@@ -2286,6 +2310,15 @@ spec:
           - patch
           - update
           - watch
+        - apiGroups:
+          - scheduling.k8s.io
+          resources:
+          - priorityclasses
+          verbs:
+          - create
+          - get
+          - patch
+          - update
         - apiGroups:
           - storage.k8s.io
           resources:

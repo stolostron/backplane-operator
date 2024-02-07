@@ -129,7 +129,7 @@ func (r *MultiClusterEngineReconciler) ensureManagedServiceAccount(ctx context.C
 
 	// Render CRD templates
 	crdPath := toggle.ManagedServiceAccountCRDPath
-	crds, errs := renderer.RenderCRDs(crdPath)
+	crds, errs := renderer.RenderCRDs(crdPath, backplaneConfig)
 	if len(errs) > 0 {
 		for _, err := range errs {
 			log.Info(err.Error())
@@ -212,7 +212,7 @@ func (r *MultiClusterEngineReconciler) ensureNoManagedServiceAccount(ctx context
 
 	// Render CRD templates
 	crdPath := toggle.ManagedServiceAccountCRDPath
-	crds, errs := renderer.RenderCRDs(crdPath)
+	crds, errs := renderer.RenderCRDs(crdPath, backplaneConfig)
 	if len(errs) > 0 {
 		for _, err := range errs {
 			log.Info(err.Error())

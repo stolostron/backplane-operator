@@ -148,6 +148,7 @@ package main
 //+kubebuilder:rbac:groups=authentication.k8s.io,resources=tokenreviews,verbs=create
 //+kubebuilder:rbac:groups=authentication.k8s.io,resources=tokenreviews,verbs=create
 //+kubebuilder:rbac:groups=authentication.open-cluster-management.io,resources=managedserviceaccounts,verbs=get;list;watch;update;patch;delete
+//+kubebuilder:rbac:groups=authentication.open-cluster-management.io,resources=managedserviceaccounts,verbs=get;watch;list;create;update
 //+kubebuilder:rbac:groups=authentication.open-cluster-management.io,resources=managedserviceaccounts/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=authorization.k8s.io,resources=subjectaccessreviews,verbs=create
 //+kubebuilder:rbac:groups=authorization.k8s.io,resources=subjectaccessreviews,verbs=create
@@ -200,6 +201,7 @@ package main
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclustersets/join,verbs=create
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclustersets;placementdecisions,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclustersets;placementdecisions;placementdecisions/status,verbs=get;list;watch;update
+//+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=placements,verbs=get;list;watch;create
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=placements/finalizers,verbs=update
 //+kubebuilder:rbac:groups=clusterview.open-cluster-management.io,resources=managedclusters;managedclustersets,verbs=list;get;watch
 //+kubebuilder:rbac:groups=config.open-cluster-management.io,resources=klusterletconfigs,verbs=get;list;watch
@@ -324,6 +326,7 @@ package main
 //+kubebuilder:rbac:groups=route.openshift.io,resources=routes,verbs=get;list;create;delete;update;patch
 //+kubebuilder:rbac:groups=route.openshift.io,resources=routes/custom-host,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=route.openshift.io,resources=routes;routes/custom-host,verbs=create;get
+//+kubebuilder:rbac:groups=scheduling.k8s.io,resources=priorityclasses,verbs=get;create;patch;update
 //+kubebuilder:rbac:groups=storage.k8s.io,resources=storageclasses,verbs=list;watch
 //+kubebuilder:rbac:groups=submarineraddon.open-cluster-management.io,resources=submarinerconfigs,verbs=list;watch
 //+kubebuilder:rbac:groups=tower.ansible.com;batch;"",resources=ansiblejobs;jobs;secrets;serviceaccounts,verbs=create

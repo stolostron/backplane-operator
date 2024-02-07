@@ -146,7 +146,7 @@ func (val *Values) ToValues() (chartutil.Values, error) {
 	return vals, nil
 }
 
-func RenderCRDs(crdDir string) ([]*unstructured.Unstructured, []error) {
+func RenderCRDs(crdDir string, backplaneConfig *v1.MultiClusterEngine) ([]*unstructured.Unstructured, []error) {
 	var crds []*unstructured.Unstructured
 	errs := []error{}
 
@@ -170,6 +170,12 @@ func RenderCRDs(crdDir string) ([]*unstructured.Unstructured, []error) {
 		}
 		if err = yaml.Unmarshal(bytesFile, crd); err != nil {
 			errs = append(errs, fmt.Errorf("%s - error unmarshalling file to unstructured: %v", info.Name(), err.Error()))
+		}
+		if backplaneConfig != nil {
+			_, conversion, _ := unstructured.NestedMap(crd.Object, "spec", "conversion", "webhook", "clientConfig", "service")
+			if conversion {
+				crd.Object["spec"].(map[string]interface{})["conversion"].(map[string]interface{})["webhook"].(map[string]interface{})["clientConfig"].(map[string]interface{})["service"].(map[string]interface{})["namespace"] = backplaneConfig.Spec.TargetNamespace
+			}
 		}
 		crds = append(crds, crd)
 		return nil
