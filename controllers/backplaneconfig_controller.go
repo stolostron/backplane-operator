@@ -759,6 +759,24 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 		}
 	}
 
+	if backplaneConfig.Enabled(backplanev1.ImageBasedInstallOperator) {
+		result, err := r.ensureImageBasedInstallOperator(ctx, backplaneConfig)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.ImageBasedInstallOperator] = err
+		}
+	} else {
+		result, err := r.ensureNoImageBasedInstallOperator(ctx, backplaneConfig)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.ImageBasedInstallOperator] = err
+		}
+	}
+
 	if backplaneConfig.Enabled(backplanev1.HyperShift) {
 		result, err := r.ensureHyperShift(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
