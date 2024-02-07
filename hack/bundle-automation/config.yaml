@@ -7,6 +7,17 @@
   imageMappings:
     hive: openshift_hive
 
+
+- repo_name: image-based-install-operator
+  github_ref: "https://github.com/openshift/image-based-install-operator.git"
+  branch: "main"
+  operators:
+    - name: image-based-install-operator
+      bundlePath: "bundle/manifests/"
+      imageMappings:
+        controller: image_based_install_operator
+
+
 - repo_name: assisted-service
   github_ref: "https://github.com/openshift/assisted-service.git"
   branch: "release-ocm-2.10"

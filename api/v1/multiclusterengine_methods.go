@@ -35,6 +35,7 @@ const (
 	ManagedServiceAccount        = "managedserviceaccount"
 	ManagedServiceAccountPreview = "managedserviceaccount-preview"
 	ServerFoundation             = "server-foundation"
+	ImageBasedInstallOperator    = "image-based-install-operator"
 )
 
 var allComponents = []string{
@@ -52,6 +53,7 @@ var allComponents = []string{
 	ManagedServiceAccount,
 	ManagedServiceAccountPreview,
 	ServerFoundation,
+	ImageBasedInstallOperator,
 }
 
 // MCEComponents is a slice containing component names specific to the "MCE" category.
@@ -67,6 +69,7 @@ var MCEComponents = []string{
 	HypershiftLocalHosting,
 	ManagedServiceAccount,
 	ServerFoundation,
+	ImageBasedInstallOperator,
 }
 
 var LegacyPrometheusKind = []string{"PrometheusRule", "ServiceMonitor"}
