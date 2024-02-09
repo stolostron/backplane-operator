@@ -59,6 +59,8 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
+        - name: TMPDIR
+          value: /tmp
         image: '{{ .Values.global.imageOverrides.openshift_hive }}'
         imagePullPolicy: '{{ .Values.global.pullPolicy }}'
         livenessProbe:
@@ -88,6 +90,8 @@ spec:
         volumeMounts:
         - mountPath: /var/cache/kubectl
           name: kubectl-cache
+        - mountPath: /tmp
+          name: tmp
       hostIPC: false
       hostNetwork: false
       hostPID: false
@@ -120,3 +124,5 @@ spec:
       volumes:
       - emptyDir: {}
         name: kubectl-cache
+      - emptyDir: {}
+        name: tmp
