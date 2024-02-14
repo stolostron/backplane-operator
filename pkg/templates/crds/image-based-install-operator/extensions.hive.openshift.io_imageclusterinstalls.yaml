@@ -308,6 +308,10 @@ spec:
                   - type
                   type: object
                 type: array
+              configurationImageURL:
+                description: ConfigurationImageURL is the externally accessible URL
+                  for downloading the image containing the SNO configuration
+                type: string
               installRestarts:
                 description: InstallRestarts is the total count of container restarts
                   on the clusters install job.
