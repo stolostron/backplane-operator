@@ -35,7 +35,7 @@ const (
 	ManagedServiceAccount        = "managedserviceaccount"
 	ManagedServiceAccountPreview = "managedserviceaccount-preview"
 	ServerFoundation             = "server-foundation"
-	ImageBasedInstallOperator    = "image-based-install-operator"
+	ImageBasedInstallOperator    = "image-based-install-operator-preview"
 )
 
 var allComponents = []string{
