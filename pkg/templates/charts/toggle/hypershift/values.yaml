@@ -10,6 +10,7 @@ global:
     hypershift_operator: ""
     cluster_api_provider_kubevirt: ""
     kube_rbac_proxy_mce: "registry.redhat.io/openshift4/ose-kube-rbac-proxy:v4.10"
+  templateOverrides: {}
   namespace: default
   pullSecret: null
 hubconfig:
@@ -17,4 +18,5 @@ hubconfig:
   proxyConfigs: {}
   replicaCount: 1
   tolerations: []
+  ocpVersion: "4.12.0"
 org: open-cluster-management

@@ -1,6 +1,7 @@
 global:
   imageOverrides:
     managed_serviceaccount: ''
+  templateOverrides: {}
   namespace: default
   pullSecret: null
 hubconfig:

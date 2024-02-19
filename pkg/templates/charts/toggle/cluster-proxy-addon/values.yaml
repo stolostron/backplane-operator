@@ -5,12 +5,12 @@ global:
   imageOverrides:
     cluster_proxy_addon: ""
     cluster_proxy: ""
-
+  templateOverrides: {}
 hubconfig:
   nodeSelector: null
   replicaCount: 1
   proxyConfigs: {}
   tolerations: []
-  ocpVersion: ""
+  ocpVersion: "4.12.0"
 org: open-cluster-management
 
