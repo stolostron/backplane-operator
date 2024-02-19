@@ -7,6 +7,12 @@
 global:
   imageOverrides:
     console_mce: ""
+  templateOverrides: {}
+    # Available template overrides:
+    # console_mce_deployment_container_memory_request: <memory-value>
+    # console_mce_deployment_container_memory_limit: <memory-value>
+    # console_mce_deployment_container_cpu_request: <cpu-value>
+    # console_mce_deployment_container_cpu_limit: <cpu-value>
   pullPolicy: Always
   namespace: default
   pullSecret: null
@@ -15,5 +21,5 @@ hubconfig:
   proxyConfigs: {}
   replicaCount: 1
   tolerations: []
-  ocpVersion: ""
+  ocpVersion: "4.12.0"
 org: open-cluster-management
