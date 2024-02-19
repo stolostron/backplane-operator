@@ -6,6 +6,14 @@ rules:
 - apiGroups:
   - ''
   resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ''
+  resources:
   - secrets
   verbs:
   - create
@@ -51,6 +59,12 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - hive.openshift.io
+  resources:
+  - clusterdeployments/finalizers
+  verbs:
+  - update
 - apiGroups:
   - hive.openshift.io
   resources:
