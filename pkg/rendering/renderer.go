@@ -5,7 +5,6 @@ package renderer
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -35,11 +34,12 @@ type Values struct {
 }
 
 type Global struct {
-	ImageOverrides map[string]string `json:"imageOverrides" structs:"imageOverrides"`
-	PullPolicy     string            `json:"pullPolicy" structs:"pullPolicy"`
-	PullSecret     string            `json:"pullSecret" structs:"pullSecret"`
-	Namespace      string            `json:"namespace" structs:"namespace"`
-	ConfigSecret   string            `json:"configSecret" structs:"configSecret"`
+	ImageOverrides    map[string]string `json:"imageOverrides" structs:"imageOverrides"`
+	TemplateOverrides map[string]string `json:"templateOverrides" structs:"templateOverrides"`
+	PullPolicy        string            `json:"pullPolicy" structs:"pullPolicy"`
+	PullSecret        string            `json:"pullSecret" structs:"pullSecret"`
+	Namespace         string            `json:"namespace" structs:"namespace"`
+	ConfigSecret      string            `json:"configSecret" structs:"configSecret"`
 }
 
 type HubConfig struct {
@@ -160,17 +160,21 @@ func RenderCRDs(crdDir string, backplaneConfig *v1.MultiClusterEngine) ([]*unstr
 			fmt.Println(err.Error())
 			return err
 		}
+
 		crd := &unstructured.Unstructured{}
 		if info == nil || info.IsDir() {
 			return nil
 		}
-		bytesFile, e := ioutil.ReadFile(path)
+
+		bytesFile, e := os.ReadFile(path)
 		if e != nil {
 			errs = append(errs, fmt.Errorf("%s - error reading file: %v", info.Name(), err.Error()))
 		}
+
 		if err = yaml.Unmarshal(bytesFile, crd); err != nil {
 			errs = append(errs, fmt.Errorf("%s - error unmarshalling file to unstructured: %v", info.Name(), err.Error()))
 		}
+
 		if backplaneConfig != nil {
 			_, conversion, _ := unstructured.NestedMap(crd.Object, "spec", "conversion", "webhook", "clientConfig", "service")
 			if conversion {
@@ -187,20 +191,26 @@ func RenderCRDs(crdDir string, backplaneConfig *v1.MultiClusterEngine) ([]*unstr
 	return crds, errs
 }
 
-func RenderCharts(chartDir string, backplaneConfig *v1.MultiClusterEngine, images map[string]string) ([]*unstructured.Unstructured, []error) {
+func RenderCharts(chartDir string, backplaneConfig *v1.MultiClusterEngine, images map[string]string,
+	templateOverrides map[string]string) ([]*unstructured.Unstructured, []error) {
+
 	log := log.Log.WithName("reconcile")
 	var templates []*unstructured.Unstructured
 	errs := []error{}
+
 	if val, ok := os.LookupEnv("DIRECTORY_OVERRIDE"); ok {
 		chartDir = path.Join(val, chartDir)
 	}
-	charts, err := ioutil.ReadDir(chartDir)
+
+	charts, err := os.ReadDir(chartDir)
 	if err != nil {
 		errs = append(errs, err)
 	}
+
 	for _, chart := range charts {
 		chartPath := filepath.Join(chartDir, chart.Name())
-		chartTemplates, errs := renderTemplates(chartPath, backplaneConfig, images)
+		chartTemplates, errs := renderTemplates(chartPath, backplaneConfig, images, templateOverrides)
+
 		if len(errs) > 0 {
 			for _, err := range errs {
 				log.Info(err.Error())
@@ -212,13 +222,16 @@ func RenderCharts(chartDir string, backplaneConfig *v1.MultiClusterEngine, image
 	return templates, nil
 }
 
-func RenderChart(chartPath string, backplaneConfig *v1.MultiClusterEngine, images map[string]string) ([]*unstructured.Unstructured, []error) {
+func RenderChart(chartPath string, backplaneConfig *v1.MultiClusterEngine, images map[string]string,
+	templates map[string]string) ([]*unstructured.Unstructured, []error) {
+
 	log := log.Log.WithName("reconcile")
 	errs := []error{}
 	if val, ok := os.LookupEnv("DIRECTORY_OVERRIDE"); ok {
 		chartPath = path.Join(val, chartPath)
 	}
-	chartTemplates, errs := renderTemplates(chartPath, backplaneConfig, images)
+
+	chartTemplates, errs := renderTemplates(chartPath, backplaneConfig, images, templates)
 	if len(errs) > 0 {
 		for _, err := range errs {
 			log.Info(err.Error())
@@ -230,23 +243,29 @@ func RenderChart(chartPath string, backplaneConfig *v1.MultiClusterEngine, image
 }
 
 // RenderChartWithNamespace wraps the RenderChart function, overriding the target namespace
-func RenderChartWithNamespace(chartPath string, backplaneConfig *v1.MultiClusterEngine, images map[string]string, namespace string) ([]*unstructured.Unstructured, []error) {
+func RenderChartWithNamespace(chartPath string, backplaneConfig *v1.MultiClusterEngine,
+	images map[string]string, templates map[string]string, namespace string) ([]*unstructured.Unstructured, []error) {
+
 	mce := backplaneConfig.DeepCopy()
 	mce.Spec.TargetNamespace = namespace
-	return RenderChart(chartPath, mce, images)
+	return RenderChart(chartPath, mce, images, templates)
 }
 
-func renderTemplates(chartPath string, backplaneConfig *v1.MultiClusterEngine, images map[string]string) ([]*unstructured.Unstructured, []error) {
+func renderTemplates(chartPath string, backplaneConfig *v1.MultiClusterEngine, images map[string]string,
+	templateOverrides map[string]string) ([]*unstructured.Unstructured, []error) {
+
 	log := log.Log.WithName("reconcile")
 	var templates []*unstructured.Unstructured
 	errs := []error{}
+
 	chart, err := loader.Load(chartPath)
 	if err != nil {
 		log.Info(fmt.Sprintf("error loading chart: %s", chart.Name()))
 		return nil, append(errs, err)
 	}
+
 	valuesYaml := &Values{}
-	injectValuesOverrides(valuesYaml, backplaneConfig, images)
+	injectValuesOverrides(valuesYaml, backplaneConfig, images, templateOverrides)
 	helmEngine := engine.Engine{
 		Strict:   true,
 		LintMode: false,
@@ -259,8 +278,6 @@ func renderTemplates(chartPath string, backplaneConfig *v1.MultiClusterEngine, i
 	}
 
 	rawTemplates, err := helmEngine.Render(chart, chartutil.Values{"Values": vals.AsMap()})
-	// rawTemplates, err := helmEngine.Render(chart, valuesYaml.ToValues())
-
 	if err != nil {
 		log.Info(fmt.Sprintf("error rendering chart: %s", chart.Name()))
 		return nil, append(errs, err)
@@ -285,9 +302,12 @@ func renderTemplates(chartPath string, backplaneConfig *v1.MultiClusterEngine, i
 	return templates, errs
 }
 
-func injectValuesOverrides(values *Values, backplaneConfig *v1.MultiClusterEngine, images map[string]string) {
+func injectValuesOverrides(values *Values, backplaneConfig *v1.MultiClusterEngine, images map[string]string,
+	templates map[string]string) {
 
 	values.Global.ImageOverrides = images
+
+	values.Global.TemplateOverrides = templates
 
 	values.Global.PullPolicy = string(utils.GetImagePullPolicy(backplaneConfig))
 

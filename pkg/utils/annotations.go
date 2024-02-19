@@ -13,21 +13,50 @@ import (
 )
 
 var (
-	// AnnotationMCEPause sits in multiclusterengine annotations to identify if the multiclusterengine is paused or not
+	/*
+		AnnotationMCEPause is an annotation used in multiclusterengine to identify if the multiclusterengine is
+		paused or not.
+	*/
 	AnnotationMCEPause = "pause"
-	// AnnotationMCEIgnore labels a resource as something the operator should ignore and not update
+
+	/*
+		AnnotationMCEIgnore labels a resource as something the operator should ignore and not update.
+	*/
 	AnnotationMCEIgnore = "multiclusterengine.openshift.io/ignore"
-	// AnnotationIgnoreOCPVersion indicates the operator should not check the OCP version before proceeding when set
+
+	/*
+		AnnotationIgnoreOCPVersion is an annotation used to indicate the operator should not check the OpenShift
+		Container Platform (OCP) version before proceeding when set.
+	*/
 	AnnotationIgnoreOCPVersion = "ignoreOCPVersion"
-	// AnnotationImageRepo sits in multiclusterengine annotations to identify a custom image repository to use
+
+	/*
+		AnnotationImageRepo is an annotation used in multiclusterengine to specify a custom image repository to use.
+	*/
 	AnnotationImageRepo = "imageRepository"
-	// AnnotationImageOverridesCM identifies a configmap name containing an image override mapping
+
+	/*
+		AnnotationImageOverridesCM is an annotation used in multiclusterengine to specify a custom ConfigMap containing
+		image overrides.
+	*/
 	AnnotationImageOverridesCM = "imageOverridesCM"
 
-	// AnnotationKubeconfig is the secret name residing in targetcontaining the kubeconfig to access the remote cluster
+	/*
+		AnnotationTemplateOverridesCM is an annotation used in multiclusterengine to specify a custom ConfigMap
+		containing resource template overrides.
+	*/
+	AnnotationTemplateOverridesCM = "operator.multicluster.openshift.io/template-override-cm"
+
+	/*
+		AnnotationKubeconfig is an annotation used to specify the secret name residing in target containing the
+		kubeconfig to access the remote cluster.
+	*/
 	AnnotationKubeconfig = "mce-kubeconfig"
 
-	// AnnotationReleaseVersion indicates the release version that should be applied to all resources managed by backplane operator
+	/*
+		AnnotationReleaseVersion is an annotation used to indicate the release version that should be applied to all
+		resources managed by the backplane operator.
+	*/
 	AnnotationReleaseVersion = "installer.multicluster.openshift.io/release-version"
 )
 
@@ -86,6 +115,19 @@ func getAnnotation(instance *backplanev1.MultiClusterEngine, key string) string 
 // GetImageRepository returns the image repo annotation, or an empty string if not set
 func GetImageRepository(instance *backplanev1.MultiClusterEngine) string {
 	return getAnnotation(instance, AnnotationImageRepo)
+}
+
+// GetImageOverridesConfigmapName returns the images override configmap annotation value, or an empty string if not set.
+func GetImageOverridesConfigmapName(instance *backplanev1.MultiClusterEngine) string {
+	return getAnnotation(instance, AnnotationImageOverridesCM)
+}
+
+/*
+GetTemplateOverridesConfigmapName returns the templates override configmap annotation value, or an empty string
+if not set.
+*/
+func GetTemplateOverridesConfigmapName(instance *backplanev1.MultiClusterEngine) string {
+	return getAnnotation(instance, AnnotationTemplateOverridesCM)
 }
 
 func OverrideImageRepository(imageOverrides map[string]string, imageRepo string) map[string]string {

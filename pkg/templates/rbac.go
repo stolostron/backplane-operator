@@ -83,8 +83,10 @@ func main() {
 	for _, v := range utils.GetTestImages() {
 		testImages[v] = "quay.io/test/test:Test"
 	}
+	testTemplateOverrides := map[string]string{}
+
 	chartsDir := chartsDir
-	templates, errs := renderer.RenderCharts(chartsDir, testBackplane, testImages)
+	templates, errs := renderer.RenderCharts(chartsDir, testBackplane, testImages, testTemplateOverrides)
 	if len(errs) > 0 {
 		panic(errs)
 	}

@@ -212,6 +212,7 @@ func main() {
 	if err = (&controllers.MultiClusterEngineReconciler{
 		Client:          mgr.GetClient(),
 		Scheme:          mgr.GetScheme(),
+		UncachedClient:  uncachedClient,
 		StatusManager:   &status.StatusTracker{Client: mgr.GetClient()},
 		UpgradeableCond: upgradeableCondition,
 	}).SetupWithManager(mgr); err != nil {
