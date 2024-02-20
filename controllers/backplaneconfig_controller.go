@@ -27,9 +27,10 @@ import (
 	"time"
 
 	"github.com/go-co-op/gocron"
+	"github.com/go-logr/logr"
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 	"github.com/stolostron/backplane-operator/pkg/foundation"
-	"github.com/stolostron/backplane-operator/pkg/images"
+	"github.com/stolostron/backplane-operator/pkg/overrides"
 	renderer "github.com/stolostron/backplane-operator/pkg/rendering"
 	"github.com/stolostron/backplane-operator/pkg/status"
 	"github.com/stolostron/backplane-operator/pkg/utils"
@@ -68,10 +69,13 @@ import (
 
 // MultiClusterEngineReconciler reconciles a MultiClusterEngine object
 type MultiClusterEngineReconciler struct {
-	client.Client
+	Client          client.Client
+	UncachedClient  client.Client
+	CacheSpec       CacheSpec
 	Scheme          *runtime.Scheme
 	Images          map[string]string
 	StatusManager   *status.StatusTracker
+	Log             logr.Logger
 	UpgradeableCond utils.Condition
 }
 
@@ -153,12 +157,12 @@ var (
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (retRes ctrl.Result, retErr error) {
-	log := log.Log.WithName("reconcile")
-	log.Info("Reconciling MultiClusterEngine")
+	r.Log = log.Log.WithName("reconcile")
+	r.Log.Info("Reconciling MultiClusterEngine")
 
 	// Initalize sceduler instance for operator resync cronjob.
 	if scheduler == nil {
-		log.Info("Setting up scheduler for operator resync")
+		r.Log.Info("Setting up scheduler for operator resync")
 		r.InitScheduler()
 	}
 
@@ -166,7 +170,7 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 	backplaneConfig, err := r.getBackplaneConfig(ctx, req)
 	if err != nil && !apierrors.IsNotFound(err) {
 		// Unknown error. Requeue
-		log.Info("Failed to fetch backplaneConfig")
+		r.Log.Info("Failed to fetch backplaneConfig")
 		return ctrl.Result{RequeueAfter: requeuePeriod}, err
 	} else if err != nil && apierrors.IsNotFound(err) {
 		// BackplaneConfig deleted or not found
@@ -185,11 +189,14 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}
 
 	// Check to see if upgradeable
-	r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing, metav1.ConditionTrue, status.WaitingForResourceReason, "Setting the operator"))
+	r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing, metav1.ConditionTrue,
+		status.WaitingForResourceReason, "Setting the operator"))
+
 	upgrade, err := r.setOperatorUpgradeableStatus(ctx, backplaneConfig)
 	if err != nil {
-		log.Error(err, "Trouble with Upgradable Operator Condition")
-		r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing, metav1.ConditionFalse, status.RequirementsNotMetReason, err.Error()))
+		r.Log.Error(err, "Trouble with Upgradable Operator Condition")
+		r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing,
+			metav1.ConditionFalse, status.RequirementsNotMetReason, err.Error()))
 	}
 
 	// Do not preform any further action on a hosted-mode MCE
@@ -198,16 +205,17 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}
 
 	defer func() {
-		log.Info("Updating status")
+		r.Log.Info("Updating status")
 		backplaneConfig.Status = r.StatusManager.ReportStatus(*backplaneConfig)
 		err := r.Client.Status().Update(ctx, backplaneConfig)
 		if backplaneConfig.Status.Phase != backplanev1.MultiClusterEnginePhaseAvailable && !utils.IsPaused(backplaneConfig) {
 			retRes = ctrl.Result{RequeueAfter: requeuePeriod}
 		}
+
 		if err != nil {
 			if apierrors.IsConflict(err) {
 				// Error from object being modified is normal behavior and should not be treated like an error
-				log.Info("Failed to update status", "Reason", "Object has been modified")
+				r.Log.Info("Failed to update status", "Reason", "Object has been modified")
 				retRes = ctrl.Result{RequeueAfter: requeuePeriod}
 			} else {
 				retErr = err
@@ -220,11 +228,11 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		if controllerutil.ContainsFinalizer(backplaneConfig, backplaneFinalizer) {
 			err := r.finalizeBackplaneConfig(ctx, backplaneConfig) // returns all errors
 			if err != nil {
-				log.Info(err.Error())
+				r.Log.Info(err.Error())
 				return ctrl.Result{RequeueAfter: 5 * time.Second}, nil
 			}
 
-			log.Info("all subcomponents have been finalized successfully - removing finalizer")
+			r.Log.Info("all subcomponents have been finalized successfully - removing finalizer")
 			controllerutil.RemoveFinalizer(backplaneConfig, backplaneFinalizer)
 			if err := r.Client.Update(ctx, backplaneConfig); err != nil {
 				return ctrl.Result{}, err
@@ -259,7 +267,7 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 	*/
 	_, err = r.ensureOpenShiftNamespaceLabel(ctx, backplaneConfig)
 	if err != nil {
-		log.Error(err, "Failed to add to %s label to namespace: %s", utils.OpenShiftClusterMonitoringLabel,
+		r.Log.Error(err, "Failed to add to %s label to namespace: %s", utils.OpenShiftClusterMonitoringLabel,
 			backplaneConfig.Spec.TargetNamespace)
 		return ctrl.Result{}, err
 	}
@@ -269,8 +277,10 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		if err != nil {
 			return ctrl.Result{}, fmt.Errorf("failed to detect clusterversion: %w", err)
 		}
+
 		if err := version.ValidOCPVersion(currentOCPVersion); err != nil {
-			r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing, metav1.ConditionFalse, status.RequirementsNotMetReason, err.Error()))
+			r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing,
+				metav1.ConditionFalse, status.RequirementsNotMetReason, err.Error()))
 			return ctrl.Result{}, err
 		}
 	}
@@ -291,24 +301,79 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return ctrl.Result{Requeue: true}, err
 	}
 
-	// Read images from environmental variables
-	imgs, err := images.GetImagesWithOverrides(r.Client, backplaneConfig)
-	if err != nil {
-		r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing, metav1.ConditionFalse, status.RequirementsNotMetReason, fmt.Sprintf("Issue building image references: %s", err.Error())))
-		return ctrl.Result{}, err
+	// Attempt to retrieve image overrides from environmental variables.
+	imageOverrides := overrides.GetOverridesFromEnv(overrides.OperandImagePrefix)
+
+	// If no overrides found using OperandImagePrefix, attempt to retrieve using OSBSImagePrefix.
+	if len(imageOverrides) == 0 {
+		imageOverrides = overrides.GetOverridesFromEnv(overrides.OSBSImagePrefix)
 	}
-	if len(imgs) == 0 {
+
+	// Check if no image overrides were found using either prefix.
+	if len(imageOverrides) == 0 {
+		r.Log.Error(err, "Could not get map of image overrides")
+
 		// If images are not set from environmental variables, fail
-		r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing, metav1.ConditionFalse, status.RequirementsNotMetReason, "No image references defined in deployment"))
-		return ctrl.Result{RequeueAfter: requeuePeriod}, errors.New("no image references exist. images must be defined as environment variables")
+		r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing,
+			metav1.ConditionFalse, status.RequirementsNotMetReason, "No image references defined in deployment"))
+
+		return ctrl.Result{RequeueAfter: requeuePeriod}, errors.New(
+			"no image references exist. images must be defined as environment variables")
 	}
-	r.Images = imgs
+
+	// Apply image repository override from annotation if present.
+	if imageRepo := utils.GetImageRepository(backplaneConfig); imageRepo != "" {
+		r.Log.Info(fmt.Sprintf("Overriding Image Repository from annotation 'imageRepository': %s", imageRepo))
+		imageOverrides = utils.OverrideImageRepository(imageOverrides, imageRepo)
+	}
+
+	// Check for developer overrides in configmap.
+	if cmName := utils.GetImageOverridesConfigmapName(backplaneConfig); cmName != "" {
+		imageOverrides, err = overrides.GetOverridesFromConfigmap(r.Client, imageOverrides,
+			utils.OperatorNamespace(), cmName, false)
+
+		if err != nil {
+			r.Log.Error(err, fmt.Sprintf("Failed to find image override configmap: %s/%s",
+				utils.OperatorNamespace(), cmName))
+
+			r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing,
+				metav1.ConditionFalse, status.RequirementsNotMetReason,
+				fmt.Sprintf("Issue building image references: %s", err.Error())))
+
+			return ctrl.Result{}, err
+		}
+	}
+
+	// Update cache with image overrides and related information.
+	r.CacheSpec.ImageOverrides = imageOverrides
+	r.CacheSpec.ImageRepository = utils.GetImageRepository(backplaneConfig)
+	r.CacheSpec.ImageOverridesCM = utils.GetImageOverridesConfigmapName(backplaneConfig)
+
+	// Attempt to retrieve template overrides from environmental variables.
+	templateOverrides := overrides.GetOverridesFromEnv(overrides.TemplateOverridePrefix)
+
+	// Check for developer overrides in configmap
+	if toConfigmapName := utils.GetTemplateOverridesConfigmapName(backplaneConfig); toConfigmapName != "" {
+		templateOverrides, err = overrides.GetOverridesFromConfigmap(r.Client, templateOverrides,
+			utils.OperatorNamespace(), toConfigmapName, true)
+
+		if err != nil {
+			r.Log.Error(err, fmt.Sprintf("Failed to find template override configmap: %s/%s",
+				utils.OperatorNamespace(), toConfigmapName))
+
+			return ctrl.Result{}, err
+		}
+	}
+
+	// Update cache with template overrides and related information.
+	r.CacheSpec.TemplateOverrides = templateOverrides
+	r.CacheSpec.TemplateOverridesCM = utils.GetTemplateOverridesConfigmapName(backplaneConfig)
 
 	// Do not reconcile objects if this instance of mce is labeled "paused"
 	if utils.IsPaused(backplaneConfig) {
-		log.Info("MultiClusterEngine reconciliation is paused. Nothing more to do.")
+		r.Log.Info("MultiClusterEngine reconciliation is paused. Nothing more to do.")
 		if ok := scheduler.IsRunning(); ok {
-			log.Info("Pausing MultiClusterEngine operator controller resync job.")
+			r.Log.Info("Pausing MultiClusterEngine operator controller resync job.")
 			go r.StopScheduleOperatorControllerResync()
 		}
 
@@ -350,7 +415,7 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 				return e
 			})
 			if retryErr != nil {
-				log.Error(retryErr, "Failed to apply CRD")
+				r.Log.Error(retryErr, "Failed to apply CRD")
 				return result, retryErr
 			}
 		}
@@ -401,7 +466,8 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return ctrl.Result{Requeue: true}, nil
 	}
 
-	r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing, metav1.ConditionTrue, status.DeploySuccessReason, "All components deployed"))
+	r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing, metav1.ConditionTrue,
+		status.DeploySuccessReason, "All components deployed"))
 
 	return ctrl.Result{}, nil
 }
@@ -455,7 +521,8 @@ func (r *MultiClusterEngineReconciler) setOperatorUpgradeableStatus(ctx context.
 func (r *MultiClusterEngineReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&backplanev1.MultiClusterEngine{}).
-		WithEventFilter(predicate.Or(predicate.GenerationChangedPredicate{}, predicate.LabelChangedPredicate{}, predicate.AnnotationChangedPredicate{})).
+		WithEventFilter(predicate.Or(predicate.GenerationChangedPredicate{}, predicate.LabelChangedPredicate{},
+			predicate.AnnotationChangedPredicate{})).
 		Watches(&appsv1.Deployment{},
 			handler.EnqueueRequestForOwner(mgr.GetScheme(), mgr.GetRESTMapper(), &backplanev1.MultiClusterEngine{}),
 		).
@@ -703,12 +770,15 @@ func (r *MultiClusterEngineReconciler) createMetricsServiceMonitor(ctx context.C
 }
 
 // DeployAlwaysSubcomponents ensures all subcomponents exist
-func (r *MultiClusterEngineReconciler) DeployAlwaysSubcomponents(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+func (r *MultiClusterEngineReconciler) DeployAlwaysSubcomponents(ctx context.Context,
+	backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 	log := log.Log.WithName("reconcile")
 
 	chartsDir := renderer.AlwaysChartsDir
 	// Renders all templates from charts
-	templates, errs := renderer.RenderCharts(chartsDir, backplaneConfig, r.Images)
+	templates, errs := renderer.RenderCharts(chartsDir, backplaneConfig, r.CacheSpec.ImageOverrides,
+		r.CacheSpec.TemplateOverrides)
+
 	if len(errs) > 0 {
 		for _, err := range errs {
 			log.Info(err.Error())
@@ -737,7 +807,10 @@ func (r *MultiClusterEngineReconciler) DeployAlwaysSubcomponents(ctx context.Con
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Context,
+	backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+	r.Log = log.Log.WithName("reconcile")
+
 	errs := map[string]error{}
 	requeue := false
 
@@ -975,7 +1048,8 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 			errorMessages = append(errorMessages, fmt.Sprintf("error ensuring %s: %s", k, v.Error()))
 		}
 		combinedError := fmt.Sprintf(": %s", strings.Join(errorMessages, "; "))
-		log.Log.WithName("reconcile").Error(errors.New("Errors applying components"), combinedError)
+
+		r.Log.Error(errors.New("errors applying components"), combinedError)
 		return ctrl.Result{RequeueAfter: requeuePeriod}, errors.New(combinedError)
 	}
 	if requeue {
@@ -984,13 +1058,17 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterEngineReconciler) applyTemplate(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine, template *unstructured.Unstructured) (ctrl.Result, error) {
+func (r *MultiClusterEngineReconciler) applyTemplate(ctx context.Context,
+	backplaneConfig *backplanev1.MultiClusterEngine, template *unstructured.Unstructured) (ctrl.Result, error) {
+
 	// Set owner reference.
 	// Don't set owner reference on hypershift-addon ManagedClusterAddOn. See ACM-2289
 	if !(template.GetName() == "hypershift-addon" && template.GetKind() == "ManagedClusterAddOn") {
 		err := ctrl.SetControllerReference(backplaneConfig, template, r.Scheme)
 		if err != nil {
-			return ctrl.Result{}, fmt.Errorf("error setting controller reference on resource Name: %s Kind: %s Error: %w", template.GetName(), template.GetKind(), err)
+			return ctrl.Result{},
+				fmt.Errorf("error setting controller reference on resource Name: %s Kind: %s Error: %w",
+					template.GetName(), template.GetKind(), err)
 		}
 	}
 
@@ -1002,7 +1080,9 @@ func (r *MultiClusterEngineReconciler) applyTemplate(ctx context.Context, backpl
 	} else {
 		// Apply the object data.
 		force := true
-		err := r.Client.Patch(ctx, template, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
+		err := r.Client.Patch(ctx, template, client.Apply,
+			&client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
+
 		if err != nil {
 			errMessage := fmt.Errorf(
 				"error applying object Name: %s Kind: %s Error: %w", template.GetName(), template.GetKind(), err)
@@ -1019,15 +1099,17 @@ func (r *MultiClusterEngineReconciler) applyTemplate(ctx context.Context, backpl
 			return ctrl.Result{}, errMessage
 		}
 	}
+
 	return ctrl.Result{}, nil
 }
 
 // deleteTemplate return true if resource does not exist and returns an error if a GET or DELETE errors unexpectedly. A false response without error
 // means the resource is in the process of deleting.
-func (r *MultiClusterEngineReconciler) deleteTemplate(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine, template *unstructured.Unstructured) (ctrl.Result, error) {
+func (r *MultiClusterEngineReconciler) deleteTemplate(ctx context.Context,
+	backplaneConfig *backplanev1.MultiClusterEngine, template *unstructured.Unstructured) (ctrl.Result, error) {
 	log := log.Log.WithName("reconcile")
-	err := r.Client.Get(ctx, types.NamespacedName{Name: template.GetName(), Namespace: template.GetNamespace()}, template)
 
+	err := r.Client.Get(ctx, types.NamespacedName{Name: template.GetName(), Namespace: template.GetNamespace()}, template)
 	if err != nil && (apierrors.IsNotFound(err) || apimeta.IsNoMatchError(err)) {
 		return ctrl.Result{}, nil
 	}
@@ -1048,7 +1130,8 @@ func (r *MultiClusterEngineReconciler) deleteTemplate(ctx context.Context, backp
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterEngineReconciler) ensureCustomResources(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+func (r *MultiClusterEngineReconciler) ensureCustomResources(ctx context.Context,
+	backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 	log := log.Log.WithName("reconcile")
 
 	if foundation.CanInstallAddons(ctx, r.Client) {
@@ -1062,9 +1145,11 @@ func (r *MultiClusterEngineReconciler) ensureCustomResources(ctx context.Context
 				return ctrl.Result{}, pkgerrors.Wrapf(err, "Error setting controller reference on resource %s", addonTemplate.GetName())
 			}
 			force := true
-			err := r.Client.Patch(ctx, addonTemplate, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
+			err := r.Client.Patch(ctx, addonTemplate, client.Apply,
+				&client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
 			if err != nil {
-				return ctrl.Result{}, pkgerrors.Wrapf(err, "error applying object Name: %s Kind: %s", addonTemplate.GetName(), addonTemplate.GetKind())
+				return ctrl.Result{}, pkgerrors.Wrapf(err, "error applying object Name: %s Kind: %s",
+					addonTemplate.GetName(), addonTemplate.GetKind())
 			}
 		}
 	} else {
@@ -1108,7 +1193,8 @@ func (r *MultiClusterEngineReconciler) ensureOpenShiftNamespaceLabel(ctx context
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) error {
+func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Context,
+	backplaneConfig *backplanev1.MultiClusterEngine) error {
 	log := log.Log.WithName("reconcile")
 
 	ocpConsole, err := r.CheckConsole(ctx)
@@ -1128,7 +1214,9 @@ func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Conte
 	if err != nil {
 		return err
 	}
-	err = r.Client.Get(ctx, types.NamespacedName{Name: hypershiftAddon.GetName(), Namespace: hypershiftAddon.GetNamespace()}, hypershiftAddon)
+	err = r.Client.Get(ctx, types.NamespacedName{Name: hypershiftAddon.GetName(),
+		Namespace: hypershiftAddon.GetNamespace()}, hypershiftAddon)
+
 	if err != nil {
 		if !(apierrors.IsNotFound(err) || apimeta.IsNoMatchError(err)) {
 			log.Error(err, "error while looking for hypershift-addon ManagedClusterAddOn")
@@ -1173,13 +1261,21 @@ func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Conte
 
 		// If wait time exceeds expected then uninstall may not be able to progress
 		if time.Since(backplaneConfig.DeletionTimestamp.Time) < 10*time.Minute {
-			terminatingCondition := status.NewCondition(backplanev1.MultiClusterEngineConditionType(backplanev1.MultiClusterEngineProgressing), metav1.ConditionTrue, status.WaitingForResourceReason, "Waiting for ManagedCluster local-cluster to terminate.")
+			terminatingCondition := status.NewCondition(
+				backplanev1.MultiClusterEngineConditionType(backplanev1.MultiClusterEngineProgressing),
+				metav1.ConditionTrue, status.WaitingForResourceReason,
+				"Waiting for ManagedCluster local-cluster to terminate.")
+
 			r.StatusManager.AddCondition(terminatingCondition)
 		} else {
-			terminatingCondition := status.NewCondition(backplanev1.MultiClusterEngineConditionType(backplanev1.MultiClusterEngineProgressing), metav1.ConditionFalse, status.WaitingForResourceReason, "ManagedCluster local-cluster still exists.")
+			terminatingCondition := status.NewCondition(
+				backplanev1.MultiClusterEngineConditionType(backplanev1.MultiClusterEngineProgressing),
+				metav1.ConditionFalse, status.WaitingForResourceReason, "ManagedCluster local-cluster still exists.")
+
 			r.StatusManager.AddCondition(terminatingCondition)
 		}
-		return fmt.Errorf("waiting for 'local-cluster' ManagedCluster to be terminated before proceeding with uninstallation")
+		return fmt.Errorf(
+			"waiting for 'local-cluster' ManagedCluster to be terminated before proceeding with uninstallation")
 
 	} else if err != nil && !apierrors.IsNotFound(err) { // Return error, if error is not not found error
 		log.Error(err, "error while looking for local-cluster ManagedCluster CR")
@@ -1204,13 +1300,21 @@ func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Conte
 		}
 		// If wait time exceeds expected then uninstall may not be able to progress
 		if time.Since(backplaneConfig.DeletionTimestamp.Time) < 10*time.Minute {
-			terminatingCondition := status.NewCondition(backplanev1.MultiClusterEngineConditionType(backplanev1.MultiClusterEngineProgressing), metav1.ConditionTrue, status.WaitingForResourceReason, "Waiting for ClusterManager cluster-manager to terminate.")
+			terminatingCondition := status.NewCondition(
+				backplanev1.MultiClusterEngineConditionType(backplanev1.MultiClusterEngineProgressing),
+				metav1.ConditionTrue, status.WaitingForResourceReason,
+				"Waiting for ClusterManager cluster-manager to terminate.")
+
 			r.StatusManager.AddCondition(terminatingCondition)
 		} else {
-			terminatingCondition := status.NewCondition(backplanev1.MultiClusterEngineConditionType(backplanev1.MultiClusterEngineProgressing), metav1.ConditionFalse, status.WaitingForResourceReason, "ClusterManager cluster-manager still exists.")
+			terminatingCondition := status.NewCondition(
+				backplanev1.MultiClusterEngineConditionType(backplanev1.MultiClusterEngineProgressing),
+				metav1.ConditionFalse, status.WaitingForResourceReason, "ClusterManager cluster-manager still exists.")
+
 			r.StatusManager.AddCondition(terminatingCondition)
 		}
-		return fmt.Errorf("waiting for 'cluster-manager' ClusterManager to be terminated before proceeding with uninstallation")
+		return fmt.Errorf(
+			"waiting for 'cluster-manager' ClusterManager to be terminated before proceeding with uninstallation")
 
 	} else if err != nil && !apierrors.IsNotFound(err) { // Return error, if error is not not found error
 		return err
@@ -1221,14 +1325,23 @@ func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Conte
 	if err == nil {
 		// If wait time exceeds expected then uninstall may not be able to progress
 		if time.Since(backplaneConfig.DeletionTimestamp.Time) < 10*time.Minute {
-			terminatingCondition := status.NewCondition(backplanev1.MultiClusterEngineConditionType(backplanev1.MultiClusterEngineProgressing), metav1.ConditionTrue, status.WaitingForResourceReason, "Waiting for namespace open-cluster-management-hub to terminate.")
+			terminatingCondition := status.NewCondition(
+				backplanev1.MultiClusterEngineConditionType(
+					backplanev1.MultiClusterEngineProgressing), metav1.ConditionTrue, status.WaitingForResourceReason,
+				"Waiting for namespace open-cluster-management-hub to terminate.")
+
 			r.StatusManager.AddCondition(terminatingCondition)
 		} else {
-			terminatingCondition := status.NewCondition(backplanev1.MultiClusterEngineConditionType(backplanev1.MultiClusterEngineProgressing), metav1.ConditionFalse, status.WaitingForResourceReason, "Namespace open-cluster-management-hub still exists.")
+			terminatingCondition := status.NewCondition(
+				backplanev1.MultiClusterEngineConditionType(backplanev1.MultiClusterEngineProgressing),
+				metav1.ConditionFalse, status.WaitingForResourceReason,
+				"Namespace open-cluster-management-hub still exists.")
+
 			r.StatusManager.AddCondition(terminatingCondition)
 		}
 
-		return fmt.Errorf("waiting for 'open-cluster-management-hub' namespace to be terminated before proceeding with uninstallation")
+		return fmt.Errorf(
+			"waiting for 'open-cluster-management-hub' namespace to be terminated before proceeding with uninstallation")
 	} else if err != nil && !apierrors.IsNotFound(err) { // Return error, if error is not not found error
 		return err
 	}
@@ -1247,8 +1360,9 @@ func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Conte
 	return nil
 }
 
-func (r *MultiClusterEngineReconciler) getBackplaneConfig(ctx context.Context, req ctrl.Request) (*backplanev1.MultiClusterEngine, error) {
-	log := log.Log.WithName("reconcile")
+func (r *MultiClusterEngineReconciler) getBackplaneConfig(ctx context.Context, req ctrl.Request) (
+	*backplanev1.MultiClusterEngine, error) {
+	r.Log = log.Log.WithName("reconcile")
 	backplaneConfig := &backplanev1.MultiClusterEngine{}
 	err := r.Client.Get(ctx, req.NamespacedName, backplaneConfig)
 	if err != nil {
@@ -1256,7 +1370,7 @@ func (r *MultiClusterEngineReconciler) getBackplaneConfig(ctx context.Context, r
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
-			log.Info("BackplaneConfig resource not found. Ignoring since object must be deleted")
+			r.Log.Info("BackplaneConfig resource not found. Ignoring since object must be deleted")
 			return nil, err
 		}
 		// Error reading the object - requeue the request.
@@ -1266,8 +1380,9 @@ func (r *MultiClusterEngineReconciler) getBackplaneConfig(ctx context.Context, r
 }
 
 // ensureUnstructuredResource ensures that the unstructured resource is applied in the cluster properly
-func (r *MultiClusterEngineReconciler) ensureUnstructuredResource(ctx context.Context, bpc *backplanev1.MultiClusterEngine, u *unstructured.Unstructured) (ctrl.Result, error) {
-	log := log.Log.WithName("reconcile")
+func (r *MultiClusterEngineReconciler) ensureUnstructuredResource(ctx context.Context,
+	bpc *backplanev1.MultiClusterEngine, u *unstructured.Unstructured) (ctrl.Result, error) {
+	r.Log = log.Log.WithName("reconcile")
 
 	found := &unstructured.Unstructured{}
 	found.SetGroupVersionKind(u.GroupVersionKind())
@@ -1284,18 +1399,18 @@ func (r *MultiClusterEngineReconciler) ensureUnstructuredResource(ctx context.Co
 		err := r.Client.Create(ctx, u)
 		if err != nil {
 			// Creation failed
-			log.Error(err, "Failed to create new instance")
+			r.Log.Error(err, "Failed to create new instance")
 			return ctrl.Result{}, err
 		}
 		// Creation was successful
-		log.Info(fmt.Sprintf("Created new resource - kind: %s name: %s", u.GetKind(), u.GetName()))
+		r.Log.Info(fmt.Sprintf("Created new resource - kind: %s name: %s", u.GetKind(), u.GetName()))
 		// condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
 		// SetHubCondition(&m.Status, *condition)
 		return ctrl.Result{}, nil
 
 	} else if err != nil {
 		// Error that isn't due to the resource not existing
-		log.Error(err, "Failed to get resource")
+		r.Log.Error(err, "Failed to get resource")
 		return ctrl.Result{}, err
 	}
 
@@ -1403,7 +1518,8 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 	}
 }
 
-func (r *MultiClusterEngineReconciler) validateNamespace(ctx context.Context, m *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+func (r *MultiClusterEngineReconciler) validateNamespace(ctx context.Context, m *backplanev1.MultiClusterEngine) (
+	ctrl.Result, error) {
 	log := log.Log.WithName("reconcile")
 	newNs := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1414,13 +1530,16 @@ func (r *MultiClusterEngineReconciler) validateNamespace(ctx context.Context, m 
 	err := r.Client.Get(context.TODO(), types.NamespacedName{Name: m.Spec.TargetNamespace}, checkNs)
 	if err != nil && apierrors.IsNotFound(err) {
 		if err := ctrl.SetControllerReference(m, newNs, r.Scheme); err != nil {
-			return ctrl.Result{}, pkgerrors.Wrapf(err, "Error setting controller reference on resource %s", m.Spec.TargetNamespace)
+			return ctrl.Result{}, pkgerrors.Wrapf(err, "Error setting controller reference on resource %s",
+				m.Spec.TargetNamespace)
 		}
+
 		err = r.Client.Create(context.TODO(), newNs)
 		if err != nil {
 			log.Error(err, "Could not create namespace")
 			return ctrl.Result{}, err
 		}
+
 		log.Info("Namespace created")
 		return ctrl.Result{Requeue: true}, nil
 	}
@@ -1432,7 +1551,8 @@ func (r *MultiClusterEngineReconciler) validateNamespace(ctx context.Context, m 
 
 // validateImagePullSecret returns an error if the namespace in spec.targetNamespace does not have a secret
 // with the name in spec.imagePullSecret.
-func (r *MultiClusterEngineReconciler) validateImagePullSecret(ctx context.Context, m *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+func (r *MultiClusterEngineReconciler) validateImagePullSecret(ctx context.Context, m *backplanev1.MultiClusterEngine) (
+	ctrl.Result, error) {
 	if m.Spec.ImagePullSecret == "" {
 		return ctrl.Result{}, nil
 	}
@@ -1443,7 +1563,12 @@ func (r *MultiClusterEngineReconciler) validateImagePullSecret(ctx context.Conte
 		Namespace: m.Spec.TargetNamespace,
 	}, pullSecret)
 	if apierrors.IsNotFound(err) {
-		missingPullSecret := status.NewCondition(backplanev1.MultiClusterEngineConditionType(backplanev1.MultiClusterEngineProgressing), metav1.ConditionFalse, status.RequirementsNotMetReason, fmt.Sprintf("Could not find imagePullSecret %s in namespace %s", m.Spec.ImagePullSecret, m.Spec.TargetNamespace))
+		missingPullSecret := status.NewCondition(
+			backplanev1.MultiClusterEngineConditionType(backplanev1.MultiClusterEngineProgressing),
+			metav1.ConditionFalse, status.RequirementsNotMetReason,
+			fmt.Sprintf("Could not find imagePullSecret %s in namespace %s", m.Spec.ImagePullSecret,
+				m.Spec.TargetNamespace))
+
 		r.StatusManager.AddCondition(missingPullSecret)
 		return ctrl.Result{RequeueAfter: requeuePeriod}, err
 	}
@@ -1455,7 +1580,7 @@ func (r *MultiClusterEngineReconciler) validateImagePullSecret(ctx context.Conte
 }
 
 func (r *MultiClusterEngineReconciler) getClusterVersion(ctx context.Context) (string, error) {
-	log := log.Log.WithName("reconcile")
+	r.Log = log.Log.WithName("reconcile")
 	// If Unit test
 	if val, ok := os.LookupEnv("UNIT_TEST"); ok && val == "true" {
 		if _, exists := os.LookupEnv("ACM_HUB_OCP_VERSION"); exists {
@@ -1467,12 +1592,12 @@ func (r *MultiClusterEngineReconciler) getClusterVersion(ctx context.Context) (s
 	clusterVersion := &configv1.ClusterVersion{}
 	err := r.Client.Get(ctx, types.NamespacedName{Name: "version"}, clusterVersion)
 	if err != nil {
-		log.Error(err, "Failed to detect clusterversion")
+		r.Log.Error(err, "Failed to detect clusterversion")
 		return "", err
 	}
 
 	if len(clusterVersion.Status.History) == 0 {
-		log.Error(err, "Failed to detect status in clusterversion.status.history")
+		r.Log.Error(err, "Failed to detect status in clusterversion.status.history")
 		return "", err
 	}
 	return clusterVersion.Status.History[0].Version, nil
@@ -1481,7 +1606,7 @@ func (r *MultiClusterEngineReconciler) getClusterVersion(ctx context.Context) (s
 //+kubebuilder:rbac:groups="config.openshift.io",resources="ingresses",verbs=get;list;watch
 
 func (r *MultiClusterEngineReconciler) getClusterIngressDomain(ctx context.Context, mce *backplanev1.MultiClusterEngine) (string, error) {
-	log := log.Log.WithName("reconcile")
+	r.Log = log.Log.WithName("reconcile")
 	// If Unit test
 	if val, ok := os.LookupEnv("UNIT_TEST"); ok && val == "true" {
 		return "apps.installer-test-cluster.dev00.red-chesterfield.com", nil
@@ -1490,12 +1615,12 @@ func (r *MultiClusterEngineReconciler) getClusterIngressDomain(ctx context.Conte
 	clusterIngress := &configv1.Ingress{}
 	err := r.Client.Get(ctx, types.NamespacedName{Name: "cluster"}, clusterIngress)
 	if err != nil {
-		log.Error(err, "Failed to detect cluster ingress")
+		r.Log.Error(err, "Failed to detect cluster ingress")
 		return "", err
 	}
 
 	if clusterIngress.Spec.Domain == "" {
-		log.Error(err, "Domain not found or empty in Ingress")
+		r.Log.Error(err, "Domain not found or empty in Ingress")
 		return "", fmt.Errorf("Domain not found or empty in Ingress")
 	}
 	return clusterIngress.Spec.Domain, nil
@@ -1506,15 +1631,15 @@ func (r *MultiClusterEngineReconciler) InitScheduler() {
 }
 
 func (r *MultiClusterEngineReconciler) ScheduleOperatorControllerResync(ctx context.Context, req ctrl.Request) {
-	log := log.Log.WithName("reconcile")
+	r.Log = log.Log.WithName("reconcile")
 
 	if ok := scheduler.IsRunning(); !ok {
 		_, err := scheduler.Tag(cronResyncTag).Every(reconciliationInterval).Minutes().Do(r.Reconcile, ctx, req)
 
 		if err != nil {
-			log.Error(err, "failed to schedule scheduler job for operator controller resync")
+			r.Log.Error(err, "failed to schedule scheduler job for operator controller resync")
 		} else {
-			log.Info(fmt.Sprintf("Starting scheduler job for operator controller. Reconciling every %v minutes",
+			r.Log.Info(fmt.Sprintf("Starting scheduler job for operator controller. Reconciling every %v minutes",
 				reconciliationInterval))
 			scheduler.StartAsync()
 		}

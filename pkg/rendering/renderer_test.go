@@ -95,9 +95,11 @@ func TestRender(t *testing.T) {
 	for _, v := range utils.GetTestImages() {
 		testImages[v] = "quay.io/test/test:Test"
 	}
+	templateOverrides := map[string]string{}
+
 	// multiple charts
 	chartsDir := chartsDir
-	templates, errs := RenderCharts(chartsDir, testBackplane, testImages)
+	templates, errs := RenderCharts(chartsDir, testBackplane, testImages, templateOverrides)
 	if len(errs) > 0 {
 		for _, err := range errs {
 			t.Logf(err.Error())
@@ -196,8 +198,10 @@ func TestRender(t *testing.T) {
 	for _, v := range utils.GetTestImages() {
 		singleChartTestImages[v] = "quay.io/test/test:Test"
 	}
+
 	chartsPath := chartsPath
-	singleChartTemplates, errs := RenderChart(chartsPath, testBackplane, singleChartTestImages)
+	singleChartTemplates, errs := RenderChart(chartsPath, testBackplane, singleChartTestImages, templateOverrides)
+
 	if len(errs) > 0 {
 		for _, err := range errs {
 			t.Logf(err.Error())

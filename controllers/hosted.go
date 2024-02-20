@@ -11,7 +11,7 @@ import (
 	pkgerrors "github.com/pkg/errors"
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 	"github.com/stolostron/backplane-operator/pkg/foundation"
-	"github.com/stolostron/backplane-operator/pkg/images"
+	"github.com/stolostron/backplane-operator/pkg/overrides"
 	renderer "github.com/stolostron/backplane-operator/pkg/rendering"
 	"github.com/stolostron/backplane-operator/pkg/status"
 	"github.com/stolostron/backplane-operator/pkg/toggle"
@@ -31,8 +31,9 @@ import (
 
 var ErrBadFormat = errors.New("bad format")
 
-func (r *MultiClusterEngineReconciler) HostedReconcile(ctx context.Context, mce *backplanev1.MultiClusterEngine) (retRes ctrl.Result, retErr error) {
-	log := log.Log.WithName("reconcile")
+func (r *MultiClusterEngineReconciler) HostedReconcile(ctx context.Context, mce *backplanev1.MultiClusterEngine) (
+	retRes ctrl.Result, retErr error) {
+	r.Log = log.Log.WithName("reconcile")
 
 	defer func() {
 		mce.Status = r.StatusManager.ReportStatus(*mce)
@@ -50,11 +51,11 @@ func (r *MultiClusterEngineReconciler) HostedReconcile(ctx context.Context, mce 
 		if controllerutil.ContainsFinalizer(mce, backplaneFinalizer) {
 			err := r.finalizeHostedBackplaneConfig(ctx, mce) // returns all errors
 			if err != nil {
-				log.Info(err.Error())
+				r.Log.Info(err.Error())
 				return ctrl.Result{RequeueAfter: 5 * time.Second}, nil
 			}
 
-			log.Info("all subcomponents have been finalized successfully - removing finalizer")
+			r.Log.Info("all subcomponents have been finalized successfully - removing finalizer")
 			controllerutil.RemoveFinalizer(mce, backplaneFinalizer)
 			if err := r.Client.Update(ctx, mce); err != nil {
 				return ctrl.Result{}, err
@@ -99,29 +100,89 @@ func (r *MultiClusterEngineReconciler) HostedReconcile(ctx context.Context, mce 
 		return ctrl.Result{Requeue: true}, err
 	}
 
-	// Read images from environmental variables
-	imgs, err := images.GetImagesWithOverrides(r.Client, mce)
-	if err != nil {
-		r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing, metav1.ConditionFalse, status.RequirementsNotMetReason, fmt.Sprintf("Issue building image references: %s", err.Error())))
-		return ctrl.Result{}, err
+	// Attempt to retrieve image overrides from environmental variables.
+	imageOverrides := overrides.GetOverridesFromEnv(overrides.OperandImagePrefix)
+
+	// If no overrides found using OperandImagePrefix, attempt to retrieve using OSBSImagePrefix.
+	if len(imageOverrides) == 0 {
+		imageOverrides = overrides.GetOverridesFromEnv(overrides.OSBSImagePrefix)
 	}
-	if len(imgs) == 0 {
+
+	// Check if no image overrides were found using either prefix.
+	if len(imageOverrides) == 0 {
+		r.Log.Error(err, "Could not get map of image overrides")
+
 		// If images are not set from environmental variables, fail
-		r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing, metav1.ConditionFalse, status.RequirementsNotMetReason, "No image references defined in deployment"))
-		return ctrl.Result{RequeueAfter: requeuePeriod}, errors.New("no image references exist. images must be defined as environment variables")
+		r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing,
+			metav1.ConditionFalse, status.RequirementsNotMetReason, "No image references defined in deployment"))
+
+		return ctrl.Result{RequeueAfter: requeuePeriod}, errors.New(
+			"no image references exist. images must be defined as environment variables")
 	}
-	r.Images = imgs
+
+	// Apply image repository override from annotation if present.
+	if imageRepo := utils.GetImageRepository(mce); imageRepo != "" {
+		r.Log.Info(fmt.Sprintf("Overriding Image Repository from annotation 'imageRepository': %s", imageRepo))
+		imageOverrides = utils.OverrideImageRepository(imageOverrides, imageRepo)
+	}
+
+	// Check for developer overrides in configmap.
+	if cmName := utils.GetImageOverridesConfigmapName(mce); cmName != "" {
+		imageOverrides, err = overrides.GetOverridesFromConfigmap(r.Client, imageOverrides,
+			utils.OperatorNamespace(), cmName, false)
+
+		if err != nil {
+			r.Log.Error(err, fmt.Sprintf("Failed to find image override configmap: %s/%s",
+				utils.OperatorNamespace(), cmName))
+
+			r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing,
+				metav1.ConditionFalse, status.RequirementsNotMetReason,
+				fmt.Sprintf("Issue building image references: %s", err.Error())))
+
+			return ctrl.Result{}, err
+		}
+	}
+
+	// Update cache with image overrides and related information.
+	r.CacheSpec.ImageOverrides = imageOverrides
+	r.CacheSpec.ImageRepository = utils.GetImageRepository(mce)
+	r.CacheSpec.ImageOverridesCM = utils.GetImageOverridesConfigmapName(mce)
+
+	// Attempt to retrieve template overrides from environmental variables.
+	templateOverrides := overrides.GetOverridesFromEnv(overrides.TemplateOverridePrefix)
+
+	// Check for developer overrides in configmap
+	if toConfigmapName := utils.GetTemplateOverridesConfigmapName(mce); toConfigmapName != "" {
+		templateOverrides, err = overrides.GetOverridesFromConfigmap(r.Client, templateOverrides,
+			utils.OperatorNamespace(), toConfigmapName, true)
+
+		if err != nil {
+			r.Log.Error(err, fmt.Sprintf("Failed to find template override configmap: %s/%s",
+				utils.OperatorNamespace(), toConfigmapName))
+
+			return ctrl.Result{}, err
+		}
+	}
+
+	// Update cache with template overrides and related information.
+	r.CacheSpec.TemplateOverrides = templateOverrides
+	r.CacheSpec.TemplateOverridesCM = utils.GetTemplateOverridesConfigmapName(mce)
 
 	// Do not reconcile objects if this instance of mce is labeled "paused"
 	if utils.IsPaused(mce) {
-		log.Info("MultiClusterEngine reconciliation is paused. Nothing more to do.")
-		r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing, metav1.ConditionUnknown, status.PausedReason, "Multiclusterengine is paused"))
+		r.Log.Info("MultiClusterEngine reconciliation is paused. Nothing more to do.")
+		r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing,
+			metav1.ConditionUnknown, status.PausedReason, "Multiclusterengine is paused"))
+
 		return ctrl.Result{}, nil
 	}
 
 	hostedClient, err := r.GetHostedClient(ctx, mce)
 	if err != nil {
-		r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing, metav1.ConditionFalse, status.RequirementsNotMetReason, fmt.Sprintf("couldn't connect to hosted environment: %s", err.Error())))
+		r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing,
+			metav1.ConditionFalse, status.RequirementsNotMetReason,
+			fmt.Sprintf("couldn't connect to hosted environment: %s", err.Error())))
+
 		return ctrl.Result{RequeueAfter: requeuePeriod}, err
 	}
 
@@ -129,7 +190,9 @@ func (r *MultiClusterEngineReconciler) HostedReconcile(ctx context.Context, mce 
 		ObjectMeta: metav1.ObjectMeta{Name: mce.Spec.TargetNamespace},
 	})
 	if err != nil && !apierrors.IsAlreadyExists(err) {
-		r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing, metav1.ConditionFalse, status.RequirementsNotMetReason, err.Error()))
+		r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing,
+			metav1.ConditionFalse, status.RequirementsNotMetReason, err.Error()))
+
 		return ctrl.Result{RequeueAfter: requeuePeriod}, err
 	}
 
@@ -137,7 +200,7 @@ func (r *MultiClusterEngineReconciler) HostedReconcile(ctx context.Context, mce 
 	crdsDir := "pkg/templates/hosted-crds"
 	crds, errs := renderer.RenderCRDs(crdsDir, mce)
 	for _, err := range errs {
-		log.Info(err.Error())
+		r.Log.Info(err.Error())
 	}
 	if len(errs) > 0 {
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
@@ -176,11 +239,14 @@ func (r *MultiClusterEngineReconciler) HostedReconcile(ctx context.Context, mce 
 		}
 	}
 
-	r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing, metav1.ConditionTrue, status.DeploySuccessReason, "All components deployed"))
+	r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing, metav1.ConditionTrue,
+		status.DeploySuccessReason, "All components deployed"))
+
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterEngineReconciler) GetHostedClient(ctx context.Context, mce *backplanev1.MultiClusterEngine) (client.Client, error) {
+func (r *MultiClusterEngineReconciler) GetHostedClient(ctx context.Context, mce *backplanev1.MultiClusterEngine) (
+	client.Client, error) {
 	secretNN, err := utils.GetHostedCredentialsSecret(mce)
 	if err != nil {
 		return nil, err
@@ -188,7 +254,7 @@ func (r *MultiClusterEngineReconciler) GetHostedClient(ctx context.Context, mce 
 
 	// Parse Kube credentials from secret
 	kubeConfigSecret := &corev1.Secret{}
-	if err := r.Get(context.TODO(), secretNN, kubeConfigSecret); err != nil {
+	if err := r.Client.Get(context.TODO(), secretNN, kubeConfigSecret); err != nil {
 		if apierrors.IsNotFound(err) {
 			if err != nil {
 				return nil, err
@@ -221,16 +287,24 @@ func parseKubeCreds(secret *corev1.Secret) ([]byte, error) {
 	if !ok {
 		return []byte{}, fmt.Errorf("%s: %w", secret.Name, ErrBadFormat)
 	}
+
 	return kubeconfig, nil
 }
 
-func (r *MultiClusterEngineReconciler) ensureHostedImport(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine, hostedClient client.Client) (ctrl.Result, error) {
-
+func (r *MultiClusterEngineReconciler) ensureHostedImport(ctx context.Context,
+	backplaneConfig *backplanev1.MultiClusterEngine, hostedClient client.Client) (ctrl.Result, error) {
 	log := log.Log.WithName("reconcile")
 
-	r.StatusManager.AddComponent(toggle.EnabledStatus(types.NamespacedName{Name: "managedcluster-import-controller-v2", Namespace: backplaneConfig.Spec.TargetNamespace}))
-	r.StatusManager.RemoveComponent(toggle.DisabledStatus(types.NamespacedName{Name: "managedcluster-import-controller-v2", Namespace: backplaneConfig.Spec.TargetNamespace}, []*unstructured.Unstructured{}))
-	templates, errs := renderer.RenderChart(toggle.HostingImportChartDir, backplaneConfig, r.Images)
+	r.StatusManager.AddComponent(toggle.EnabledStatus(types.NamespacedName{Name: "managedcluster-import-controller-v2",
+		Namespace: backplaneConfig.Spec.TargetNamespace}))
+
+	r.StatusManager.RemoveComponent(toggle.DisabledStatus(
+		types.NamespacedName{Name: "managedcluster-import-controller-v2",
+			Namespace: backplaneConfig.Spec.TargetNamespace}, []*unstructured.Unstructured{}))
+
+	templates, errs := renderer.RenderChart(toggle.HostingImportChartDir, backplaneConfig,
+		r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
+
 	if len(errs) > 0 {
 		for _, err := range errs {
 			log.Info(err.Error())
@@ -246,7 +320,9 @@ func (r *MultiClusterEngineReconciler) ensureHostedImport(ctx context.Context, b
 		}
 	}
 
-	templates, errs = renderer.RenderChart(toggle.HostedImportChartDir, backplaneConfig, r.Images)
+	templates, errs = renderer.RenderChart(toggle.HostedImportChartDir, backplaneConfig,
+		r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
+
 	if len(errs) > 0 {
 		for _, err := range errs {
 			log.Info(err.Error())
@@ -265,12 +341,21 @@ func (r *MultiClusterEngineReconciler) ensureHostedImport(ctx context.Context, b
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterEngineReconciler) ensureNoHostedImport(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine, hostedClient client.Client) (ctrl.Result, error) {
-
+func (r *MultiClusterEngineReconciler) ensureNoHostedImport(ctx context.Context,
+	backplaneConfig *backplanev1.MultiClusterEngine, hostedClient client.Client) (ctrl.Result, error) {
 	log := log.Log.WithName("reconcile")
-	r.StatusManager.RemoveComponent(toggle.EnabledStatus(types.NamespacedName{Name: "managedcluster-import-controller-v2", Namespace: backplaneConfig.Spec.TargetNamespace}))
-	r.StatusManager.AddComponent(toggle.DisabledStatus(types.NamespacedName{Name: "managedcluster-import-controller-v2", Namespace: backplaneConfig.Spec.TargetNamespace}, []*unstructured.Unstructured{}))
-	templates, errs := renderer.RenderChart(toggle.HostingImportChartDir, backplaneConfig, r.Images)
+
+	r.StatusManager.RemoveComponent(toggle.EnabledStatus(
+		types.NamespacedName{Name: "managedcluster-import-controller-v2",
+			Namespace: backplaneConfig.Spec.TargetNamespace}))
+
+	r.StatusManager.AddComponent(toggle.DisabledStatus(
+		types.NamespacedName{Name: "managedcluster-import-controller-v2",
+			Namespace: backplaneConfig.Spec.TargetNamespace}, []*unstructured.Unstructured{}))
+
+	templates, errs := renderer.RenderChart(toggle.HostingImportChartDir, backplaneConfig,
+		r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
+
 	if len(errs) > 0 {
 		for _, err := range errs {
 			log.Info(err.Error())
@@ -286,7 +371,9 @@ func (r *MultiClusterEngineReconciler) ensureNoHostedImport(ctx context.Context,
 		}
 	}
 
-	templates, errs = renderer.RenderChart(toggle.HostedImportChartDir, backplaneConfig, r.Images)
+	templates, errs = renderer.RenderChart(toggle.HostedImportChartDir, backplaneConfig,
+		r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
+
 	if len(errs) > 0 {
 		for _, err := range errs {
 			log.Info(err.Error())
@@ -305,7 +392,8 @@ func (r *MultiClusterEngineReconciler) ensureNoHostedImport(ctx context.Context,
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterEngineReconciler) ensureHostedClusterManager(ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+func (r *MultiClusterEngineReconciler) ensureHostedClusterManager(ctx context.Context,
+	mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 	log := log.Log.WithName("reconcile")
 	cmName := fmt.Sprintf("%s-cluster-manager", mce.Name)
 
@@ -360,27 +448,35 @@ func (r *MultiClusterEngineReconciler) ensureHostedClusterManager(ctx context.Co
 	}
 
 	force := true
-	err = r.Client.Patch(context.TODO(), cmSecret, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
+	err = r.Client.Patch(context.TODO(), cmSecret, client.Apply,
+		&client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
+
 	if err != nil {
 		log.Info(fmt.Sprintf("Error applying kubeconfig secret to hosted cluster-manager namespace: %s", err.Error()))
 		return ctrl.Result{Requeue: true}, nil
 	}
 
 	// Apply clustermanager
-	cmTemplate := foundation.HostedClusterManager(mce, r.Images)
+	cmTemplate := foundation.HostedClusterManager(mce, r.CacheSpec.ImageOverrides)
 	if err := ctrl.SetControllerReference(mce, cmTemplate, r.Scheme); err != nil {
-		return ctrl.Result{}, fmt.Errorf("Error setting controller reference on resource `%s`: %w", cmTemplate.GetName(), err)
+		return ctrl.Result{}, fmt.Errorf("error setting controller reference on resource `%s`: %w",
+			cmTemplate.GetName(), err)
 	}
+
 	force = true
-	err = r.Client.Patch(ctx, cmTemplate, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
+	err = r.Client.Patch(ctx, cmTemplate, client.Apply,
+		&client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
+
 	if err != nil {
-		return ctrl.Result{}, fmt.Errorf("error applying object Name: %s Kind: %s, %w", cmTemplate.GetName(), cmTemplate.GetKind(), err)
+		return ctrl.Result{}, fmt.Errorf("error applying object Name: %s Kind: %s, %w", cmTemplate.GetName(),
+			cmTemplate.GetKind(), err)
 	}
 
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterEngineReconciler) ensureNoHostedClusterManager(ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+func (r *MultiClusterEngineReconciler) ensureNoHostedClusterManager(ctx context.Context,
+	mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 	cmName := fmt.Sprintf("%s-cluster-manager", mce.Name)
 
 	r.StatusManager.RemoveComponent(status.ClusterManagerStatus{
@@ -410,8 +506,10 @@ func (r *MultiClusterEngineReconciler) ensureNoHostedClusterManager(ctx context.
 	checkNs := &corev1.Namespace{}
 	err = r.Client.Get(context.TODO(), types.NamespacedName{Name: cmName}, checkNs)
 	if err == nil {
-		return ctrl.Result{RequeueAfter: requeuePeriod}, fmt.Errorf("waiting for hosted-clustermanager namespace to be terminated before proceeding with clustermanager cleanup")
+		return ctrl.Result{RequeueAfter: requeuePeriod}, fmt.Errorf(
+			"waiting for hosted-clustermanager namespace to be terminated before proceeding with clustermanager cleanup")
 	}
+
 	if err != nil && !apierrors.IsNotFound(err) { // Return error, if error is not not found error
 		return ctrl.Result{RequeueAfter: requeuePeriod}, err
 	}
@@ -420,8 +518,9 @@ func (r *MultiClusterEngineReconciler) ensureNoHostedClusterManager(ctx context.
 }
 
 // setHostedDefaults configures the MCE with default values and updates
-func (r *MultiClusterEngineReconciler) setHostedDefaults(ctx context.Context, m *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	log := log.Log.WithName("reconcile")
+func (r *MultiClusterEngineReconciler) setHostedDefaults(ctx context.Context, m *backplanev1.MultiClusterEngine) (
+	ctrl.Result, error) {
+	r.Log = log.Log.WithName("reconcile")
 
 	updateNecessary := false
 	if !utils.AvailabilityConfigIsValid(m.Spec.AvailabilityConfig) {
@@ -444,20 +543,22 @@ func (r *MultiClusterEngineReconciler) setHostedDefaults(ctx context.Context, m 
 
 	// Apply defaults to server
 	if updateNecessary {
-		log.Info("Setting hosted defaults")
+		r.Log.Info("Setting hosted defaults")
 		err := r.Client.Update(ctx, m)
 		if err != nil {
-			log.Error(err, "Failed to update MultiClusterEngine")
+			r.Log.Error(err, "Failed to update MultiClusterEngine")
 			return ctrl.Result{}, err
 		}
-		log.Info("MultiClusterEngine successfully updated")
+
+		r.Log.Info("MultiClusterEngine successfully updated")
 		return ctrl.Result{Requeue: true}, nil
 	} else {
 		return ctrl.Result{}, nil
 	}
 }
 
-func (r *MultiClusterEngineReconciler) finalizeHostedBackplaneConfig(ctx context.Context, mce *backplanev1.MultiClusterEngine) error {
+func (r *MultiClusterEngineReconciler) finalizeHostedBackplaneConfig(ctx context.Context,
+	mce *backplanev1.MultiClusterEngine) error {
 	_, err := r.ensureNoHostedClusterManager(ctx, mce)
 	if err != nil {
 		return err
@@ -476,7 +577,9 @@ func (r *MultiClusterEngineReconciler) finalizeHostedBackplaneConfig(ctx context
 	return nil
 }
 
-func (r *MultiClusterEngineReconciler) hostedApplyTemplate(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine, template *unstructured.Unstructured, hostedClient client.Client) (ctrl.Result, error) {
+func (r *MultiClusterEngineReconciler) hostedApplyTemplate(ctx context.Context,
+	backplaneConfig *backplanev1.MultiClusterEngine, template *unstructured.Unstructured, hostedClient client.Client) (
+	ctrl.Result, error) {
 	// Set owner reference.
 	err := ctrl.SetControllerReference(backplaneConfig, template, r.Scheme)
 	if err != nil {
@@ -485,18 +588,28 @@ func (r *MultiClusterEngineReconciler) hostedApplyTemplate(ctx context.Context, 
 
 	// Apply the object data.
 	force := true
-	err = hostedClient.Patch(ctx, template, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
+	err = hostedClient.Patch(ctx, template, client.Apply,
+		&client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
+
 	if err != nil {
-		return ctrl.Result{}, pkgerrors.Wrapf(err, "error applying object Name: %s Kind: %s", template.GetName(), template.GetKind())
+		return ctrl.Result{}, pkgerrors.Wrapf(err, "error applying object Name: %s Kind: %s", template.GetName(),
+			template.GetKind())
 	}
+
 	return ctrl.Result{}, nil
 }
 
-// deleteTemplate return true if resource does not exist and returns an error if a GET or DELETE errors unexpectedly. A false response without error
-// means the resource is in the process of deleting.
-func (r *MultiClusterEngineReconciler) hostedDeleteTemplate(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine, template *unstructured.Unstructured, hostedClient client.Client) (ctrl.Result, error) {
-	log := log.Log.WithName("reconcile")
-	err := hostedClient.Get(ctx, types.NamespacedName{Name: template.GetName(), Namespace: template.GetNamespace()}, template)
+/*
+deleteTemplate return true if resource does not exist and returns an error if a GET or DELETE errors unexpectedly.
+A false response without error means the resource is in the process of deleting.
+*/
+func (r *MultiClusterEngineReconciler) hostedDeleteTemplate(ctx context.Context,
+	backplaneConfig *backplanev1.MultiClusterEngine, template *unstructured.Unstructured, hostedClient client.Client) (
+	ctrl.Result, error) {
+	r.Log = log.Log.WithName("reconcile")
+
+	err := hostedClient.Get(ctx, types.NamespacedName{Name: template.GetName(), Namespace: template.GetNamespace()},
+		template)
 
 	if err != nil && apierrors.IsNotFound(err) {
 		return ctrl.Result{}, nil
@@ -504,14 +617,14 @@ func (r *MultiClusterEngineReconciler) hostedDeleteTemplate(ctx context.Context,
 
 	// set status progressing condition
 	if err != nil {
-		log.Error(err, "Odd error delete template")
+		r.Log.Error(err, "Odd error delete template")
 		return ctrl.Result{}, err
 	}
 
-	log.Info(fmt.Sprintf("finalizing template: %s\n", template.GetName()))
+	r.Log.Info(fmt.Sprintf("finalizing template: %s\n", template.GetName()))
 	err = hostedClient.Delete(ctx, template)
 	if err != nil {
-		log.Error(err, "Failed to delete template")
+		r.Log.Error(err, "Failed to delete template")
 		return ctrl.Result{}, err
 	}
 
