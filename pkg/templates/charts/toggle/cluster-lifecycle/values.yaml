@@ -5,6 +5,7 @@ global:
     clusterclaims_controller: quay.io/test/test:test
     clusterlifecycle_state_metrics: quay.io/test/test:test
     provider_credential_controller: quay.io/test/test:test
+  templateOverrides: {}
   pullSecret: ""
   namespace: default
 hubconfig:
@@ -12,4 +13,5 @@ hubconfig:
   proxyConfigs: {}
   replicaCount: 1
   tolerations: []
+  ocpVersion: "4.12.0"
 org: open-cluster-management

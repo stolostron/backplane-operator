@@ -8,8 +8,10 @@ global:
     postgresql_12: ''
   namespace: default
   pullSecret: null
+  templateOverrides: {}
 hubconfig:
   nodeSelector: null
+  ocpVersion: 4.12.0
   proxyConfigs: {}
   replicaCount: 1
   tolerations: []
