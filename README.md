@@ -33,14 +33,21 @@ make run
 The operator can also run inside the cluster as a Deployment. To do that first build the container image and push to an accessible image registry:
 
 1. Build the image:
+
     ```shell
     make docker-build IMG=<registry>/<imagename>:<tag>
     ```
+
 2. Push the image:
+
     ```shell
     make docker-push IMG=<registry>/<imagename>:<tag>
     ```
+
 3. Deploy the Operator:
+
     ```shell
     make deploy IMG=<registry>/<imagename>:<tag>
     ```
+
+Rebuild Date: 2024-02-21
