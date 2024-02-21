@@ -113,7 +113,7 @@ func (sm *StatusTracker) reportPhase(mce bpv1.MultiClusterEngine, components []b
 
 	// If status isn't tracking anything show error phase
 	if len(components) == 0 {
-		return bpv1.MultiClusterEnginePhaseError
+		return bpv1.MultiClusterEnginePhaseProgressing
 	}
 
 	// If status contains failure status return error

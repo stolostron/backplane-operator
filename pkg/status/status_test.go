@@ -200,7 +200,7 @@ func TestStatusTracker_ReportStatus(t *testing.T) {
 			want: bpv1.MultiClusterEngineStatus{
 				CurrentVersion: "",
 				DesiredVersion: "9.9.9",
-				Phase:          bpv1.MultiClusterEnginePhaseError,
+				Phase:          bpv1.MultiClusterEnginePhaseProgressing,
 			},
 		},
 	}
