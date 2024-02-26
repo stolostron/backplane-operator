@@ -7,7 +7,6 @@
   imageMappings:
     hive: openshift_hive
 
-
 - repo_name: image-based-install-operator
   github_ref: "https://github.com/openshift/image-based-install-operator.git"
   branch: "backplane-2.5"
@@ -16,7 +15,8 @@
       bundlePath: "bundle/manifests/"
       imageMappings:
         controller: image_based_install_operator
-
+      preserve_files:
+        - image-based-install-config_v1_route.yaml
 
 - repo_name: assisted-service
   github_ref: "https://github.com/openshift/assisted-service.git"
