@@ -8,10 +8,14 @@ import os
 import shutil
 import yaml
 import logging
+import coloredlogs
 import subprocess
 from git import Repo, exc
 
 from validate_csv import *
+
+# Configure logging with coloredlogs
+coloredlogs.install(level='DEBUG')  # Set the logging level as needed
 
 # Parse an image reference, return dict containing image reference information
 def parse_image_ref(image_ref):
@@ -307,9 +311,12 @@ def fixImageReferences(helmChart, imageKeyMapping):
         with open(deployment, 'w') as f:
             yaml.dump(deploy, f, width=float("inf"))
 
-    del  values['global']['imageOverrides']['imageOverride']
+    if 'imageOverride' in values['global']['imageOverrides']:
+        del values['global']['imageOverrides']['imageOverride']
+
     for imageKey in imageKeys:
         values['global']['imageOverrides'][imageKey] = "" # set to temp to debug
+
     with open(valuesYaml, 'w') as f:
         yaml.dump(values, f, width=float("inf"))
     logging.info("Image references and pull policy in deployments and values.yaml updated successfully.\n")
