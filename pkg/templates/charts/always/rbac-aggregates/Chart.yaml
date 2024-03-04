@@ -2,8 +2,8 @@
 # Copyright Contributors to the Open Cluster Management project
 
 apiVersion: v2
-appVersion: 2.5.0
+appVersion: 2.6.0
 description: Manages RBAC aggregate roles
 name: rbac-aggregates
 type: application
-version: 2.5.0
+version: 2.6.0
