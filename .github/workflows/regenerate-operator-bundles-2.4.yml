@@ -54,6 +54,7 @@ jobs:
             echo "Regenerate Operator Bundles step failed with exit code $exit_code"
             exit $exit_code
           fi
+
       - name: Send Slack Message on Failure
         if: ${{ failure() }}
         env:
