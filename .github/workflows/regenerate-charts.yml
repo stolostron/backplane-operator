@@ -42,28 +42,22 @@ jobs:
         id: generate_chart
         run: |
           make regenerate-charts
-
-      - name: Check Job Status
-        id: job_status
-        run: |
-          if [[ ${{ steps.generate_chart.outcome }} == 'failure' ]]; then
-            echo "status=failure" >> $GITHUB_OUTPUT
-          else
-            echo "status=success" >> $GITHUB_OUTPUT
+          exit_code=$?
+          if [ $exit_code -ne 0 ]; then
+            echo "Regenerate Charts step failed with exit code $exit_code"
+            exit $exit_code
           fi
 
       - name: Send Slack Message on Failure
-        if: steps.job_status.outputs.status == 'failure'
+        if: ${{ failure() }}
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: |
-          # Compose the Slack message
           SLACK_MESSAGE=":exclamation: *GitHub Actions Job Failed* :exclamation:\n\n"
           SLACK_MESSAGE+="Job Name: $GITHUB_WORKFLOW/$GITHUB_JOB\n"
           SLACK_MESSAGE+="Job URL: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID\n"
           SLACK_MESSAGE+="Error Details: Your job failed. Please check the job logs for more information."
 
-          # Send the message to Slack
           curl -X POST -H "Content-type: application/json" --data "{
             \"text\": \"$SLACK_MESSAGE\"
           }" $SLACK_WEBHOOK_URL
@@ -78,4 +72,4 @@ jobs:
           committer: GitHub <noreply@github.com>
           author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
           labels: do-not-merge/hold
-          assignees: cameronmwall,dislbenn,ngraham20
+          reviewers: cameronmwall,dislbenn,ngraham20
