@@ -1,7 +1,7 @@
 - repo_name: generate-hive-bundle
   gen_command: ./hack/bundle-automation/gen-hive-bundle.sh
   branch: mce-2.4
-  sha: eb033fe9f3b36593b8dfc3a8b60c7d880b304907
+  sha: fd47e70e7d5f4ed1dcb3475b9bbd59e724865dbd
   bundlePath: /tmp/hive-operator-manifests
   name: hive-operator
   imageMappings:
