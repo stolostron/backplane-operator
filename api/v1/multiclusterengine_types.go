@@ -207,12 +207,6 @@ type MultiClusterEngineCondition struct {
 //+kubebuilder:subresource:status
 //+kubebuilder:resource:scope=Cluster,shortName=mce
 
-
-
-// MultiClusterEngine defines the configuration for an instance
-// of a multicluster engine, a central point providing the foundational components
-// for managing multiple Kubernetes-based clusters. The deployment of the multicluster engine components is 
-// determined based on the configuration that is defined in this resource.
 // +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.phase",description="The overall state of the MultiClusterEngine"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 // +operator-sdk:csv:customresourcedefinitions:displayName="MultiCluster Engine"
