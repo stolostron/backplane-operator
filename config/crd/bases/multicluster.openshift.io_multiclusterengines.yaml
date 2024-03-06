@@ -29,10 +29,10 @@ spec:
     schema:
       openAPIV3Schema:
         description: MultiClusterEngine defines the configuration for an instance
-          of a multicluster engine, a central  point providing the foundational components
-          for managing multiple Kubernetes-based clusters. The deployment of the components
-          of the multiclsuterengine will be determined based on the configuration
-          defined in this resource.
+          of a multicluster engine, a central point providing the foundational components
+          for managing multiple Kubernetes-based clusters. The deployment of the multicluster
+          engine components is determined based on the configuration that is defined
+          in this resource.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
