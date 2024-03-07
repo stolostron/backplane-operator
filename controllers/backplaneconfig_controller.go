@@ -183,7 +183,7 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 	backplaneConfig.Status.Conditions = status.FilterOutConditionWithSubString(backplaneConfig.Status.Conditions,
 		backplanev1.MultiClusterEngineComponentFailure)
 
-	// Check if any deprecated fields are present within the multiClusterHub spec.
+	// Check if any deprecated fields are present within the backplaneConfig spec.
 	r.CheckDeprecatedFieldUsage(backplaneConfig)
 
 	// reset status manager
