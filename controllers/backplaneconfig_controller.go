@@ -69,14 +69,15 @@ import (
 
 // MultiClusterEngineReconciler reconciles a MultiClusterEngine object
 type MultiClusterEngineReconciler struct {
-	Client          client.Client
-	UncachedClient  client.Client
-	CacheSpec       CacheSpec
-	Scheme          *runtime.Scheme
-	Images          map[string]string
-	StatusManager   *status.StatusTracker
-	Log             logr.Logger
-	UpgradeableCond utils.Condition
+	Client               client.Client
+	UncachedClient       client.Client
+	CacheSpec            CacheSpec
+	Scheme               *runtime.Scheme
+	Images               map[string]string
+	StatusManager        *status.StatusTracker
+	Log                  logr.Logger
+	UpgradeableCond      utils.Condition
+	DeprecatedSpecFields map[string]bool
 }
 
 const (
@@ -181,6 +182,9 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 	// reset the status conditions for failures that has occurred in previous iterations.
 	backplaneConfig.Status.Conditions = status.FilterOutConditionWithSubString(backplaneConfig.Status.Conditions,
 		backplanev1.MultiClusterEngineComponentFailure)
+
+	// Check if any deprecated fields are present within the multiClusterHub spec.
+	r.CheckDeprecatedFieldUsage(backplaneConfig)
 
 	// reset status manager
 	r.StatusManager.Reset("")
@@ -1652,6 +1656,24 @@ func (r *MultiClusterEngineReconciler) StopScheduleOperatorControllerResync() {
 
 	if ok := scheduler.IsRunning(); !ok {
 		r.InitScheduler()
+	}
+}
+
+func (r *MultiClusterEngineReconciler) CheckDeprecatedFieldUsage(m *backplanev1.MultiClusterEngine) {
+	deprecatedSpecFields := []struct {
+		name      string
+		isPresent bool
+	}{}
+
+	if r.DeprecatedSpecFields == nil {
+		r.DeprecatedSpecFields = make(map[string]bool)
+	}
+
+	for _, f := range deprecatedSpecFields {
+		if f.isPresent && !r.DeprecatedSpecFields[f.name] {
+			r.Log.Info(fmt.Sprintf("Warning: %s field usage is deprecated in operator.", f.name))
+			r.DeprecatedSpecFields[f.name] = true
+		}
 	}
 }
 
