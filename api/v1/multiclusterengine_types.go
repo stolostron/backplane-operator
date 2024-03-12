@@ -77,7 +77,7 @@ type Overrides struct {
 	// Pull policy for the MCE images
 	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
 
-	// Provides optional configuration for components
+	// Provides optional configuration for components, the list of which can be found here: https://github.com/stolostron/backplane-operator/tree/main/docs/available-components.md
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Component Configuration",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	// +optional
 	Components []ComponentConfig `json:"components,omitempty"`
@@ -207,7 +207,9 @@ type MultiClusterEngineCondition struct {
 //+kubebuilder:subresource:status
 //+kubebuilder:resource:scope=Cluster,shortName=mce
 
-// MultiClusterEngine is the Schema for the multiclusterengines API
+// MultiClusterEngine defines the configuration for an instance
+// of a multicluster engine, a central point providing the foundational components for managing multiple Kubernetes-based clusters. The deployment of the multicluster engine components is
+// determined based on the configuration that is defined in this resource.
 // +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.phase",description="The overall state of the MultiClusterEngine"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 // +operator-sdk:csv:customresourcedefinitions:displayName="MultiCluster Engine"

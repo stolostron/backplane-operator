@@ -28,8 +28,11 @@ spec:
     name: v1
     schema:
       openAPIV3Schema:
-        description: MultiClusterEngine is the Schema for the multiclusterengines
-          API
+        description: MultiClusterEngine defines the configuration for an instance
+          of a multicluster engine, a central point providing the foundational components
+          for managing multiple Kubernetes-based clusters. The deployment of the multicluster
+          engine components is determined based on the configuration that is defined
+          in this resource.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -63,7 +66,8 @@ spec:
                 description: Developer Overrides
                 properties:
                   components:
-                    description: Provides optional configuration for components
+                    description: 'Provides optional configuration for components,
+                      the list of which can be found here: https://github.com/stolostron/backplane-operator/tree/main/docs/available-components.md'
                     items:
                       description: ComponentConfig provides optional configuration
                         items for individual components
