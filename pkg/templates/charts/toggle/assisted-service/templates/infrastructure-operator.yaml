@@ -35,6 +35,7 @@ spec:
                   - infrastructure-operator
               topologyKey: kubernetes.io/hostname
             weight: 35
+      automountServiceAccountToken: true
       containers:
       - args:
         - --leader-elect
