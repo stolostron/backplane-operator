@@ -46,6 +46,9 @@ spec:
         value: $(params.output-image)
       - name: build-task-status
         value: $(tasks.build-container.status)
+      workspaces:
+      - name: workspace
+        workspace: workspace
       taskRef:
         bundle: quay.io/redhat-appstudio-tekton-catalog/task-summary:0.2@sha256:6a54bf5cee74c54ed5e08d4b11476cc29fa119d02a2d715005496737de885d49
         name: summary
