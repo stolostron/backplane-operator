@@ -9,7 +9,7 @@
 
 - repo_name: image-based-install-operator
   github_ref: "https://github.com/openshift/image-based-install-operator.git"
-  branch: "backplane-2.5"
+  branch: "main"
   operators:
     - name: image-based-install-operator
       bundlePath: "bundle/manifests/"
@@ -20,7 +20,7 @@
 
 - repo_name: assisted-service
   github_ref: "https://github.com/openshift/assisted-service.git"
-  branch: "release-ocm-2.10"
+  branch: "release-ocm-2.11"
   operators:
     - name: assisted-service
       bundlePath: "deploy/olm-catalog/manifests/"
@@ -34,7 +34,7 @@
 
 - repo_name: registration-operator
   github_ref: "https://github.com/stolostron/ocm.git"
-  branch: "backplane-2.5"
+  branch: "backplane-2.6"
   operators:
     - name: cluster-manager
       bundlePath: "deploy/cluster-manager/olm-catalog/cluster-manager/manifests/"
@@ -45,7 +45,7 @@
 
 - repo_name: discovery-operator
   github_ref: "https://github.com/stolostron/discovery.git"
-  branch: "backplane-2.5"
+  branch: "backplane-2.6"
   operators:
     - name: discovery-operator
       bundlePath: "bundle/manifests/"
