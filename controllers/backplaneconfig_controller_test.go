@@ -566,11 +566,11 @@ var _ = Describe("BackplaneConfig controller", func() {
 								},
 								{
 									Name:    backplanev1.ServerFoundation,
-									Enabled: true,
+									Enabled: false,
 								},
 								{
 									Name:    backplanev1.HyperShift,
-									Enabled: true,
+									Enabled: false,
 								},
 								{
 									Name:    backplanev1.Hive,
@@ -628,6 +628,18 @@ var _ = Describe("BackplaneConfig controller", func() {
 				}
 				createCtx := context.Background()
 				Expect(k8sClient.Create(createCtx, backplaneConfig)).Should(Succeed())
+				_, err := reconciler.ensureNoClusterManager(createCtx, backplaneConfig)
+				Expect(err).To(BeNil())
+				_, err = reconciler.ensureNoClusterLifecycle(createCtx, backplaneConfig)
+				Expect(err).To(BeNil())
+				_, err = reconciler.ensureNoManagedServiceAccount(createCtx, backplaneConfig)
+				Expect(err).To(BeNil())
+				_, err = reconciler.ensureNoHive(createCtx, backplaneConfig)
+				Expect(err).To(BeNil())
+				_, err = reconciler.ensureNoHyperShift(createCtx, backplaneConfig)
+				Expect(err).To(BeNil())
+				_, err = reconciler.ensureNoServerFoundation(createCtx, backplaneConfig)
+				Expect(err).To(BeNil())
 
 				By("ensuring each deployment and config is created")
 				for _, test := range tests {
