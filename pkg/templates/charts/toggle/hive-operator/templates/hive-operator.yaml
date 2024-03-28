@@ -39,6 +39,7 @@ spec:
                   - hive-operator
               topologyKey: kubernetes.io/hostname
             weight: 35
+      automountServiceAccountToken: false
       containers:
       - command:
         - /opt/services/hive-operator
