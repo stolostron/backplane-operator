@@ -26,6 +26,31 @@ import (
 // AvailabilityType ...
 type AvailabilityType string
 
+type HubSize uint8
+
+// Putting medium first here defaults it to Medium
+const (
+	Medium = iota
+	Small
+	Large
+	ExtraLarge
+)
+
+var (
+	HubSizeStrings = map[HubSize]string{
+		Small:      "S",
+		Medium:     "M",
+		Large:      "L",
+		ExtraLarge: "XL",
+	}
+	HubSizeFromString = map[string]HubSize{
+		"S":  Small,
+		"M":  Medium,
+		"L":  Large,
+		"XL": ExtraLarge,
+	}
+)
+
 // DeploymentMode
 type DeploymentMode string
 
@@ -49,6 +74,11 @@ type MultiClusterEngineSpec struct {
 
 	// Set the nodeselectors
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+
+	// The resource allocation bucket for this hub to use.
+	// [S (Small), M (Medium), L (Large), XL (Extra Large)]. Defaults to (M)edium if not specified.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Hub Size",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
+	HubSize HubSize `json:"hubSize,omitempty"`
 
 	// Override pull secret for accessing MultiClusterEngine operand and endpoint images
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Image Pull Secret",xDescriptors={"urn:alm:descriptor:io.kubernetes:Secret","urn:alm:descriptor:com.tectonic.ui:advanced"}
