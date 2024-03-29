@@ -1,6 +1,7 @@
 package v1_test
 
 import (
+	"encoding/json"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -168,6 +169,68 @@ func TestGetLegacyServiceMonitorName(t *testing.T) {
 
 			if got != tt.want {
 				t.Errorf("GetLegacyServiceMonitorName(%v) = %v, want: %v", tt.component, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestHubSizeDefault(t *testing.T) {
+	tests := []struct {
+		name string
+		spec api.MultiClusterEngineSpec
+		want api.HubSize
+	}{
+		{
+			name: "Default is Medium",
+			spec: api.MultiClusterEngineSpec{},
+			want: api.Medium,
+		},
+		{
+			name: "Override Default with Large",
+			spec: api.MultiClusterEngineSpec{
+				HubSize: api.Large,
+			},
+			want: api.Large,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			hsize := tt.spec.HubSize
+			if hsize != tt.want {
+				t.Errorf("HubSize: %v, want: %v", hsize, tt.want)
+			}
+		})
+	}
+}
+
+func TestHubSizeMarshal(t *testing.T) {
+	tests := []struct {
+		name       string
+		yamlstring string
+		want       api.HubSize
+	}{
+		{
+			name:       "Marshal defaults to M",
+			yamlstring: `{}`,
+			want:       api.Medium,
+		},
+		{
+			name:       "Marshals when overriding default with large",
+			yamlstring: `{"hubSize": "L"}`,
+			want:       api.Large,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var out api.MultiClusterEngineSpec
+			t.Logf("spec before marshal: %v\n", out)
+			err := json.Unmarshal([]byte([]byte(tt.yamlstring)), &out)
+			t.Logf("spec after marshal: %v\n", out)
+			if err != nil {
+				t.Errorf("Unable to unmarshal yaml string: %v. %v", tt.yamlstring, err)
+			}
+			if out.HubSize != tt.want {
+				t.Errorf("Hubsize not desired. HubSize: %v, want: %v", out.HubSize, tt.want)
 			}
 		})
 	}

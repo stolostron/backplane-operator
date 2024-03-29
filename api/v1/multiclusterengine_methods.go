@@ -18,7 +18,10 @@ limitations under the License.
 
 package v1
 
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 const (
 	AssistedService              = "assisted-service"
@@ -210,6 +213,26 @@ func IsInHostedMode(mce *MultiClusterEngine) bool {
 		return true
 	}
 	return false
+}
+
+func (h HubSize) String() string {
+	return HubSizeStrings[h]
+}
+
+func (h *HubSize) UnmarshalJSON(b []byte) error {
+	fmt.Println("Unmarshaling JSON is occuring")
+	var hubsize string
+	if err := json.Unmarshal(b, &hubsize); err != nil {
+		return err
+	}
+
+	var exists bool
+	*h, exists = HubSizeFromString[hubsize]
+
+	if !exists {
+		return fmt.Errorf("key %v does not exist in map", hubsize)
+	}
+	return nil
 }
 
 /*
