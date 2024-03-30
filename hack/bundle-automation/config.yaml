@@ -26,7 +26,7 @@
       bundlePath: "deploy/olm-catalog/manifests/"
       imageMappings:
         assisted-service: assisted_service
-        postgresql-12-centos7: postgresql_12
+        postgresql-12-c8s: postgresql_12
         assisted-installer-agent: assisted_installer_agent
         assisted-installer-controller: assisted_installer_controller
         assisted-installer: assisted_installer
