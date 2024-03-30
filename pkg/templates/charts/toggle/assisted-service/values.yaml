@@ -1,6 +1,11 @@
 global:
   imageOverrides:
+    assisted_image_service: ''
+    assisted_installer: ''
+    assisted_installer_agent: ''
+    assisted_installer_controller: ''
     assisted_service: ''
+    postgresql_12: ''
   namespace: default
   pullSecret: null
   templateOverrides: {}
