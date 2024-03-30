@@ -7,17 +7,34 @@ rules:
   - cluster.open-cluster-management.io
   resources:
   - managedclusters
+  - managedclusters/accept
+  - managedclusters/finalizers
+  - managedclustersets
+  - managedclustersets/bind
+  - managedclustersets/finalizers
+  - managedclustersets/join
+  - managedclustersetbindings
+  - managedclustersetbindings/finalizers
+  - placements
+  - placements/finalizers
+  - managedclusters/status
   verbs:
+  - create
   - get
   - list
+  - patch
+  - update
   - watch
 - apiGroups:
   - ''
   resources:
+  - namespaces
   - secrets
   verbs:
+  - create
   - get
   - list
+  - update
   - watch
 - apiGroups:
   - discovery.open-cluster-management.io
@@ -75,4 +92,24 @@ rules:
   verbs:
   - get
   - patch
+  - update
+- apiGroups:
+  - agent.open-cluster-management.io
+  resources:
+  - klusterletaddonconfigs
+  - klusterletaddonconfigs/finalizers
+  - klusterletaddonconfigs/status
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - register.open-cluster-management.io
+  resources:
+  - managedclusters/accept
+  verbs:
   - update
