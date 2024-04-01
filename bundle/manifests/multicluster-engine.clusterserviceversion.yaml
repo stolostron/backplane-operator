@@ -14,7 +14,7 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    createdAt: "2024-04-01T22:12:50Z"
+    createdAt: "2024-04-01T22:23:48Z"
     operators.operatorframework.io/builder: operator-sdk-v1.34.1
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
   name: multicluster-engine.v0.0.1
@@ -297,9 +297,11 @@ spec:
           - namespaces
           - secrets
           verbs:
+          - create
           - delete
           - get
           - list
+          - update
           - watch
         - apiGroups:
           - ""
@@ -908,6 +910,20 @@ spec:
           - watch
         - apiGroups:
           - agent.open-cluster-management.io
+          resources:
+          - klusterletaddonconfigs
+          - klusterletaddonconfigs/finalizers
+          - klusterletaddonconfigs/status
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - agent.open-cluster-management.io
           - cluster.open-cluster-management.io
           - operator.open-cluster-management.io
           resources:
@@ -1341,6 +1357,28 @@ spec:
           verbs:
           - create
           - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - cluster.open-cluster-management.io
+          resources:
+          - managedclusters
+          - managedclusters/accept
+          - managedclusters/finalizers
+          - managedclusters/status
+          - managedclustersetbindings
+          - managedclustersetbindings/finalizers
+          - managedclustersets
+          - managedclustersets/bind
+          - managedclustersets/finalizers
+          - managedclustersets/join
+          - placements
+          - placements/finalizers
+          verbs:
+          - create
           - get
           - list
           - patch
@@ -1993,12 +2031,6 @@ spec:
           - patch
           - update
           - watch
-        - apiGroups:
-          - migration.k8s.io
-          resources:
-          - storageversionmigrations/status
-          verbs:
-          - patch
         - apiGroups:
           - monitoring.coreos.com
           resources:
