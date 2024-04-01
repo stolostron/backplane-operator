@@ -26,29 +26,14 @@ import (
 // AvailabilityType ...
 type AvailabilityType string
 
-type HubSize uint8
+type HubSize string
 
 // Putting medium first here defaults it to Medium
 const (
-	Medium = iota
-	Small
-	Large
-	ExtraLarge
-)
-
-var (
-	HubSizeStrings = map[HubSize]string{
-		Small:      "S",
-		Medium:     "M",
-		Large:      "L",
-		ExtraLarge: "XL",
-	}
-	HubSizeFromString = map[string]HubSize{
-		"S":  Small,
-		"M":  Medium,
-		"L":  Large,
-		"XL": ExtraLarge,
-	}
+	Small      = "Small"
+	Medium     = "Medium"
+	Large      = "Large"
+	ExtraLarge = "ExtraLarge"
 )
 
 // DeploymentMode
@@ -76,7 +61,10 @@ type MultiClusterEngineSpec struct {
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 
 	// The resource allocation bucket for this hub to use.
-	// [S (Small), M (Medium), L (Large), XL (Extra Large)]. Defaults to (M)edium if not specified.
+	// Small, Medium, Large, ExtraLarge]. Defaults to Medium if not specified.
+	//+kubebuilder:validation:Enum:=Small;Medium;Large;ExtraLarge
+	//+kubebuilder:default:=Medium
+	//+kubebuilder:validation:Type:=string
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Hub Size",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	HubSize HubSize `json:"hubSize,omitempty"`
 
