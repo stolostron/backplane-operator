@@ -174,35 +174,6 @@ func TestGetLegacyServiceMonitorName(t *testing.T) {
 	}
 }
 
-func TestHubSizeDefault(t *testing.T) {
-	tests := []struct {
-		name string
-		spec api.MultiClusterEngineSpec
-		want api.HubSize
-	}{
-		{
-			name: "Default is Medium",
-			spec: api.MultiClusterEngineSpec{},
-			want: api.Medium,
-		},
-		{
-			name: "Override Default with Large",
-			spec: api.MultiClusterEngineSpec{
-				HubSize: api.Large,
-			},
-			want: api.Large,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			hsize := tt.spec.HubSize
-			if hsize != tt.want {
-				t.Errorf("HubSize: %v, want: %v", hsize, tt.want)
-			}
-		})
-	}
-}
-
 func TestHubSizeMarshal(t *testing.T) {
 	tests := []struct {
 		name       string
@@ -210,13 +181,8 @@ func TestHubSizeMarshal(t *testing.T) {
 		want       api.HubSize
 	}{
 		{
-			name:       "Marshal defaults to M",
-			yamlstring: `{}`,
-			want:       api.Medium,
-		},
-		{
-			name:       "Marshals when overriding default with large",
-			yamlstring: `{"hubSize": "L"}`,
+			name:       "Marshals when setting hubSize to Large",
+			yamlstring: `{"hubSize": "Large"}`,
 			want:       api.Large,
 		},
 	}

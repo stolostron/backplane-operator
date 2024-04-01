@@ -14,8 +14,8 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    createdAt: "2024-02-06T11:49:16Z"
-    operators.operatorframework.io/builder: operator-sdk-v1.32.0
+    createdAt: "2024-04-01T22:23:48Z"
+    operators.operatorframework.io/builder: operator-sdk-v1.34.1
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
   name: multicluster-engine.v0.0.1
   namespace: placeholder
@@ -23,7 +23,11 @@ spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
-    - description: MultiClusterEngine is the Schema for the multiclusterengines API
+    - description: MultiClusterEngine defines the configuration for an instance of
+        a multicluster engine, a central point providing the foundational components
+        for managing multiple Kubernetes-based clusters. The deployment of the multicluster
+        engine components is determined based on the configuration that is defined
+        in this resource.
       displayName: MultiCluster Engine
       kind: MultiClusterEngine
       name: multiclusterengines.multicluster.openshift.io
@@ -36,6 +40,12 @@ spec:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:select:High
         - urn:alm:descriptor:com.tectonic.ui:select:Basic
+      - description: The resource allocation bucket for this hub to use. Small, Medium,
+          Large, ExtraLarge]. Defaults to Medium if not specified.
+        displayName: Hub Size
+        path: hubSize
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: Override pull secret for accessing MultiClusterEngine operand
           and endpoint images
         displayName: Image Pull Secret
@@ -48,7 +58,8 @@ spec:
         path: overrides
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: Provides optional configuration for components
+      - description: 'Provides optional configuration for components, the list of
+          which can be found here: https://github.com/stolostron/backplane-operator/tree/main/docs/available-components.md'
         displayName: Component Configuration
         path: overrides.components
         x-descriptors:
@@ -286,9 +297,11 @@ spec:
           - namespaces
           - secrets
           verbs:
+          - create
           - delete
           - get
           - list
+          - update
           - watch
         - apiGroups:
           - ""
@@ -897,6 +910,20 @@ spec:
           - watch
         - apiGroups:
           - agent.open-cluster-management.io
+          resources:
+          - klusterletaddonconfigs
+          - klusterletaddonconfigs/finalizers
+          - klusterletaddonconfigs/status
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - agent.open-cluster-management.io
           - cluster.open-cluster-management.io
           - operator.open-cluster-management.io
           resources:
@@ -1120,6 +1147,7 @@ spec:
           resources:
           - managedserviceaccounts
           verbs:
+          - create
           - delete
           - get
           - list
@@ -1329,6 +1357,28 @@ spec:
           verbs:
           - create
           - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - cluster.open-cluster-management.io
+          resources:
+          - managedclusters
+          - managedclusters/accept
+          - managedclusters/finalizers
+          - managedclusters/status
+          - managedclustersetbindings
+          - managedclustersetbindings/finalizers
+          - managedclustersets
+          - managedclustersets/bind
+          - managedclustersets/finalizers
+          - managedclustersets/join
+          - placements
+          - placements/finalizers
+          verbs:
+          - create
           - get
           - list
           - patch
@@ -1694,6 +1744,32 @@ spec:
           - extensions.hive.openshift.io
           resources:
           - agentclusterinstalls/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - extensions.hive.openshift.io
+          resources:
+          - imageclusterinstalls
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - extensions.hive.openshift.io
+          resources:
+          - imageclusterinstalls/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - extensions.hive.openshift.io
+          resources:
+          - imageclusterinstalls/status
           verbs:
           - get
           - patch
