@@ -737,7 +737,7 @@ func (r *MultiClusterEngineReconciler) createMetricsServiceMonitor(ctx context.C
 				Endpoints: []monitorv1.Endpoint{
 					{
 						BearerTokenFile: "/var/run/secrets/kubernetes.io/serviceaccount/token",
-						BearerTokenSecret: corev1.SecretKeySelector{
+						BearerTokenSecret: &corev1.SecretKeySelector{
 							Key: "",
 						},
 						Port: "metrics",
