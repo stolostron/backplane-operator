@@ -151,6 +151,11 @@ func main() {
 	ctrl.Log.WithName("Backplane Operator version").Info(fmt.Sprintf("%#v", version.Get()))
 
 	mgrOptions := ctrl.Options{
+		Client: client.Options{
+			Cache: &client.CacheOptions{
+				DisableFor: []client.Object{},
+			},
+		},
 		Scheme: scheme,
 		Metrics: metricsserver.Options{
 			BindAddress: metricsAddr,
