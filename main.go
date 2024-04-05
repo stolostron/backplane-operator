@@ -22,6 +22,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"flag"
 	"fmt"
 	"os"
@@ -63,6 +64,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
@@ -149,13 +151,21 @@ func main() {
 	ctrl.Log.WithName("Backplane Operator version").Info(fmt.Sprintf("%#v", version.Get()))
 
 	mgrOptions := ctrl.Options{
-		Scheme:                 scheme,
-		MetricsBindAddress:     metricsAddr,
-		Port:                   9443,
+		Scheme: scheme,
+		Metrics: metricsserver.Options{
+			BindAddress: metricsAddr,
+		},
+		WebhookServer: webhook.NewServer(webhook.Options{
+			Port: 9443,
+			TLSOpts: []func(*tls.Config){func(config *tls.Config) {
+				config = &tls.Config{
+					MinVersion: tls.VersionTLS12,
+				}
+			}},
+		}),
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "797f9276.open-cluster-management.io",
-		WebhookServer:          webhook.NewServer(webhook.Options{TLSMinVersion: "1.2"}),
 		LeaseDuration:          &leaseDuration,
 		RenewDeadline:          &renewDeadline,
 		RetryPeriod:            &retryPeriod,
@@ -163,7 +173,7 @@ func main() {
 	}
 
 	setupLog.Info("Disabling Operator Client Cache for high-memory resources")
-	mgrOptions.ClientDisableCacheFor = []client.Object{
+	mgrOptions.Client.Cache.DisableFor = []client.Object{
 		&corev1.Secret{},
 		&rbacv1.ClusterRole{},
 		&rbacv1.ClusterRoleBinding{},
