@@ -213,12 +213,6 @@ rules:
   - patch
   - delete
 - apiGroups:
-  - migration.k8s.io
-  resources:
-  - storageversionmigrations/status
-  verbs:
-  - patch
-- apiGroups:
   - addon.open-cluster-management.io
   resources:
   - managedclusteraddons
