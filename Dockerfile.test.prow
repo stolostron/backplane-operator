@@ -1,5 +1,5 @@
 # Build the backplane-operator binary
-FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_1.21 AS builder
+FROM registry.ci.openshift.org/stolostron/builder:go1.21-linux AS builder
 
 WORKDIR /workspace
 
