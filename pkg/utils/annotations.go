@@ -29,7 +29,7 @@ var (
 		AnnotationImageOverridesCM is an annotation used in multiclusterengine to specify a custom ConfigMap containing
 		image overrides.
 	*/
-	AnnotationImageOverridesCM           = "multicluster.openshift.io/imageOverridesCM"
+	AnnotationImageOverridesCM           = "multicluster.openshift.io/image-overrides-configmap"
 	DeprecatedAnnotationImageOverridesCM = "imageOverridesCM"
 
 	/*
