@@ -94,7 +94,7 @@ package main
 //+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=managedclusteraddons/status;clustermanagementaddons/status,verbs=patch;update
 //+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=managedclusteraddons;clustermanagementaddons,verbs=create;update;patch;get;list;watch;delete
 //+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=managedclusteraddons;managedclusteraddons/finalizers,verbs=get;list;watch;patch;update;delete;deletecollection
-//+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=managedclusteraddons;managedclusteraddons/finalizers;managedclusteraddons/status;clustermanagementaddons;clustermanagementaddons/finalizers,verbs=create;delete;get;list;watch;patch;update
+//+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=managedclusteraddons;managedclusteraddons/finalizers;managedclusteraddons/status;clustermanagementaddons;clustermanagementaddons/finalizers;clustermanagementaddons/status,verbs=create;delete;get;list;watch;patch;update
 //+kubebuilder:rbac:groups=admission.hive.openshift.io,resources=clusterdeployments;clusterimagesets;clusterprovisions;dnszones;machinepools;selectorsyncsets;syncsets,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=admission.hive.openshift.io,resources=dnszones,verbs=get;list;watch
 //+kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=mutatingwebhookconfigurations,verbs=create;delete;get;list;patch;update;watch
