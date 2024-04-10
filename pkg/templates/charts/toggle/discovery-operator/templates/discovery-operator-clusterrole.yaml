@@ -4,28 +4,6 @@ metadata:
   name: '{{ .Values.org }}:{{ .Chart.Name }}:discovery-operator'
 rules:
 - apiGroups:
-  - cluster.open-cluster-management.io
-  resources:
-  - managedclusters
-  - managedclusters/accept
-  - managedclusters/finalizers
-  - managedclustersets
-  - managedclustersets/bind
-  - managedclustersets/finalizers
-  - managedclustersets/join
-  - managedclustersetbindings
-  - managedclustersetbindings/finalizers
-  - placements
-  - placements/finalizers
-  - managedclusters/status
-  verbs:
-  - create
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - ''
   resources:
   - namespaces
@@ -34,6 +12,60 @@ rules:
   - create
   - get
   - list
+  - update
+  - watch
+- apiGroups:
+  - admissionregistration.k8s.io
+  resources:
+  - validatingwebhookconfigurations
+  verbs:
+  - create
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
+  - agent.open-cluster-management.io
+  resources:
+  - klusterletaddonconfigs
+  - klusterletaddonconfigs/finalizers
+  - klusterletaddonconfigs/status
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - cluster.open-cluster-management.io
+  resources:
+  - managedclusters
+  - managedclusters/accept
+  - managedclusters/finalizers
+  - managedclusters/status
+  - managedclustersetbindings
+  - managedclustersetbindings/finalizers
+  - managedclustersets
+  - managedclustersets/bind
+  - managedclustersets/finalizers
+  - managedclustersets/join
+  - placements
+  - placements/finalizers
+  verbs:
+  - create
+  - get
+  - list
+  - patch
   - update
   - watch
 - apiGroups:
@@ -94,30 +126,8 @@ rules:
   - patch
   - update
 - apiGroups:
-  - agent.open-cluster-management.io
-  resources:
-  - klusterletaddonconfigs
-  - klusterletaddonconfigs/finalizers
-  - klusterletaddonconfigs/status
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - register.open-cluster-management.io
   resources:
   - managedclusters/accept
   verbs:
   - update
-- apiGroups:
-  - apiextensions.k8s.io
-  resources:
-  - customresourcedefinitions
-  verbs:
-  - get
-  - list
-  - watch
