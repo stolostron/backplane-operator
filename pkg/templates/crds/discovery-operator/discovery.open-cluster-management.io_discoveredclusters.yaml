@@ -108,7 +108,7 @@ spec:
                 x-kubernetes-map-type: atomic
               displayName:
                 type: string
-              enableAutoImport:
+              importAsManagedCluster:
                 default: false
                 type: boolean
               isManagedCluster:
