@@ -246,11 +246,7 @@ spec:
                 type: boolean
               name:
                 type: string
-              ocpClusterId:
-                type: string
               openshiftVersion:
-                type: string
-              rhocmClusterId:
                 type: string
               status:
                 type: string
