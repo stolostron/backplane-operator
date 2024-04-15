@@ -99,6 +99,7 @@ package main
 //+kubebuilder:rbac:groups=admission.hive.openshift.io,resources=dnszones,verbs=get;list;watch
 //+kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=mutatingwebhookconfigurations,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=validatingwebhookconfigurations,verbs=create;delete;get;list;patch;update;watch
+//+kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=validatingwebhookconfigurations,verbs=create;get;list;update;watch
 //+kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=validatingwebhookconfigurations;mutatingwebhookconfigurations,verbs=create;get;list;update;watch;patch;delete
 //+kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=validatingwebhookconfigurations;mutatingwebhookconfigurations,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=agent-install.openshift.io,resources=agentclassifications,verbs=create;delete;get;list;patch;update;watch
@@ -190,7 +191,7 @@ package main
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclusters,verbs=get;list;watch;update;patch
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclusters/status,verbs=patch;update
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclusters/status;managedclustersetbindings/status;managedclustersets/status;placements/status;placementdecisions/status,verbs=update;patch
-//+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclusters;managedclusters/accept;managedclusters/finalizers;managedclustersets;managedclustersets/bind;managedclustersets/finalizers;managedclustersets/join;managedclustersetbindings;managedclustersetbindings/finalizers;placements;placements/finalizers;managedclusters/status,verbs=create;get;list;patch;update;watch
+//+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclusters;managedclusters/accept;managedclusters/finalizers;managedclusters/status;managedclustersetbindings;managedclustersetbindings/finalizers;managedclustersets;managedclustersets/bind;managedclustersets/finalizers;managedclustersets/join;placements;placements/finalizers,verbs=create;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclusters;managedclusters/status;managedclusters/finalizers,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclusters;managedclustersets,verbs=get;list;watch
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclusters;managedclustersets;managedclustersetbindings,verbs=get;list;watch;patch;update;delete

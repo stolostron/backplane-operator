@@ -62,6 +62,7 @@ import (
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/config"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
@@ -72,14 +73,14 @@ import (
 )
 
 const (
-	crdName    = "multiclusterengines.multicluster.openshift.io"
-	crdsDir    = "pkg/templates/crds"
-	NoCacheEnv = "DISABLE_CLIENT_CACHE"
+	crdName = "multiclusterengines.multicluster.openshift.io"
+	crdsDir = "pkg/templates/crds"
 )
 
 var (
-	scheme   = runtime.NewScheme()
-	setupLog = ctrl.Log.WithName("setup")
+	cacheDuration time.Duration = time.Minute * 5
+	scheme                      = runtime.NewScheme()
+	setupLog                    = ctrl.Log.WithName("setup")
 )
 
 func init() {
@@ -174,6 +175,9 @@ func main() {
 		LeaseDuration:          &leaseDuration,
 		RenewDeadline:          &renewDeadline,
 		RetryPeriod:            &retryPeriod,
+		Controller: config.Controller{
+			CacheSyncTimeout: cacheDuration,
+		},
 		// LeaderElectionNamespace: "backplane-operator-system", // Ensure this is commented out. Uncomment only for running operator locally.
 	}
 
