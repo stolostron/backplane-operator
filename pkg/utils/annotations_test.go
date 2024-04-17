@@ -41,6 +41,52 @@ func TestIsPaused(t *testing.T) {
 
 }
 
+func Test_AnnotationMatch(t *testing.T) {
+	tests := []struct {
+		name string
+		new  map[string]string
+		old  map[string]string
+		want bool
+	}{
+		{
+			name: "Annotations should match",
+			new: map[string]string{
+				AnnotationMCEPause:         "false",
+				AnnotationImageRepo:        "sample-image-repo",
+				AnnotationImageOverridesCM: "sample-image-override",
+			},
+			old: map[string]string{
+				DeprecatedAnnotationMCEPause:         "false",
+				DeprecatedAnnotationImageRepo:        "sample-image-repo",
+				DeprecatedAnnotationImageOverridesCM: "sample-image-override",
+			},
+			want: true,
+		},
+		{
+			name: "Annotations should not match",
+			new: map[string]string{
+				AnnotationMCEPause:         "false",
+				AnnotationImageRepo:        "sample-image-repo",
+				AnnotationImageOverridesCM: "sample-image-override",
+			},
+			old: map[string]string{
+				DeprecatedAnnotationMCEPause:         "true",
+				DeprecatedAnnotationImageRepo:        "sample-image-repo",
+				DeprecatedAnnotationImageOverridesCM: "sample-image-override",
+			},
+			want: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := AnnotationsMatch(tt.old, tt.new); got != tt.want {
+				t.Errorf("AnnotationsMatch(old, new) = got: %v, want: %v", got, tt.want)
+			}
+		})
+	}
+}
+
 func Test_getAnnotation(t *testing.T) {
 	type args struct {
 		instance *backplanev1.MultiClusterEngine
@@ -77,6 +123,48 @@ func Test_getAnnotation(t *testing.T) {
 			}
 		})
 	}
+}
+
+func Test_GetImageRepository(t *testing.T) {
+	t.Run("Get image repository for MCE", func(t *testing.T) {
+		mce := &backplanev1.MultiClusterEngine{
+			ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{
+				AnnotationImageRepo: "quay.io/foo",
+			}},
+		}
+		want := "quay.io/foo"
+		if got := GetImageRepository(mce); got != want {
+			t.Errorf("GetImageRepository(mce) = %v, want %v", got, want)
+		}
+	})
+}
+
+func Test_GetImageOverridesConfigmapName(t *testing.T) {
+	t.Run("Get image overrides configmap name for MCE", func(t *testing.T) {
+		mce := &backplanev1.MultiClusterEngine{
+			ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{
+				AnnotationImageOverridesCM: "image-override-cm",
+			}},
+		}
+		want := "image-override-cm"
+		if got := GetImageOverridesConfigmapName(mce); got != want {
+			t.Errorf("AnnotationImageOverridesCM(mce) = %v, want %v", got, want)
+		}
+	})
+}
+
+func Test_GetTemplateOverridesConfigmapName(t *testing.T) {
+	t.Run("Get template overrides configmap name for MCE", func(t *testing.T) {
+		mce := &backplanev1.MultiClusterEngine{
+			ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{
+				AnnotationTemplateOverridesCM: "template-override-cm",
+			}},
+		}
+		want := "template-override-cm"
+		if got := GetTemplateOverridesConfigmapName(mce); got != want {
+			t.Errorf("GetTemplateOverridesConfigmapName() = %v, want %v", got, want)
+		}
+	})
 }
 
 func TestOverrideImageRepository(t *testing.T) {

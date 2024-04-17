@@ -69,15 +69,15 @@ import (
 
 // MultiClusterEngineReconciler reconciles a MultiClusterEngine object
 type MultiClusterEngineReconciler struct {
-	Client               client.Client
-	UncachedClient       client.Client
-	CacheSpec            CacheSpec
-	Scheme               *runtime.Scheme
-	Images               map[string]string
-	StatusManager        *status.StatusTracker
-	Log                  logr.Logger
-	UpgradeableCond      utils.Condition
-	DeprecatedSpecFields map[string]bool
+	Client           client.Client
+	UncachedClient   client.Client
+	CacheSpec        CacheSpec
+	Scheme           *runtime.Scheme
+	Images           map[string]string
+	StatusManager    *status.StatusTracker
+	Log              logr.Logger
+	UpgradeableCond  utils.Condition
+	DeprecatedFields map[string]bool
 }
 
 const (
@@ -1660,19 +1660,26 @@ func (r *MultiClusterEngineReconciler) StopScheduleOperatorControllerResync() {
 }
 
 func (r *MultiClusterEngineReconciler) CheckDeprecatedFieldUsage(m *backplanev1.MultiClusterEngine) {
-	deprecatedSpecFields := []struct {
+	a := m.GetAnnotations()
+	df := []struct {
 		name      string
 		isPresent bool
-	}{}
-
-	if r.DeprecatedSpecFields == nil {
-		r.DeprecatedSpecFields = make(map[string]bool)
+	}{
+		{utils.DeprecatedAnnotationIgnoreOCPVersion, a[utils.DeprecatedAnnotationIgnoreOCPVersion] != ""},
+		{utils.DeprecatedAnnotationImageOverridesCM, a[utils.DeprecatedAnnotationImageOverridesCM] != ""},
+		{utils.DeprecatedAnnotationImageRepo, a[utils.DeprecatedAnnotationImageRepo] != ""},
+		{utils.DeprecatedAnnotationKubeconfig, a[utils.DeprecatedAnnotationKubeconfig] != ""},
+		{utils.DeprecatedAnnotationMCEPause, a[utils.DeprecatedAnnotationMCEPause] != ""},
 	}
 
-	for _, f := range deprecatedSpecFields {
-		if f.isPresent && !r.DeprecatedSpecFields[f.name] {
+	if r.DeprecatedFields == nil {
+		r.DeprecatedFields = make(map[string]bool)
+	}
+
+	for _, f := range df {
+		if f.isPresent && !r.DeprecatedFields[f.name] {
 			r.Log.Info(fmt.Sprintf("Warning: %s field usage is deprecated in operator.", f.name))
-			r.DeprecatedSpecFields[f.name] = true
+			r.DeprecatedFields[f.name] = true
 		}
 	}
 }
