@@ -230,6 +230,11 @@ spec:
                 required:
                 - name
                 type: object
+              machine_network:
+                description: MachineNetwork is the subnet provided by user for the
+                  ocp cluster. This will be used to create the node network and choose
+                  ip address for the node. Equivalent to install-config.yaml's machineNetwork.
+                type: string
               networkConfigRef:
                 description: NetworkConfigRef is the reference to a config map containing
                   network configuration files if necessary. Keys should be of the
@@ -243,7 +248,8 @@ spec:
                 type: object
                 x-kubernetes-map-type: atomic
               nodeIP:
-                description: NodeIP is the desired IP for the host
+                description: 'NodeIP is the desired IP for the host Deprecated: this
+                  field is ignored (will be removed in a future release).'
                 type: string
               sshKey:
                 description: SSHKey is the public Secure Shell (SSH) key to provide
