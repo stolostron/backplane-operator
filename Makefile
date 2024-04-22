@@ -127,6 +127,12 @@ docker-build: test ## Build docker image with the manager.
 docker-push: ## Push docker image with the manager.
 	docker push ${IMG}
 
+podman-build: test ## Build podman image with the manager.
+	podman build --build-arg LDFLAGS=${LDFLAGS} -t ${IMG} .
+
+podman-push: ## Push podman image with the manager.
+	podman push ${IMG}
+
 ##@ Deployment
 
 install: manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
@@ -189,6 +195,14 @@ bundle-build: ## Build the bundle image.
 bundle-push: ## Push the bundle image.
 	$(MAKE) docker-push IMG=$(BUNDLE_IMG)
 
+.PHONY: podman-bundle-build
+podman-bundle-build: ## Build the bundle image.
+	podman build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
+
+.PHONY: podman-bundle-push
+podman-bundle-push: ## Push the bundle image.
+	$(MAKE) podman-push IMG=$(BUNDLE_IMG)
+
 .PHONY: opm
 OPM = ./bin/opm
 opm: ## Download opm locally if necessary.
@@ -230,6 +244,11 @@ catalog-build: opm ## Build a catalog image.
 catalog-push: ## Push a catalog image.
 	$(MAKE) docker-push IMG=$(CATALOG_IMG)
 
+# Push the catalog image.
+.PHONY: podman-catalog-push
+podman-catalog-push: ## Push a catalog image.
+	$(MAKE) podman-push IMG=$(CATALOG_IMG)
+
 
 -include Makefile.dev 
 
@@ -241,6 +260,13 @@ test-image: ## Build a functional test image
 
 ft-install: ## Docker run the functional test image
 	docker run --env TEST_MODE="install" --volume ~/.kube/config:/opt/.kube/config $(REGISTRY)/backplane-operator-test:$(VERSION)
+
+podman-test-image: ## Build a functional test image
+	@echo "Building $(REGISTRY)/backplane-operator-test:$(VERSION)"
+	podman build . -f Dockerfile.test.prow -t $(REGISTRY)/backplane-operator-test:$(VERSION)
+
+podman-ft-install: ## Podman run the functional test image
+	podman run --env TEST_MODE="install" --volume ~/.kube/config:/opt/.kube/config $(REGISTRY)/backplane-operator-test:$(VERSION)
 
 functional-tests: ## Run ginkgo functional tests directly.
 	ginkgo -tags functional -v test/function_tests/backplane_operator_install_test
