@@ -28,7 +28,6 @@ type AvailabilityType string
 
 type HubSize string
 
-// Putting medium first here defaults it to Medium
 const (
 	Small      = "Small"
 	Medium     = "Medium"
