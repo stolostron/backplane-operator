@@ -22,34 +22,34 @@ var (
 		AnnotationIgnoreOCPVersion is an annotation used to indicate the operator should not check the OpenShift
 		Container Platform (OCP) version before proceeding when set.
 	*/
-	AnnotationIgnoreOCPVersion           = "multicluster.openshift.io/ignore-ocp-version"
+	AnnotationIgnoreOCPVersion           = "installer.multicluster.openshift.io/ignore-ocp-version"
 	DeprecatedAnnotationIgnoreOCPVersion = "ignoreOCPVersion"
 
 	/*
 		AnnotationImageOverridesCM is an annotation used in multiclusterengine to specify a custom ConfigMap containing
 		image overrides.
 	*/
-	AnnotationImageOverridesCM           = "multicluster.openshift.io/image-overrides-configmap"
+	AnnotationImageOverridesCM           = "installer.multicluster.openshift.io/image-overrides-configmap"
 	DeprecatedAnnotationImageOverridesCM = "imageOverridesCM"
 
 	/*
 		AnnotationImageRepo is an annotation used in multiclusterengine to specify a custom image repository to use.
 	*/
-	AnnotationImageRepo           = "multicluster.openshift.io/image-repository"
+	AnnotationImageRepo           = "installer.multicluster.openshift.io/image-repository"
 	DeprecatedAnnotationImageRepo = "imageRepository"
 
 	/*
 		AnnotationKubeconfig is an annotation used to specify the secret name residing in target containing the
 		kubeconfig to access the remote cluster.
 	*/
-	AnnotationKubeconfig           = "multicluster.openshift.io/kubeconfig"
+	AnnotationKubeconfig           = "installer.multicluster.openshift.io/kubeconfig"
 	DeprecatedAnnotationKubeconfig = "mce-kubeconfig"
 
 	/*
 		AnnotationMCEPause is an annotation used in multiclusterengine to identify if the multiclusterengine is
 		paused or not.
 	*/
-	AnnotationMCEPause           = "multicluster.openshift.io/pause"
+	AnnotationMCEPause           = "installer.multicluster.openshift.io/pause"
 	DeprecatedAnnotationMCEPause = "pause"
 
 	/*
@@ -62,7 +62,7 @@ var (
 		AnnotationTemplateOverridesCM is an annotation used in multiclusterengine to specify a custom ConfigMap
 		containing resource template overrides.
 	*/
-	AnnotationTemplateOverridesCM = "operator.multicluster.openshift.io/template-override-cm"
+	AnnotationTemplateOverridesCM = "installer.multicluster.openshift.io/template-override-configmap"
 )
 
 /*
