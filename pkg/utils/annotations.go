@@ -62,7 +62,7 @@ var (
 		AnnotationTemplateOverridesCM is an annotation used in multiclusterengine to specify a custom ConfigMap
 		containing resource template overrides.
 	*/
-	AnnotationTemplateOverridesCM = "installer.multicluster.openshift.io/template-override-cm"
+	AnnotationTemplateOverridesCM = "installer.multicluster.openshift.io/template-override-configmap"
 )
 
 /*
