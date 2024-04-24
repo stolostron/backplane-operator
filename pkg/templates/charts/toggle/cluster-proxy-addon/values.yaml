@@ -6,6 +6,7 @@ global:
     cluster_proxy_addon: ""
     cluster_proxy: ""
   templateOverrides: {}
+  hubSize: Small
 hubconfig:
   nodeSelector: null
   replicaCount: 1
@@ -13,4 +14,3 @@ hubconfig:
   tolerations: []
   ocpVersion: "4.12.0"
 org: open-cluster-management
-

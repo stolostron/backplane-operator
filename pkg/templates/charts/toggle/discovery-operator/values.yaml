@@ -1,4 +1,5 @@
 global:
+  hubSize: Small
   imageOverrides:
     discovery_operator: ''
   namespace: default

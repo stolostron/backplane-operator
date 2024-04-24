@@ -7,3 +7,5 @@ featureGates:
 agentImagePullSecret: ""
 enableAddOnDeploymentConfig: true
 hubDeployMode: AddOnTemplate
+global:
+  hubSize: Small

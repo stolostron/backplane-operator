@@ -8,14 +8,15 @@ global:
   imageOverrides:
     console_mce: ""
   templateOverrides: {}
-    # Available template overrides:
-    # console_mce_deployment_container_memory_request: <memory-value>
-    # console_mce_deployment_container_memory_limit: <memory-value>
-    # console_mce_deployment_container_cpu_request: <cpu-value>
-    # console_mce_deployment_container_cpu_limit: <cpu-value>
+  # Available template overrides:
+  # console_mce_deployment_container_memory_request: <memory-value>
+  # console_mce_deployment_container_memory_limit: <memory-value>
+  # console_mce_deployment_container_cpu_request: <cpu-value>
+  # console_mce_deployment_container_cpu_limit: <cpu-value>
   pullPolicy: Always
   namespace: default
   pullSecret: null
+  hubSize: Small
 hubconfig:
   nodeSelector: null
   proxyConfigs: {}

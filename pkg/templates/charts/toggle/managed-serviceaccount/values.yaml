@@ -1,4 +1,5 @@
 global:
+  hubSize: Small
   imageOverrides:
     managed_serviceaccount: ''
   namespace: default

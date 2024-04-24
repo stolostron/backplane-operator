@@ -1,4 +1,5 @@
 global:
+  hubSize: Small
   imageOverrides:
     assisted_image_service: ''
     assisted_installer: ''
