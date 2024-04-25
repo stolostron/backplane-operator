@@ -29,10 +29,10 @@ type AvailabilityType string
 type HubSize string
 
 const (
-	Small      = "Small"
-	Medium     = "Medium"
-	Large      = "Large"
-	ExtraLarge = "ExtraLarge"
+	Small  = "Small"
+	Medium = "Medium"
+	Large  = "Large"
+	XLarge = "XLarge"
 )
 
 // DeploymentMode
@@ -60,8 +60,8 @@ type MultiClusterEngineSpec struct {
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 
 	// The resource allocation bucket for this hub to use.
-	// Small, Medium, Large, ExtraLarge]. Defaults to Medium if not specified.
-	//+kubebuilder:validation:Enum:=Small;Medium;Large;ExtraLarge
+	// Small, Medium, Large, XLarge]. Defaults to Small if not specified.
+	//+kubebuilder:validation:Enum:=Small;Medium;Large;XLarge
 	//+kubebuilder:default:=Small
 	//+kubebuilder:validation:Type:=string
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Hub Size",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}

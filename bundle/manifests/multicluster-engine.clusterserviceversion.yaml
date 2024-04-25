@@ -14,7 +14,7 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    createdAt: "2024-04-01T22:23:48Z"
+    createdAt: "2024-04-25T18:14:26Z"
     operators.operatorframework.io/builder: operator-sdk-v1.34.1
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
   name: multicluster-engine.v0.0.1
@@ -41,7 +41,7 @@ spec:
         - urn:alm:descriptor:com.tectonic.ui:select:High
         - urn:alm:descriptor:com.tectonic.ui:select:Basic
       - description: The resource allocation bucket for this hub to use. Small, Medium,
-          Large, ExtraLarge]. Defaults to Medium if not specified.
+          Large, XLarge]. Defaults to Small if not specified.
         displayName: Hub Size
         path: hubSize
         x-descriptors:
@@ -586,6 +586,23 @@ spec:
           - addon.open-cluster-management.io
           resources:
           - clustermanagementaddons
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - addon.open-cluster-management.io
+          resources:
+          - clustermanagementaddons
+          - clustermanagementaddons/finalizers
+          - clustermanagementaddons/status
+          - managedclusteraddons
+          - managedclusteraddons/finalizers
+          - managedclusteraddons/status
           verbs:
           - create
           - delete
@@ -1553,6 +1570,8 @@ spec:
           - dnses
           verbs:
           - get
+          - list
+          - watch
         - apiGroups:
           - config.openshift.io
           resources:
