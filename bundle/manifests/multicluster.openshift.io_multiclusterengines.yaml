@@ -53,14 +53,14 @@ spec:
                   Options are: Basic and High (default)'
                 type: string
               hubSize:
-                default: Medium
+                default: Small
                 description: The resource allocation bucket for this hub to use. Small,
-                  Medium, Large, ExtraLarge]. Defaults to Medium if not specified.
+                  Medium, Large, XLarge]. Defaults to Small if not specified.
                 enum:
                 - Small
                 - Medium
                 - Large
-                - ExtraLarge
+                - XLarge
                 type: string
               imagePullSecret:
                 description: Override pull secret for accessing MultiClusterEngine

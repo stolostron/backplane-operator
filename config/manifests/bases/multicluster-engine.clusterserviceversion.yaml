@@ -28,7 +28,7 @@ spec:
         - urn:alm:descriptor:com.tectonic.ui:select:High
         - urn:alm:descriptor:com.tectonic.ui:select:Basic
       - description: The resource allocation bucket for this hub to use. Small, Medium,
-          Large, ExtraLarge]. Defaults to Medium if not specified.
+          Large, XLarge]. Defaults to Small if not specified.
         displayName: Hub Size
         path: hubSize
         x-descriptors:

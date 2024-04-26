@@ -8,6 +8,7 @@ global:
   templateOverrides: {}
   pullSecret: ""
   namespace: default
+  hubSize: Small
 hubconfig:
   nodeSelector: {}
   proxyConfigs: {}
