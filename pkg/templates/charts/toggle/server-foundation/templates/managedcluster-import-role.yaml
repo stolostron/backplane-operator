@@ -256,3 +256,9 @@ rules:
     - create
     - patch
     - update
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
