@@ -97,6 +97,82 @@ func Test_deduplicate(t *testing.T) {
 	}
 }
 
+func TestGetHubSize(t *testing.T) {
+	tests := []struct {
+		name string
+		mce  *backplanev1.MultiClusterEngine
+		want backplanev1.HubSize
+	}{
+		{
+			name: "get default",
+			mce:  &backplanev1.MultiClusterEngine{},
+			want: backplanev1.Small,
+		},
+		{
+			name: "set hubsize Small",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						AnnotationHubSize: "Small",
+					},
+				},
+			},
+			want: backplanev1.Small,
+		},
+		{
+			name: "set hubsize Small",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						AnnotationHubSize: "Small",
+					},
+				},
+			},
+			want: backplanev1.Small,
+		},
+		{
+			name: "set hubsize Medium",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						AnnotationHubSize: "Medium",
+					},
+				},
+			},
+			want: backplanev1.Medium,
+		},
+		{
+			name: "set hubsize Large",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						AnnotationHubSize: "Large",
+					},
+				},
+			},
+			want: backplanev1.Large,
+		},
+		{
+			name: "set hubsize XLarge",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						AnnotationHubSize: "XLarge",
+					},
+				},
+			},
+			want: backplanev1.XLarge,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := GetHubSize(tt.mce); got != tt.want {
+				t.Errorf("GetHubSize() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestGetHubType(t *testing.T) {
 	tests := []struct {
 		name string
