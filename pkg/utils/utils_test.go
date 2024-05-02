@@ -120,17 +120,6 @@ func TestGetHubSize(t *testing.T) {
 			want: backplanev1.Small,
 		},
 		{
-			name: "set hubsize Small",
-			mce: &backplanev1.MultiClusterEngine{
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{
-						AnnotationHubSize: "Small",
-					},
-				},
-			},
-			want: backplanev1.Small,
-		},
-		{
 			name: "set hubsize Medium",
 			mce: &backplanev1.MultiClusterEngine{
 				ObjectMeta: metav1.ObjectMeta{
