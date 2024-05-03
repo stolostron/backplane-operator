@@ -314,7 +314,11 @@ func injectValuesOverrides(values *Values, backplaneConfig *v1.MultiClusterEngin
 
 	values.Global.Namespace = backplaneConfig.Spec.TargetNamespace
 
-	values.Global.HubSize = backplaneConfig.Spec.HubSize
+	// TODO: remove this after backplaneConfig.Spec.HubSize is back
+	values.Global.HubSize = utils.GetHubSize(backplaneConfig)
+
+	// TODO: put this back later
+	// values.Global.HubSize = backplaneConfig.Spec.HubSize
 
 	values.Global.PullSecret = backplaneConfig.Spec.ImagePullSecret
 
