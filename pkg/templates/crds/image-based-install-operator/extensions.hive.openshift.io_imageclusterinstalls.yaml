@@ -279,6 +279,11 @@ spec:
                 - name
                 - namespace
                 type: object
+              bootTime:
+                description: BootTime indicates the time at which the host was requested
+                  to boot. Used to determine install timeouts.
+                format: date-time
+                type: string
               conditions:
                 description: Conditions is a list of conditions associated with syncing
                   to the cluster.
