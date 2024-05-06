@@ -588,6 +588,12 @@ rules:
   - addon.open-cluster-management.io
   resources:
   - clustermanagementaddons/status
+  verbs:
+  - patch
+- apiGroups:
+  - addon.open-cluster-management.io
+  resources:
+  - clustermanagementaddons/status
   - managedclusteraddons/status
   verbs:
   - patch
