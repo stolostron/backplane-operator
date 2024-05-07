@@ -9,7 +9,7 @@
 
 - repo_name: image-based-install-operator
   github_ref: "https://github.com/openshift/image-based-install-operator.git"
-  branch: "main"
+  branch: "backplane-2.6"
   operators:
     - name: image-based-install-operator
       bundlePath: "bundle/manifests/"
