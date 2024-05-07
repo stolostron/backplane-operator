@@ -59,3 +59,6 @@ rules:
 - apiGroups: ["multicluster.openshift.io"]
   resources: ["multiclusterengines"]
   verbs: ["list"]
+- apiGroups: [ "discovery.open-cluster-management.io" ]
+  resources: [ "discoveredclusters" ]
+  verbs: ["get", "list", "watch", "create", "update", "delete", "deletecollection", "patch"]
