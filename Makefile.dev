@@ -20,15 +20,19 @@ upstream-install: ## Installs the upstream Backplane Operator by deploying a Cat
 	bash ./hack/scripts/upstream-install.sh
 
 lint-operator-bundles: ## Lints the operator bundles
-	pip install -r hack/bundle-automation/requirements.txt
-	python3 ./hack/bundle-automation/generate-shell.py --lint
+	pip3 install -r hack/bundle-automation/requirements.txt
+	python3 ./hack/bundle-automation/generate-shell.py --lint-bundles
 
 regenerate-operator-bundles: ## Regenerates the operator bundles
-	pip install -r hack/bundle-automation/requirements.txt
-	python3 ./hack/bundle-automation/generate-shell.py
+	pip3 install -r hack/bundle-automation/requirements.txt
+	python3 ./hack/bundle-automation/generate-shell.py --update-bundles
+
+regenerate-sha-commits: ## Regenerates the operator bundles
+	pip3 install -r hack/bundle-automation/requirements.txt
+	python3 ./hack/bundle-automation/generate-shell.py --update-commits --repo backplane-pipeline --branch 2.6-integration
 
 regenerate-charts: ## Regenerates the charts 
-	pip install -r hack/bundle-automation/chart-requirements.txt
+	pip3 install -r hack/bundle-automation/chart-requirements.txt
 	python3 ./hack/bundle-automation/generate-charts.py --destination pkg/templates/
 
 catalog-deploy: ## Deploys backplane operator via subscription
