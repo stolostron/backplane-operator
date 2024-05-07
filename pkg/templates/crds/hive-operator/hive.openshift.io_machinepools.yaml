@@ -86,39 +86,6 @@ spec:
                 description: Platform is configuration for machine pool specific to
                   the platform.
                 properties:
-                  alibabacloud:
-                    description: AlibabaCloud is the configuration used when installing
-                      on Alibaba Cloud.
-                    properties:
-                      imageID:
-                        description: ImageID is the Image ID that should be used to
-                          create ECS instance. If set, the ImageID should belong to
-                          the same region as the cluster.
-                        type: string
-                      instanceType:
-                        description: InstanceType defines the ECS instance type. eg.
-                          ecs.g6.large
-                        type: string
-                      systemDiskCategory:
-                        description: SystemDiskCategory defines the category of the
-                          system disk.
-                        enum:
-                        - ""
-                        - cloud_efficiency
-                        - cloud_essd
-                        type: string
-                      systemDiskSize:
-                        description: SystemDiskSize defines the size of the system
-                          disk in gibibytes (GiB).
-                        minimum: 120
-                        type: integer
-                      zones:
-                        description: Zones is list of availability zones that can
-                          be used. eg. ["cn-hangzhou-i", "cn-hangzhou-h", "cn-hangzhou-j"]
-                        items:
-                          type: string
-                        type: array
-                    type: object
                   aws:
                     description: AWS is the configuration used when installing on
                       AWS.
@@ -195,6 +162,14 @@ spec:
                         description: InstanceType defines the ec2 instance type. eg.
                           m4-large
                         type: string
+                      userTags:
+                        additionalProperties:
+                          type: string
+                        description: UserTags contains the user defined tags to be
+                          supplied for the ec2 instance. Note that these will be merged
+                          with ClusterDeployment.Spec.Platform.AWS.UserTags, with
+                          this field taking precedence when keys collide.
+                        type: object
                       zones:
                         description: Zones is list of availability zones that can
                           be used.
@@ -292,6 +267,18 @@ spec:
                         description: NetworkProjectID specifies which project the
                           network and subnets exist in when they are not in the main
                           ProjectID.
+                        type: string
+                      onHostMaintenance:
+                        description: OnHostMaintenance determines the behavior when
+                          a maintenance event occurs that might cause the instance
+                          to reboot. This is required to be set to "Terminate" if
+                          you want to provision machine with attached GPUs. Otherwise,
+                          allowed values are "Migrate" and "Terminate". If omitted,
+                          the platform chooses a default, which is subject to change
+                          over time, currently that default is "Migrate".
+                        enum:
+                        - Migrate
+                        - Terminate
                         type: string
                       osDisk:
                         description: OSDisk defines the storage for instances.

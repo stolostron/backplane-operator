@@ -35,14 +35,12 @@ jobs:
 
       # Runs a set of commands using the runners shell
       - name: Lint Operator Bundles
-        continue-on-error: true
         id: lint_bundle
         run: |
           make lint-operator-bundles    
 
       # Runs a set of commands using the runners shell
       - name: Regenerate Operator Bundles
-        continue-on-error: true
         id: generate_bundle
         run: |
           make regenerate-operator-bundles
