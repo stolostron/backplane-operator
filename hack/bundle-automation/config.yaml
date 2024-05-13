@@ -1,4 +1,4 @@
-- repo_name: generate-hive-bundle
+- repo_name: hive
   gen_command: ./hack/bundle-automation/gen-hive-bundle.sh
   branch: mce-2.6
   sha: e11a23b88b31c989402ff0a79de21572bacd72e5
