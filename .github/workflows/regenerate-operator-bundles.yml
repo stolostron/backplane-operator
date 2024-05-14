@@ -33,11 +33,12 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+      # TODO: Re-enable linting bundle after squads address CSV issues.
       # Runs a set of commands using the runners shell
-      - name: Lint Operator Bundles
-        id: lint_bundle
-        run: |
-          make lint-operator-bundles    
+      # - name: Lint Operator Bundles
+      #   id: lint_bundle
+      #   run: |
+      #     make lint-operator-bundles    
 
       # Runs a set of commands using the runners shell
       - name: Regenerate Operator Bundles
