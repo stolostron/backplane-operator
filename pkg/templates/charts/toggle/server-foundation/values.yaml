@@ -5,6 +5,7 @@ global:
   pullSecret: ""
   namespace: default
   hubSize: Small
+  deployOnOCP: ""
 hubconfig:
   nodeSelector: {}
   proxyConfigs: {}

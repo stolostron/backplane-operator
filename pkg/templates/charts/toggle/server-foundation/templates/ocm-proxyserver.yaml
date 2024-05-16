@@ -1,3 +1,4 @@
+{{- if .Values.global.deployOnOCP }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -131,3 +132,4 @@ spec:
         configMap:
           defaultMode: 420
           name: openshift-service-ca.crt
+{{- end }}
