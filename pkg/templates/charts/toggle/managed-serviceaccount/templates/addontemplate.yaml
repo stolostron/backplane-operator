@@ -12,7 +12,7 @@ spec:
         metadata:
           annotations:
             addon.open-cluster-management.io/deletion-orphan: ''
-          name: '{{ `{{INSTALL_NAMESPACE}}` }}'
+          name: open-cluster-management-agent-addon
       - apiVersion: rbac.authorization.k8s.io/v1
         kind: ClusterRole
         metadata:

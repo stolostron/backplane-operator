@@ -320,14 +320,6 @@ var _ = Describe("BackplaneConfig controller", func() {
 
 		msaTests = testList{
 			{
-				Name: "Managed-ServiceAccount Addon Deployment Config",
-				NamespacedName: types.NamespacedName{
-					Name:      "managed-serviceaccount-addon-deploy-config",
-					Namespace: DestinationNamespace},
-				ResourceType: addonDeploymentConfig,
-				Expected:     nil,
-			},
-			{
 				Name:           "Managed-ServiceAccount Addon Template",
 				NamespacedName: types.NamespacedName{Name: "managed-serviceaccount"},
 				ResourceType:   addonTemplate,

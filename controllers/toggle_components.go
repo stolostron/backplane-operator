@@ -207,9 +207,6 @@ func (r *MultiClusterEngineReconciler) ensureNoManagedServiceAccount(ctx context
 	}
 
 	r.StatusManager.AddComponent(toggle.DisabledStatus(types.NamespacedName{Name: "managedservice", Namespace: backplaneConfig.Spec.TargetNamespace}, []*unstructured.Unstructured{}))
-	// TODO: remove this in a future release, since from 2.9, we change the managed-serviceaccount to a template type
-	// addon, so there is no managed-serviceaccount-addon-manager deployment on the hub cluster
-	r.StatusManager.RemoveComponent(toggle.EnabledStatus(types.NamespacedName{Name: "managed-serviceaccount-addon-manager", Namespace: backplaneConfig.Spec.TargetNamespace}))
 
 	// Deletes all templates
 	for _, template := range templates {

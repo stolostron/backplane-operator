@@ -1,6 +1,0 @@
-apiVersion: addon.open-cluster-management.io/v1alpha1
-kind: AddOnDeploymentConfig
-metadata:
-  name: managed-serviceaccount-addon-deploy-config
-  namespace: '{{ .Values.global.namespace }}'
-spec: {}

@@ -16,10 +16,7 @@ spec:
         type: All
     type: Placements
   supportedConfigs:
-  - defaultConfig:
-      name: managed-serviceaccount-addon-deploy-config
-      namespace: '{{ .Values.global.namespace }}'
-    group: addon.open-cluster-management.io
+  - group: addon.open-cluster-management.io
     resource: addondeploymentconfigs
   - defaultConfig:
       name: managed-serviceaccount-2.6
