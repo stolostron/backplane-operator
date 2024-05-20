@@ -83,6 +83,30 @@ spec:
                   will be used as the default value. e.g. `oc get infrastructure cluster
                   -o jsonpath='{.status.apiServerURL}'`
                 type: string
+              installMode:
+                description: InstallMode is the mode to install the klusterlet
+                properties:
+                  noOperator:
+                    description: NoOperator is the setting of klusterlet installation
+                      when install type is noOperator.
+                    properties:
+                      postfix:
+                        description: Postfix is the postfix of the klusterlet name.
+                          The name of the klusterlet is "klusterlet" if it is not
+                          set, and "klusterlet-{Postfix}". The install namespace is
+                          "open-cluster-management-agent" if it is not set, and "open-cluster-management-{Postfix}".
+                        maxLength: 33
+                        pattern: ^[-a-z0-9]*[a-z0-9]$
+                        type: string
+                    type: object
+                  type:
+                    default: default
+                    description: InstallModeType is the type of install mode.
+                    enum:
+                      - default
+                      - noOperator
+                    type: string
+                type: object
               nodePlacement:
                 description: NodePlacement enables explicit control over the scheduling
                   of the agent components. If the placement is nil, the placement
