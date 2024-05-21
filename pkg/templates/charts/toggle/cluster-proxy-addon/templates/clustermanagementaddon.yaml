@@ -1,13 +1,24 @@
 apiVersion: addon.open-cluster-management.io/v1alpha1
 kind: ClusterManagementAddOn
 metadata:
+  annotations:
+    addon.open-cluster-management.io/lifecycle: addon-manager
   name: cluster-proxy
 spec:
   addOnMeta:
     displayName: cluster-proxy
     description: cluster-proxy
+  installStrategy:
+    placements:
+      - name: global
+        namespace: open-cluster-management-global-set
+        rolloutStrategy:
+          type: All
+    type: Placements
   supportedConfigs:
   - group: proxy.open-cluster-management.io
     resource: managedproxyconfigurations
     defaultConfig:
       name: cluster-proxy
+  - group: addon.open-cluster-management.io
+    resource: addondeploymentconfigs
