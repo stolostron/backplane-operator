@@ -41,6 +41,7 @@ type Global struct {
 	Namespace         string            `json:"namespace" structs:"namespace"`
 	ConfigSecret      string            `json:"configSecret" structs:"configSecret"`
 	HubSize           v1.HubSize        `json:"hubSize" structs:"hubSize" yaml:"hubSize"`
+	DeployOnOCP       bool            `json:"deployOnOCP" structs:"deployOnOCP"`
 }
 
 type HubConfig struct {
@@ -81,7 +82,7 @@ func (u *Toleration) MarshalJSON() ([]byte, error) {
 	var operator corev1.TolerationOperator = u.Operator
 	var effect corev1.TaintEffect = u.Effect
 
-	//Marshal all Toleration fields that are a number or true/false into a string
+	// Marshal all Toleration fields that are a number or true/false into a string
 	for i := 0; i < reflect.Indirect(v).NumField(); i++ {
 		switch reflect.Indirect(v).Field(i).Kind() {
 		case reflect.String:
@@ -285,18 +286,28 @@ func renderTemplates(chartPath string, backplaneConfig *v1.MultiClusterEngine, i
 	}
 
 	for fileName, templateFile := range rawTemplates {
+		if len(templateFile) == 0 {
+			continue
+		}
+
 		unstructured := &unstructured.Unstructured{}
 		if err = yaml.Unmarshal([]byte(templateFile), unstructured); err != nil {
 			return nil, append(errs, fmt.Errorf("error converting file %s to unstructured", fileName))
 		}
 
+		kind := unstructured.GetKind()
+		if kind == "" {
+			continue
+
+		}
 		utils.AddBackplaneConfigLabels(unstructured, backplaneConfig.Name)
 
 		// Add namespace to namespaced resources
-		switch unstructured.GetKind() {
+		switch kind {
 		case "Deployment", "ServiceAccount", "Role", "RoleBinding", "Service", "ConfigMap", "Route":
 			unstructured.SetNamespace(backplaneConfig.Spec.TargetNamespace)
 		}
+
 		templates = append(templates, unstructured)
 	}
 
@@ -321,6 +332,9 @@ func injectValuesOverrides(values *Values, backplaneConfig *v1.MultiClusterEngin
 	// values.Global.HubSize = backplaneConfig.Spec.HubSize
 
 	values.Global.PullSecret = backplaneConfig.Spec.ImagePullSecret
+
+	// TODO: check if operator is working on OCP cluster
+	values.Global.DeployOnOCP = true
 
 	if v1.IsInHostedMode(backplaneConfig) {
 		secretNN, err := utils.GetHostedCredentialsSecret(backplaneConfig)
