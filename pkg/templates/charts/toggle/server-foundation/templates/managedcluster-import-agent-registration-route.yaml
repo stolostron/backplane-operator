@@ -1,3 +1,4 @@
+{{- if .Values.global.deployOnOCP }}
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
@@ -13,3 +14,4 @@ spec:
   to:
     kind: Service
     name: agent-registration
+  {{- end }}
