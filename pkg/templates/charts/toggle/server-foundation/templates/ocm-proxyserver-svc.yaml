@@ -1,6 +1,6 @@
 # Copyright (c) 2021 Red Hat, Inc.
 # Copyright Contributors to the Open Cluster Management project
-
+{{- if .Values.global.deployOnOCP }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -18,3 +18,4 @@ spec:
       protocol: TCP
   selector:
     control-plane: ocm-proxyserver
+{{- end }}
