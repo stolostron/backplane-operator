@@ -69,7 +69,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
-	//+kubebuilder:scaffold:imports
+	// +kubebuilder:scaffold:imports
 )
 
 const (
@@ -110,7 +110,7 @@ func init() {
 
 	utilruntime.Must(operatorv1.AddToScheme(scheme))
 
-	//+kubebuilder:scaffold:scheme
+	// +kubebuilder:scaffold:scheme
 }
 
 func main() {
@@ -146,6 +146,12 @@ func main() {
 	}
 	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
+
+	err := utils.DetectOpenShift(ctrl.GetConfigOrDie())
+	if err != nil {
+		setupLog.Error(err, "unable to detect if cluster is openShift")
+		os.Exit(1)
+	}
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
@@ -216,7 +222,7 @@ func main() {
 	// the operator can be upgraded stays within the mce controller.
 	setupLog.Info("Setting OperatorCondition.")
 	upgradeableCondition, err := utils.NewOperatorCondition(uncachedClient, operatorsapiv2.Upgradeable)
-	ctx := context.Background()
+	ctx := ctrl.SetupSignalHandler()
 
 	if err != nil {
 		setupLog.Error(err, "Cannot create the Upgradeable Operator Condition")
@@ -276,7 +282,7 @@ func main() {
 			os.Exit(1)
 		}
 	}
-	//+kubebuilder:scaffold:builder
+	// +kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up health check")
@@ -303,7 +309,7 @@ func main() {
 	}
 
 	setupLog.Info("starting manager")
-	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
+	if err := mgr.Start(ctx); err != nil {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
