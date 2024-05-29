@@ -53,16 +53,6 @@ spec:
                 description: 'Specifies deployment replication for improved availability.
                   Options are: Basic and High (default)'
                 type: string
-              hubSize:
-                default: Small
-                description: The resource allocation bucket for this hub to use. Small,
-                  Medium, Large, XLarge]. Defaults to Small if not specified.
-                enum:
-                - Small
-                - Medium
-                - Large
-                - XLarge
-                type: string
               imagePullSecret:
                 description: Override pull secret for accessing MultiClusterEngine
                   operand and endpoint images

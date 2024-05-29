@@ -14,8 +14,8 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    createdAt: "2024-04-25T18:14:26Z"
-    operators.operatorframework.io/builder: operator-sdk-v1.34.1
+    createdAt: "2024-05-29T13:26:27Z"
+    operators.operatorframework.io/builder: operator-sdk-v1.32.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
   name: multicluster-engine.v0.0.1
   namespace: placeholder
@@ -567,6 +567,17 @@ spec:
         - apiGroups:
           - addon.open-cluster-management.io
           resources:
+          - addondeploymentconfigs
+          - clustermanagementaddons
+          verbs:
+          - create
+          - get
+          - list
+          - update
+          - watch
+        - apiGroups:
+          - addon.open-cluster-management.io
+          resources:
           - addontemplates
           verbs:
           - create
@@ -658,6 +669,12 @@ spec:
           - managedclusteraddons/finalizers
           verbs:
           - update
+        - apiGroups:
+          - addon.open-cluster-management.io
+          resources:
+          - clustermanagementaddons/status
+          verbs:
+          - patch
         - apiGroups:
           - addon.open-cluster-management.io
           resources:
@@ -1729,6 +1746,12 @@ spec:
           - get
           - patch
           - update
+        - apiGroups:
+          - events.k8s.io
+          resources:
+          - events
+          verbs:
+          - create
         - apiGroups:
           - extensions.hive.openshift.io
           resources:
