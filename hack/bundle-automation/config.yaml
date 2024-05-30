@@ -25,7 +25,8 @@
     - name: assisted-service
       bundlePath: "deploy/olm-catalog/manifests/"
       imageMappings:
-        assisted-service: assisted_service
+        assisted-service: assisted_service_9
+        assisted-service-el8: assisted_service_8
         postgresql-12-c8s: postgresql_12
         assisted-installer-agent: assisted_installer_agent
         assisted-installer-controller: assisted_installer_controller
