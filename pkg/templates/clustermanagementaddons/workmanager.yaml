@@ -15,3 +15,6 @@ spec:
       namespace: open-cluster-management-global-set
       rolloutStrategy:
         type: All
+  supportedConfigs:
+  - group: addon.open-cluster-management.io
+    resource: addondeploymentconfigs
