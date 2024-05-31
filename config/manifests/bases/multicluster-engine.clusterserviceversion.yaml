@@ -27,12 +27,6 @@ spec:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:select:High
         - urn:alm:descriptor:com.tectonic.ui:select:Basic
-      - description: The resource allocation bucket for this hub to use. Small, Medium,
-          Large, XLarge]. Defaults to Small if not specified.
-        displayName: Hub Size
-        path: hubSize
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: Override pull secret for accessing MultiClusterEngine operand
           and endpoint images
         displayName: Image Pull Secret

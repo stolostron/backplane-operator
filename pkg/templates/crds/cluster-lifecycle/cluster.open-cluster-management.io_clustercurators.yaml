@@ -358,11 +358,7 @@ spec:
                       the intermediate cluster version when performing EUS to EUS
                       upgrades. Setting both this value and DesiredUpdate will trigger
                       an EUS to EUS upgrade.
-                    maxLength: 512
                     type: string
-                    x-kubernetes-validations:
-                    - message: Value is immutable
-                      rule: self == oldSelf
                   monitorTimeout:
                     default: 120
                     description: MonitorTimeout defines the monitor process timeout,
@@ -453,6 +449,23 @@ spec:
                       for the cluster and region.
                     type: string
                 type: object
+                x-kubernetes-validations:
+                - message: The intermediateUpdate cannot be modified
+                  rule: '!(has(oldSelf.intermediateUpdate) && self.intermediateUpdate
+                    != oldSelf.intermediateUpdate)'
+                - message: The desiredUpdate cannot be modified when intermediateUpdate
+                    exists
+                  rule: '!(has(oldSelf.intermediateUpdate) && oldSelf.intermediateUpdate
+                    != '''' && has(oldSelf.desiredUpdate) && self.desiredUpdate !=
+                    oldSelf.desiredUpdate)'
+                - message: The intermediateUpdate cannot be created if desiredUpdate
+                    is missing or empty
+                  rule: '!has(self.intermediateUpdate) || (has(self.desiredUpdate)
+                    && self.desiredUpdate != '''')'
+                - message: The intermediateUpdate cannot be added via update if desiredUpdate
+                    already exists
+                  rule: '!(has(self.intermediateUpdate) && !has(oldSelf.intermediateUpdate)
+                    && has(oldSelf.desiredUpdate) && oldSelf.desiredUpdate != '''')'
             type: object
           status:
             description: ClusterCuratorStatus defines the observed state of ClusterCurator
