@@ -9,5 +9,5 @@ spec:
   groups:
     - name: acm_managed_cluster_worker_cores.rules
       rules:
-        - expr: sum by (hub_cluster_id, managed_cluster_id) (acm_managed_cluster_worker_cores)
-          record: 'acm_managed_cluster_worker_cores:sum'
+        - expr: max by (hub_cluster_id, managed_cluster_id) (acm_managed_cluster_worker_cores)
+          record: 'acm_managed_cluster_worker_cores:max'
