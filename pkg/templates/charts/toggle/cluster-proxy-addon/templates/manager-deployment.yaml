@@ -8,6 +8,8 @@ metadata:
     component: cluster-proxy-addon-manager
 spec:
   replicas: {{ .Values.hubconfig.replicaCount }}
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       chart: cluster-proxy-addon-2.1.0
