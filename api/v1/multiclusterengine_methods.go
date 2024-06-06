@@ -200,21 +200,6 @@ func validComponent(c ComponentConfig) bool {
 }
 
 /*
-IsInHostedMode checks if the MultiClusterEngine has an annotation indicating it is in hosted mode.
-Returns true if the annotation is present and its value is "ModeHosted," otherwise false.
-*/
-func IsInHostedMode(mce *MultiClusterEngine) bool {
-	a := mce.GetAnnotations()
-	if a == nil {
-		return false
-	}
-	if a["deploymentmode"] == string(ModeHosted) {
-		return true
-	}
-	return false
-}
-
-/*
 GetLegacyPrometheusKind returns a list of legacy kind resources that are required to be removed before updating to
 ACM 2.9 and later.
 */

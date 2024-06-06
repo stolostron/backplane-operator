@@ -43,8 +43,6 @@ const (
 	HABasic AvailabilityType = "Basic"
 	// HAHigh stands up most app subscriptions with a replicaCount of 2
 	HAHigh AvailabilityType = "High"
-	// ModeHosted deploys the MCE on a hosted virtual cluster
-	ModeHosted DeploymentMode = "Hosted"
 	// ModeStandalone deployos the MCE in the default manner
 	ModeStandalone DeploymentMode = "Standalone"
 )

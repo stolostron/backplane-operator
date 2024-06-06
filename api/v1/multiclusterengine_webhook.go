@@ -159,6 +159,17 @@ func (r *MultiClusterEngine) ValidateCreate() (admission.Warnings, error) {
 	ctx := context.Background()
 	backplaneconfiglog.Info("validate create", "name", r.Name)
 
+	mceList := &MultiClusterEngineList{}
+	if err := Client.List(ctx, mceList); err != nil {
+		return nil, fmt.Errorf("unable to list BackplaneConfigs: %s", err)
+	}
+
+	// Prevent two standalone MCE's
+	if len(mceList.Items) > 0 {
+		existingMCE := mceList.Items[0]
+		return nil, fmt.Errorf("MultiClusterEngine in Standalone mode already exists: `%s`", existingMCE.GetName())
+	}
+
 	if (r.Spec.AvailabilityConfig != HABasic) && (r.Spec.AvailabilityConfig != HAHigh) && (r.Spec.AvailabilityConfig != "") {
 		return nil, ErrInvalidAvailability
 	}
@@ -172,27 +183,6 @@ func (r *MultiClusterEngine) ValidateCreate() (admission.Warnings, error) {
 		}
 	}
 
-	mceList := &MultiClusterEngineList{}
-	if err := Client.List(ctx, mceList); err != nil {
-		return nil, fmt.Errorf("unable to list BackplaneConfigs: %s", err)
-	}
-
-	targetNS := r.Spec.TargetNamespace
-	if targetNS == "" {
-		targetNS = DefaultTargetNamespace
-	}
-
-	for _, mce := range mceList.Items {
-		mce := mce
-		if mce.Spec.TargetNamespace == targetNS || (targetNS == DefaultTargetNamespace && mce.Spec.TargetNamespace == "") {
-			return nil, fmt.Errorf("%w: MultiClusterEngine with targetNamespace already exists: '%s'",
-				ErrInvalidNamespace, mce.Name)
-		}
-		if !IsInHostedMode(r) && !IsInHostedMode(&mce) {
-			return nil, fmt.Errorf("%w: MultiClusterEngine in Standalone mode already exists: `%s`. "+
-				"Only one resource may exist in Standalone mode.", ErrInvalidDeployMode, mce.Name)
-		}
-	}
 	return nil, nil
 }
 
@@ -204,9 +194,6 @@ func (r *MultiClusterEngine) ValidateUpdate(old runtime.Object) (admission.Warni
 	backplaneconfiglog.Info(oldMCE.Spec.TargetNamespace)
 	if (r.Spec.TargetNamespace != oldMCE.Spec.TargetNamespace) && (oldMCE.Spec.TargetNamespace != "") {
 		return nil, fmt.Errorf("%w: changes cannot be made to target namespace", ErrInvalidNamespace)
-	}
-	if IsInHostedMode(r) != IsInHostedMode(oldMCE) {
-		return nil, fmt.Errorf("%w: changes cannot be made to DeploymentMode", ErrInvalidDeployMode)
 	}
 
 	oldNS, newNS := "", ""
