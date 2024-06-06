@@ -496,8 +496,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 					backplaneConfig.Annotations = annotations
 					_ = k8sClient.Update(ctx, backplaneConfig)
 
-					reconciler.StopScheduleOperatorControllerResync()
-					return utils.IsPaused(backplaneConfig) && !scheduler.IsRunning()
+					return utils.IsPaused(backplaneConfig)
 				}, timeout, interval).Should(BeTrue())
 			})
 		})
