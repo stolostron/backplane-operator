@@ -1,3 +1,4 @@
+# Build the backplane-operator binary
 FROM registry.ci.openshift.org/stolostron/builder:go1.20-linux AS builder
 
 WORKDIR /workspace
