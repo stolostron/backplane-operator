@@ -5,4 +5,5 @@
 !**/*.sum
 
 # Exclude test files
-**/*_test.go
+# **/*_test.go
+# **/test/**
