@@ -41,7 +41,7 @@ type Global struct {
 	Namespace         string            `json:"namespace" structs:"namespace"`
 	ConfigSecret      string            `json:"configSecret" structs:"configSecret"`
 	HubSize           v1.HubSize        `json:"hubSize" structs:"hubSize" yaml:"hubSize"`
-	DeployOnOCP       bool            `json:"deployOnOCP" structs:"deployOnOCP"`
+	DeployOnOCP       bool              `json:"deployOnOCP" structs:"deployOnOCP"`
 }
 
 type HubConfig struct {
@@ -333,8 +333,7 @@ func injectValuesOverrides(values *Values, backplaneConfig *v1.MultiClusterEngin
 
 	values.Global.PullSecret = backplaneConfig.Spec.ImagePullSecret
 
-	// TODO: check if operator is working on OCP cluster
-	values.Global.DeployOnOCP = true
+	values.Global.DeployOnOCP = utils.DeployOnOCP()
 
 	if v1.IsInHostedMode(backplaneConfig) {
 		secretNN, err := utils.GetHostedCredentialsSecret(backplaneConfig)
