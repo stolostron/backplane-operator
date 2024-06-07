@@ -3,6 +3,7 @@
 package renderer
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -34,14 +35,15 @@ type Values struct {
 }
 
 type Global struct {
-	ImageOverrides    map[string]string `json:"imageOverrides" structs:"imageOverrides"`
-	TemplateOverrides map[string]string `json:"templateOverrides" structs:"templateOverrides"`
-	PullPolicy        string            `json:"pullPolicy" structs:"pullPolicy"`
-	PullSecret        string            `json:"pullSecret" structs:"pullSecret"`
-	Namespace         string            `json:"namespace" structs:"namespace"`
-	ConfigSecret      string            `json:"configSecret" structs:"configSecret"`
-	HubSize           v1.HubSize        `json:"hubSize" structs:"hubSize" yaml:"hubSize"`
-	DeployOnOCP       bool              `json:"deployOnOCP" structs:"deployOnOCP"`
+	ImageOverrides      map[string]string `json:"imageOverrides" structs:"imageOverrides"`
+	TemplateOverrides   map[string]string `json:"templateOverrides" structs:"templateOverrides"`
+	PullPolicy          string            `json:"pullPolicy" structs:"pullPolicy"`
+	PullSecret          string            `json:"pullSecret" structs:"pullSecret"`
+	Namespace           string            `json:"namespace" structs:"namespace"`
+	ConfigSecret        string            `json:"configSecret" structs:"configSecret"`
+	HubSize             v1.HubSize        `json:"hubSize" structs:"hubSize" yaml:"hubSize"`
+	DeployOnOCP         bool              `json:"deployOnOCP" structs:"deployOnOCP"`
+	ServingCertCABundle string            `json:"servingCertCABundle" structs:"servingCertCABundle"`
 }
 
 type HubConfig struct {
@@ -334,6 +336,14 @@ func injectValuesOverrides(values *Values, backplaneConfig *v1.MultiClusterEngin
 	values.Global.PullSecret = backplaneConfig.Spec.ImagePullSecret
 
 	values.Global.DeployOnOCP = utils.DeployOnOCP()
+	if !values.Global.DeployOnOCP {
+		servingCertCABundle, err := utils.GetServingCertCABundle()
+		if err != nil {
+			fmt.Printf("error getting serving cert ca bundle: %s\n", err)
+		} else {
+			values.Global.ServingCertCABundle = base64.StdEncoding.EncodeToString([]byte(servingCertCABundle))
+		}
+	}
 
 	if v1.IsInHostedMode(backplaneConfig) {
 		secretNN, err := utils.GetHostedCredentialsSecret(backplaneConfig)
