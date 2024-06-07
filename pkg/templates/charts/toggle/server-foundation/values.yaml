@@ -6,6 +6,7 @@ global:
   namespace: default
   hubSize: Small
   deployOnOCP: ""
+  servingCertCABundle: ""
 hubconfig:
   nodeSelector: {}
   proxyConfigs: {}

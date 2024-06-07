@@ -25,9 +25,15 @@ import (
 	"crypto/tls"
 	"flag"
 	"fmt"
+	"github.com/stolostron/backplane-operator/controllers/mcewebhook"
+	"k8s.io/client-go/kubernetes"
+	"open-cluster-management.io/sdk-go/pkg/servingcert"
 	"os"
 	"time"
 
+	configv1 "github.com/openshift/api/config/v1"
+	operatorv1 "github.com/openshift/api/operator/v1"
+	hiveconfig "github.com/openshift/hive/apis/hive/v1"
 	operatorsapiv2 "github.com/operator-framework/api/pkg/operators/v2"
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 	"github.com/stolostron/backplane-operator/controllers"
@@ -35,14 +41,9 @@ import (
 	"github.com/stolostron/backplane-operator/pkg/status"
 	"github.com/stolostron/backplane-operator/pkg/utils"
 	"github.com/stolostron/backplane-operator/pkg/version"
+	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clustermanager "open-cluster-management.io/api/operator/v1"
-
-	configv1 "github.com/openshift/api/config/v1"
-	operatorv1 "github.com/openshift/api/operator/v1"
-	hiveconfig "github.com/openshift/hive/apis/hive/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
-
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -245,6 +246,39 @@ func main() {
 		os.Exit(1)
 	}
 
+	if !utils.DeployOnOCP() {
+		kubeClient, err := kubernetes.NewForConfig(ctrl.GetConfigOrDie())
+		if err != nil {
+			setupLog.Error(err, "unable to create kubeClient")
+			os.Exit(1)
+		}
+
+		operatorNamespace := utils.OperatorNamespace()
+
+		utils.NewGlobalServingCertCABundleGetter(kubeClient, servingcert.DefaultCABundleConfigmapName, operatorNamespace)
+
+		servingcert.NewServingCertController(utils.OperatorNamespace(), kubeClient).
+			WithTargetServingCerts([]servingcert.TargetServingCertOptions{
+				{
+					Name:      "multicluster-engine-operator-webhook",
+					HostNames: []string{fmt.Sprintf("multicluster-engine-operator-webhook-service.%s.svc", operatorNamespace)},
+					LoadDir:   "/tmp/k8s-webhook-server/serving-certs",
+				},
+				{
+					Name:      "ocm-webhook",
+					HostNames: []string{fmt.Sprintf("ocm-webhook.%s.svc", operatorNamespace)},
+				},
+			}).Start(ctx)
+
+		if err = (&mcewebhook.Reconciler{
+			Client:    mgr.GetClient(),
+			Namespace: operatorNamespace,
+		}).SetupWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create mce webhook controller", "controller", "MultiClusterEngine")
+			os.Exit(1)
+		}
+	}
+
 	// Render CRD templates
 
 	var backplaneConfig *backplanev1.MultiClusterEngine
@@ -375,6 +409,17 @@ func ensureWebhooks(k8sClient client.Client) error {
 				UID:        owner.UID,
 			},
 		})
+		if !utils.DeployOnOCP() {
+			servingCertCABundle, err := utils.GetServingCertCABundle()
+			if err != nil {
+				fmt.Printf("error getting serving cert ca bundle: %s\n", err)
+			} else {
+				validatingWebhook.Webhooks[0].ClientConfig.CABundle = []byte(servingCertCABundle)
+			}
+			if err = utils.DumpServingCertSecret(); err != nil {
+				fmt.Printf("error dumping serving cert secret: %s\n", err)
+			}
+		}
 
 		existingWebhook := &admissionregistration.ValidatingWebhookConfiguration{}
 		existingWebhook.SetGroupVersionKind(schema.GroupVersionKind{
