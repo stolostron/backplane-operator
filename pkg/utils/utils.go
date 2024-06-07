@@ -3,12 +3,18 @@
 package utils
 
 import (
+	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"path"
+	"path/filepath"
 
 	"os"
 
@@ -336,4 +342,75 @@ func ComponentOnNonOCP(name string) bool {
 		}
 	}
 	return false
+}
+
+type ServingCertGetter struct {
+	caBundleConfigMapName, namespace string
+	kubeClient                       kubernetes.Interface
+}
+
+var GlobalServingCertGetter *ServingCertGetter
+
+func NewGlobalServingCertCABundleGetter(kubeClient kubernetes.Interface,
+	caBundleConfigMapName, namespace string) {
+	GlobalServingCertGetter = &ServingCertGetter{
+		kubeClient:            kubeClient,
+		namespace:             namespace,
+		caBundleConfigMapName: caBundleConfigMapName,
+	}
+}
+
+func GetServingCertCABundle() (string, error) {
+	if GlobalServingCertGetter == nil {
+		return "", fmt.Errorf("GlobalServingCertCABundleGetter is nil")
+	}
+	caBundleConfigMap, err := GlobalServingCertGetter.kubeClient.CoreV1().ConfigMaps(GlobalServingCertGetter.namespace).
+		Get(context.Background(), GlobalServingCertGetter.caBundleConfigMapName, metav1.GetOptions{})
+	if err != nil {
+		return "", err
+	}
+	caBundle := caBundleConfigMap.Data["ca-bundle.crt"]
+	if caBundle == "" {
+		return "", fmt.Errorf("CA bundle ConfigMap does not contain a CA bundle")
+	}
+	return caBundle, nil
+	// return base64.StdEncoding.EncodeToString([]byte(caBundle)), nil
+}
+
+func DumpServingCertSecret() error {
+	certKeySecret, err := GlobalServingCertGetter.kubeClient.CoreV1().Secrets(GlobalServingCertGetter.namespace).
+		Get(context.Background(), "multicluster-engine-operator-webhook", metav1.GetOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to get secret multicluster-engine-operator-webhook: %v", err)
+	}
+
+	dir := "/tmp/k8s-webhook-server/serving-certs"
+
+	err = os.MkdirAll(dir, 0700)
+	if err != nil {
+		return fmt.Errorf("failed to create directory %q: %v", dir, err)
+	}
+	for key, data := range certKeySecret.Data {
+		filename := path.Clean(path.Join(dir, key))
+		lastData, err := os.ReadFile(filepath.Clean(filename))
+		switch {
+		case os.IsNotExist(err):
+			// create file
+			if err := os.WriteFile(filename, data, 0600); err != nil {
+				return fmt.Errorf("unable to write file %q: %w", filename, err)
+			}
+		case err != nil:
+			return fmt.Errorf("unable to write file %q: %w", filename, err)
+		case bytes.Equal(lastData, data):
+			// skip file without any change
+			continue
+		default:
+			// update file
+			if err := os.WriteFile(path.Clean(filename), data, 0600); err != nil {
+				return fmt.Errorf("unable to write file %q: %w", filename, err)
+			}
+		}
+	}
+
+	return nil
 }
