@@ -59,12 +59,24 @@ var offComponents = []string{
 	backplanev1.ImageBasedInstallOperator,
 }
 
+var nonOCPComponents = []string{
+	backplanev1.ClusterManager,
+	backplanev1.ServerFoundation,
+	backplanev1.HyperShift,
+	backplanev1.HypershiftLocalHosting,
+	backplanev1.LocalCluster,
+}
+
 var GlobalDeployOnOCP = true
 
 // SetDefaultComponents returns true if changes are made
 func SetDefaultComponents(m *backplanev1.MultiClusterEngine) bool {
+	components := onComponents
+	if !DeployOnOCP() {
+		components = nonOCPComponents
+	}
 	updated := false
-	for _, c := range onComponents {
+	for _, c := range components {
 		if !m.ComponentPresent(c) {
 			m.Enable(c)
 			updated = true
@@ -332,4 +344,13 @@ func DetectOpenShift(kubeConfig *rest.Config) error {
 		return err
 	}
 	return nil
+}
+
+func ComponentOnNonOCP(name string) bool {
+	for _, component := range nonOCPComponents {
+		if name == component {
+			return true
+		}
+	}
+	return false
 }
