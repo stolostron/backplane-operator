@@ -13,6 +13,9 @@ webhooks:
     admissionReviewVersions:
       - v1
     clientConfig:
+      {{- if not .Values.global.deployOnOCP }}
+      caBundle: {{ .Values.global.servingCertCABundle }}
+      {{- end }}
       service:
         name: ocm-webhook
         namespace: {{ .Values.global.namespace }}
