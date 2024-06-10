@@ -203,11 +203,6 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 			metav1.ConditionFalse, status.RequirementsNotMetReason, err.Error()))
 	}
 
-	// Do not preform any further action on a hosted-mode MCE
-	if backplanev1.IsInHostedMode(backplaneConfig) {
-		return r.HostedReconcile(ctx, backplaneConfig)
-	}
-
 	defer func() {
 		r.Log.Info("Updating status")
 		backplaneConfig.Status = r.StatusManager.ReportStatus(*backplaneConfig)

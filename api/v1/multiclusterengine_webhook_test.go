@@ -30,26 +30,13 @@ var _ = Describe("Multiclusterengine webhook", func() {
 				}
 				Expect(k8sClient.Create(ctx, mce)).Should(Succeed())
 			})
-			By("by creating a new hosted Multiclusterengine resource", func() {
-				mce := &MultiClusterEngine{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:        "hosted-mce",
-						Annotations: map[string]string{"deploymentmode": string(ModeHosted)},
-					},
-					Spec: MultiClusterEngineSpec{
-						TargetNamespace: "hostedNS",
-					},
-				}
-				Expect(k8sClient.Create(ctx, mce)).Should(Succeed())
-			})
 		})
 
 		It("Should fail to create multiclusterengine", func() {
 			By("because of TargetNamespace", func() {
 				mce := &MultiClusterEngine{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:        fmt.Sprintf("%s-2", multiClusterEngineName),
-						Annotations: map[string]string{"deploymentmode": string(ModeHosted)},
+						Name: fmt.Sprintf("%s-2", multiClusterEngineName),
 					},
 					Spec: MultiClusterEngineSpec{
 						TargetNamespace: DefaultTargetNamespace,
@@ -71,8 +58,7 @@ var _ = Describe("Multiclusterengine webhook", func() {
 			By("because of invalid AvailabilityConfig", func() {
 				mce := &MultiClusterEngine{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:        fmt.Sprintf("%s-2", multiClusterEngineName),
-						Annotations: map[string]string{"deploymentmode": string(ModeHosted)},
+						Name: fmt.Sprintf("%s-2", multiClusterEngineName),
 					},
 					Spec: MultiClusterEngineSpec{
 						TargetNamespace:    "new",
@@ -84,8 +70,7 @@ var _ = Describe("Multiclusterengine webhook", func() {
 			By("because of component configuration", func() {
 				mce := &MultiClusterEngine{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:        fmt.Sprintf("%s-2", multiClusterEngineName),
-						Annotations: map[string]string{"deploymentmode": string(ModeHosted)},
+						Name: fmt.Sprintf("%s-2", multiClusterEngineName),
 					},
 					Spec: MultiClusterEngineSpec{
 						TargetNamespace: "new",
@@ -110,11 +95,6 @@ var _ = Describe("Multiclusterengine webhook", func() {
 				Expect(k8sClient.Get(ctx, types.NamespacedName{Name: multiClusterEngineName}, mce)).To(Succeed())
 				mce.Spec.TargetNamespace = "new"
 				Expect(k8sClient.Update(ctx, mce)).NotTo(BeNil(), "Target namespace should not change")
-			})
-			By("because of DeploymentMode", func() {
-				Expect(k8sClient.Get(ctx, types.NamespacedName{Name: multiClusterEngineName}, mce)).To(Succeed())
-				mce.SetAnnotations(map[string]string{"deploymentmode": string(ModeHosted)})
-				Expect(k8sClient.Update(ctx, mce)).NotTo(BeNil(), "DeploymentMode should not change")
 			})
 			By("because of invalid component", func() {
 				Expect(k8sClient.Get(ctx, types.NamespacedName{Name: multiClusterEngineName}, mce)).To(Succeed())

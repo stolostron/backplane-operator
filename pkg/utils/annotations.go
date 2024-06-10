@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -166,25 +165,6 @@ func getAnnotationOrDefaultForMap(old, new map[string]string, primaryKey, deprec
 	}
 
 	return oldValue == newValue
-}
-
-/*
-GetHostedCredentialsSecret returns the NamespacedName of the secret containing the kubeconfig
-to access the hosted cluster, using the primary annotation key and falling back to the deprecated key if not set.
-*/
-func GetHostedCredentialsSecret(mce *backplanev1.MultiClusterEngine) (types.NamespacedName, error) {
-	nn := types.NamespacedName{}
-	nn.Name = getAnnotationOrDefault(mce, AnnotationKubeconfig, DeprecatedAnnotationKubeconfig)
-
-	if nn.Name == "" {
-		return nn, fmt.Errorf("no kubeconfig secret annotation defined in %s", mce.Name)
-	}
-
-	nn.Namespace = mce.Spec.TargetNamespace
-	if mce.Spec.TargetNamespace == "" {
-		nn.Namespace = backplanev1.DefaultTargetNamespace
-	}
-	return nn, nil
 }
 
 /*
