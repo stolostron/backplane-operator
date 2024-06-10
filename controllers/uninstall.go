@@ -10,7 +10,6 @@ import (
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 	"github.com/stolostron/backplane-operator/pkg/toggle"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -132,7 +131,6 @@ instead.
 */
 func (r *MultiClusterEngineReconciler) removeLegacyPrometheusConfigurations(ctx context.Context,
 	targetNamespace string, kind string) error {
-	log := log.Log.WithName("reconcile")
 
 	obj := &unstructured.Unstructured{}
 	obj.SetGroupVersionKind(schema.GroupVersionKind{

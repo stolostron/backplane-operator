@@ -26,14 +26,13 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 var ErrBadFormat = errors.New("bad format")
 
 func (r *MultiClusterEngineReconciler) HostedReconcile(ctx context.Context, mce *backplanev1.MultiClusterEngine) (
 	retRes ctrl.Result, retErr error) {
-	r.Log = log.Log.WithName("reconcile")
+	r.Log = log
 
 	defer func() {
 		mce.Status = r.StatusManager.ReportStatus(*mce)
@@ -293,8 +292,6 @@ func parseKubeCreds(secret *corev1.Secret) ([]byte, error) {
 
 func (r *MultiClusterEngineReconciler) ensureHostedImport(ctx context.Context,
 	backplaneConfig *backplanev1.MultiClusterEngine, hostedClient client.Client) (ctrl.Result, error) {
-	log := log.Log.WithName("reconcile")
-
 	r.StatusManager.AddComponent(toggle.EnabledStatus(types.NamespacedName{Name: "managedcluster-import-controller-v2",
 		Namespace: backplaneConfig.Spec.TargetNamespace}))
 
@@ -343,8 +340,6 @@ func (r *MultiClusterEngineReconciler) ensureHostedImport(ctx context.Context,
 
 func (r *MultiClusterEngineReconciler) ensureNoHostedImport(ctx context.Context,
 	backplaneConfig *backplanev1.MultiClusterEngine, hostedClient client.Client) (ctrl.Result, error) {
-	log := log.Log.WithName("reconcile")
-
 	r.StatusManager.RemoveComponent(toggle.EnabledStatus(
 		types.NamespacedName{Name: "managedcluster-import-controller-v2",
 			Namespace: backplaneConfig.Spec.TargetNamespace}))
@@ -394,7 +389,6 @@ func (r *MultiClusterEngineReconciler) ensureNoHostedImport(ctx context.Context,
 
 func (r *MultiClusterEngineReconciler) ensureHostedClusterManager(ctx context.Context,
 	mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	log := log.Log.WithName("reconcile")
 	cmName := fmt.Sprintf("%s-cluster-manager", mce.Name)
 
 	r.StatusManager.AddComponent(status.ClusterManagerStatus{
@@ -520,7 +514,7 @@ func (r *MultiClusterEngineReconciler) ensureNoHostedClusterManager(ctx context.
 // setHostedDefaults configures the MCE with default values and updates
 func (r *MultiClusterEngineReconciler) setHostedDefaults(ctx context.Context, m *backplanev1.MultiClusterEngine) (
 	ctrl.Result, error) {
-	r.Log = log.Log.WithName("reconcile")
+	r.Log = log
 
 	updateNecessary := false
 	if !utils.AvailabilityConfigIsValid(m.Spec.AvailabilityConfig) {
@@ -606,7 +600,7 @@ A false response without error means the resource is in the process of deleting.
 func (r *MultiClusterEngineReconciler) hostedDeleteTemplate(ctx context.Context,
 	backplaneConfig *backplanev1.MultiClusterEngine, template *unstructured.Unstructured, hostedClient client.Client) (
 	ctrl.Result, error) {
-	r.Log = log.Log.WithName("reconcile")
+	r.Log = log
 
 	err := hostedClient.Get(ctx, types.NamespacedName{Name: template.GetName(), Namespace: template.GetNamespace()},
 		template)

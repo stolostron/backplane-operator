@@ -7,6 +7,12 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
+)
+
+var (
+	prevAvailability = make(map[string]bool)
+	log              = logf.Log.WithName("status")
 )
 
 type StatusTracker struct {
@@ -133,12 +139,35 @@ func allComponentsReady(components []bpv1.ComponentCondition) bool {
 	if len(components) == 0 {
 		return false
 	}
+
+	// Track availability status.
+	allAvailable := true
+
 	for _, val := range components {
 		if !val.Available {
-			return false
+			// Check if the component's availability status has changed since the last reconciliation.
+			if prevStatus, exists := prevAvailability[val.Name]; !exists || prevStatus {
+				// Log the information about the newly unavailable component
+				log.Info("The component is not yet available.", "Kind", val.Kind, "Name", val.Name, "Reason", val.Reason)
+			}
+
+			// Update the previous availability status for this component
+			prevAvailability[val.Name] = false
+			allAvailable = false
+		} else {
+			// Check if the component's availability status has changed since the last reconciliation
+			if prevStatus, exists := prevAvailability[val.Name]; !exists || !prevStatus {
+				// Log the information about the newly available component
+				log.Info("The component is now available.", "Kind", val.Kind, "Name", val.Name)
+			}
+
+			// Update the previous availability status for this component
+			prevAvailability[val.Name] = true
 		}
 	}
-	return true
+
+	// Return the overall availability status
+	return allAvailable
 }
 
 // StatusReporter is a resource that can report back a status

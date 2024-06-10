@@ -27,7 +27,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	operatorv1 "github.com/openshift/api/operator/v1"
 
@@ -42,7 +41,7 @@ var clusterManagementAddOnGVK = schema.GroupVersionKind{
 
 func (r *MultiClusterEngineReconciler) ensureConsoleMCE(ctx context.Context,
 	backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	r.Log = log.Log.WithName("reconcile")
+	r.Log = log
 
 	namespacedName := types.NamespacedName{Name: "console-mce-console", Namespace: backplaneConfig.Spec.TargetNamespace}
 	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
@@ -87,7 +86,7 @@ func (r *MultiClusterEngineReconciler) ensureConsoleMCE(ctx context.Context,
 
 func (r *MultiClusterEngineReconciler) ensureNoConsoleMCE(ctx context.Context,
 	backplaneConfig *backplanev1.MultiClusterEngine, ocpConsole bool) (ctrl.Result, error) {
-	r.Log = log.Log.WithName("reconcile")
+	r.Log = log
 
 	namespacedName := types.NamespacedName{Name: "console-mce-console", Namespace: backplaneConfig.Spec.TargetNamespace}
 	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
@@ -131,7 +130,7 @@ func (r *MultiClusterEngineReconciler) ensureNoConsoleMCE(ctx context.Context,
 
 func (r *MultiClusterEngineReconciler) ensureManagedServiceAccount(ctx context.Context,
 	backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	r.Log = log.Log.WithName("reconcile")
+	r.Log = log
 
 	r.StatusManager.RemoveComponent(toggle.DisabledStatus(types.NamespacedName{Name: "managedservice", Namespace: backplaneConfig.Spec.TargetNamespace}, []*unstructured.Unstructured{}))
 	// from 2.9, we change the managed-serviceaccount to a template type addon, so the agent will be managed by the
@@ -193,8 +192,8 @@ func (r *MultiClusterEngineReconciler) ensureManagedServiceAccount(ctx context.C
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterEngineReconciler) ensureNoManagedServiceAccount(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	log := log.Log.WithName("reconcile")
+func (r *MultiClusterEngineReconciler) ensureNoManagedServiceAccount(ctx context.Context,
+	backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 
 	// Renders all templates from charts
 	chartPath := toggle.ManagedServiceAccountChartDir
@@ -244,7 +243,7 @@ func (r *MultiClusterEngineReconciler) ensureNoManagedServiceAccount(ctx context
 
 // addPluginToConsoleResource ...
 func (r *MultiClusterEngineReconciler) addPluginToConsoleResource(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	r.Log = log.Log.WithName("reconcile")
+	r.Log = log
 
 	console := &operatorv1.Console{}
 	// If trying to check this resource from the CLI run - `oc get consoles.operator.openshift.io cluster`.
@@ -277,7 +276,7 @@ func (r *MultiClusterEngineReconciler) addPluginToConsoleResource(ctx context.Co
 
 // removePluginFromConsoleResource ...
 func (r *MultiClusterEngineReconciler) removePluginFromConsoleResource(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	r.Log = log.Log.WithName("reconcile")
+	r.Log = log
 
 	if val, ok := os.LookupEnv("UNIT_TEST"); ok && val == "true" {
 		return ctrl.Result{}, nil
@@ -313,7 +312,7 @@ func (r *MultiClusterEngineReconciler) removePluginFromConsoleResource(ctx conte
 }
 
 func (r *MultiClusterEngineReconciler) ensureDiscovery(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	r.Log = log.Log.WithName("reconcile")
+	r.Log = log
 
 	namespacedName := types.NamespacedName{Name: "discovery-operator", Namespace: backplaneConfig.Spec.TargetNamespace}
 	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
@@ -342,7 +341,6 @@ func (r *MultiClusterEngineReconciler) ensureDiscovery(ctx context.Context, back
 }
 
 func (r *MultiClusterEngineReconciler) ensureNoDiscovery(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	log := log.Log.WithName("reconcile")
 	namespacedName := types.NamespacedName{Name: "discovery-operator", Namespace: backplaneConfig.Spec.TargetNamespace}
 
 	// Renders all templates from charts
@@ -371,7 +369,7 @@ func (r *MultiClusterEngineReconciler) ensureNoDiscovery(ctx context.Context, ba
 }
 
 func (r *MultiClusterEngineReconciler) ensureHive(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	r.Log = log.Log.WithName("reconcile")
+	r.Log = log
 
 	namespacedName := types.NamespacedName{Name: "hive-operator", Namespace: backplaneConfig.Spec.TargetNamespace}
 	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
@@ -410,7 +408,7 @@ func (r *MultiClusterEngineReconciler) ensureHive(ctx context.Context, backplane
 }
 
 func (r *MultiClusterEngineReconciler) ensureNoHive(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	r.Log = log.Log.WithName("reconcile")
+	r.Log = log
 	namespacedName := types.NamespacedName{Name: "hive-operator", Namespace: backplaneConfig.Spec.TargetNamespace}
 
 	// Renders all templates from charts
@@ -451,7 +449,7 @@ func (r *MultiClusterEngineReconciler) ensureNoHive(ctx context.Context, backpla
 }
 
 func (r *MultiClusterEngineReconciler) ensureAssistedService(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	r.Log = log.Log.WithName("reconcile")
+	r.Log = log
 
 	targetNamespace := backplaneConfig.Spec.TargetNamespace
 	if backplaneConfig.Spec.Overrides != nil && backplaneConfig.Spec.Overrides.InfrastructureCustomNamespace != "" {
@@ -486,7 +484,7 @@ func (r *MultiClusterEngineReconciler) ensureAssistedService(ctx context.Context
 
 func (r *MultiClusterEngineReconciler) ensureNoAssistedService(ctx context.Context,
 	backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	r.Log = log.Log.WithName("reconcile")
+	r.Log = log
 
 	targetNamespace := backplaneConfig.Spec.TargetNamespace
 	if backplaneConfig.Spec.Overrides != nil && backplaneConfig.Spec.Overrides.InfrastructureCustomNamespace != "" {
@@ -521,7 +519,7 @@ func (r *MultiClusterEngineReconciler) ensureNoAssistedService(ctx context.Conte
 
 func (r *MultiClusterEngineReconciler) ensureServerFoundation(ctx context.Context,
 	backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	r.Log = log.Log.WithName("reconcile")
+	r.Log = log
 
 	namespacedName := types.NamespacedName{Name: "ocm-controller", Namespace: backplaneConfig.Spec.TargetNamespace}
 	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
@@ -557,7 +555,6 @@ func (r *MultiClusterEngineReconciler) ensureServerFoundation(ctx context.Contex
 
 func (r *MultiClusterEngineReconciler) ensureNoServerFoundation(ctx context.Context,
 	backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	log := log.Log.WithName("reconcile")
 
 	// Renders all templates from charts
 	templates, errs := renderer.RenderChart(toggle.ServerFoundationChartDir, backplaneConfig,
@@ -592,7 +589,7 @@ func (r *MultiClusterEngineReconciler) ensureNoServerFoundation(ctx context.Cont
 }
 
 func (r *MultiClusterEngineReconciler) ensureImageBasedInstallOperator(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	r.Log = log.Log.WithName("reconcile")
+	r.Log = log
 
 	targetNamespace := backplaneConfig.Spec.TargetNamespace
 
@@ -624,7 +621,7 @@ func (r *MultiClusterEngineReconciler) ensureImageBasedInstallOperator(ctx conte
 
 func (r *MultiClusterEngineReconciler) ensureNoImageBasedInstallOperator(ctx context.Context,
 	backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	r.Log = log.Log.WithName("reconcile")
+	r.Log = log
 
 	targetNamespace := backplaneConfig.Spec.TargetNamespace
 	namespacedName := types.NamespacedName{Name: "image-based-install-operator", Namespace: targetNamespace}
@@ -656,7 +653,7 @@ func (r *MultiClusterEngineReconciler) ensureNoImageBasedInstallOperator(ctx con
 
 func (r *MultiClusterEngineReconciler) ensureClusterLifecycle(ctx context.Context,
 	backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	r.Log = log.Log.WithName("reconcile")
+	r.Log = log
 
 	namespacedName := types.NamespacedName{Name: "cluster-curator-controller", Namespace: backplaneConfig.Spec.TargetNamespace}
 	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
@@ -698,7 +695,6 @@ func (r *MultiClusterEngineReconciler) ensureClusterLifecycle(ctx context.Contex
 
 func (r *MultiClusterEngineReconciler) ensureNoClusterLifecycle(ctx context.Context,
 	backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	log := log.Log.WithName("reconcile")
 
 	// Renders all templates from charts
 	templates, errs := renderer.RenderChart(toggle.ClusterLifecycleChartDir, backplaneConfig,
@@ -737,7 +733,7 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterLifecycle(ctx context.Cont
 
 func (r *MultiClusterEngineReconciler) ensureClusterManager(ctx context.Context,
 	backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	r.Log = log.Log.WithName("reconcile")
+	r.Log = log
 
 	namespacedName := types.NamespacedName{Name: "cluster-manager", Namespace: backplaneConfig.Spec.TargetNamespace}
 	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
@@ -780,7 +776,6 @@ func (r *MultiClusterEngineReconciler) ensureClusterManager(ctx context.Context,
 }
 
 func (r *MultiClusterEngineReconciler) ensureNoClusterManager(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	log := log.Log.WithName("reconcile")
 	namespacedName := types.NamespacedName{Name: "cluster-manager", Namespace: backplaneConfig.Spec.TargetNamespace}
 
 	// Renders all templates from charts
@@ -841,7 +836,7 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterManager(ctx context.Contex
 }
 
 func (r *MultiClusterEngineReconciler) ensureHyperShift(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	r.Log = log.Log.WithName("reconcile")
+	r.Log = log
 
 	namespacedName := types.NamespacedName{Name: "hypershift-addon-manager", Namespace: backplaneConfig.Spec.TargetNamespace}
 	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
@@ -884,7 +879,6 @@ func (r *MultiClusterEngineReconciler) ensureHyperShift(ctx context.Context, bac
 
 func (r *MultiClusterEngineReconciler) ensureNoHyperShift(ctx context.Context,
 	backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	log := log.Log.WithName("reconcile")
 
 	namespacedName := types.NamespacedName{Name: "hypershift-addon-manager", Namespace: backplaneConfig.Spec.TargetNamespace}
 
@@ -995,7 +989,7 @@ func (r *MultiClusterEngineReconciler) reconcileHypershiftLocalHosting(ctx conte
 				Message:   "Waiting for namespace 'local-cluster'",
 			},
 		})
-		log.Log.WithName("reconcile").Info("Can't apply hypershift-addon, waiting for local-cluster namespace")
+		log.Info("Can't apply hypershift-addon, waiting for local-cluster namespace")
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
 	r.StatusManager.AddComponent(status.ManagedClusterAddOnStatus{
@@ -1014,7 +1008,7 @@ func (r *MultiClusterEngineReconciler) applyHypershiftLocalHosting(ctx context.C
 	if err != nil {
 		if apimeta.IsNoMatchError(errors.Unwrap(err)) || apierrors.IsNotFound(errors.Unwrap(err)) {
 			// addon CRD does not yet exist. Replace status.
-			log.Log.WithName("reconcile").Info("Couldn't apply template for hypershiftlocalhosting due to missing CRD", "error is", err.Error())
+			log.Info("Couldn't apply template for hypershiftlocalhosting due to missing CRD", "error is", err.Error())
 
 			r.StatusManager.RemoveComponent(status.ManagedClusterAddOnStatus{
 				NamespacedName: types.NamespacedName{Name: addon.GetName(), Namespace: addon.GetNamespace()},
@@ -1036,7 +1030,8 @@ func (r *MultiClusterEngineReconciler) applyHypershiftLocalHosting(ctx context.C
 		}
 		if apierrors.IsInternalError(errors.Unwrap(err)) {
 			// likely failed to call webhook
-			log.Log.WithName("reconcile").Info("Couldn't apply template for hypershiftlocalhosting likely due to webhook not ready", "error is", err.Error())
+			log.Info("Couldn't apply template for hypershiftlocalhosting likely due to webhook not ready", "error is",
+				err.Error())
 
 			r.StatusManager.RemoveComponent(status.ManagedClusterAddOnStatus{
 				NamespacedName: types.NamespacedName{Name: addon.GetName(), Namespace: addon.GetNamespace()},
@@ -1074,7 +1069,7 @@ func (r *MultiClusterEngineReconciler) removeHypershiftLocalHosting(ctx context.
 }
 
 func (r *MultiClusterEngineReconciler) ensureClusterProxyAddon(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	r.Log = log.Log.WithName("reconcile")
+	r.Log = log
 
 	namespacedName := types.NamespacedName{Name: "cluster-proxy-addon-manager", Namespace: backplaneConfig.Spec.TargetNamespace}
 	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
@@ -1116,7 +1111,6 @@ func (r *MultiClusterEngineReconciler) ensureClusterProxyAddon(ctx context.Conte
 }
 
 func (r *MultiClusterEngineReconciler) ensureNoClusterProxyAddon(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	log := log.Log.WithName("reconcile")
 	namespacedName := types.NamespacedName{Name: "cluster-proxy-addon-manager", Namespace: backplaneConfig.Spec.TargetNamespace}
 	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
 	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
@@ -1185,7 +1179,6 @@ func (r *MultiClusterEngineReconciler) CheckConsole(ctx context.Context) (bool, 
 
 func (r *MultiClusterEngineReconciler) ensureLocalCluster(ctx context.Context, mce *backplanev1.MultiClusterEngine) (
 	ctrl.Result, error) {
-	log := log.Log.WithName("reconcile")
 
 	if utils.IsUnitTest() {
 		r.Log.Info("skipping local cluster creation in unit tests")
@@ -1315,7 +1308,6 @@ func (r *MultiClusterEngineReconciler) ensureLocalCluster(ctx context.Context, m
 }
 
 func (r *MultiClusterEngineReconciler) ensureNoLocalCluster(ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	log := log.Log.WithName("reconcile")
 
 	if utils.IsUnitTest() {
 		r.Log.Info("skipping local cluster removal in unit tests")
