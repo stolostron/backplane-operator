@@ -48,6 +48,8 @@ spec:
               addon-agent: managed-serviceaccount
           template:
             metadata:
+              annotations:
+                target.workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
               labels:
                 addon-agent: managed-serviceaccount
             spec:
