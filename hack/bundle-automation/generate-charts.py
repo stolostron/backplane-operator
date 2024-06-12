@@ -470,6 +470,36 @@ def updateDeployments(chartName, helmChart, exclusions, inclusions):
         if 'pullSecretOverride' in inclusions:
             addPullSecretOverride(deployment)
 
+# injectAnnotationsForAddonTemplate injects following annotations for deployments in the AddonTemplate:
+# - target.workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
+def injectAnnotationsForAddonTemplate(helmChart):
+    logging.info("Injecting Annotations for deployments in the AddonTemplate ...")
+
+    addonTemplates = findTemplatesOfType(helmChart, 'AddOnTemplate')
+    for addonTemplate in addonTemplates:
+        injected = False
+        with open(addonTemplate, 'r') as f:
+            templateContent = yaml.safe_load(f)
+            agentSpec = templateContent['spec']['agentSpec']
+            if 'workload' not in agentSpec:
+                return
+            workload = agentSpec['workload']
+            if 'manifests' not in workload:
+                return
+            manifests = workload['manifests']
+            for manifest in manifests:
+                if manifest['kind'] == 'Deployment':
+                    metadata = manifest['spec']['template']['metadata']
+                    if 'annotations' not in metadata:
+                        metadata['annotations'] = {}
+                    if 'target.workload.openshift.io/management' not in metadata['annotations']:
+                        metadata['annotations']['target.workload.openshift.io/management'] = '{"effect": "PreferredDuringScheduling"}'
+                        injected = True
+        if injected:
+            with open(addonTemplate, 'w') as f:
+                yaml.dump(templateContent, f, width=float("inf"))
+                logging.info("Annotations injected successfully. \n")
+
 
 # fixImageReferencesForAddonTemplate identify the image references for every deployment in addontemplates, if any exist
 # in the image field, insert helm flow control code to reference it, and add image-key to the values.yaml file.
@@ -503,7 +533,6 @@ def fixImageReferencesForAddonTemplate(helmChart, imageKeyMapping):
                             logging.critical("No image key mapping provided for imageKey: %s" % image_key)
                             exit(1)
                         imageKeys.append(image_key)
-                        temp = container['image']
                         container['image'] = "{{ .Values.global.imageOverrides." + image_key + " }}"
                         # container['imagePullPolicy'] = "{{ .Values.global.pullPolicy }}"
         with open(addonTemplate, 'w') as f:
@@ -548,6 +577,7 @@ def injectRequirements(helmChart, chartName, imageKeyMapping, skipRBACOverrides,
     fixImageReferences(helmChart, imageKeyMapping)
     fixEnvVarImageReferences(helmChart, imageKeyMapping)
     fixImageReferencesForAddonTemplate(helmChart, imageKeyMapping)
+    injectAnnotationsForAddonTemplate(helmChart)
     if not skipRBACOverrides:
         updateRBAC(helmChart, chartName)
     updateDeployments(chartName, helmChart, exclusions, inclusions)
