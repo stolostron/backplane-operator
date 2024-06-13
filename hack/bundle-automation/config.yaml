@@ -1,54 +1,50 @@
-- repo_name: hive
-  gen_command: ./hack/bundle-automation/gen-hive-bundle.sh
-  branch: mce-2.6
-  sha: e11a23b88b31c989402ff0a79de21572bacd72e5
+- branch: mce-2.6
   bundlePath: /tmp/hive-operator-manifests
-  name: hive-operator
+  gen_command: ./hack/bundle-automation/gen-hive-bundle.sh
   imageMappings:
     hive: openshift_hive
-
-- repo_name: image-based-install-operator
-  github_ref: "https://github.com/openshift/image-based-install-operator.git"
-  branch: "backplane-2.6"
+  name: hive-operator
+  repo_name: hive
+  sha: cd191be5b64cd879e13ced2a1c4034e233cb2a89
+- branch: backplane-2.6
+  github_ref: https://github.com/openshift/image-based-install-operator.git
   operators:
-    - name: image-based-install-operator
-      bundlePath: "bundle/manifests/"
-      imageMappings:
-        controller: image_based_install_operator
-      preserve_files:
-        - image-based-install-config_v1_route.yaml
-
-- repo_name: assisted-service
-  github_ref: "https://github.com/openshift/assisted-service.git"
-  branch: "release-ocm-2.11"
+  - bundlePath: bundle/manifests/
+    imageMappings:
+      controller: image_based_install_operator
+    name: image-based-install-operator
+    preserve_files:
+    - image-based-install-config_v1_route.yaml
+  repo_name: image-based-install-operator
+- branch: release-ocm-2.11
+  github_ref: https://github.com/openshift/assisted-service.git
   operators:
-    - name: assisted-service
-      bundlePath: "deploy/olm-catalog/manifests/"
-      imageMappings:
-        assisted-service: assisted_service_9
-        assisted-service-el8: assisted_service_8
-        postgresql-12-c8s: postgresql_12
-        assisted-installer-agent: assisted_installer_agent
-        assisted-installer-controller: assisted_installer_controller
-        assisted-installer: assisted_installer
-        assisted-image-service: assisted_image_service
-
-- repo_name: registration-operator
-  github_ref: "https://github.com/stolostron/ocm.git"
-  branch: "backplane-2.6"
+  - bundlePath: deploy/olm-catalog/manifests/
+    imageMappings:
+      assisted-image-service: assisted_image_service
+      assisted-installer: assisted_installer
+      assisted-installer-agent: assisted_installer_agent
+      assisted-installer-controller: assisted_installer_controller
+      assisted-service: assisted_service_9
+      assisted-service-el8: assisted_service_8
+      postgresql-12-c8s: postgresql_12
+    name: assisted-service
+  repo_name: assisted-service
+- branch: backplane-2.6
+  github_ref: https://github.com/stolostron/ocm.git
   operators:
-    - name: cluster-manager
-      bundlePath: "deploy/cluster-manager/olm-catalog/latest/manifests/"
-      imageMappings:
-        registration-operator: registration_operator
-      exclusions:
-        - readOnlyRootFilesystem
-
-- repo_name: discovery-operator
-  github_ref: "https://github.com/stolostron/discovery.git"
-  branch: "backplane-2.6"
+  - bundlePath: deploy/cluster-manager/olm-catalog/latest/manifests/
+    exclusions:
+    - readOnlyRootFilesystem
+    imageMappings:
+      registration-operator: registration_operator
+    name: cluster-manager
+  repo_name: registration-operator
+- branch: backplane-2.6
+  github_ref: https://github.com/stolostron/discovery.git
   operators:
-    - name: discovery-operator
-      bundlePath: "bundle/manifests/"
-      imageMappings:
-        discovery-operator: discovery_operator
+  - bundlePath: bundle/manifests/
+    imageMappings:
+      discovery-operator: discovery_operator
+    name: discovery-operator
+  repo_name: discovery-operator
