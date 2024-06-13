@@ -255,18 +255,6 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return ctrl.Result{Requeue: true}, err
 	}
 
-	/*
-		In MCE 2.4, we need to ensure that the openshift.io/cluster-monitoring is added to the same namespace as the
-		MultiClusterEngine to avoid conflicts with the openshift-* namespace when deploying PrometheusRules and
-		ServiceMonitors in ACM and MCE.
-	*/
-	_, err = r.ensureOpenShiftNamespaceLabel(ctx, backplaneConfig)
-	if err != nil {
-		r.Log.Error(err, "Failed to add to %s label to namespace: %s", utils.OpenShiftClusterMonitoringLabel,
-			backplaneConfig.Spec.TargetNamespace)
-		return ctrl.Result{}, err
-	}
-
 	if !utils.ShouldIgnoreOCPVersion(backplaneConfig) {
 		currentOCPVersion, err := r.getClusterVersion(ctx)
 		if err != nil {
@@ -286,6 +274,18 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}
 	if err != nil {
 		return ctrl.Result{Requeue: true}, err
+	}
+
+	/*
+		In MCE 2.4, we need to ensure that the openshift.io/cluster-monitoring is added to the same namespace as the
+		MultiClusterEngine to avoid conflicts with the openshift-* namespace when deploying PrometheusRules and
+		ServiceMonitors in ACM and MCE.
+	*/
+	_, err = r.ensureOpenShiftNamespaceLabel(ctx, backplaneConfig)
+	if err != nil {
+		r.Log.Error(err, fmt.Sprintf("Failed to add to %s label to namespace: %s", utils.OpenShiftClusterMonitoringLabel,
+			backplaneConfig.Spec.TargetNamespace))
+		return ctrl.Result{}, err
 	}
 
 	result, err = r.validateImagePullSecret(ctx, backplaneConfig)
@@ -1145,7 +1145,6 @@ func (r *MultiClusterEngineReconciler) ensureCustomResources(ctx context.Context
 
 func (r *MultiClusterEngineReconciler) ensureOpenShiftNamespaceLabel(ctx context.Context,
 	backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-
 	existingNs := &corev1.Namespace{}
 
 	err := r.Client.Get(ctx, types.NamespacedName{Name: backplaneConfig.Spec.TargetNamespace}, existingNs)
