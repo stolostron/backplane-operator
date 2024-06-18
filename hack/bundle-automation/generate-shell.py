@@ -38,7 +38,7 @@ def main(args):
     start_time = time.time()  # Record start time
 
     repo_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "tmp/dev-tools") # Destination path for cloned repository.
-    clone_repository("https://github.com/dislbenn/installer-dev-tools.git", repo_path)
+    clone_repository("https://github.com/stolostron/installer-dev-tools.git", repo_path)
     script_dir = "tmp/dev-tools/bundle-generation"
 
     if args.lint_bundles:
@@ -56,6 +56,14 @@ def main(args):
 
         prepare_operation(script_dir, operation_script, operation_args)
         logging.info("Bundles updated successfully.")
+
+    elif args.update_charts:
+        logging.info("Preparing to update charts...")
+        operation_script = "generate-charts.py"
+        operation_args = "--destination pkg/templates/"
+
+        prepare_operation(script_dir, operation_script, operation_args)
+        logging.info("charts updated successfully.")
 
     elif args.update_commits:
         logging.info("Preparing to update commit SHAs...")
@@ -76,6 +84,7 @@ if __name__ == "__main__":
 
     parser.add_argument("--lint-bundles", action="store_true", help="Perform linting for operator bundles")
     parser.add_argument("--update-bundles", action="store_true", help="Regenerate operator bundles")
+    parser.add_argument("--update-charts", action="store_true", help="Regenerate operator bundles")
     parser.add_argument("--update-commits", action="store_true", help="Regenerate operator bundles with commit SHA")
 
     parser.add_argument("--repo", help="Repository name")
