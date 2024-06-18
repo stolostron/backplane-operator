@@ -41,6 +41,7 @@ package main
 //+kubebuilder:rbac:groups="",resources=nodes;pods;endpoints;services;secrets,verbs=get;watch;list
 //+kubebuilder:rbac:groups="",resources=persistentvolumeclaims,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups="",resources=pods,verbs=get
+//+kubebuilder:rbac:groups="",resources=pods,verbs=get;list
 //+kubebuilder:rbac:groups="",resources=pods,verbs=list
 //+kubebuilder:rbac:groups="",resources=pods;nodes,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",resources=pods;pods/log,verbs=get;list;watch
