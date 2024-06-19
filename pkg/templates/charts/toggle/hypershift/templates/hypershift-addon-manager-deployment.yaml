@@ -81,6 +81,14 @@ spec:
             - '--namespace={{ .Values.global.namespace }}'
             - '--with-image-override=true'
           env:
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
           - name: HYPERSHIFT_OPERATOR_IMAGE_NAME
             value: '{{ .Values.global.imageOverrides.hypershift_operator }}'
           - name: HYPERSHIFT_ADDON_IMAGE_NAME
