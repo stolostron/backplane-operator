@@ -57,6 +57,22 @@ def main(args):
         prepare_operation(script_dir, operation_script, operation_args)
         logging.info("Bundles updated successfully.")
 
+    elif args.update_charts:
+        logging.info("Preparing to update operator...")
+        operation_script = "generate-charts.py"
+        operation_args = "--destination pkg/templates/"
+
+        prepare_operation(script_dir, operation_script, operation_args)
+        logging.info("Bundles updated successfully.")
+
+    elif args.copy_charts:
+        logging.info("Preparing to copy charts...")
+        operation_script = "move-charts.py"
+        operation_args = "--destination pkg/templates/"
+
+        prepare_operation(script_dir, operation_script, operation_args)
+        logging.info("Bundles updated successfully.")
+
     elif args.update_commits:
         logging.info("Preparing to update commit SHAs...")
         operation_script = "generate-sha-commits.py"

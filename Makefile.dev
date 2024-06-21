@@ -33,7 +33,7 @@ regenerate-operator-sha-commits: ## Regenerates the operator bundles
 
 regenerate-charts: ## Regenerates the charts 
 	pip3 install -r hack/bundle-automation/chart-requirements.txt
-	python3 ./hack/bundle-automation/generate-charts.py --destination pkg/templates/
+	python3 ./hack/bundle-automation/generate-shell.py --update-charts
 
 catalog-deploy: ## Deploys backplane operator via subscription
 	IMG="${IMAGE_TAG_BASE}-catalog:v${VERSION}" yq eval -i '.spec.image = env(IMG)' hack/catalog/catalogsource.yaml
