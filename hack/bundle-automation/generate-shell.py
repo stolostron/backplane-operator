@@ -90,8 +90,10 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
+    parser.add_argument("--copy-charts", action="store_true", help="Copy operator charts from source repository")
     parser.add_argument("--lint-bundles", action="store_true", help="Perform linting for operator bundles")
     parser.add_argument("--update-charts-from-bundles", action="store_true", help="Regenerate operator charts from bundles")
+    parser.add_argument("--update-charts", action="store_true", help="Regenerate operator charts")
     parser.add_argument("--update-commits", action="store_true", help="Regenerate operator bundles with commit SHA")
 
     parser.add_argument("--repo", help="Repository name")
