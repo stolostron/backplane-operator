@@ -2,11 +2,11 @@
 # Copyright Contributors to the Open Cluster Management project
 
 apiVersion: v1
-appVersion: 2.6.0
+appVersion: 2.7.0
 category: "Development"
 description: Helm chart for console plugin for multicluster engine for Kubernetes
 keywords:
   - ui
 kubeVersion: ">=1.10.0-0"
 name: console-mce
-version: 2.6.0
+version: 2.7.0
