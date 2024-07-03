@@ -2,7 +2,7 @@
 # Copyright Contributors to the Open Cluster Management project
 
 apiVersion: v1
-appVersion: 2.6.0
+appVersion: 2.7.0
 category: "Development"
 description: Helm chart for ACM cluster-proxy-addon
 keywords:
@@ -10,4 +10,4 @@ keywords:
   - cluster-proxy
 name: cluster-proxy-addon
 verified: "RHACM"
-version: 2.6.0
+version: 2.7.0

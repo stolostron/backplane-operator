@@ -2,8 +2,8 @@
 # Copyright Contributors to the Open Cluster Management project
 
 apiVersion: v2
-appVersion: 2.6.0
+appVersion: 2.7.0
 description: cluster lifecycle components.
 name: cluster-lifecycle
 type: application
-version: 2.6.0
+version: 2.7.0

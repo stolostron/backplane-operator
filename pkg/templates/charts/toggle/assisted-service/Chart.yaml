@@ -1,7 +1,7 @@
 apiVersion: v2
-appVersion: 2.6.0
+appVersion: 2.7.0
 description: The Infrastructure Operator for Red Hat OpenShift is responsible for
   managing the deployment of the Assisted Service.
 name: assisted-service
 type: application
-version: 2.6.0
+version: 2.7.0

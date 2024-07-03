@@ -1,5 +1,5 @@
 apiVersion: operators.coreos.com/v1
 kind: OperatorCondition
 metadata:
-  name: multicluster-engine.v2.6.0 
+  name: multicluster-engine.v2.7.0 
   namespace: backplane-operator-system 
