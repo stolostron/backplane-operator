@@ -6,10 +6,10 @@ Operator for managing installation of Backplane components
 
 ## Prerequisites
 
-- Go v1.22+
+- Go v1.22.4
 - kubectl 1.19+
 - Operator-sdk v1.17.0+
-- Docker
+- Podman
 - Connection to an existing Kubernetes cluster
 
 ## Installation
@@ -35,13 +35,13 @@ The operator can also run inside the cluster as a Deployment. To do that first b
 1. Build the image:
 
     ```shell
-    make docker-build IMG=<registry>/<imagename>:<tag>
+    make podman-build IMG=<registry>/<imagename>:<tag>
     ```
 
 2. Push the image:
 
     ```shell
-    make docker-push IMG=<registry>/<imagename>:<tag>
+    make podman-push IMG=<registry>/<imagename>:<tag>
     ```
 
 3. Deploy the Operator:
@@ -49,5 +49,3 @@ The operator can also run inside the cluster as a Deployment. To do that first b
     ```shell
     make deploy IMG=<registry>/<imagename>:<tag>
     ```
-
-Rebuild Date: 2024-02-21

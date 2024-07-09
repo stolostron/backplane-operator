@@ -75,7 +75,7 @@ Make sure your code build passed.
 
 ```shell
 make manifests              ## Regenerate manifests if necessary
-make docker-build           ## Ensure build succeeds
+make podman-build           ## Ensure build succeeds
 ```
 
 Now, you can follow the [README](./README.md) to work with the stolostron/backplane-operator repository.
