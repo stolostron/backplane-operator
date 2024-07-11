@@ -9,14 +9,14 @@ Operator for managing installation of Backplane components
 - Go v1.22.4
 - kubectl 1.19+
 - Operator-sdk v1.17.0+
-- Podman
+- Docker or Podman
 - Connection to an existing Kubernetes cluster
 
 ## Installation
 
 Before deploying, the CRDs need to be installed onto the cluster.
 
-```shell
+```bash
 make install
 ```
 
@@ -24,7 +24,7 @@ make install
 
 The operator can be run locally against the configured Kubernetes cluster in ~/.kube/config with the following command:
 
-```shell
+```bash
 make run
 ```
 
@@ -34,18 +34,22 @@ The operator can also run inside the cluster as a Deployment. To do that first b
 
 1. Build the image:
 
-    ```shell
+    ```bash
+    make docker-build IMG=<registry>/<imagename>:<tag>
+    # or
     make podman-build IMG=<registry>/<imagename>:<tag>
     ```
 
 2. Push the image:
 
-    ```shell
+    ```bash
+    make docker-push IMG=<registry>/<imagename>:<tag>
+    # or
     make podman-push IMG=<registry>/<imagename>:<tag>
     ```
 
 3. Deploy the Operator:
 
-    ```shell
+    ```bash
     make deploy IMG=<registry>/<imagename>:<tag>
     ```
