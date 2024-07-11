@@ -230,6 +230,8 @@ type MultiClusterEngineCondition struct {
 // determined based on the configuration that is defined in this resource.
 // +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.phase",description="The overall state of the MultiClusterEngine"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
+// +kubebuilder:printcolumn:name="CurrentVersion",type="string",JSONPath=".status.currentVersion",description="The current version of the MultiClusterEngine"
+// +kubebuilder:printcolumn:name="DesiredVersion",type="string",JSONPath=".status.desiredVersion",description="The desired version of the MultiClusterEngine"
 // +operator-sdk:csv:customresourcedefinitions:displayName="MultiCluster Engine"
 type MultiClusterEngine struct {
 	metav1.TypeMeta   `json:",inline"`
