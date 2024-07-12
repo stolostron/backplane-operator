@@ -265,3 +265,17 @@ rules:
   - watch
   resources:
   - multiclusterengines
+
+  - verbs:
+      - list
+    apiGroups:
+      - apps
+    resources:
+      - deployments
+
+  - verbs:
+      - create
+    apiGroups:
+      - view.open-cluster-management.io
+    resources:
+      - managedclusterviews
