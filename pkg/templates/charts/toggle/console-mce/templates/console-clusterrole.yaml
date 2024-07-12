@@ -258,6 +258,20 @@ rules:
   resources:
   - customresourcedefinitions
 
+- verbs:
+    - list
+  apiGroups:
+    - apps
+  resources:
+    - deployments
+
+- verbs:
+    - create
+  apiGroups:
+    - view.open-cluster-management.io
+  resources:
+    - managedclusterviews
+
 - apiGroups:
   - multicluster.openshift.io
   verbs:
@@ -265,17 +279,3 @@ rules:
   - watch
   resources:
   - multiclusterengines
-
-  - verbs:
-      - list
-    apiGroups:
-      - apps
-    resources:
-      - deployments
-
-  - verbs:
-      - create
-    apiGroups:
-      - view.open-cluster-management.io
-    resources:
-      - managedclusterviews
