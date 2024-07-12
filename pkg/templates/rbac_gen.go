@@ -138,6 +138,7 @@ package main
 //+kubebuilder:rbac:groups=apps,resources=deployments,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=apps,resources=deployments,verbs=create;get;list;update;watch;patch;delete
 //+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch
+//+kubebuilder:rbac:groups=apps,resources=deployments,verbs=list
 //+kubebuilder:rbac:groups=apps,resources=deployments/finalizers,verbs=update
 //+kubebuilder:rbac:groups=apps,resources=deployments;deployments/finalizers,verbs=get;list;create;delete;update;patch
 //+kubebuilder:rbac:groups=apps,resources=deployments;deployments/finalizers;daemonsets;daemonsets/finalizers;statefulsets,verbs=get;list;watch;create;update;patch;delete
@@ -346,6 +347,7 @@ package main
 //+kubebuilder:rbac:groups=submarineraddon.open-cluster-management.io,resources=submarinerconfigs,verbs=list;watch
 //+kubebuilder:rbac:groups=tower.ansible.com;batch;"",resources=ansiblejobs;jobs;secrets;serviceaccounts,verbs=create
 //+kubebuilder:rbac:groups=velero.io,resources=backups,verbs=create
+//+kubebuilder:rbac:groups=view.open-cluster-management.io,resources=managedclusterviews,verbs=create
 //+kubebuilder:rbac:groups=view.open-cluster-management.io,resources=managedclusterviews,verbs=get;create;update;delete
 //+kubebuilder:rbac:groups=view.open-cluster-management.io,resources=managedclusterviews,verbs=get;list;watch
 //+kubebuilder:rbac:groups=view.open-cluster-management.io,resources=managedclusterviews/status,verbs=update;patch
