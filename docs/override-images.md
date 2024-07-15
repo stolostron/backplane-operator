@@ -10,13 +10,13 @@ kind: MultiClusterEngine
 metadata:
   name: multiclusterengine
   annotations:
-    "imageRepository": "quay.io/stolostron"
+    "installer.multicluster.openshift.io/image-repository": "quay.io/stolostron"
 ```
 
 Run the following example to annotate an existing multiclusterengine and overwrite images with `quay.io/stolostron`
 
 ```bash
-kubectl annotate mce <mce-name> --overwrite imageRepository="quay.io/stolostron"
+kubectl annotate mce <mce-name> --overwrite installer.multicluster.openshift.io/image-repository="quay.io/stolostron"
 ```
 
 ## Replace images with Configmap
@@ -36,12 +36,12 @@ If overriding individual images, the minimum required parameters required to bui
 
 ```bash
 kubectl create configmap <my-config> --from-file=docs/examples/image-override.json # Override 1 image example
-kubectl annotate mce <mce-name> --overwrite imageOverridesCM=<my-config> # Provide the configmap name in an annotation
+kubectl annotate mce <mce-name> --overwrite installer.multicluster.openshift.io/image-overrides-configmap=<my-config> # Provide the configmap name in an annotation
 ```
 
 To remove this annotation to revert back to the original manifest
 ```bash
-kubectl annotate mce <mce-name> imageOverridesCM- --overwrite # Remove annotation
+kubectl annotate mce <mce-name> installer.multicluster.openshift.io/image-overrides-configmap- --overwrite # Remove annotation
 kubectl delete configmap <my-config> # Delete configmap
 ```
 
