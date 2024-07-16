@@ -68,8 +68,8 @@ var offComponents = []string{
 var nonOCPComponents = []string{
 	backplanev1.ClusterManager,
 	backplanev1.ServerFoundation,
-	backplanev1.HyperShift,
-	backplanev1.HypershiftLocalHosting,
+	//	backplanev1.HyperShift,
+	//	backplanev1.HypershiftLocalHosting,
 	backplanev1.LocalCluster,
 }
 

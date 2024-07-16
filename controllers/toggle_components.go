@@ -524,9 +524,12 @@ func (r *MultiClusterEngineReconciler) ensureServerFoundation(ctx context.Contex
 	namespacedName := types.NamespacedName{Name: "ocm-controller", Namespace: backplaneConfig.Spec.TargetNamespace}
 	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
-	namespacedName = types.NamespacedName{Name: "ocm-proxyserver", Namespace: backplaneConfig.Spec.TargetNamespace}
-	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
-	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
+	if utils.DeployOnOCP() {
+		namespacedName = types.NamespacedName{Name: "ocm-proxyserver", Namespace: backplaneConfig.Spec.TargetNamespace}
+		r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
+		r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
+	}
+
 	namespacedName = types.NamespacedName{Name: "ocm-webhook", Namespace: backplaneConfig.Spec.TargetNamespace}
 	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
@@ -570,9 +573,13 @@ func (r *MultiClusterEngineReconciler) ensureNoServerFoundation(ctx context.Cont
 	namespacedName := types.NamespacedName{Name: "ocm-controller", Namespace: backplaneConfig.Spec.TargetNamespace}
 	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
 	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
-	namespacedName = types.NamespacedName{Name: "ocm-proxyserver", Namespace: backplaneConfig.Spec.TargetNamespace}
-	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
-	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
+
+	if utils.DeployOnOCP() {
+		namespacedName = types.NamespacedName{Name: "ocm-proxyserver", Namespace: backplaneConfig.Spec.TargetNamespace}
+		r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
+		r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
+	}
+
 	namespacedName = types.NamespacedName{Name: "ocm-webhook", Namespace: backplaneConfig.Spec.TargetNamespace}
 	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
 	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
@@ -1161,7 +1168,7 @@ func (r *MultiClusterEngineReconciler) CheckConsole(ctx context.Context) (bool, 
 	}
 	// -0 allows for prerelease builds to pass the validation.
 	// If -0 is removed, developer/rc builds will not pass this check
-	//OCP Console can only be disabled in OCP 4.12+
+	// OCP Console can only be disabled in OCP 4.12+
 	constraint, err := semver.NewConstraint(">= 4.12.0-0")
 	if err != nil {
 		return false, fmt.Errorf("failed to set ocp version constraint: %w", err)
