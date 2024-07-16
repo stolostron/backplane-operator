@@ -8,12 +8,12 @@ See [Overriding Images](override-images.md ) for details about modifying images 
 
 Once installed, the mce operator will monitor changes in the cluster that affect an instance of the mce and reconcile deviations to maintain desired state. To stop the operator from making these changes you can apply an annotation to the mce instance.
 ```bash
-kubectl annotate mce <mce-name> pause=true
+kubectl annotate mce <mce-name> installer.multicluster.openshift.io/pause=true
 ```
 
 Remove or edit this annotation to resume operator reconciliation
 ```bash
-kubectl annotate mce <mce-name> pause- --overwrite
+kubectl annotate mce <mce-name> installer.multicluster.openshift.io/pause- --overwrite
 ```
 
 ### Skip OCP Version Requirement
@@ -22,7 +22,7 @@ The operator defines a minimum version of OCP it can run in to avoid unexpected 
 
 1. Set `DISABLE_OCP_MIN_VERSION` as an environment variable. The presence of this variable in the container the operator runs will skip the check.
 
-2. Set `ignoreOCPVersion` annotation in the MCE instance.
+2. Set `installer.multicluster.openshift.io/ignore-ocp-version` annotation in the MCE instance.
 ```bash
-kubectl annotate mce <mce-name> ignoreOCPVersion=true
+kubectl annotate mce <mce-name> installer.multicluster.openshift.io/ignore-ocp-version=true
 ```

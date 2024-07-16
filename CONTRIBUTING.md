@@ -65,17 +65,20 @@ associated unit and function tests.
 
 After your PR is ready to commit, please run following commands to check your code.
 
-```shell
-make test                   ## Run unit tests
+```bash
+make test                   # Run unit tests
 ```
 
 ## Build images
 
 Make sure your code build passed.
 
-```shell
-make manifests              ## Regenerate manifests if necessary
-make docker-build           ## Ensure build succeeds
+```bash
+make manifests              # Regenerate manifests if necessary
+
+make docker-build           # Ensure build succeeds
+# or
+make podman-build
 ```
 
 Now, you can follow the [README](./README.md) to work with the stolostron/backplane-operator repository.
