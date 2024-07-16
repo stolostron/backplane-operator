@@ -11,10 +11,10 @@ spec:
   installStrategy:
     type: Placements
     placements:
-    - name: global
-      namespace: open-cluster-management-global-set
-      rolloutStrategy:
-        type: All
+      - name: global
+        namespace: open-cluster-management-global-set
+        rolloutStrategy:
+          type: All
   supportedConfigs:
-  - group: addon.open-cluster-management.io
-    resource: addondeploymentconfigs
+    - group: addon.open-cluster-management.io
+      resource: addondeploymentconfigs

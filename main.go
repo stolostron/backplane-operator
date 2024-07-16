@@ -413,11 +413,15 @@ func ensureWebhooks(k8sClient client.Client) error {
 			servingCertCABundle, err := utils.GetServingCertCABundle()
 			if err != nil {
 				fmt.Printf("error getting serving cert ca bundle: %s\n", err)
+				time.Sleep(5 * time.Second)
+				continue
 			} else {
 				validatingWebhook.Webhooks[0].ClientConfig.CABundle = []byte(servingCertCABundle)
 			}
 			if err = utils.DumpServingCertSecret(); err != nil {
 				fmt.Printf("error dumping serving cert secret: %s\n", err)
+				time.Sleep(5 * time.Second)
+				continue
 			}
 		}
 
