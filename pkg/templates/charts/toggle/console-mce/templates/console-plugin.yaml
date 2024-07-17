@@ -2,19 +2,15 @@
 apiVersion: console.openshift.io/v1
 kind: ConsolePlugin
 metadata:
-  annotations:
-    installer.multicluster.openshift.io/release-version: 2.7.0
-  labels:
-    backplaneconfig.name: multiclusterengine
   name: mce
 spec:
+  displayName: Red Hat MultiCluster Engine
   backend:
     service:
       basePath: /plugin/
       name: console-mce-console
-      namespace: { { .Values.global.namespace } }
+      namespace: {{ .Values.global.namespace }}
       port: 3000
-  displayName: Red Hat MultiCluster Engine
   i18n:
     loadType: Preload
   proxy:
@@ -23,6 +19,6 @@ spec:
       endpoint:
         service:
           name: console-mce-console
-          namespace: { { .Values.global.namespace } }
+          namespace: {{ .Values.global.namespace }}
           port: 3000
         type: Service
