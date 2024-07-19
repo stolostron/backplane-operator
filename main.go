@@ -213,26 +213,30 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Force OperatorCondition Upgradeable to False
-	//
-	// We have to at least default the condition to False or
-	// OLM will use the Readiness condition via our readiness probe instead:
-	// https://olm.operatorframework.io/docs/advanced-tasks/communicating-operator-conditions-to-olm/#setting-defaults
-	//
-	// We want to force it to False to ensure that the final decision about whether
-	// the operator can be upgraded stays within the mce controller.
-	setupLog.Info("Setting OperatorCondition.")
-	upgradeableCondition, err := utils.NewOperatorCondition(uncachedClient, operatorsapiv2.Upgradeable)
 	ctx := ctrl.SetupSignalHandler()
+	upgradeableCondition := &utils.OperatorCondition{}
 
-	if err != nil {
-		setupLog.Error(err, "Cannot create the Upgradeable Operator Condition")
-		os.Exit(1)
-	}
-	err = upgradeableCondition.Set(ctx, metav1.ConditionFalse, utils.UpgradeableInitReason, utils.UpgradeableInitMessage)
-	if err != nil {
-		setupLog.Error(err, "unable to create set operator condition upgradable to false")
-		os.Exit(1)
+	if utils.DeployOnOCP() {
+		// Force OperatorCondition Upgradeable to False
+		//
+		// We have to at least default the condition to False or
+		// OLM will use the Readiness condition via our readiness probe instead:
+		// https://olm.operatorframework.io/docs/advanced-tasks/communicating-operator-conditions-to-olm/#setting-defaults
+		//
+		// We want to force it to False to ensure that the final decision about whether
+		// the operator can be upgraded stays within the mce controller.
+		setupLog.Info("Setting OperatorCondition.")
+		upgradeableCondition, err = utils.NewOperatorCondition(uncachedClient, operatorsapiv2.Upgradeable)
+		if err != nil {
+			setupLog.Error(err, "Cannot create the Upgradeable Operator Condition")
+			os.Exit(1)
+		}
+		
+		err = upgradeableCondition.Set(ctx, metav1.ConditionFalse, utils.UpgradeableInitReason, utils.UpgradeableInitMessage)
+		if err != nil {
+			setupLog.Error(err, "unable to create set operator condition upgradable to false")
+			os.Exit(1)
+		}
 	}
 
 	if err = (&controllers.MultiClusterEngineReconciler{
