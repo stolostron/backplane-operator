@@ -1,7 +1,7 @@
 apiVersion: addon.open-cluster-management.io/v1alpha1
 kind: AddOnTemplate
 metadata:
-  name: managed-serviceaccount-2.6
+  name: managed-serviceaccount-2.7
 spec:
   addonName: managed-serviceaccount
   agentSpec:
