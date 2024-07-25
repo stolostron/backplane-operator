@@ -1,22 +1,24 @@
 # Copyright Contributors to the Open Cluster Management project
-apiVersion: console.openshift.io/v1alpha1
+apiVersion: console.openshift.io/v1
 kind: ConsolePlugin
 metadata:
   name: mce
-  annotations:
-    console.openshift.io/use-i18n: "true"
 spec:
   displayName: Red Hat MultiCluster Engine
+  backend:
+    service:
+      basePath: /plugin/
+      name: console-mce-console
+      namespace: {{ .Values.global.namespace }}
+      port: 3000
+  i18n:
+    loadType: Preload
   proxy:
-    - type: Service
-      alias: console
-      service:
-        name: console-mce-console
-        namespace: {{ .Values.global.namespace }}
-        port: 3000
-      authorize: true
-  service:
-    basePath: /plugin/
-    name: console-mce-console
-    namespace: {{ .Values.global.namespace }}
-    port: 3000
+    - alias: console
+      authorization: UserToken
+      endpoint:
+        service:
+          name: console-mce-console
+          namespace: {{ .Values.global.namespace }}
+          port: 3000
+        type: Service
