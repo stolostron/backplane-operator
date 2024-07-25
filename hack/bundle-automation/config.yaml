@@ -1,4 +1,4 @@
-- branch: mce-2.6
+- branch: mce-2.7
   bundlePath: /tmp/hive-operator-manifests
   gen_command: ./hack/bundle-automation/gen-hive-bundle.sh
   imageMappings:
