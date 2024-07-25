@@ -11,6 +11,7 @@ spec:
       name: console-mce-console
       namespace: {{ .Values.global.namespace }}
       port: 3000
+    type: Service
   i18n:
     loadType: Preload
   proxy:
