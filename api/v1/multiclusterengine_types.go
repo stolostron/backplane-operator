@@ -21,6 +21,7 @@ package v1
 import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 // AvailabilityType ...
@@ -250,6 +251,28 @@ type MultiClusterEngineList struct {
 	Items           []MultiClusterEngine `json:"items"`
 }
 
+// +kubebuilder:object:root=true
+// +operator-sdk:csv:customresourcedefinitions:displayName="InternalHubComponent
+type InternalHubComponent struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+	Spec              InternalHubComponentSpec `json:"spec,omitempty"`
+}
+
+// +kubebuilder:object:root=true
+type InternalHubComponentList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []InternalHubComponent `json:"items"`
+}
+
+var (
+	InternalHubComponentGroupVersion = schema.GroupVersion{Group: "operator.open-cluster-management.io", Version: "v1"}
+)
+
+type InternalHubComponentSpec struct{}
+
 func init() {
 	SchemeBuilder.Register(&MultiClusterEngine{}, &MultiClusterEngineList{})
+	SchemeBuilder.Register(&InternalHubComponent{}, &InternalHubComponentList{})
 }
