@@ -799,10 +799,6 @@ func (r *MultiClusterEngineReconciler) ensureInternalHubComponent(
 	component string) (ctrl.Result, error) {
 
 	componentCR := &backplanev1.InternalHubComponent{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: backplanev1.InternalHubComponentGroupVersion.String(),
-			Kind:       "InternalHubComponent",
-		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      component,
 			Namespace: backplaneConfig.Namespace,
