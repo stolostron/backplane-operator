@@ -23,21 +23,22 @@ import (
 )
 
 const (
-	AssistedService              = "assisted-service"
-	ClusterLifecycle             = "cluster-lifecycle"
-	ClusterManager               = "cluster-manager"
-	ClusterProxyAddon            = "cluster-proxy-addon"
-	ConsoleMCE                   = "console-mce"
-	Discovery                    = "discovery"
-	Hive                         = "hive"
-	HyperShift                   = "hypershift"
-	HypershiftLocalHosting       = "hypershift-local-hosting"
-	HyperShiftPreview            = "hypershift-preview"
-	LocalCluster                 = "local-cluster"
-	ManagedServiceAccount        = "managedserviceaccount"
-	ManagedServiceAccountPreview = "managedserviceaccount-preview"
-	ServerFoundation             = "server-foundation"
-	ImageBasedInstallOperator    = "image-based-install-operator-preview"
+	AssistedService                  = "assisted-service"
+	ClusterLifecycle                 = "cluster-lifecycle"
+	ClusterManager                   = "cluster-manager"
+	ClusterProxyAddon                = "cluster-proxy-addon"
+	ConsoleMCE                       = "console-mce"
+	Discovery                        = "discovery"
+	Hive                             = "hive"
+	HyperShift                       = "hypershift"
+	HypershiftLocalHosting           = "hypershift-local-hosting"
+	HyperShiftPreview                = "hypershift-preview"
+	LocalCluster                     = "local-cluster"
+	ManagedServiceAccount            = "managedserviceaccount"
+	ManagedServiceAccountPreview     = "managedserviceaccount-preview"
+	ServerFoundation                 = "server-foundation"
+	ImageBasedInstallOperator        = "image-based-install-operator"
+	ImageBasedInstallOperatorPreview = "image-based-install-operator-preview"
 )
 
 var allComponents = []string{
@@ -56,6 +57,7 @@ var allComponents = []string{
 	ManagedServiceAccountPreview,
 	ServerFoundation,
 	ImageBasedInstallOperator,
+	ImageBasedInstallOperatorPreview,
 }
 
 // MCEComponents is a slice containing component names specific to the "MCE" category.
