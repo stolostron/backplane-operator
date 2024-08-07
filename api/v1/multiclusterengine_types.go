@@ -252,7 +252,7 @@ type MultiClusterEngineList struct {
 }
 
 // +kubebuilder:object:root=true
-// +operator-sdk:csv:customresourcedefinitions:displayName="InternalHubComponent
+// +operator-sdk:csv:customresourcedefinitions:displayName="InternalHubComponent"
 type InternalHubComponent struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
