@@ -21,7 +21,6 @@ package v1
 import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 // AvailabilityType ...
@@ -265,10 +264,6 @@ type InternalHubComponentList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []InternalHubComponent `json:"items"`
 }
-
-var (
-	InternalHubComponentGroupVersion = schema.GroupVersion{Group: "operator.open-cluster-management.io", Version: "v1"}
-)
 
 type InternalHubComponentSpec struct{}
 
