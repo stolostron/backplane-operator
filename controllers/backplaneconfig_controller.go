@@ -1412,7 +1412,7 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 		updateNecessary = true
 	}
 
-	// hyper-shift preview component upgraded in 2.8.0
+	// hypershift preview component upgraded in ACM 2.8.0
 	if m.Prune(backplanev1.HyperShiftPreview) {
 		updateNecessary = true
 	}
@@ -1424,8 +1424,13 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 		updateNecessary = true
 	}
 
-	// managedserviceaccount preview component upgraded in 2.9.0
+	// managedserviceaccount preview component upgraded in ACM 2.9.0
 	if m.Prune(backplanev1.ManagedServiceAccountPreview) {
+		updateNecessary = true
+	}
+
+	// image based install operator preview component upgraded in ACM 2.12.0
+	if m.Prune(backplanev1.ImageBasedInstallOperatorPreview) {
 		updateNecessary = true
 	}
 
