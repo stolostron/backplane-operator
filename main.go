@@ -25,9 +25,15 @@ import (
 	"crypto/tls"
 	"flag"
 	"fmt"
+	"github.com/stolostron/backplane-operator/controllers/mcewebhook"
+	"k8s.io/client-go/kubernetes"
+	"open-cluster-management.io/sdk-go/pkg/servingcert"
 	"os"
 	"time"
 
+	configv1 "github.com/openshift/api/config/v1"
+	operatorv1 "github.com/openshift/api/operator/v1"
+	hiveconfig "github.com/openshift/hive/apis/hive/v1"
 	operatorsapiv2 "github.com/operator-framework/api/pkg/operators/v2"
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 	"github.com/stolostron/backplane-operator/controllers"
@@ -35,14 +41,9 @@ import (
 	"github.com/stolostron/backplane-operator/pkg/status"
 	"github.com/stolostron/backplane-operator/pkg/utils"
 	"github.com/stolostron/backplane-operator/pkg/version"
+	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clustermanager "open-cluster-management.io/api/operator/v1"
-
-	configv1 "github.com/openshift/api/config/v1"
-	operatorv1 "github.com/openshift/api/operator/v1"
-	hiveconfig "github.com/openshift/hive/apis/hive/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
-
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -69,7 +70,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
-	//+kubebuilder:scaffold:imports
+	// +kubebuilder:scaffold:imports
 )
 
 const (
@@ -110,7 +111,7 @@ func init() {
 
 	utilruntime.Must(operatorv1.AddToScheme(scheme))
 
-	//+kubebuilder:scaffold:scheme
+	// +kubebuilder:scaffold:scheme
 }
 
 func main() {
@@ -146,6 +147,12 @@ func main() {
 	}
 	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
+
+	err := utils.DetectOpenShift(ctrl.GetConfigOrDie())
+	if err != nil {
+		setupLog.Error(err, "unable to detect if cluster is openShift")
+		os.Exit(1)
+	}
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
@@ -206,26 +213,30 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Force OperatorCondition Upgradeable to False
-	//
-	// We have to at least default the condition to False or
-	// OLM will use the Readiness condition via our readiness probe instead:
-	// https://olm.operatorframework.io/docs/advanced-tasks/communicating-operator-conditions-to-olm/#setting-defaults
-	//
-	// We want to force it to False to ensure that the final decision about whether
-	// the operator can be upgraded stays within the mce controller.
-	setupLog.Info("Setting OperatorCondition.")
-	upgradeableCondition, err := utils.NewOperatorCondition(uncachedClient, operatorsapiv2.Upgradeable)
-	ctx := context.Background()
+	ctx := ctrl.SetupSignalHandler()
+	upgradeableCondition := &utils.OperatorCondition{}
 
-	if err != nil {
-		setupLog.Error(err, "Cannot create the Upgradeable Operator Condition")
-		os.Exit(1)
-	}
-	err = upgradeableCondition.Set(ctx, metav1.ConditionFalse, utils.UpgradeableInitReason, utils.UpgradeableInitMessage)
-	if err != nil {
-		setupLog.Error(err, "unable to create set operator condition upgradable to false")
-		os.Exit(1)
+	if utils.DeployOnOCP() {
+		// Force OperatorCondition Upgradeable to False
+		//
+		// We have to at least default the condition to False or
+		// OLM will use the Readiness condition via our readiness probe instead:
+		// https://olm.operatorframework.io/docs/advanced-tasks/communicating-operator-conditions-to-olm/#setting-defaults
+		//
+		// We want to force it to False to ensure that the final decision about whether
+		// the operator can be upgraded stays within the mce controller.
+		setupLog.Info("Setting OperatorCondition.")
+		upgradeableCondition, err = utils.NewOperatorCondition(uncachedClient, operatorsapiv2.Upgradeable)
+		if err != nil {
+			setupLog.Error(err, "Cannot create the Upgradeable Operator Condition")
+			os.Exit(1)
+		}
+
+		err = upgradeableCondition.Set(ctx, metav1.ConditionFalse, utils.UpgradeableInitReason, utils.UpgradeableInitMessage)
+		if err != nil {
+			setupLog.Error(err, "unable to create set operator condition upgradable to false")
+			os.Exit(1)
+		}
 	}
 
 	if err = (&controllers.MultiClusterEngineReconciler{
@@ -237,6 +248,39 @@ func main() {
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "MultiClusterEngine")
 		os.Exit(1)
+	}
+
+	if !utils.DeployOnOCP() {
+		kubeClient, err := kubernetes.NewForConfig(ctrl.GetConfigOrDie())
+		if err != nil {
+			setupLog.Error(err, "unable to create kubeClient")
+			os.Exit(1)
+		}
+
+		operatorNamespace := utils.OperatorNamespace()
+
+		utils.NewGlobalServingCertCABundleGetter(kubeClient, servingcert.DefaultCABundleConfigmapName, operatorNamespace)
+
+		servingcert.NewServingCertController(utils.OperatorNamespace(), kubeClient).
+			WithTargetServingCerts([]servingcert.TargetServingCertOptions{
+				{
+					Name:      "multicluster-engine-operator-webhook",
+					HostNames: []string{fmt.Sprintf("multicluster-engine-operator-webhook-service.%s.svc", operatorNamespace)},
+					LoadDir:   "/tmp/k8s-webhook-server/serving-certs",
+				},
+				{
+					Name:      "ocm-webhook",
+					HostNames: []string{fmt.Sprintf("ocm-webhook.%s.svc", operatorNamespace)},
+				},
+			}).Start(ctx)
+
+		if err = (&mcewebhook.Reconciler{
+			Client:    mgr.GetClient(),
+			Namespace: operatorNamespace,
+		}).SetupWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create mce webhook controller", "controller", "MultiClusterEngine")
+			os.Exit(1)
+		}
 	}
 
 	// Render CRD templates
@@ -276,7 +320,7 @@ func main() {
 			os.Exit(1)
 		}
 	}
-	//+kubebuilder:scaffold:builder
+	// +kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up health check")
@@ -303,7 +347,7 @@ func main() {
 	}
 
 	setupLog.Info("starting manager")
-	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
+	if err := mgr.Start(ctx); err != nil {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
@@ -370,6 +414,21 @@ func ensureWebhooks(k8sClient client.Client) error {
 				UID:        owner.UID,
 			},
 		})
+		if !utils.DeployOnOCP() {
+			servingCertCABundle, err := utils.GetServingCertCABundle()
+			if err != nil {
+				fmt.Printf("error getting serving cert ca bundle: %s\n", err)
+				time.Sleep(5 * time.Second)
+				continue
+			} else {
+				validatingWebhook.Webhooks[0].ClientConfig.CABundle = []byte(servingCertCABundle)
+			}
+			if err = utils.DumpServingCertSecret(); err != nil {
+				fmt.Printf("error dumping serving cert secret: %s\n", err)
+				time.Sleep(5 * time.Second)
+				continue
+			}
+		}
 
 		existingWebhook := &admissionregistration.ValidatingWebhookConfiguration{}
 		existingWebhook.SetGroupVersionKind(schema.GroupVersionKind{

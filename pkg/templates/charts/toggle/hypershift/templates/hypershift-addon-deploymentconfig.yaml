@@ -9,6 +9,14 @@ spec:
     value: "80"
   - name: hcThresholdNumber
     value: "60"
+{{- if not .Values.global.deployOnOCP }}
+  - name: disableMetrics
+    value: "true"
+  - name: disableHOManagement
+    value: "true"
+  - name: aroHcp
+    value: "true"
+{{- end }}
   nodePlacement:
     {{- with .Values.hubconfig.tolerations }}
     tolerations:
