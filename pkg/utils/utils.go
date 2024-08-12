@@ -45,12 +45,13 @@ var onComponents = []string{
 	backplanev1.LocalCluster,
 	backplanev1.HypershiftLocalHosting,
 	backplanev1.HyperShift,
-	backplanev1.ImageBasedInstallOperator,
 	backplanev1.ManagedServiceAccount,
 	// backplanev1.ConsoleMCE, // determined by OCP version
 }
 
-var offComponents = []string{}
+var offComponents = []string{
+	backplanev1.ImageBasedInstallOperator,
+}
 
 // SetDefaultComponents returns true if changes are made
 func SetDefaultComponents(m *backplanev1.MultiClusterEngine) bool {
