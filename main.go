@@ -231,7 +231,7 @@ func main() {
 			setupLog.Error(err, "Cannot create the Upgradeable Operator Condition")
 			os.Exit(1)
 		}
-		
+
 		err = upgradeableCondition.Set(ctx, metav1.ConditionFalse, utils.UpgradeableInitReason, utils.UpgradeableInitMessage)
 		if err != nil {
 			setupLog.Error(err, "unable to create set operator condition upgradable to false")
