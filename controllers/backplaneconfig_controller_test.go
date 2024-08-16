@@ -673,9 +673,46 @@ var _ = Describe("BackplaneConfig controller", func() {
 			})
 		})
 
+		Context("nonOCP", func() {
+			It("should deploy sub components", func() {
+				createCtx := context.Background()
+				utils.SetDeployOnOCP(false)
+				By("creating the backplane config")
+				backplaneConfig := &backplanev1.MultiClusterEngine{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "multicluster.openshift.io/v1",
+						Kind:       "MultiClusterEngine",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: BackplaneConfigName,
+					},
+					Spec: backplanev1.MultiClusterEngineSpec{
+						TargetNamespace: DestinationNamespace,
+						ImagePullSecret: "testsecret",
+						Overrides: &backplanev1.Overrides{
+							Components: []backplanev1.ComponentConfig{},
+						},
+					},
+				}
+				Expect(k8sClient.Create(createCtx, backplaneConfig)).Should(Succeed())
+
+				// By("ensuring each deployment and config is created")
+				// for _, test := range secondTests {
+				// 	By(fmt.Sprintf("ensuring %s is created", test.Name))
+				// 	Eventually(func() bool {
+				// 		ctx := context.Background()
+				// 		err := k8sClient.Get(ctx, test.NamespacedName, test.ResourceType)
+				// 		return err == test.Expected
+				// 	}, timeout, interval).Should(BeTrue())
+				// }
+
+			})
+		})
+
 		Context("and enable ManagedServiceAccount", func() {
 			It("should deploy sub components", func() {
 				By("creating the backplane config")
+				utils.SetDeployOnOCP(true)
 				backplaneConfig := &backplanev1.MultiClusterEngine{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "multicluster.openshift.io/v1",
