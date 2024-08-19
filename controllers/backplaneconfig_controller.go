@@ -152,6 +152,9 @@ var (
 //+kubebuilder:rbac:groups="",resources=serviceaccounts/token,verbs=create
 //+kubebuilder:rbac:groups=authentication.k8s.io,resources=tokenrequests,verbs=create
 
+// InternalHubComponent
+// +kubebuilder:rbac:groups="multicluster.openshift.io",resources="internalhubcomponents",verbs=create;get;delete;patch;list;watch
+
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (retRes ctrl.Result, retErr error) {

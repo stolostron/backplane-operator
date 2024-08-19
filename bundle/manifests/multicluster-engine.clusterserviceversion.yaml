@@ -80,6 +80,17 @@ spec:
       clusterPermissions:
       - rules:
         - apiGroups:
+          - multicluster.openshift.io
+          resources:
+            - internalhubcomponents
+          verbs:
+            - create
+            - get
+            - delete
+            - patch
+            - list
+            - watch
+        - apiGroups:
           - ""
           resources:
           - configmaps
