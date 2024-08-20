@@ -808,7 +808,7 @@ func (r *MultiClusterEngineReconciler) ensureInternalHubComponent(
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      component,
-			Namespace: backplaneConfig.GetNamespace(),
+			Namespace: backplaneConfig.Spec.TargetNamespace,
 		},
 	}
 
