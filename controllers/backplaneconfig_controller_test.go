@@ -364,6 +364,19 @@ var _ = Describe("BackplaneConfig controller", func() {
 			// 	Expected:       nil,
 			// },
 		}
+
+		// 	AssistedService,
+		// ClusterLifecycle,
+		// ClusterManager,
+		// ClusterProxyAddon,
+		// ConsoleMCE,
+		// Discovery,
+		// Hive,
+		// HyperShift,
+		// HypershiftLocalHosting,
+		// ManagedServiceAccount,
+		// ServerFoundation,
+		// ImageBasedInstallOperator,
 	})
 
 	When("creating a new BackplaneConfig", func() {
@@ -409,6 +422,12 @@ var _ = Describe("BackplaneConfig controller", func() {
 				ihcCRD := &apixv1.CustomResourceDefinition{}
 
 				Eventually(k8sClient.Get(ctx, types.NamespacedName{Name: "internalhubcomponents.multicluster.openshift.io"}, ihcCRD)).Should(Succeed())
+
+				By("ensuring each enabled component's CR is created")
+				for _, mcecomponent := range backplanev1.MCEComponents {
+					comp := &backplanev1.InternalHubComponent{}
+					Eventually(k8sClient.Get(ctx, types.NamespacedName{Name: mcecomponent, Namespace: backplaneConfig.Spec.TargetNamespace}, comp)).Should(Succeed())
+				}
 
 				By("ensuring each deployment and config is created")
 				for _, test := range tests {
