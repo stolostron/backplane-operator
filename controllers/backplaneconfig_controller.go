@@ -816,7 +816,7 @@ func (r *MultiClusterEngineReconciler) ensureInternalHubComponent(
 	err := r.Client.Patch(ctx, componentCR, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
 	if err != nil {
 		r.Log.Info(fmt.Sprintf("error applying %s CR. Error: %s", component, err.Error()))
-		return ctrl.Result{Requeue: true}, nil
+		return ctrl.Result{Requeue: true}, err
 	}
 
 	return ctrl.Result{}, nil
