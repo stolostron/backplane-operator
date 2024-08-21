@@ -387,28 +387,6 @@ var _ = Describe("BackplaneConfig controller", func() {
 				By("creating the backplane config")
 				Expect(k8sClient.Create(createCtx, backplaneConfig)).Should(Succeed())
 
-				By("ensuring the InternalHubComponent CRD is created")
-				ctx := context.Background()
-				ihcCRD := &apixv1.CustomResourceDefinition{}
-
-				Eventually(k8sClient.Get(ctx, types.NamespacedName{Name: "internalhubcomponents.multicluster.openshift.io"}, ihcCRD)).Should(Succeed())
-
-				By("ensuring each enabled component's CR is created")
-				for _, mcecomponent := range backplanev1.MCEComponents {
-					if backplaneConfig.Enabled(mcecomponent) {
-						By(fmt.Sprintf("ensuring %s CR is created", mcecomponent))
-						Eventually(k8sClient.Get(ctx, types.NamespacedName{Name: mcecomponent, Namespace: backplaneConfig.Spec.TargetNamespace}, &backplanev1.InternalHubComponent{})).Should(Succeed())
-					}
-				}
-
-				By("ensuring each disabled component's CR is not present")
-				for _, mcecomponent := range backplanev1.MCEComponents {
-					if !backplaneConfig.Enabled(mcecomponent) {
-						By(fmt.Sprintf("ensuring %s CR is not present", mcecomponent))
-						Eventually(k8sClient.Get(ctx, types.NamespacedName{Name: mcecomponent, Namespace: backplaneConfig.Spec.TargetNamespace}, &backplanev1.InternalHubComponent{})).Should(Not(Succeed()))
-					}
-				}
-
 				By("ensuring that no openshift.io/cluster-monitoring label is enabled if MCE does not exist")
 				backplaneConfig2 := &backplanev1.MultiClusterEngine{
 					TypeMeta: metav1.TypeMeta{
@@ -626,6 +604,28 @@ var _ = Describe("BackplaneConfig controller", func() {
 					},
 				}
 				Expect(k8sClient.Create(createCtx, backplaneConfig)).Should(Succeed())
+
+				By("ensuring the InternalHubComponent CRD is created")
+				ctx := context.Background()
+				ihcCRD := &apixv1.CustomResourceDefinition{}
+
+				Eventually(k8sClient.Get(ctx, types.NamespacedName{Name: "internalhubcomponents.multicluster.openshift.io"}, ihcCRD)).Should(Succeed())
+
+				By("ensuring each enabled component's CR is created")
+				for _, mcecomponent := range backplanev1.MCEComponents {
+					if backplaneConfig.Enabled(mcecomponent) {
+						By(fmt.Sprintf("ensuring %s CR is created", mcecomponent))
+						Eventually(k8sClient.Get(ctx, types.NamespacedName{Name: mcecomponent, Namespace: backplaneConfig.Spec.TargetNamespace}, &backplanev1.InternalHubComponent{})).Should(Succeed())
+					}
+				}
+
+				By("ensuring each disabled component's CR is not present")
+				for _, mcecomponent := range backplanev1.MCEComponents {
+					if !backplaneConfig.Enabled(mcecomponent) {
+						By(fmt.Sprintf("ensuring %s CR is not present", mcecomponent))
+						Eventually(k8sClient.Get(ctx, types.NamespacedName{Name: mcecomponent, Namespace: backplaneConfig.Spec.TargetNamespace}, &backplanev1.InternalHubComponent{})).Should(Not(Succeed()))
+					}
+				}
 			})
 		})
 		Context("2nd attempt", func() {
