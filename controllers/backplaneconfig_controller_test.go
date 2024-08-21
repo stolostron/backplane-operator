@@ -400,6 +400,18 @@ var _ = Describe("BackplaneConfig controller", func() {
 				By("creating the backplane config")
 				Expect(k8sClient.Create(createCtx, backplaneConfig)).Should(Succeed())
 
+				By("ensuring the InternalHubComponent CRD is created")
+				ctx := context.Background()
+				ihcCRD := &apixv1.CustomResourceDefinition{}
+
+				Eventually(k8sClient.Get(ctx, types.NamespacedName{Name: "internalhubcomponents.multicluster.openshift.io"}, ihcCRD)).Should(Succeed())
+
+				By("ensuring each enabled component's CR is created")
+				for _, mcecomponent := range backplanev1.MCEComponents {
+					comp := &backplanev1.InternalHubComponent{}
+					Eventually(k8sClient.Get(ctx, types.NamespacedName{Name: mcecomponent, Namespace: backplaneConfig.Spec.TargetNamespace}, comp)).Should(Succeed())
+				}
+
 				By("ensuring that no openshift.io/cluster-monitoring label is enabled if MCE does not exist")
 				backplaneConfig2 := &backplanev1.MultiClusterEngine{
 					TypeMeta: metav1.TypeMeta{
@@ -416,18 +428,6 @@ var _ = Describe("BackplaneConfig controller", func() {
 
 				res, _ := reconciler.ensureOpenShiftNamespaceLabel(createCtx, backplaneConfig2)
 				Expect(res).To(Equal(ctrl.Result{Requeue: true}))
-
-				By("ensuring the InternalHubComponent CRD is created")
-				ctx := context.Background()
-				ihcCRD := &apixv1.CustomResourceDefinition{}
-
-				Eventually(k8sClient.Get(ctx, types.NamespacedName{Name: "internalhubcomponents.multicluster.openshift.io"}, ihcCRD)).Should(Succeed())
-
-				// By("ensuring each enabled component's CR is created")
-				// for _, mcecomponent := range backplanev1.MCEComponents {
-				// 	comp := &backplanev1.InternalHubComponent{}
-				// 	Eventually(k8sClient.Get(ctx, types.NamespacedName{Name: mcecomponent, Namespace: backplaneConfig.Spec.TargetNamespace}, comp)).Should(Succeed())
-				// }
 
 				By("ensuring each deployment and config is created")
 				for _, test := range tests {

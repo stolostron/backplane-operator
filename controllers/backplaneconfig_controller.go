@@ -830,7 +830,7 @@ func (r *MultiClusterEngineReconciler) ensureNoInternalHubComponent(
 	comp := &backplanev1.InternalHubComponent{}
 	err := r.Client.Get(ctx, types.NamespacedName{Name: component, Namespace: backplaneConfig.Spec.TargetNamespace}, comp)
 	if err != nil && !apierrors.IsNotFound(err) {
-		log.Error(err, fmt.Sprintf("Error getting InternalHubComponent. Error: %v", err))
+		log.Error(err, fmt.Sprintf("Error getting InternalHubComponent. Error: %v: Component was: %v", err, comp))
 		return reconcile.Result{Requeue: true}, err
 	}
 
