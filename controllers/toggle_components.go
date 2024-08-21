@@ -509,7 +509,7 @@ func (r *MultiClusterEngineReconciler) ensureNoAssistedService(ctx context.Conte
 	// Deletes all templates
 	for _, template := range templates {
 		result, err := r.deleteTemplate(ctx, backplaneConfig, template)
-		if err != nil && !apierrors.IsNotFound(err) {
+		if err != nil {
 			r.Log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
 			return result, err
 		}

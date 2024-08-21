@@ -1316,10 +1316,14 @@ func (r *MultiClusterEngineReconciler) applyTemplate(ctx context.Context,
 func (r *MultiClusterEngineReconciler) deleteTemplate(ctx context.Context,
 	backplaneConfig *backplanev1.MultiClusterEngine, template *unstructured.Unstructured) (ctrl.Result, error) {
 
+	before := template.DeepCopy()
 	err := r.Client.Get(ctx, types.NamespacedName{Name: template.GetName(), Namespace: template.GetNamespace()}, template)
 	if err != nil && (apierrors.IsNotFound(err) || apimeta.IsNoMatchError(err)) {
 		return ctrl.Result{}, nil
 	}
+	after := template.DeepCopy()
+
+	log.Info(fmt.Sprintf("Before: %v, After: %v", before, after))
 
 	// set status progressing condition
 	if err != nil {
@@ -1329,7 +1333,7 @@ func (r *MultiClusterEngineReconciler) deleteTemplate(ctx context.Context,
 
 	log.Info(fmt.Sprintf("finalizing template: %s\n", template.GetName()))
 	err = r.Client.Delete(ctx, template)
-	if err != nil {
+	if err != nil && !apierrors.IsNotFound(err) {
 		log.Error(err, "Failed to delete template")
 		return ctrl.Result{}, err
 	}
