@@ -538,6 +538,8 @@ var _ = Describe("BackplaneConfig controller", func() {
 			It("should deploy sub components", func() {
 				createCtx := context.Background()
 				By("creating the backplane config with everything enabled")
+				os.Setenv("ACM_HUB_OCP_VERSION", "4.11.0")
+				defer os.Unsetenv("ACM_HUB_OCP_VERSION")
 				backplaneConfig := &backplanev1.MultiClusterEngine{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "multicluster.openshift.io/v1",
@@ -569,7 +571,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 								},
 								{
 									Name:    backplanev1.ConsoleMCE,
-									Enabled: false,
+									Enabled: true,
 								},
 								{
 									Name:    backplanev1.Discovery,
