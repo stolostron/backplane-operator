@@ -569,7 +569,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 								},
 								{
 									Name:    backplanev1.ConsoleMCE,
-									Enabled: true,
+									Enabled: false,
 								},
 								{
 									Name:    backplanev1.Discovery,
@@ -615,7 +615,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 				for _, mcecomponent := range backplanev1.MCEComponents {
 					if backplaneConfig.Enabled(mcecomponent) {
 						By(fmt.Sprintf("ensuring %s CR is created", mcecomponent))
-						Eventually(k8sClient.Get(ctx, types.NamespacedName{Name: mcecomponent, Namespace: backplaneConfig.Spec.TargetNamespace}, &backplanev1.InternalHubComponent{}), timeout, interval).Should(Succeed())
+						Eventually(k8sClient.Get(ctx, types.NamespacedName{Name: mcecomponent, Namespace: backplaneConfig.Spec.TargetNamespace}, &backplanev1.InternalHubComponent{})).Should(Succeed())
 					}
 				}
 
@@ -623,7 +623,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 				for _, mcecomponent := range backplanev1.MCEComponents {
 					if !backplaneConfig.Enabled(mcecomponent) {
 						By(fmt.Sprintf("ensuring %s CR is not present", mcecomponent))
-						Eventually(k8sClient.Get(ctx, types.NamespacedName{Name: mcecomponent, Namespace: backplaneConfig.Spec.TargetNamespace}, &backplanev1.InternalHubComponent{}), timeout, interval).Should(Not(Succeed()))
+						Eventually(k8sClient.Get(ctx, types.NamespacedName{Name: mcecomponent, Namespace: backplaneConfig.Spec.TargetNamespace}, &backplanev1.InternalHubComponent{})).Should(Not(Succeed()))
 					}
 				}
 			})
