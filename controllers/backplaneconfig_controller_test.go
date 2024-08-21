@@ -597,7 +597,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 								},
 								{
 									Name:    backplanev1.ImageBasedInstallOperator,
-									Enabled: false,
+									Enabled: true,
 								},
 							},
 						},
