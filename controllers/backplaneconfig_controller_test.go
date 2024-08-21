@@ -409,8 +409,10 @@ var _ = Describe("BackplaneConfig controller", func() {
 				By("ensuring each enabled component's CR is created")
 				for _, mcecomponent := range backplanev1.MCEComponents {
 					By(fmt.Sprintf("ensuring %s CR is created", mcecomponent))
-					comp := &backplanev1.InternalHubComponent{}
-					Eventually(k8sClient.Get(ctx, types.NamespacedName{Name: mcecomponent, Namespace: backplaneConfig.Spec.TargetNamespace}, comp)).Should(Succeed())
+					if backplaneConfig.Enabled(mcecomponent) {
+						comp := &backplanev1.InternalHubComponent{}
+						Eventually(k8sClient.Get(ctx, types.NamespacedName{Name: mcecomponent, Namespace: backplaneConfig.Spec.TargetNamespace}, comp)).Should(Succeed())
+					}
 				}
 
 				By("ensuring that no openshift.io/cluster-monitoring label is enabled if MCE does not exist")
