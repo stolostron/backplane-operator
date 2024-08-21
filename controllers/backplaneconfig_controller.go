@@ -1219,14 +1219,14 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 	}
 
 	if backplaneConfig.Enabled(backplanev1.LocalCluster) {
-		result, err := r.ensureInternalHubComponent(ctx, backplaneConfig, backplanev1.LocalCluster)
-		if result != (ctrl.Result{}) {
-			requeue = true
-		}
-		if err != nil {
-			errs[backplanev1.LocalCluster+"InternalHubComponent"] = err
-		}
-		result, err = r.ensureLocalCluster(ctx, backplaneConfig)
+		// result, err := r.ensureInternalHubComponent(ctx, backplaneConfig, backplanev1.LocalCluster)
+		// if result != (ctrl.Result{}) {
+		// 	requeue = true
+		// }
+		// if err != nil {
+		// 	errs[backplanev1.LocalCluster+"InternalHubComponent"] = err
+		// }
+		result, err := r.ensureLocalCluster(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
 			requeue = true
 		}
@@ -1234,14 +1234,14 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 			errs[backplanev1.LocalCluster] = err
 		}
 	} else {
-		result, err := r.ensureNoInternalHubComponent(ctx, backplaneConfig, backplanev1.LocalCluster)
-		if result != (ctrl.Result{}) {
-			requeue = true
-		}
-		if err != nil {
-			errs[backplanev1.LocalCluster+"InternalHubComponent"] = err
-		}
-		result, err = r.ensureNoLocalCluster(ctx, backplaneConfig)
+		// result, err := r.ensureNoInternalHubComponent(ctx, backplaneConfig, backplanev1.LocalCluster)
+		// if result != (ctrl.Result{}) {
+		// 	requeue = true
+		// }
+		// if err != nil {
+		// 	errs[backplanev1.LocalCluster+"InternalHubComponent"] = err
+		// }
+		result, err := r.ensureNoLocalCluster(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
 			requeue = true
 		}

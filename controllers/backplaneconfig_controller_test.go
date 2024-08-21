@@ -585,7 +585,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 								},
 								{
 									Name:    backplanev1.HypershiftLocalHosting,
-									Enabled: true,
+									Enabled: false,
 								},
 								{
 									Name:    backplanev1.ManagedServiceAccount,
@@ -597,7 +597,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 								},
 								{
 									Name:    backplanev1.ImageBasedInstallOperator,
-									Enabled: true,
+									Enabled: false,
 								},
 							},
 						},
