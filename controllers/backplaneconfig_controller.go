@@ -1333,7 +1333,7 @@ func (r *MultiClusterEngineReconciler) deleteTemplate(ctx context.Context,
 
 	log.Info(fmt.Sprintf("finalizing template: %s\n", template.GetName()))
 	err = r.Client.Delete(ctx, template)
-	if err != nil && !apierrors.IsNotFound(err) {
+	if err != nil {
 		log.Error(err, "Failed to delete template")
 		return ctrl.Result{}, err
 	}
