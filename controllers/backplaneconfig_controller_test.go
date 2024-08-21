@@ -611,6 +611,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 
 				Eventually(k8sClient.Get(ctx, types.NamespacedName{Name: "internalhubcomponents.multicluster.openshift.io"}, ihcCRD)).Should(Succeed())
 
+				By("ensuring togglable components")
 				_, err := reconciler.ensureToggleableComponents(ctx, backplaneConfig)
 				Expect(err).To(BeNil())
 
@@ -709,6 +710,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 
 				Eventually(k8sClient.Get(ctx, types.NamespacedName{Name: "internalhubcomponents.multicluster.openshift.io"}, ihcCRD)).Should(Succeed())
 
+				By("ensuring togglable components")
 				_, err := reconciler.ensureToggleableComponents(ctx, backplaneConfig)
 				Expect(err).To(BeNil())
 
