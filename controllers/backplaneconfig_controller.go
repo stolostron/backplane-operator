@@ -839,7 +839,7 @@ func (r *MultiClusterEngineReconciler) ensureNoInternalHubComponent(
 
 	log.Info(fmt.Sprintf("Ensuring No InternalHubComponent: %s", component))
 	err = r.Client.Delete(ctx, comp)
-	if err != nil {
+	if err != nil && !apierrors.IsNotFound(err) {
 		log.Error(err, fmt.Sprintf("Error deleting InternalHubComponent. Error: %v", err))
 		return reconcile.Result{Requeue: true}, err
 	}
