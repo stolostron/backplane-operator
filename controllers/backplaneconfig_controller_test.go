@@ -718,7 +718,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 				for _, mcecomponent := range backplanev1.MCEComponents {
 					if !backplaneConfig.Enabled(mcecomponent) {
 						By(fmt.Sprintf("ensuring %s CR is not present", mcecomponent))
-						Eventually(k8sClient.Get(ctx, types.NamespacedName{Name: mcecomponent, Namespace: backplaneConfig.Spec.TargetNamespace}, &backplanev1.InternalHubComponent{})).Should(Not(Succeed()))
+						Expect(k8sClient.Get(ctx, types.NamespacedName{Name: mcecomponent, Namespace: backplaneConfig.Spec.TargetNamespace}, &backplanev1.InternalHubComponent{})).NotTo(Succeed())
 					}
 				}
 			})
