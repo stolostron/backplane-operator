@@ -16,7 +16,20 @@ spec:
     singular: imageclusterinstall
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .status.conditions[?(@.type=='RequirementsMet')].reason
+      name: RequirementsMet
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Completed')].reason
+      name: Completed
+      type: string
+    - jsonPath: .status.configurationImageURL
+      name: ConfigurationImageURL
+      type: string
+    - jsonPath: .spec.bareMetalHostRef.name
+      name: BareMetalHostRef
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: ImageClusterInstall is the Schema for the imageclusterinstall
