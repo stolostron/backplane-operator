@@ -571,7 +571,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 								},
 								{
 									Name:    backplanev1.ConsoleMCE,
-									Enabled: true,
+									Enabled: false,
 								},
 								{
 									Name:    backplanev1.Discovery,
