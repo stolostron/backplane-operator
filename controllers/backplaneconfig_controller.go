@@ -829,14 +829,17 @@ func (r *MultiClusterEngineReconciler) ensureNoInternalHubComponent(
 
 	comp := &backplanev1.InternalHubComponent{}
 	err := r.Client.Get(ctx, types.NamespacedName{Name: component, Namespace: backplaneConfig.Spec.TargetNamespace}, comp)
-	if err != nil && !apierrors.IsNotFound(err) {
+	if apierrors.IsNotFound(err) {
+		return ctrl.Result{}, nil
+	}
+	if err != nil {
 		log.Error(err, fmt.Sprintf("Error getting InternalHubComponent. Error: %v: Component was: %v", err, comp))
 		return reconcile.Result{Requeue: true}, err
 	}
 
 	log.Info(fmt.Sprintf("Ensuring No InternalHubComponent: %s", component))
 	err = r.Client.Delete(ctx, comp)
-	if err != nil && !apierrors.IsNotFound(err) {
+	if err != nil {
 		log.Error(err, fmt.Sprintf("Error deleting InternalHubComponent. Error: %v", err))
 		return reconcile.Result{Requeue: true}, err
 	}
