@@ -2044,6 +2044,17 @@ rules:
 - apiGroups:
   - multicluster.openshift.io
   resources:
+  - internalenginecomponents
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - watch
+- apiGroups:
+  - multicluster.openshift.io
+  resources:
   - multiclusterengines
   verbs:
   - create

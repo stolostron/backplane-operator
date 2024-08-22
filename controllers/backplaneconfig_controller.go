@@ -152,6 +152,9 @@ var (
 //+kubebuilder:rbac:groups="",resources=serviceaccounts/token,verbs=create
 //+kubebuilder:rbac:groups=authentication.k8s.io,resources=tokenrequests,verbs=create
 
+// InternalEngineComponent
+// +kubebuilder:rbac:groups="multicluster.openshift.io",resources="internalenginecomponents",verbs=create;get;delete;patch;list;watch
+
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (retRes ctrl.Result, retErr error) {
@@ -793,6 +796,57 @@ func (r *MultiClusterEngineReconciler) DeployAlwaysSubcomponents(ctx context.Con
 	return ctrl.Result{}, nil
 }
 
+func (r *MultiClusterEngineReconciler) ensureInternalEngineComponent(
+	ctx context.Context,
+	backplaneConfig *backplanev1.MultiClusterEngine,
+	component string) (ctrl.Result, error) {
+
+	componentCR := &backplanev1.InternalEngineComponent{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: backplanev1.GroupVersion.String(),
+			Kind:       "InternalEngineComponent",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      component,
+			Namespace: backplaneConfig.Spec.TargetNamespace,
+		},
+	}
+
+	force := true
+	err := r.Client.Patch(ctx, componentCR, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
+	if err != nil {
+		r.Log.Info(fmt.Sprintf("error applying %s CR. Error: %s", component, err.Error()))
+		return ctrl.Result{Requeue: true}, err
+	}
+
+	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterEngineReconciler) ensureNoInternalEngineComponent(
+	ctx context.Context,
+	backplaneConfig *backplanev1.MultiClusterEngine,
+	component string) (ctrl.Result, error) {
+
+	comp := &backplanev1.InternalEngineComponent{}
+	err := r.Client.Get(ctx, types.NamespacedName{Name: component, Namespace: backplaneConfig.Spec.TargetNamespace}, comp)
+	if apierrors.IsNotFound(err) {
+		return ctrl.Result{}, nil
+	}
+	if err != nil {
+		log.Error(err, fmt.Sprintf("Error getting InternalEngineComponent. Error: %v: Component was: %v", err, comp))
+		return reconcile.Result{Requeue: true}, err
+	}
+
+	log.Info(fmt.Sprintf("Ensuring No InternalEngineComponent: %s", component))
+	err = r.Client.Delete(ctx, comp)
+	if err != nil && !apierrors.IsNotFound(err) {
+		log.Error(err, fmt.Sprintf("Error deleting InternalEngineComponent. Error: %v", err))
+		return reconcile.Result{Requeue: true}, err
+	}
+
+	return ctrl.Result{}, nil
+}
+
 func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Context,
 	backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 
@@ -800,7 +854,15 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 	requeue := false
 
 	if backplaneConfig.Enabled(backplanev1.ManagedServiceAccount) {
-		result, err := r.ensureManagedServiceAccount(ctx, backplaneConfig)
+
+		result, err := r.ensureInternalEngineComponent(ctx, backplaneConfig, backplanev1.ManagedServiceAccount)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.ManagedServiceAccount+"InternalEngineComponent"] = err
+		}
+		result, err = r.ensureManagedServiceAccount(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
 			requeue = true
 		}
@@ -808,7 +870,14 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 			errs[backplanev1.ManagedServiceAccount] = err
 		}
 	} else {
-		result, err := r.ensureNoManagedServiceAccount(ctx, backplaneConfig)
+		result, err := r.ensureNoInternalEngineComponent(ctx, backplaneConfig, backplanev1.ManagedServiceAccount)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.ManagedServiceAccount+"InternalEngineComponent"] = err
+		}
+		result, err = r.ensureNoManagedServiceAccount(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
 			requeue = true
 		}
@@ -818,7 +887,14 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 	}
 
 	if backplaneConfig.Enabled(backplanev1.ImageBasedInstallOperator) {
-		result, err := r.ensureImageBasedInstallOperator(ctx, backplaneConfig)
+		result, err := r.ensureInternalEngineComponent(ctx, backplaneConfig, backplanev1.ImageBasedInstallOperator)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.ImageBasedInstallOperator+"InternalEngineComponent"] = err
+		}
+		result, err = r.ensureImageBasedInstallOperator(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
 			requeue = true
 		}
@@ -826,7 +902,14 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 			errs[backplanev1.ImageBasedInstallOperator] = err
 		}
 	} else {
-		result, err := r.ensureNoImageBasedInstallOperator(ctx, backplaneConfig)
+		result, err := r.ensureNoInternalEngineComponent(ctx, backplaneConfig, backplanev1.ImageBasedInstallOperator)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.ImageBasedInstallOperator+"InternalEngineComponent"] = err
+		}
+		result, err = r.ensureNoImageBasedInstallOperator(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
 			requeue = true
 		}
@@ -836,7 +919,14 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 	}
 
 	if backplaneConfig.Enabled(backplanev1.HyperShift) {
-		result, err := r.ensureHyperShift(ctx, backplaneConfig)
+		result, err := r.ensureInternalEngineComponent(ctx, backplaneConfig, backplanev1.HyperShift)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.HyperShift+"InternalEngineComponent"] = err
+		}
+		result, err = r.ensureHyperShift(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
 			requeue = true
 		}
@@ -844,7 +934,14 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 			errs[backplanev1.HyperShift] = err
 		}
 	} else {
-		result, err := r.ensureNoHyperShift(ctx, backplaneConfig)
+		result, err := r.ensureNoInternalEngineComponent(ctx, backplaneConfig, backplanev1.HyperShift)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.HyperShift+"InternalEngineComponent"] = err
+		}
+		result, err = r.ensureNoHyperShift(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
 			requeue = true
 		}
@@ -866,7 +963,14 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 	}
 
 	if backplaneConfig.Enabled(backplanev1.ConsoleMCE) && ocpConsole {
-		result, err := r.ensureConsoleMCE(ctx, backplaneConfig)
+		result, err := r.ensureInternalEngineComponent(ctx, backplaneConfig, backplanev1.ConsoleMCE)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.ConsoleMCE+"InternalEngineComponent"] = err
+		}
+		result, err = r.ensureConsoleMCE(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
 			requeue = true
 		}
@@ -874,7 +978,14 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 			errs[backplanev1.ConsoleMCE] = err
 		}
 	} else {
-		result, err := r.ensureNoConsoleMCE(ctx, backplaneConfig, ocpConsole)
+		result, err := r.ensureNoInternalEngineComponent(ctx, backplaneConfig, backplanev1.ConsoleMCE)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.ConsoleMCE+"InternalEngineComponent"] = err
+		}
+		result, err = r.ensureNoConsoleMCE(ctx, backplaneConfig, ocpConsole)
 		if result != (ctrl.Result{}) {
 			requeue = true
 		}
@@ -884,7 +995,14 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 	}
 
 	if backplaneConfig.Enabled(backplanev1.Discovery) {
-		result, err := r.ensureDiscovery(ctx, backplaneConfig)
+		result, err := r.ensureInternalEngineComponent(ctx, backplaneConfig, backplanev1.Discovery)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.Discovery+"InternalEngineComponent"] = err
+		}
+		result, err = r.ensureDiscovery(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
 			requeue = true
 		}
@@ -892,7 +1010,14 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 			errs[backplanev1.Discovery] = err
 		}
 	} else {
-		result, err := r.ensureNoDiscovery(ctx, backplaneConfig)
+		result, err := r.ensureNoInternalEngineComponent(ctx, backplaneConfig, backplanev1.Discovery)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.Discovery+"InternalEngineComponent"] = err
+		}
+		result, err = r.ensureNoDiscovery(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
 			requeue = true
 		}
@@ -902,7 +1027,14 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 	}
 
 	if backplaneConfig.Enabled(backplanev1.Hive) {
-		result, err := r.ensureHive(ctx, backplaneConfig)
+		result, err := r.ensureInternalEngineComponent(ctx, backplaneConfig, backplanev1.Hive)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.Hive+"InternalEngineComponent"] = err
+		}
+		result, err = r.ensureHive(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
 			requeue = true
 		}
@@ -910,7 +1042,14 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 			errs[backplanev1.Hive] = err
 		}
 	} else {
-		result, err := r.ensureNoHive(ctx, backplaneConfig)
+		result, err := r.ensureNoInternalEngineComponent(ctx, backplaneConfig, backplanev1.Hive)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.Hive+"InternalEngineComponent"] = err
+		}
+		result, err = r.ensureNoHive(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
 			requeue = true
 		}
@@ -920,7 +1059,14 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 	}
 
 	if backplaneConfig.Enabled(backplanev1.AssistedService) {
-		result, err := r.ensureAssistedService(ctx, backplaneConfig)
+		result, err := r.ensureInternalEngineComponent(ctx, backplaneConfig, backplanev1.AssistedService)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.AssistedService+"InternalEngineComponent"] = err
+		}
+		result, err = r.ensureAssistedService(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
 			requeue = true
 		}
@@ -928,7 +1074,14 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 			errs[backplanev1.AssistedService] = err
 		}
 	} else {
-		result, err := r.ensureNoAssistedService(ctx, backplaneConfig)
+		result, err := r.ensureNoInternalEngineComponent(ctx, backplaneConfig, backplanev1.AssistedService)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.AssistedService+"InternalEngineComponent"] = err
+		}
+		result, err = r.ensureNoAssistedService(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
 			requeue = true
 		}
@@ -938,7 +1091,14 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 	}
 
 	if backplaneConfig.Enabled(backplanev1.ClusterLifecycle) {
-		result, err := r.ensureClusterLifecycle(ctx, backplaneConfig)
+		result, err := r.ensureInternalEngineComponent(ctx, backplaneConfig, backplanev1.ClusterLifecycle)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.ClusterLifecycle+"InternalEngineComponent"] = err
+		}
+		result, err = r.ensureClusterLifecycle(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
 			requeue = true
 		}
@@ -946,7 +1106,14 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 			errs[backplanev1.ClusterLifecycle] = err
 		}
 	} else {
-		result, err := r.ensureNoClusterLifecycle(ctx, backplaneConfig)
+		result, err := r.ensureNoInternalEngineComponent(ctx, backplaneConfig, backplanev1.ClusterLifecycle)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.ClusterLifecycle+"InternalEngineComponent"] = err
+		}
+		result, err = r.ensureNoClusterLifecycle(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
 			requeue = true
 		}
@@ -956,7 +1123,14 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 	}
 
 	if backplaneConfig.Enabled(backplanev1.ClusterManager) {
-		result, err := r.ensureClusterManager(ctx, backplaneConfig)
+		result, err := r.ensureInternalEngineComponent(ctx, backplaneConfig, backplanev1.ClusterManager)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.ClusterManager+"InternalEngineComponent"] = err
+		}
+		result, err = r.ensureClusterManager(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
 			requeue = true
 		}
@@ -964,7 +1138,14 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 			errs[backplanev1.ClusterManager] = err
 		}
 	} else {
-		result, err := r.ensureNoClusterManager(ctx, backplaneConfig)
+		result, err := r.ensureNoInternalEngineComponent(ctx, backplaneConfig, backplanev1.ClusterManager)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.ClusterManager+"InternalEngineComponent"] = err
+		}
+		result, err = r.ensureNoClusterManager(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
 			requeue = true
 		}
@@ -974,7 +1155,14 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 	}
 
 	if backplaneConfig.Enabled(backplanev1.ServerFoundation) {
-		result, err := r.ensureServerFoundation(ctx, backplaneConfig)
+		result, err := r.ensureInternalEngineComponent(ctx, backplaneConfig, backplanev1.ServerFoundation)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.ServerFoundation+"InternalEngineComponent"] = err
+		}
+		result, err = r.ensureServerFoundation(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
 			requeue = true
 		}
@@ -982,7 +1170,14 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 			errs[backplanev1.ServerFoundation] = err
 		}
 	} else {
-		result, err := r.ensureNoServerFoundation(ctx, backplaneConfig)
+		result, err := r.ensureNoInternalEngineComponent(ctx, backplaneConfig, backplanev1.ServerFoundation)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.ServerFoundation+"InternalEngineComponent"] = err
+		}
+		result, err = r.ensureNoServerFoundation(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
 			requeue = true
 		}
@@ -992,7 +1187,14 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 	}
 
 	if backplaneConfig.Enabled(backplanev1.ClusterProxyAddon) {
-		result, err := r.ensureClusterProxyAddon(ctx, backplaneConfig)
+		result, err := r.ensureInternalEngineComponent(ctx, backplaneConfig, backplanev1.ClusterProxyAddon)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.ClusterProxyAddon+"InternalEngineComponent"] = err
+		}
+		result, err = r.ensureClusterProxyAddon(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
 			requeue = true
 		}
@@ -1000,7 +1202,14 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 			errs[backplanev1.ClusterProxyAddon] = err
 		}
 	} else {
-		result, err := r.ensureNoClusterProxyAddon(ctx, backplaneConfig)
+		result, err := r.ensureNoInternalEngineComponent(ctx, backplaneConfig, backplanev1.ClusterProxyAddon)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.ClusterProxyAddon+"InternalEngineComponent"] = err
+		}
+		result, err = r.ensureNoClusterProxyAddon(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
 			requeue = true
 		}
@@ -1010,6 +1219,13 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 	}
 
 	if backplaneConfig.Enabled(backplanev1.LocalCluster) {
+		// result, err := r.ensureInternalEngineComponent(ctx, backplaneConfig, backplanev1.LocalCluster)
+		// if result != (ctrl.Result{}) {
+		// 	requeue = true
+		// }
+		// if err != nil {
+		// 	errs[backplanev1.LocalCluster+"InternalEngineComponent"] = err
+		// }
 		result, err := r.ensureLocalCluster(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
 			requeue = true
@@ -1018,6 +1234,13 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 			errs[backplanev1.LocalCluster] = err
 		}
 	} else {
+		// result, err := r.ensureNoInternalEngineComponent(ctx, backplaneConfig, backplanev1.LocalCluster)
+		// if result != (ctrl.Result{}) {
+		// 	requeue = true
+		// }
+		// if err != nil {
+		// 	errs[backplanev1.LocalCluster+"InternalEngineComponent"] = err
+		// }
 		result, err := r.ensureNoLocalCluster(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
 			requeue = true
@@ -1093,10 +1316,14 @@ func (r *MultiClusterEngineReconciler) applyTemplate(ctx context.Context,
 func (r *MultiClusterEngineReconciler) deleteTemplate(ctx context.Context,
 	backplaneConfig *backplanev1.MultiClusterEngine, template *unstructured.Unstructured) (ctrl.Result, error) {
 
+	// before := template.DeepCopy()
 	err := r.Client.Get(ctx, types.NamespacedName{Name: template.GetName(), Namespace: template.GetNamespace()}, template)
 	if err != nil && (apierrors.IsNotFound(err) || apimeta.IsNoMatchError(err)) {
 		return ctrl.Result{}, nil
 	}
+	// after := template.DeepCopy()
+
+	// log.Info(fmt.Sprintf("Before: %v, After: %v", before, after))
 
 	// set status progressing condition
 	if err != nil {
@@ -1106,7 +1333,7 @@ func (r *MultiClusterEngineReconciler) deleteTemplate(ctx context.Context,
 
 	log.Info(fmt.Sprintf("finalizing template: %s\n", template.GetName()))
 	err = r.Client.Delete(ctx, template)
-	if err != nil {
+	if err != nil && !apierrors.IsNotFound(err) {
 		log.Error(err, "Failed to delete template")
 		return ctrl.Result{}, err
 	}

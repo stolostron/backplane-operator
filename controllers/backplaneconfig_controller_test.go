@@ -534,6 +534,208 @@ var _ = Describe("BackplaneConfig controller", func() {
 			})
 		})
 
+		Context("ensuring InternalEngineComponent CRs", func() {
+			It("should deploy sub components", func() {
+				createCtx := context.Background()
+				By("creating the backplane config with everything enabled")
+				os.Setenv("ACM_HUB_OCP_VERSION", "4.12.0")
+				defer os.Unsetenv("ACM_HUB_OCP_VERSION")
+				backplaneConfig := &backplanev1.MultiClusterEngine{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "multicluster.openshift.io/v1",
+						Kind:       "MultiClusterEngine",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: BackplaneConfigName,
+					},
+					Spec: backplanev1.MultiClusterEngineSpec{
+						TargetNamespace: DestinationNamespace,
+						ImagePullSecret: "testsecret",
+						Overrides: &backplanev1.Overrides{
+							Components: []backplanev1.ComponentConfig{
+								{
+									Name:    backplanev1.AssistedService,
+									Enabled: true,
+								},
+								{
+									Name:    backplanev1.ClusterLifecycle,
+									Enabled: true,
+								},
+								{
+									Name:    backplanev1.ClusterManager,
+									Enabled: true,
+								},
+								{
+									Name:    backplanev1.ClusterProxyAddon,
+									Enabled: true,
+								},
+								{
+									Name:    backplanev1.ConsoleMCE,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.Discovery,
+									Enabled: true,
+								},
+								{
+									Name:    backplanev1.Hive,
+									Enabled: true,
+								},
+								{
+									Name:    backplanev1.HyperShift,
+									Enabled: true,
+								},
+								{
+									Name:    backplanev1.HypershiftLocalHosting,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.ManagedServiceAccount,
+									Enabled: true,
+								},
+								{
+									Name:    backplanev1.ServerFoundation,
+									Enabled: true,
+								},
+								{
+									Name:    backplanev1.ImageBasedInstallOperator,
+									Enabled: true,
+								},
+							},
+						},
+					},
+				}
+				Expect(k8sClient.Create(createCtx, backplaneConfig)).Should(Succeed())
+
+				By("ensuring the InternalEngineComponent CRD is created")
+				ctx := context.Background()
+				iecCRD := &apixv1.CustomResourceDefinition{}
+
+				Eventually(k8sClient.Get(ctx, types.NamespacedName{Name: "internalenginecomponents.multicluster.openshift.io"}, iecCRD)).Should(Succeed())
+
+				By("ensuring togglable components")
+				_, err := reconciler.ensureToggleableComponents(ctx, backplaneConfig)
+				Expect(err).To(BeNil())
+
+				By("ensuring each enabled component's CR is created")
+				for _, mcecomponent := range backplanev1.MCEComponents {
+					if backplaneConfig.Enabled(mcecomponent) {
+						By(fmt.Sprintf("ensuring %s CR is created", mcecomponent))
+						Eventually(k8sClient.Get(ctx, types.NamespacedName{Name: mcecomponent, Namespace: backplaneConfig.Spec.TargetNamespace}, &backplanev1.InternalEngineComponent{})).Should(Succeed())
+					}
+				}
+
+				By("ensuring each disabled component's CR is not present")
+				for _, mcecomponent := range backplanev1.MCEComponents {
+					if !backplaneConfig.Enabled(mcecomponent) {
+						By(fmt.Sprintf("ensuring %s CR is not present", mcecomponent))
+						Eventually(k8sClient.Get(ctx, types.NamespacedName{Name: mcecomponent, Namespace: backplaneConfig.Spec.TargetNamespace}, &backplanev1.InternalEngineComponent{})).Should(Not(Succeed()))
+					}
+				}
+			})
+		})
+
+		Context("ensuring No InternalEngineComponent CRs", func() {
+			It("should deploy sub components", func() {
+				createCtx := context.Background()
+				By("creating the backplane config with everything enabled")
+				backplaneConfig := &backplanev1.MultiClusterEngine{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "multicluster.openshift.io/v1",
+						Kind:       "MultiClusterEngine",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: BackplaneConfigName,
+					},
+					Spec: backplanev1.MultiClusterEngineSpec{
+						TargetNamespace: DestinationNamespace,
+						ImagePullSecret: "testsecret",
+						Overrides: &backplanev1.Overrides{
+							Components: []backplanev1.ComponentConfig{
+								{
+									Name:    backplanev1.AssistedService,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.ClusterLifecycle,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.ClusterManager,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.ClusterProxyAddon,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.ConsoleMCE,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.Discovery,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.Hive,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.HyperShift,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.HypershiftLocalHosting,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.ManagedServiceAccount,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.ServerFoundation,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.ImageBasedInstallOperator,
+									Enabled: false,
+								},
+							},
+						},
+					},
+				}
+				Expect(k8sClient.Create(createCtx, backplaneConfig)).Should(Succeed())
+
+				By("ensuring the InternalEngineComponent CRD is created")
+				ctx := context.Background()
+				iecCRD := &apixv1.CustomResourceDefinition{}
+
+				Eventually(k8sClient.Get(ctx, types.NamespacedName{Name: "internalenginecomponents.multicluster.openshift.io"}, iecCRD)).Should(Succeed())
+
+				By("ensuring togglable components")
+				_, err := reconciler.ensureToggleableComponents(ctx, backplaneConfig)
+				Expect(err).To(BeNil())
+
+				By("ensuring each enabled component's CR is created")
+				for _, mcecomponent := range backplanev1.MCEComponents {
+					if backplaneConfig.Enabled(mcecomponent) {
+						By(fmt.Sprintf("ensuring %s CR is created", mcecomponent))
+						Eventually(k8sClient.Get(ctx, types.NamespacedName{Name: mcecomponent, Namespace: backplaneConfig.Spec.TargetNamespace}, &backplanev1.InternalEngineComponent{})).Should(Succeed())
+					}
+				}
+
+				By("ensuring each disabled component's CR is not present")
+				for _, mcecomponent := range backplanev1.MCEComponents {
+					if !backplaneConfig.Enabled(mcecomponent) {
+						By(fmt.Sprintf("ensuring %s CR is not present", mcecomponent))
+						component := &backplanev1.InternalEngineComponent{}
+						err := k8sClient.Get(ctx, types.NamespacedName{Name: mcecomponent, Namespace: backplaneConfig.Spec.TargetNamespace}, component)
+						log.Info(fmt.Sprintf("component and error: %v :: %v", component, err))
+						Expect(err).NotTo(BeNil())
+					}
+				}
+			})
+		})
 		Context("2nd attempt", func() {
 			It("should deploy sub components", func() {
 				createCtx := context.Background()

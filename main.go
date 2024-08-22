@@ -240,7 +240,6 @@ func main() {
 	}
 
 	// Render CRD templates
-	crdsDir := crdsDir
 
 	var backplaneConfig *backplanev1.MultiClusterEngine
 	crds, errs := renderer.RenderCRDs(crdsDir, backplaneConfig)
