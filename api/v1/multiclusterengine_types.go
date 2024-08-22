@@ -251,23 +251,23 @@ type MultiClusterEngineList struct {
 }
 
 // +kubebuilder:object:root=true
-// +operator-sdk:csv:customresourcedefinitions:displayName="InternalHubComponent"
-type InternalHubComponent struct {
+// +operator-sdk:csv:customresourcedefinitions:displayName="InternalEngineComponent"
+type InternalEngineComponent struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Spec              InternalHubComponentSpec `json:"spec,omitempty"`
+	Spec              InternalEngineComponentSpec `json:"spec,omitempty"`
 }
 
 // +kubebuilder:object:root=true
-type InternalHubComponentList struct {
+type InternalEngineComponentList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []InternalHubComponent `json:"items"`
+	Items           []InternalEngineComponent `json:"items"`
 }
 
-type InternalHubComponentSpec struct{}
+type InternalEngineComponentSpec struct{}
 
 func init() {
 	SchemeBuilder.Register(&MultiClusterEngine{}, &MultiClusterEngineList{})
-	SchemeBuilder.Register(&InternalHubComponent{}, &InternalHubComponentList{})
+	SchemeBuilder.Register(&InternalEngineComponent{}, &InternalEngineComponentList{})
 }

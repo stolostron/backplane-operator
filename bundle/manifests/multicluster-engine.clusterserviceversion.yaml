@@ -82,7 +82,7 @@ spec:
         - apiGroups:
           - multicluster.openshift.io
           resources:
-            - internalhubcomponents
+            - internalenginecomponents
           verbs:
             - create
             - get
