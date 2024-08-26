@@ -1116,7 +1116,7 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 		if err != nil {
 			errs[backplanev1.ClusterProxyAddon] = err
 		}
-
+	}
 	if backplaneConfig.Enabled(backplanev1.LocalCluster) {
 		result, err := r.ensureLocalCluster(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
