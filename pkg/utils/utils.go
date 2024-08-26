@@ -10,9 +10,8 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/discovery"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 	"path"
 	"path/filepath"
 
@@ -333,13 +332,9 @@ func DeployOnOCP() bool {
 
 var projectGVR = schema.GroupVersionResource{Group: "project.openshift.io", Version: "v1", Resource: "projects"}
 
-func DetectOpenShift(kubeConfig *rest.Config) error {
-	discoveryClient, err := discovery.NewDiscoveryClientForConfig(kubeConfig)
-	if err != nil {
-		return err
-	}
-
-	_, err = discoveryClient.ServerResourcesForGroupVersion(projectGVR.GroupVersion().String())
+func DetectOpenShift(cl client.Client) error {
+	checkNs := &corev1.Namespace{}
+	err := cl.Get(context.TODO(), types.NamespacedName{Name: "openshift-config"}, checkNs)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			fmt.Println("### The operator is running on non-OCP ###")
@@ -349,6 +344,7 @@ func DetectOpenShift(kubeConfig *rest.Config) error {
 
 		return err
 	}
+	SetDeployOnOCP(true)
 	return nil
 }
 
