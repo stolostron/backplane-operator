@@ -148,12 +148,6 @@ func main() {
 	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
 
-	err := utils.DetectOpenShift(ctrl.GetConfigOrDie())
-	if err != nil {
-		setupLog.Error(err, "unable to detect if cluster is openShift")
-		os.Exit(1)
-	}
-
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
 	ctrl.Log.WithName("Backplane Operator version").Info(fmt.Sprintf("%#v", version.Get()))
@@ -212,7 +206,11 @@ func main() {
 		setupLog.Error(err, "unable to create uncached client")
 		os.Exit(1)
 	}
-
+	err = utils.DetectOpenShift(uncachedClient)
+	if err != nil {
+		setupLog.Error(err, "unable to detect if cluster is openShift")
+		os.Exit(1)
+	}
 	ctx := ctrl.SetupSignalHandler()
 	upgradeableCondition := &utils.OperatorCondition{}
 
