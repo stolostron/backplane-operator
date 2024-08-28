@@ -43,8 +43,10 @@ import (
 	. "github.com/onsi/gomega"
 	v1 "github.com/stolostron/backplane-operator/api/v1"
 	// "github.com/stolostron/backplane-operator/pkg/controllers"
-	// "github.com/stolostron/backplane-operator/pkg/status"
+	"github.com/stolostron/backplane-operator/controllers"
+	"github.com/stolostron/backplane-operator/pkg/status"
 	"github.com/stolostron/backplane-operator/pkg/utils"
+
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 
@@ -83,15 +85,15 @@ var _ = BeforeSuite(func() {
 	By("bootstrap test environment")
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths: []string{
-			filepath.Join("..", "config", "crd", "bases"),
-			filepath.Join("..", "pkg", "templates", "crds", "cluster-manager"),
-			filepath.Join("..", "pkg", "templates", "crds", "hive-operator"),
-			filepath.Join("..", "pkg", "templates", "crds", "foundation"),
-			filepath.Join("..", "pkg", "templates", "crds", "cluster-lifecycle"),
-			filepath.Join("..", "pkg", "templates", "crds", "discovery-operator"),
-			filepath.Join("..", "pkg", "templates", "crds", "cluster-proxy-addon"),
-			filepath.Join("..", "pkg", "templates", "crds", "internal"),
-			filepath.Join("..", "hack", "unit-test-crds"),
+			filepath.Join("../..", "config", "crd", "bases"),
+			filepath.Join("../..", "pkg", "templates", "crds", "cluster-manager"),
+			filepath.Join("../..", "pkg", "templates", "crds", "hive-operator"),
+			filepath.Join("../..", "pkg", "templates", "crds", "foundation"),
+			filepath.Join("../..", "pkg", "templates", "crds", "cluster-lifecycle"),
+			filepath.Join("../..", "pkg", "templates", "crds", "discovery-operator"),
+			filepath.Join("../..", "pkg", "templates", "crds", "cluster-proxy-addon"),
+			filepath.Join("../..", "pkg", "templates", "crds", "internal"),
+			filepath.Join("../..", "hack", "unit-test-crds"),
 		},
 		CRDInstallOptions: envtest.CRDInstallOptions{
 			CleanUpAfterUse: true,
@@ -102,6 +104,7 @@ var _ = BeforeSuite(func() {
 	cfg, err := testEnv.Start()
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
+	upgradeableCondition := &utils.OperatorCondition{}
 
 	err = v1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
@@ -140,7 +143,7 @@ var _ = BeforeSuite(func() {
 	err = os.Setenv("POD_NAMESPACE", "default")
 	Expect(err).NotTo(HaveOccurred())
 
-	err = os.Setenv("DIRECTORY_OVERRIDE", "../")
+	err = os.Setenv("DIRECTORY_OVERRIDE", "../../")
 	Expect(err).NotTo(HaveOccurred())
 
 	err = os.Setenv("UNIT_TEST", "true")
@@ -167,14 +170,14 @@ var _ = BeforeSuite(func() {
 	Expect(err).ToNot(HaveOccurred())
 
 	Expect(err).ToNot(HaveOccurred())
-	// reconciler = MultiClusterEngineReconciler{
-	// 	Client:          k8sManager.GetClient(),
-	// 	Scheme:          k8sManager.GetScheme(),
-	// 	StatusManager:   &status.StatusTracker{Client: k8sManager.GetClient()},
-	// 	UpgradeableCond: upgradeableCondition,
-	// }
-	// err = (reconciler).SetupWithManager(k8sManager)
-	// Expect(err).ToNot(HaveOccurred())
+	reconciler := controllers.MultiClusterEngineReconciler{
+		Client:          k8sManager.GetClient(),
+		Scheme:          k8sManager.GetScheme(),
+		StatusManager:   &status.StatusTracker{Client: k8sManager.GetClient()},
+		UpgradeableCond: upgradeableCondition,
+	}
+	err = (reconciler).SetupWithManager(k8sManager)
+	Expect(err).ToNot(HaveOccurred())
 	operatorNamespace := utils.OperatorNamespace()
 	err = (&Reconciler{
 		Client:    k8sManager.GetClient(),
