@@ -26,6 +26,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"time"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -34,6 +37,8 @@ var _ = Describe("BackplaneConfig controller", func() {
 		It("Removes the legacy CLC Prometheus configuration", func() {
 			By("creating the backplane config with nonexistant secret")
 			createCtx := context.Background()
+			timeout := time.Second * 60
+			interval := time.Millisecond * 250
 			// Create target namespace
 			err := k8sClient.Create(context.Background(), &corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
@@ -59,6 +64,21 @@ var _ = Describe("BackplaneConfig controller", func() {
 			}
 
 			Expect(k8sClient.Create(createCtx, backplaneConfig)).Should(Succeed())
+
+			testWH := backplanev1.ValidatingWebhook("test")
+			Expect(k8sClient.Create(createCtx, testWH)).Should(Succeed())
+			Eventually(func() error {
+				ctx := context.Background()
+				u := &unstructured.Unstructured{}
+				u.SetName("multiclusterengines.multicluster.openshift.io")
+				u.SetNamespace("test")
+				u.SetGroupVersionKind(schema.GroupVersionKind{
+					Group:   "admissionregistration.k8s.io",
+					Kind:    "ValidatingWebhookConfiguration",
+					Version: "v1",
+				})
+				return k8sClient.Delete(ctx, u)
+			}, timeout, interval).Should(Succeed())
 
 		})
 	})
