@@ -19,7 +19,13 @@ limitations under the License.
 package mcewebhook
 
 import (
+	"context"
 	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -27,6 +33,33 @@ var _ = Describe("BackplaneConfig controller", func() {
 	Context("Legacy clean up tasks", func() {
 		It("Removes the legacy CLC Prometheus configuration", func() {
 			By("creating the backplane config with nonexistant secret")
+			createCtx := context.Background()
+			// Create target namespace
+			err := k8sClient.Create(context.Background(), &corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test",
+				},
+				Spec: corev1.NamespaceSpec{},
+			})
+			if err != nil && !errors.IsAlreadyExists(err) {
+				Expect(err).To(BeNil())
+			}
+			backplaneConfig := &backplanev1.MultiClusterEngine{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "multicluster.openshift.io/v1",
+					Kind:       "MultiClusterEngine",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test",
+				},
+				Spec: backplanev1.MultiClusterEngineSpec{
+					TargetNamespace: "test",
+					ImagePullSecret: "testsecret",
+				},
+			}
+
+			Expect(k8sClient.Create(createCtx, backplaneConfig)).Should(Succeed())
+
 		})
 	})
 })
