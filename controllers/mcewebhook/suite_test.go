@@ -71,6 +71,7 @@ var k8sClient client.Client
 var testEnv *envtest.Environment
 var ctx context.Context
 var cancel context.CancelFunc
+var webhookReconciler Reconciler
 
 // var reconciler controllers.MultiClusterEngineReconciler
 
@@ -178,11 +179,12 @@ var _ = BeforeSuite(func() {
 	}
 	err = (reconciler).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
-	operatorNamespace := utils.OperatorNamespace()
-	err = (&Reconciler{
+	// operatorNamespace := utils.OperatorNamespace()
+	webhookReconciler = Reconciler{
 		Client:    k8sManager.GetClient(),
-		Namespace: operatorNamespace,
-	}).SetupWithManager(k8sManager)
+		Namespace: "test",
+	}
+	err = (&webhookReconciler).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 
 	go func() {
