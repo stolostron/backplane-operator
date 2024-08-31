@@ -41,7 +41,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 			createCtx := context.Background()
 			timeout := time.Second * 60
 			interval := time.Millisecond * 250
-			utils.DetectOpenShift(k8sClient)
+			utils.SetDeployOnOCP(false)
 			// Create target namespace
 			err := k8sClient.Create(context.Background(), &corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
