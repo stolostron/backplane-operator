@@ -28,6 +28,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	// ctrl "sigs.k8s.io/controller-runtime"
+	"github.com/stolostron/backplane-operator/pkg/utils"
 	"time"
 	//+kubebuilder:scaffold:imports
 )
@@ -39,6 +41,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 			createCtx := context.Background()
 			timeout := time.Second * 60
 			interval := time.Millisecond * 250
+			utils.DetectOpenShift(k8sClient)
 			// Create target namespace
 			err := k8sClient.Create(context.Background(), &corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
@@ -79,6 +82,9 @@ var _ = Describe("BackplaneConfig controller", func() {
 				})
 				return k8sClient.Delete(ctx, u)
 			}, timeout, interval).Should(Succeed())
+
+			// _, err := webhookReconciler.Reconcile(createCtx, ctrl.Result{})
+			// Expect(err).ToBe(nil)
 
 		})
 	})

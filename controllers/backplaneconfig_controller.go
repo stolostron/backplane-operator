@@ -257,7 +257,7 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return ctrl.Result{Requeue: true}, err
 	}
 
-	if !utils.ShouldIgnoreOCPVersion(backplaneConfig) && utils.DeployOnOCP(){
+	if !utils.ShouldIgnoreOCPVersion(backplaneConfig) && utils.DeployOnOCP() {
 		currentOCPVersion, err := r.getClusterVersion(ctx)
 		if err != nil {
 			return ctrl.Result{}, fmt.Errorf("failed to detect clusterversion: %w", err)
