@@ -261,7 +261,7 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return ctrl.Result{Requeue: true}, err
 	}
 
-	if !utils.ShouldIgnoreOCPVersion(backplaneConfig) {
+	if !utils.ShouldIgnoreOCPVersion(backplaneConfig) && utils.DeployOnOCP(){
 		currentOCPVersion, err := r.getClusterVersion(ctx)
 		if err != nil {
 			return ctrl.Result{}, fmt.Errorf("failed to detect clusterversion: %w", err)
@@ -967,41 +967,42 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 	if err != nil {
 		errs[backplanev1.HypershiftLocalHosting] = err
 	}
+	if utils.DeployOnOCP() {
+		ocpConsole, err := r.CheckConsole(ctx)
+		if err != nil {
+			return ctrl.Result{RequeueAfter: requeuePeriod}, err
+		}
 
-	ocpConsole, err := r.CheckConsole(ctx)
-	if err != nil {
-		return ctrl.Result{RequeueAfter: requeuePeriod}, err
-	}
-
-	if backplaneConfig.Enabled(backplanev1.ConsoleMCE) && ocpConsole {
-		result, err := r.ensureInternalEngineComponent(ctx, backplaneConfig, backplanev1.ConsoleMCE)
-		if result != (ctrl.Result{}) {
-			requeue = true
-		}
-		if err != nil {
-			errs[backplanev1.ConsoleMCE+"InternalEngineComponent"] = err
-		}
-		result, err = r.ensureConsoleMCE(ctx, backplaneConfig)
-		if result != (ctrl.Result{}) {
-			requeue = true
-		}
-		if err != nil {
-			errs[backplanev1.ConsoleMCE] = err
-		}
-	} else {
-		result, err := r.ensureNoInternalEngineComponent(ctx, backplaneConfig, backplanev1.ConsoleMCE)
-		if result != (ctrl.Result{}) {
-			requeue = true
-		}
-		if err != nil {
-			errs[backplanev1.ConsoleMCE+"InternalEngineComponent"] = err
-		}
-		result, err = r.ensureNoConsoleMCE(ctx, backplaneConfig, ocpConsole)
-		if result != (ctrl.Result{}) {
-			requeue = true
-		}
-		if err != nil {
-			errs[backplanev1.ConsoleMCE] = err
+		if backplaneConfig.Enabled(backplanev1.ConsoleMCE) && ocpConsole {
+			result, err := r.ensureInternalEngineComponent(ctx, backplaneConfig, backplanev1.ConsoleMCE)
+			if result != (ctrl.Result{}) {
+				requeue = true
+			}
+			if err != nil {
+				errs[backplanev1.ConsoleMCE+"InternalEngineComponent"] = err
+			}
+			result, err = r.ensureConsoleMCE(ctx, backplaneConfig)
+			if result != (ctrl.Result{}) {
+				requeue = true
+			}
+			if err != nil {
+				errs[backplanev1.ConsoleMCE] = err
+			}
+		} else {
+			result, err := r.ensureNoInternalEngineComponent(ctx, backplaneConfig, backplanev1.ConsoleMCE)
+			if result != (ctrl.Result{}) {
+				requeue = true
+			}
+			if err != nil {
+				errs[backplanev1.ConsoleMCE+"InternalEngineComponent"] = err
+			}
+			result, err = r.ensureNoConsoleMCE(ctx, backplaneConfig, ocpConsole)
+			if result != (ctrl.Result{}) {
+				requeue = true
+			}
+			if err != nil {
+				errs[backplanev1.ConsoleMCE] = err
+			}
 		}
 	}
 
