@@ -156,6 +156,7 @@ var _ = BeforeSuite(func() {
 		Expect(err).NotTo(HaveOccurred())
 	}
 	//+kubebuilder:scaffold:scheme
+	utils.SetDeployOnOCP(false)
 
 	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
 	Expect(err).NotTo(HaveOccurred())
