@@ -67,7 +67,9 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (retRes ct
 		r.log.Info("Updating the validatingwebhookconfiguration " + MCEValidatingWebhookName)
 
 		existingWebhook.Webhooks = validatingWebhook.Webhooks
-		err = r.Client.Update(ctx, existingWebhook)
+		// err = r.Client.Update(ctx, existingWebhook)
+		force := true
+		err := r.Client.Patch(ctx, existingWebhook, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
 		if err != nil {
 			r.log.Error(err, "Error updating validatingwebhookconfiguration "+MCEValidatingWebhookName)
 		}
