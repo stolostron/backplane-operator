@@ -1,10 +1,9 @@
 {
     "$schema": "https://docs.renovatebot.com/renovate-schema.json",
     "addLabels": ["ok-to-test"],
+    "baseBranches": ["/(^main$)|(^backplane-2\\.(4|5|6)$)/"],
     "rebaseWhen": "behind-base-branch",
     "recreateWhen": "never",
-    "reviewersFromCodeOwners": true,
-    "rollbackPrs": true,
     "schedule": ["before 8am on tuesday and thursday"],
     "timezone": "America/New_York"
 }
