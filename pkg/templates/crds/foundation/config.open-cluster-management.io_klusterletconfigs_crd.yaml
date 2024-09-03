@@ -46,6 +46,47 @@ spec:
                   cluster.
                 pattern: ^([0-9]+(s|m|h))+$|^INFINITE$
                 type: string
+              bootstrapKubeConfigs:
+                description: BootstrapKubeConfigSecrets is the list of secrets that
+                  reflects the Klusterlet.Spec.RegistrationConfiguration.BootstrapKubeConfigs.
+                properties:
+                  localSecretsConfig:
+                    description: LocalSecretsConfig include a list of secrets that
+                      contains the kubeconfigs for ordered bootstrap kubeconifigs.
+                      The secrets must be in the same namespace where the agent controller
+                      runs.
+                    properties:
+                      hubConnectionTimeoutSeconds:
+                        default: 600
+                        description: HubConnectionTimeoutSeconds is used to set the
+                          timeout of connecting to the hub cluster. When agent loses
+                          the connection to the hub over the timeout seconds, the
+                          agent do a rebootstrap. By default is 10 mins.
+                        format: int32
+                        minimum: 180
+                        type: integer
+                      kubeConfigSecrets:
+                        description: KubeConfigSecrets is a list of secret names.
+                          The secrets are in the same namespace where the agent controller
+                          runs.
+                        items:
+                          properties:
+                            name:
+                              description: Name is the name of the secret.
+                              type: string
+                          type: object
+                        type: array
+                    type: object
+                  type:
+                    default: None
+                    description: Type specifies the type of priority bootstrap kubeconfigs.
+                      By default, it is set to None, representing no priority bootstrap
+                      kubeconfigs are set.
+                    enum:
+                    - None
+                    - LocalSecrets
+                    type: string
+                type: object
               hubKubeAPIServerCABundle:
                 description: 'HubKubeAPIServerCABundle is the CA bundle to verify
                   the server certificate of the hub kube API against. If not present,
@@ -103,8 +144,8 @@ spec:
                     default: default
                     description: InstallModeType is the type of install mode.
                     enum:
-                      - default
-                      - noOperator
+                    - default
+                    - noOperator
                     type: string
                 type: object
               nodePlacement:
@@ -120,8 +161,8 @@ spec:
                       on. The default is an empty list.
                     type: object
                   tolerations:
-                    description: Tolerations is attached by pods to tolerate any taint
-                      that matches the triple <key,value,effect> using the matching
+                    description: Tolerations are attached by pods to tolerate any
+                      taint that matches the triple <key,value,effect> using the matching
                       operator <operator>. The default is an empty list.
                     items:
                       description: The pod this Toleration is attached to tolerates
@@ -199,6 +240,7 @@ spec:
                     description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
                     type: string
                 type: object
+                x-kubernetes-map-type: atomic
               registries:
                 description: Registries includes the mirror and source registries.
                   The source registry will be replaced by the Mirror.
