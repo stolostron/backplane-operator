@@ -20,10 +20,16 @@ package utils
 
 import (
 	"context"
+	"fmt"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
+	// ctrl "sigs.k8s.io/controller-runtime"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"k8s.io/client-go/kubernetes"
+	"open-cluster-management.io/sdk-go/pkg/servingcert"
 
 	"k8s.io/client-go/kubernetes/scheme"
 
@@ -55,6 +61,61 @@ var _ = Describe("OperatorCondition", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(k8sClient).NotTo(BeNil())
 		err = DetectOpenShift(k8sClient)
+		Expect(err).ToNot(HaveOccurred())
+
+		kubeClient, err := kubernetes.NewForConfig(cfg)
+		Expect(err).ToNot(HaveOccurred())
+
+		err = k8sClient.Create(context.Background(), &corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "test",
+			},
+			Spec: corev1.NamespaceSpec{},
+		})
+		Expect(err).ToNot(HaveOccurred())
+
+		err = k8sClient.Create(context.Background(), &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "multicluster-engine-operator-webhook",
+				Namespace: "test", // Change this to your desired namespace
+			},
+			Data: map[string][]byte{
+				"ca.crt":  []byte(""),
+				"tls.key": []byte(""),
+				"tls.crt": []byte(""),
+			},
+		})
+		Expect(err).ToNot(HaveOccurred())
+
+		err = k8sClient.Create(context.Background(), &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      servingcert.DefaultCABundleConfigmapName,
+				Namespace: "test",
+			},
+			Data: map[string]string{
+				"ca-bundle.crt": "value",
+			},
+		})
+		Expect(err).ToNot(HaveOccurred())
+
+		NewGlobalServingCertCABundleGetter(kubeClient, servingcert.DefaultCABundleConfigmapName, "test")
+
+		servingcert.NewServingCertController("test", kubeClient).
+			WithTargetServingCerts([]servingcert.TargetServingCertOptions{
+				{
+					Name:      "multicluster-engine-operator-webhook",
+					HostNames: []string{fmt.Sprintf("multicluster-engine-operator-webhook-service.%s.svc", "test")},
+					// LoadDir:   "/tmp/k8s-webhook-server/serving-certs",
+				},
+				{
+					Name:      "ocm-webhook",
+					HostNames: []string{fmt.Sprintf("ocm-webhook.%s.svc", "test")},
+				},
+			}).Start(ctx)
+
+		_, err = GetServingCertCABundle()
+		Expect(err).ToNot(HaveOccurred())
+		err = DumpServingCertSecret()
 		Expect(err).ToNot(HaveOccurred())
 
 	})
