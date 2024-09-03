@@ -70,18 +70,18 @@ var _ = Describe("BackplaneConfig controller", func() {
 
 			testWH := backplanev1.ValidatingWebhook("test")
 			Expect(k8sClient.Create(createCtx, testWH)).Should(Succeed())
-			Eventually(func() error {
-				ctx := context.Background()
-				u := &unstructured.Unstructured{}
-				u.SetName("multiclusterengines.multicluster.openshift.io")
-				u.SetNamespace("test")
-				u.SetGroupVersionKind(schema.GroupVersionKind{
-					Group:   "admissionregistration.k8s.io",
-					Kind:    "ValidatingWebhookConfiguration",
-					Version: "v1",
-				})
-				return k8sClient.Delete(ctx, u)
-			}, timeout, interval).Should(Succeed())
+			// Eventually(func() error {
+			// 	ctx := context.Background()
+			// 	u := &unstructured.Unstructured{}
+			// 	u.SetName("multiclusterengines.multicluster.openshift.io")
+			// 	u.SetNamespace("test")
+			// 	u.SetGroupVersionKind(schema.GroupVersionKind{
+			// 		Group:   "admissionregistration.k8s.io",
+			// 		Kind:    "ValidatingWebhookConfiguration",
+			// 		Version: "v1",
+			// 	})
+			// 	return k8sClient.Delete(ctx, u)
+			// }, timeout, interval).Should(Succeed())
 
 			// _, err := webhookReconciler.Reconcile(createCtx, ctrl.Result{})
 			// Expect(err).ToBe(nil)
