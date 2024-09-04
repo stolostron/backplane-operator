@@ -43,8 +43,8 @@ var testEnv *envtest.Environment
 var ctx context.Context
 var cancel context.CancelFunc
 
-var _ = Describe("OperatorCondition", func() {
-	It("valid condition", func() {
+var _ = Describe("Non-OCP cert management", func() {
+	It("creating and managing certs", func() {
 		ctx, cancel = context.WithCancel(context.Background())
 
 		testEnv = &envtest.Environment{
@@ -118,5 +118,11 @@ var _ = Describe("OperatorCondition", func() {
 		err = DumpServingCertSecret()
 		Expect(err).ToNot(HaveOccurred())
 
+	})
+	It("checking other functions", func() {
+		component := ComponentOnNonOCP("cluster-manager")
+		Expect(component).To(Equal(true))
+		component = ComponentOnNonOCP("discovery")
+		Expect(component).To(Equal(false))
 	})
 })

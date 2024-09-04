@@ -26,11 +26,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime/schema"
+	// "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	// "k8s.io/apimachinery/pkg/runtime/schema"
 	// ctrl "sigs.k8s.io/controller-runtime"
 	"github.com/stolostron/backplane-operator/pkg/utils"
-	"time"
+	// "time"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -39,8 +39,8 @@ var _ = Describe("BackplaneConfig controller", func() {
 		It("Removes the legacy CLC Prometheus configuration", func() {
 			By("creating the backplane config with nonexistant secret")
 			createCtx := context.Background()
-			timeout := time.Second * 60
-			interval := time.Millisecond * 250
+			// timeout := time.Second * 60
+			// interval := time.Millisecond * 250
 			utils.SetDeployOnOCP(false)
 			// Create target namespace
 			err := k8sClient.Create(context.Background(), &corev1.Namespace{
