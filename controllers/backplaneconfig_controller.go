@@ -1415,6 +1415,7 @@ func (r *MultiClusterEngineReconciler) ensureNoAllInternalHubComponents(ctx cont
 		backplanev1.HyperShift,
 		backplanev1.ClusterProxyAddon,
 		backplanev1.LocalCluster,
+		backplanev1.ClusterManager,
 	}
 
 	for _, v := range components {
