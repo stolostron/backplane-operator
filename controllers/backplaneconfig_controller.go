@@ -796,6 +796,81 @@ func (r *MultiClusterEngineReconciler) DeployAlwaysSubcomponents(ctx context.Con
 	return ctrl.Result{}, nil
 }
 
+/*
+getComponentConfig searches for a component configuration in the provided list
+by component name. It returns the configuration and a boolean indicating
+whether it was found.
+*/
+func (r *MultiClusterEngineReconciler) getComponentConfig(components []backplanev1.ComponentConfig, componentName string) (
+	backplanev1.ComponentConfig, bool) {
+	for _, c := range components {
+		if c.Name == componentName {
+			return c, true
+		}
+	}
+	return backplanev1.ComponentConfig{}, false
+}
+
+/*
+getDeploymentConfig searches for a deployment configuration in the provided list
+by deployment name. It returns a pointer to the configuration and nil if not found.
+*/
+func (r *MultiClusterEngineReconciler) getDeploymentConfig(deployments []backplanev1.DeploymentConfig,
+	deploymentName string) (*backplanev1.DeploymentConfig, bool) {
+	for _, d := range deployments {
+		if d.Name == deploymentName {
+			return &d, true
+		}
+	}
+	return &backplanev1.DeploymentConfig{}, false
+}
+
+/*
+applyEnvConfig updates the specified container in the provided template with
+new environment variables. Logs errors if encountered during retrieval or update operations.
+*/
+func (r *MultiClusterEngineReconciler) applyEnvConfig(template *unstructured.Unstructured, containerName string,
+	envConfigs []backplanev1.EnvConfig) error {
+
+	containers, found, err := unstructured.NestedSlice(template.Object, "spec", "template", "spec", "containers")
+	if err != nil || !found {
+		log.Error(err, "Failed to get containers from template", "Kind", template.GetKind(), "Name", template.GetName())
+		return err
+	}
+
+	for i, container := range containers {
+		// We need to cast the container to a map of string interfaces to access the container fields.
+		containerMap := container.(map[string]interface{})
+
+		if containerMap["name"] == containerName {
+			existingEnv, _, _ := unstructured.NestedSlice(containerMap, "env")
+			for _, envConfig := range envConfigs {
+				envVar := map[string]interface{}{
+					"name":  envConfig.Name,
+					"value": envConfig.Value,
+				}
+				existingEnv = append(existingEnv, envVar)
+			}
+
+			if err := unstructured.SetNestedSlice(containerMap, existingEnv, "env"); err != nil {
+				log.Error(err, "Failed to set environment variable", "Container", containerName)
+				return err
+
+			} else {
+				containers[i] = containerMap
+			}
+			break
+		}
+	}
+
+	if err = unstructured.SetNestedSlice(template.Object, containers, "spec", "template", "spec", "containers"); err != nil {
+		log.Error(err, "Failed to set containers in template", "Template", template.GetName())
+		return err
+	}
+
+	return nil
+}
+
 func (r *MultiClusterEngineReconciler) ensureInternalEngineComponent(
 	ctx context.Context,
 	backplaneConfig *backplanev1.MultiClusterEngine,
