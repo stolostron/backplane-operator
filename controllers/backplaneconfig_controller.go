@@ -228,6 +228,7 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 				r.Log.Info(err.Error())
 				return ctrl.Result{RequeueAfter: 5 * time.Second}, nil
 			}
+			r.Log.Info(fmt.Sprintf("Result returned from finalizeBackplaneConfig: %v", result))
 			if result != (ctrl.Result{}) {
 				return result, nil
 			}
@@ -843,7 +844,7 @@ func (r *MultiClusterEngineReconciler) ensureNoInternalEngineComponent(
 	ctx context.Context,
 	backplaneConfig *backplanev1.MultiClusterEngine,
 	component string) (ctrl.Result, error) {
-
+	log.Info(fmt.Sprintf("Ensuring No InternalEngineComponent: %s", component))
 	comp := &backplanev1.InternalEngineComponent{}
 	err := r.Client.Get(ctx, types.NamespacedName{Name: component, Namespace: backplaneConfig.Spec.TargetNamespace}, comp)
 	if apierrors.IsNotFound(err) {
@@ -855,10 +856,10 @@ func (r *MultiClusterEngineReconciler) ensureNoInternalEngineComponent(
 	}
 
 	if comp.DeletionTimestamp != nil {
+		log.Info(fmt.Sprintf("DeletionTimestamp: %v", comp.DeletionTimestamp))
 		return reconcile.Result{RequeueAfter: requeuePeriod}, nil
 	}
 
-	log.Info(fmt.Sprintf("Ensuring No InternalEngineComponent: %s", component))
 	err = r.Client.Delete(ctx, comp)
 	if err != nil && !apierrors.IsNotFound(err) {
 		log.Error(err, fmt.Sprintf("Error deleting InternalEngineComponent. Error: %v", err))
@@ -1618,7 +1619,7 @@ func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Conte
 		return ctrl.Result{RequeueAfter: requeuePeriod}, err
 	}
 
-	return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+	return ctrl.Result{}, nil
 }
 
 func (r *MultiClusterEngineReconciler) getBackplaneConfig(ctx context.Context, req ctrl.Request) (
