@@ -22,11 +22,14 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"reflect"
 	"strings"
+	"testing"
 	"time"
 
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime"
 
 	configv1 "github.com/openshift/api/config/v1"
 
@@ -1315,7 +1318,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 				err := k8sClient.Create(context.TODO(), sm)
 				Expect(err).To(BeNil())
 
-				legacyResourceKind := backplanev1.GetLegacyPrometheusKind()
+				legacyResourceKind := backplanev1.GetLegacyConfigKind()
 				ns := "openshift-monitoring"
 
 				By("Running the cleanup of the legacy Prometheus configuration")
@@ -1337,3 +1340,246 @@ var _ = Describe("BackplaneConfig controller", func() {
 		})
 	})
 })
+
+func Test_getComponentConfig(t *testing.T) {
+	tests := []struct {
+		name      string
+		component string
+		mch       backplanev1.MultiClusterEngine
+		want      backplanev1.ComponentConfig
+	}{
+		{
+			name:      "should get discovery ComponentConfig",
+			component: backplanev1.Discovery,
+			mch: backplanev1.MultiClusterEngine{
+				Spec: backplanev1.MultiClusterEngineSpec{
+					Overrides: &backplanev1.Overrides{
+						Components: []backplanev1.ComponentConfig{
+							{
+								Name:            backplanev1.ClusterLifecycle,
+								Enabled:         false,
+								ConfigOverrides: backplanev1.ConfigOverride{},
+							},
+							{
+								Name:            backplanev1.Discovery,
+								Enabled:         true,
+								ConfigOverrides: backplanev1.ConfigOverride{},
+							},
+						},
+					},
+				},
+			},
+			want: backplanev1.ComponentConfig{
+				Name:            backplanev1.Discovery,
+				Enabled:         true,
+				ConfigOverrides: backplanev1.ConfigOverride{},
+			},
+		},
+		{
+			name:      "should get no ComponentConfig",
+			component: "foobar",
+			mch: backplanev1.MultiClusterEngine{
+				Spec: backplanev1.MultiClusterEngineSpec{
+					Overrides: &backplanev1.Overrides{
+						Components: []backplanev1.ComponentConfig{
+							{
+								Name:            backplanev1.ClusterLifecycle,
+								Enabled:         false,
+								ConfigOverrides: backplanev1.ConfigOverride{},
+							},
+							{
+								Name:            backplanev1.Discovery,
+								Enabled:         true,
+								ConfigOverrides: backplanev1.ConfigOverride{},
+							},
+						},
+					},
+				},
+			},
+			want: backplanev1.ComponentConfig{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, _ := reconciler.getComponentConfig(tt.mch.Spec.Overrides.Components, tt.component)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("getComponentConfig(tt.mch.Spec.Overrides.Components) = %v, want = %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_getDeploymentConfig(t *testing.T) {
+	tests := []struct {
+		name           string
+		componentName  string
+		deploymentName string
+		mch            backplanev1.MultiClusterEngine
+		want           *backplanev1.DeploymentConfig
+	}{
+		{
+			name:           "should get search DeploymentConfig",
+			componentName:  backplanev1.Discovery,
+			deploymentName: "discovery-operator",
+			mch: backplanev1.MultiClusterEngine{
+				Spec: backplanev1.MultiClusterEngineSpec{
+					Overrides: &backplanev1.Overrides{
+						Components: []backplanev1.ComponentConfig{
+							{
+								Name:            backplanev1.ClusterLifecycle,
+								Enabled:         false,
+								ConfigOverrides: backplanev1.ConfigOverride{},
+							},
+							{
+								Name:    backplanev1.Discovery,
+								Enabled: true,
+								ConfigOverrides: backplanev1.ConfigOverride{
+									Deployments: []backplanev1.DeploymentConfig{
+										{
+											Name: "discovery-operator",
+											Containers: []backplanev1.ContainerConfig{
+												{
+													Name: "discovery-operator",
+													Env: []backplanev1.EnvConfig{
+														{
+															Name:  "foo",
+															Value: "bar",
+														},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: &backplanev1.DeploymentConfig{
+				Name: "discovery-operator",
+				Containers: []backplanev1.ContainerConfig{
+					{
+						Name: "discovery-operator",
+						Env: []backplanev1.EnvConfig{
+							{
+								Name:  "foo",
+								Value: "bar",
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:           "should get no DeploymentConfig",
+			componentName:  backplanev1.ClusterLifecycle,
+			deploymentName: "discovery-operator",
+			mch: backplanev1.MultiClusterEngine{
+				Spec: backplanev1.MultiClusterEngineSpec{
+					Overrides: &backplanev1.Overrides{
+						Components: []backplanev1.ComponentConfig{
+							{
+								Name:            backplanev1.ClusterLifecycle,
+								Enabled:         false,
+								ConfigOverrides: backplanev1.ConfigOverride{},
+							},
+							{
+								Name:            backplanev1.Discovery,
+								Enabled:         true,
+								ConfigOverrides: backplanev1.ConfigOverride{},
+							},
+						},
+					},
+				},
+			},
+			want: &backplanev1.DeploymentConfig{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if componentConfig, found := reconciler.getComponentConfig(tt.mch.Spec.Overrides.Components,
+				tt.componentName); found {
+				if got, _ := reconciler.getDeploymentConfig(componentConfig.ConfigOverrides.Deployments,
+					tt.deploymentName); !reflect.DeepEqual(got, tt.want) {
+					t.Errorf("getDeploymentConfig(componentConfig.ConfigOverrides.Deployments, tt.deploymentName) = %v, want = %v", got, tt.want)
+				}
+			}
+		})
+	}
+}
+
+func Test_applyEnvConfig(t *testing.T) {
+	tests := []struct {
+		name          string
+		containerName string
+		template      *unstructured.Unstructured
+		envConfig     []backplanev1.EnvConfig
+		want          error
+	}{
+		{
+			name:          "should apply env config",
+			containerName: "discovery-operator",
+			template: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "apps/v1",
+					"kind":       "Deployment",
+					"metadata": map[string]interface{}{
+						"name":      "discovery-operator",
+						"namespace": "test-ns",
+					},
+					"spec": map[string]interface{}{
+						"template": map[string]interface{}{
+							"spec": map[string]interface{}{
+								"containers": []interface{}{
+									map[string]interface{}{
+										"name": "discovery-operator",
+										"env":  []interface{}{},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			envConfig: []backplanev1.EnvConfig{
+				{Name: "foo", Value: "bar"},
+			},
+			want: nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := reconciler.applyEnvConfig(tt.template, tt.containerName, tt.envConfig); err != nil {
+				t.Errorf("applyEnvConfig(tt.template, tt.containerName, tt.envConfig) = %v, want %v", err, tt.want)
+			}
+
+			deployment := &appsv1.Deployment{}
+			if err := runtime.DefaultUnstructuredConverter.FromUnstructured(tt.template.Object, deployment); err != nil {
+				t.Errorf("failed to convert unstructured object to deployment")
+			}
+
+			for _, c := range deployment.Spec.Template.Spec.Containers {
+				if c.Name == tt.containerName {
+					// Ensure envConfig is correctly applied to container Env
+					for _, envVar := range tt.envConfig {
+						found := false
+						for _, containerEnvVar := range c.Env {
+							if containerEnvVar.Name == envVar.Name && containerEnvVar.Value == envVar.Value {
+								found = true
+								break
+							}
+						}
+						if !found {
+							t.Errorf("env variable %v=%v not found in container %v", envVar.Name, envVar.Value, c.Name)
+						}
+					}
+					break
+				}
+			}
+		})
+	}
+}

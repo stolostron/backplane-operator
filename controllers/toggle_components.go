@@ -39,20 +39,26 @@ var clusterManagementAddOnGVK = schema.GroupVersionKind{
 	Kind:    "ClusterManagementAddOn",
 }
 
-func (r *MultiClusterEngineReconciler) ensureConsoleMCE(ctx context.Context,
-	backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	r.Log = log
+func (r *MultiClusterEngineReconciler) ensureConsoleMCE(ctx context.Context, mce *backplanev1.MultiClusterEngine) (
+	ctrl.Result, error) {
 
-	namespacedName := types.NamespacedName{Name: "console-mce-console", Namespace: backplaneConfig.Spec.TargetNamespace}
+	namespacedName := types.NamespacedName{Name: "console-mce-console", Namespace: mce.Spec.TargetNamespace}
 	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
 
-	templates, errs := renderer.RenderChart(toggle.ConsoleMCEChartsDir, backplaneConfig,
-		r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
+	// Ensure that the InternalHubComponent CR instance is created for component in MCE.
+	if result, err := r.ensureInternalEngineComponent(ctx, mce, backplanev1.ConsoleMCE); err != nil {
+		return result, err
+	}
+
+	// Renders all templates from charts
+	chartPath := r.fetchChartOrCRDPath(backplanev1.ConsoleMCE, false)
+	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides,
+		r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
 		for _, err := range errs {
-			r.Log.Info(err.Error())
+			log.Info(err.Error())
 		}
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
@@ -60,7 +66,7 @@ func (r *MultiClusterEngineReconciler) ensureConsoleMCE(ctx context.Context,
 	// Applies all templates
 	for _, template := range templates {
 		applyReleaseVersionAnnotation(template)
-		result, err := r.applyTemplate(ctx, backplaneConfig, template)
+		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
 			return result, err
 		}
@@ -70,56 +76,61 @@ func (r *MultiClusterEngineReconciler) ensureConsoleMCE(ctx context.Context,
 	consoleDeployment := &appsv1.Deployment{}
 	err := r.Client.Get(ctx, namespacedName, consoleDeployment)
 	if err != nil {
-		r.Log.Error(err, "Failed to get console-mce deployment for addon. Requeuing.")
+		log.Error(err, "Failed to get console-mce deployment for addon. Requeuing.")
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
 
 	for _, dc := range consoleDeployment.Status.Conditions {
 		if dc.Type == appsv1.DeploymentAvailable && dc.Status == corev1.ConditionTrue {
-			return r.addPluginToConsoleResource(ctx, backplaneConfig)
+			return r.addPluginToConsoleResource(ctx)
 		}
 	}
 
-	r.Log.Info("MCE console is not yet available. Waiting to enable console plugin")
+	log.Info("MCE console is not yet available. Waiting to enable console plugin")
 	return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 }
 
-func (r *MultiClusterEngineReconciler) ensureNoConsoleMCE(ctx context.Context,
-	backplaneConfig *backplanev1.MultiClusterEngine, ocpConsole bool) (ctrl.Result, error) {
-	r.Log = log
+func (r *MultiClusterEngineReconciler) ensureNoConsoleMCE(ctx context.Context, mce *backplanev1.MultiClusterEngine,
+	ocpConsole bool) (ctrl.Result, error) {
 
-	namespacedName := types.NamespacedName{Name: "console-mce-console", Namespace: backplaneConfig.Spec.TargetNamespace}
+	namespacedName := types.NamespacedName{Name: "console-mce-console", Namespace: mce.Spec.TargetNamespace}
 	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
+
+	// Ensure that the InternalHubComponent CR instance is deleted for component in MCE.
+	if result, err := r.ensureNoInternalEngineComponent(ctx, mce, backplanev1.ConsoleMCE); err != nil {
+		return result, err
+	}
+
 	if !ocpConsole {
 		// If Openshift console is disabled then no cleanup to be done, because MCE console cannot be installed
 		r.StatusManager.AddComponent(status.ConsoleUnavailableStatus{
-			NamespacedName: types.NamespacedName{Name: "console-mce-console", Namespace: backplaneConfig.Spec.TargetNamespace},
+			NamespacedName: types.NamespacedName{Name: "console-mce-console", Namespace: mce.Spec.TargetNamespace},
 		})
 		return ctrl.Result{}, nil
 	}
 	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 
-	result, err := r.removePluginFromConsoleResource(ctx, backplaneConfig)
+	result, err := r.removePluginFromConsoleResource(ctx)
 	if err != nil {
 		return result, err
 	}
 
 	// Renders all templates from charts
-	templates, errs := renderer.RenderChart(toggle.ConsoleMCEChartsDir, backplaneConfig,
-		r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
+	chartPath := r.fetchChartOrCRDPath(backplanev1.ConsoleMCE, false)
+	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
 		for _, err := range errs {
-			r.Log.Info(err.Error())
+			log.Info(err.Error())
 		}
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
 
 	// Deletes all templates
 	for _, template := range templates {
-		result, err := r.deleteTemplate(ctx, backplaneConfig, template)
+		result, err := r.deleteTemplate(ctx, mce, template)
 		if err != nil {
-			r.Log.Error(err, fmt.Sprintf("Failed to delete Console MCE template: %s || %s || %s", template.GetName(),
+			log.Error(err, fmt.Sprintf("Failed to delete Console MCE template: %s || %s || %s", template.GetName(),
 				template.GetAPIVersion(), template.GetNamespace()))
 
 			return result, err
@@ -129,41 +140,44 @@ func (r *MultiClusterEngineReconciler) ensureNoConsoleMCE(ctx context.Context,
 }
 
 func (r *MultiClusterEngineReconciler) ensureManagedServiceAccount(ctx context.Context,
-	backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	r.Log = log
+	mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 
-	r.StatusManager.RemoveComponent(toggle.DisabledStatus(types.NamespacedName{Name: "managedservice", Namespace: backplaneConfig.Spec.TargetNamespace}, []*unstructured.Unstructured{}))
+	r.StatusManager.RemoveComponent(toggle.DisabledStatus(types.NamespacedName{Name: "managedservice", Namespace: mce.Spec.TargetNamespace}, []*unstructured.Unstructured{}))
 	// from 2.9, we change the managed-serviceaccount to a template type addon, so the agent will be managed by the
 	// global addon manager, no need to add the managed-serviceaccount-addon-manager deployment as a component here
-	// r.StatusManager.AddComponent(toggle.EnabledStatus(types.NamespacedName{Name: "managed-serviceaccount-addon-manager", Namespace: backplaneConfig.Spec.TargetNamespace}))
+	// r.StatusManager.AddComponent(toggle.EnabledStatus(types.NamespacedName{Name: "managed-serviceaccount-addon-manager", Namespace: mce.Spec.TargetNamespace}))
 	r.StatusManager.AddComponent(status.NewPresentStatus(types.NamespacedName{Name: "managed-serviceaccount"}, clusterManagementAddOnGVK))
 
+	// Ensure that the InternalHubComponent CR instance is created for component in MCE.
+	if result, err := r.ensureInternalEngineComponent(ctx, mce, backplanev1.ManagedServiceAccount); err != nil {
+		return result, err
+	}
+
 	// Render CRD templates
-	crdPath := toggle.ManagedServiceAccountCRDPath
-	crds, errs := renderer.RenderCRDs(crdPath, backplaneConfig)
+	crdPath := r.fetchChartOrCRDPath(backplanev1.ManagedServiceAccount, true)
+	crds, errs := renderer.RenderCRDs(crdPath, mce)
 	if len(errs) > 0 {
 		for _, err := range errs {
-			r.Log.Info(err.Error())
+			log.Info(err.Error())
 		}
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
 
 	// Apply all CRDs
 	for _, crd := range crds {
-		result, err := r.applyTemplate(ctx, backplaneConfig, crd)
+		result, err := r.applyTemplate(ctx, mce, crd)
 		if err != nil {
 			return result, err
 		}
 	}
 
 	// Renders all templates from charts
-	chartPath := toggle.ManagedServiceAccountChartDir
-	templates, errs := renderer.RenderChart(chartPath, backplaneConfig,
-		r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
+	chartPath := r.fetchChartOrCRDPath(backplanev1.ManagedServiceAccount, false)
+	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
 		for _, err := range errs {
-			r.Log.Info(err.Error())
+			log.Info(err.Error())
 		}
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
@@ -172,14 +186,14 @@ func (r *MultiClusterEngineReconciler) ensureManagedServiceAccount(ctx context.C
 	missingCRDErrorOccured := false
 	for _, template := range templates {
 		applyReleaseVersionAnnotation(template)
-		result, err := r.applyTemplate(ctx, backplaneConfig, template)
+		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
 			if apimeta.IsNoMatchError(errors.Unwrap(err)) || apierrors.IsNotFound(err) {
 				// addon CRD does not yet exist. Replace status.
-				r.Log.Info("Couldn't apply template for managed-serviceaccount due to missing CRD", "error is", err.Error())
+				log.Info("Couldn't apply template for managed-serviceaccount due to missing CRD", "error is", err.Error())
 
 				missingCRDErrorOccured = true
-				r.StatusManager.AddComponent(clusterManagementAddOnNotFoundStatus("managed-serviceaccount", backplaneConfig.Spec.TargetNamespace))
+				r.StatusManager.AddComponent(clusterManagementAddOnNotFoundStatus("managed-serviceaccount", mce.Spec.TargetNamespace))
 			} else {
 				return result, err
 			}
@@ -193,19 +207,24 @@ func (r *MultiClusterEngineReconciler) ensureManagedServiceAccount(ctx context.C
 }
 
 func (r *MultiClusterEngineReconciler) ensureNoManagedServiceAccount(ctx context.Context,
-	backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+	mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+
+	// Ensure that the InternalHubComponent CR instance is deleted for component in MCE.
+	if result, err := r.ensureNoInternalEngineComponent(ctx, mce, backplanev1.ManagedServiceAccount); err != nil {
+		return result, err
+	}
 
 	// Renders all templates from charts
-	chartPath := toggle.ManagedServiceAccountChartDir
-	templates, errs := renderer.RenderChart(chartPath, backplaneConfig, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
+	chartPath := r.fetchChartOrCRDPath(backplanev1.ManagedServiceAccount, false)
+	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 	if len(errs) > 0 {
 		for _, err := range errs {
-			r.Log.Info(err.Error())
+			log.Info(err.Error())
 		}
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
 
-	r.StatusManager.AddComponent(toggle.DisabledStatus(types.NamespacedName{Name: "managedservice", Namespace: backplaneConfig.Spec.TargetNamespace}, []*unstructured.Unstructured{}))
+	r.StatusManager.AddComponent(toggle.DisabledStatus(types.NamespacedName{Name: "managedservice", Namespace: mce.Spec.TargetNamespace}, []*unstructured.Unstructured{}))
 
 	// Deletes all templates
 	for _, template := range templates {
@@ -213,7 +232,7 @@ func (r *MultiClusterEngineReconciler) ensureNoManagedServiceAccount(ctx context
 			// Can't delete ClusterManagementAddon if Kind doesn't exists
 			continue
 		}
-		result, err := r.deleteTemplate(ctx, backplaneConfig, template)
+		result, err := r.deleteTemplate(ctx, mce, template)
 		if err != nil {
 			log.Error(err, "Failed to delete MSA template")
 			return result, err
@@ -222,17 +241,17 @@ func (r *MultiClusterEngineReconciler) ensureNoManagedServiceAccount(ctx context
 
 	// Render CRD templates
 	crdPath := toggle.ManagedServiceAccountCRDPath
-	crds, errs := renderer.RenderCRDs(crdPath, backplaneConfig)
+	crds, errs := renderer.RenderCRDs(crdPath, mce)
 	if len(errs) > 0 {
 		for _, err := range errs {
-			r.Log.Info(err.Error())
+			log.Info(err.Error())
 		}
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
 
 	// Delete all CRDs
 	for _, crd := range crds {
-		result, err := r.deleteTemplate(ctx, backplaneConfig, crd)
+		result, err := r.deleteTemplate(ctx, mce, crd)
 		if err != nil {
 			log.Error(err, "Failed to delete CRD")
 			return result, err
@@ -242,15 +261,14 @@ func (r *MultiClusterEngineReconciler) ensureNoManagedServiceAccount(ctx context
 }
 
 // addPluginToConsoleResource ...
-func (r *MultiClusterEngineReconciler) addPluginToConsoleResource(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	r.Log = log
-
+func (r *MultiClusterEngineReconciler) addPluginToConsoleResource(ctx context.Context) (ctrl.Result, error) {
 	console := &operatorv1.Console{}
+
 	// If trying to check this resource from the CLI run - `oc get consoles.operator.openshift.io cluster`.
 	// The default `console` is not the correct resource
 	err := r.Client.Get(ctx, types.NamespacedName{Name: "cluster"}, console)
 	if err != nil {
-		r.Log.Info("Failed to find console: cluster")
+		log.Info("Failed to find console: cluster")
 		return ctrl.Result{Requeue: true}, err
 	}
 
@@ -260,14 +278,14 @@ func (r *MultiClusterEngineReconciler) addPluginToConsoleResource(ctx context.Co
 
 	// Add mce to the plugins list if it is not already there
 	if !utils.Contains(console.Spec.Plugins, "mce") {
-		r.Log.Info("Ready to add plugin")
+		log.Info("Ready to add plugin")
 		console.Spec.Plugins = append(console.Spec.Plugins, "mce")
 		err = r.Client.Update(ctx, console)
 		if err != nil {
-			r.Log.Info("Failed to add mce consoleplugin to console")
+			log.Info("Failed to add mce consoleplugin to console")
 			return ctrl.Result{Requeue: true}, err
 		} else {
-			r.Log.Info("Added mce consoleplugin to console")
+			log.Info("Added mce consoleplugin to console")
 		}
 	}
 
@@ -275,9 +293,7 @@ func (r *MultiClusterEngineReconciler) addPluginToConsoleResource(ctx context.Co
 }
 
 // removePluginFromConsoleResource ...
-func (r *MultiClusterEngineReconciler) removePluginFromConsoleResource(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	r.Log = log
-
+func (r *MultiClusterEngineReconciler) removePluginFromConsoleResource(ctx context.Context) (ctrl.Result, error) {
 	if val, ok := os.LookupEnv("UNIT_TEST"); ok && val == "true" {
 		return ctrl.Result{}, nil
 	}
@@ -287,7 +303,7 @@ func (r *MultiClusterEngineReconciler) removePluginFromConsoleResource(ctx conte
 	// The default `console` is not the correct resource
 	err := r.Client.Get(ctx, types.NamespacedName{Name: "cluster"}, console)
 	if err != nil {
-		r.Log.Info("Failed to find console: cluster")
+		log.Info("Failed to find console: cluster")
 		return ctrl.Result{Requeue: true}, err
 	}
 
@@ -301,29 +317,36 @@ func (r *MultiClusterEngineReconciler) removePluginFromConsoleResource(ctx conte
 		console.Spec.Plugins = utils.Remove(console.Spec.Plugins, "mce")
 		err = r.Client.Update(ctx, console)
 		if err != nil {
-			r.Log.Info("Failed to remove mce consoleplugin to console")
+			log.Info("Failed to remove mce consoleplugin to console")
 			return ctrl.Result{Requeue: true}, err
 		} else {
-			r.Log.Info("Removed mce consoleplugin to console")
+			log.Info("Removed mce consoleplugin to console")
 		}
 	}
 
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterEngineReconciler) ensureDiscovery(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	r.Log = log
+func (r *MultiClusterEngineReconciler) ensureDiscovery(ctx context.Context, mce *backplanev1.MultiClusterEngine) (
+	ctrl.Result, error) {
 
-	namespacedName := types.NamespacedName{Name: "discovery-operator", Namespace: backplaneConfig.Spec.TargetNamespace}
+	namespacedName := types.NamespacedName{Name: "discovery-operator", Namespace: mce.Spec.TargetNamespace}
 	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
 
-	templates, errs := renderer.RenderChart(toggle.DiscoveryChartDir, backplaneConfig,
+	// Ensure that the InternalHubComponent CR instance is created for component in MCE.
+	if result, err := r.ensureInternalEngineComponent(ctx, mce, backplanev1.Discovery); err != nil {
+		return result, err
+	}
+
+	// Renders all templates from charts
+	chartPath := r.fetchChartOrCRDPath(backplanev1.Discovery, false)
+	templates, errs := renderer.RenderChart(chartPath, mce,
 		r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
 		for _, err := range errs {
-			r.Log.Info(err.Error())
+			log.Info(err.Error())
 		}
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
@@ -331,7 +354,7 @@ func (r *MultiClusterEngineReconciler) ensureDiscovery(ctx context.Context, back
 	// Applies all templates
 	for _, template := range templates {
 		applyReleaseVersionAnnotation(template)
-		result, err := r.applyTemplate(ctx, backplaneConfig, template)
+		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
 			return result, err
 		}
@@ -340,16 +363,23 @@ func (r *MultiClusterEngineReconciler) ensureDiscovery(ctx context.Context, back
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterEngineReconciler) ensureNoDiscovery(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	namespacedName := types.NamespacedName{Name: "discovery-operator", Namespace: backplaneConfig.Spec.TargetNamespace}
+func (r *MultiClusterEngineReconciler) ensureNoDiscovery(ctx context.Context,
+	mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+
+	namespacedName := types.NamespacedName{Name: "discovery-operator", Namespace: mce.Spec.TargetNamespace}
+
+	// Ensure that the InternalHubComponent CR instance is deleted for component in MCE.
+	if result, err := r.ensureNoInternalEngineComponent(ctx, mce, backplanev1.Discovery); err != nil {
+		return result, err
+	}
 
 	// Renders all templates from charts
-	templates, errs := renderer.RenderChart(toggle.DiscoveryChartDir, backplaneConfig,
-		r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
+	chartPath := r.fetchChartOrCRDPath(backplanev1.Discovery, false)
+	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
 		for _, err := range errs {
-			r.Log.Info(err.Error())
+			log.Info(err.Error())
 		}
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
@@ -359,7 +389,7 @@ func (r *MultiClusterEngineReconciler) ensureNoDiscovery(ctx context.Context, ba
 
 	// Deletes all templates
 	for _, template := range templates {
-		result, err := r.deleteTemplate(ctx, backplaneConfig, template)
+		result, err := r.deleteTemplate(ctx, mce, template)
 		if err != nil {
 			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
 			return result, err
@@ -368,19 +398,25 @@ func (r *MultiClusterEngineReconciler) ensureNoDiscovery(ctx context.Context, ba
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterEngineReconciler) ensureHive(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	r.Log = log
+func (r *MultiClusterEngineReconciler) ensureHive(ctx context.Context, mce *backplanev1.MultiClusterEngine) (
+	ctrl.Result, error) {
 
-	namespacedName := types.NamespacedName{Name: "hive-operator", Namespace: backplaneConfig.Spec.TargetNamespace}
+	namespacedName := types.NamespacedName{Name: "hive-operator", Namespace: mce.Spec.TargetNamespace}
 	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
 
-	templates, errs := renderer.RenderChart(toggle.HiveChartDir, backplaneConfig,
-		r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
+	// Ensure that the InternalHubComponent CR instance is created for component in MCE.
+	if result, err := r.ensureInternalEngineComponent(ctx, mce, backplanev1.Hive); err != nil {
+		return result, err
+	}
+
+	// Renders all templates from charts
+	chartPath := r.fetchChartOrCRDPath(backplanev1.Hive, false)
+	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
 		for _, err := range errs {
-			r.Log.Info(err.Error())
+			log.Info(err.Error())
 		}
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
@@ -388,18 +424,18 @@ func (r *MultiClusterEngineReconciler) ensureHive(ctx context.Context, backplane
 	// Applies all templates
 	for _, template := range templates {
 		applyReleaseVersionAnnotation(template)
-		result, err := r.applyTemplate(ctx, backplaneConfig, template)
+		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
 			return result, err
 		}
 	}
 
-	hiveTemplate := hive.HiveConfig(backplaneConfig)
-	if err := ctrl.SetControllerReference(backplaneConfig, hiveTemplate, r.Scheme); err != nil {
+	hiveTemplate := hive.HiveConfig(mce)
+	if err := ctrl.SetControllerReference(mce, hiveTemplate, r.Scheme); err != nil {
 		return ctrl.Result{}, errors.Wrapf(err, "Error setting controller reference on resource %s", hiveTemplate.GetName())
 	}
 
-	result, err := r.ensureUnstructuredResource(ctx, backplaneConfig, hiveTemplate)
+	result, err := r.ensureUnstructuredResource(ctx, mce, hiveTemplate)
 	if err != nil {
 		return result, err
 	}
@@ -407,17 +443,23 @@ func (r *MultiClusterEngineReconciler) ensureHive(ctx context.Context, backplane
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterEngineReconciler) ensureNoHive(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	r.Log = log
-	namespacedName := types.NamespacedName{Name: "hive-operator", Namespace: backplaneConfig.Spec.TargetNamespace}
+func (r *MultiClusterEngineReconciler) ensureNoHive(ctx context.Context, mce *backplanev1.MultiClusterEngine) (
+	ctrl.Result, error) {
+
+	namespacedName := types.NamespacedName{Name: "hive-operator", Namespace: mce.Spec.TargetNamespace}
+
+	// Ensure that the InternalHubComponent CR instance is deleted for component in MCE.
+	if result, err := r.ensureNoInternalEngineComponent(ctx, mce, backplanev1.Hive); err != nil {
+		return result, err
+	}
 
 	// Renders all templates from charts
-	templates, errs := renderer.RenderChart(toggle.HiveChartDir, backplaneConfig,
-		r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
+	chartPath := r.fetchChartOrCRDPath(backplanev1.Hive, false)
+	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
 		for _, err := range errs {
-			r.Log.Info(err.Error())
+			log.Info(err.Error())
 		}
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
@@ -426,7 +468,7 @@ func (r *MultiClusterEngineReconciler) ensureNoHive(ctx context.Context, backpla
 	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 
 	// Delete hivconfig
-	hiveConfig := hive.HiveConfig(backplaneConfig)
+	hiveConfig := hive.HiveConfig(mce)
 	err := r.Client.Get(ctx, types.NamespacedName{Name: "hive"}, hiveConfig)
 	if err == nil { // If resource exists, delete
 		err := r.Client.Delete(ctx, hiveConfig)
@@ -439,33 +481,40 @@ func (r *MultiClusterEngineReconciler) ensureNoHive(ctx context.Context, backpla
 
 	// Deletes all templates
 	for _, template := range templates {
-		result, err := r.deleteTemplate(ctx, backplaneConfig, template)
+		result, err := r.deleteTemplate(ctx, mce, template)
 		if err != nil {
-			r.Log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
+			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
 			return result, err
 		}
 	}
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterEngineReconciler) ensureAssistedService(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	r.Log = log
+func (r *MultiClusterEngineReconciler) ensureAssistedService(ctx context.Context,
+	mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 
-	targetNamespace := backplaneConfig.Spec.TargetNamespace
-	if backplaneConfig.Spec.Overrides != nil && backplaneConfig.Spec.Overrides.InfrastructureCustomNamespace != "" {
-		targetNamespace = backplaneConfig.Spec.Overrides.InfrastructureCustomNamespace
+	targetNamespace := mce.Spec.TargetNamespace
+	if mce.Spec.Overrides != nil && mce.Spec.Overrides.InfrastructureCustomNamespace != "" {
+		targetNamespace = mce.Spec.Overrides.InfrastructureCustomNamespace
 	}
 
 	namespacedName := types.NamespacedName{Name: "infrastructure-operator", Namespace: targetNamespace}
 	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
 
-	templates, errs := renderer.RenderChartWithNamespace(toggle.AssistedServiceChartDir, backplaneConfig,
+	// Ensure that the InternalHubComponent CR instance is created for component in MCE.
+	if result, err := r.ensureInternalEngineComponent(ctx, mce, backplanev1.AssistedService); err != nil {
+		return result, err
+	}
+
+	// Renders all templates from charts
+	chartPath := r.fetchChartOrCRDPath(backplanev1.AssistedService, false)
+	templates, errs := renderer.RenderChartWithNamespace(chartPath, mce,
 		r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides, targetNamespace)
 
 	if len(errs) > 0 {
 		for _, err := range errs {
-			r.Log.Info(err.Error())
+			log.Info(err.Error())
 		}
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
@@ -473,7 +522,7 @@ func (r *MultiClusterEngineReconciler) ensureAssistedService(ctx context.Context
 	// Applies all templates
 	for _, template := range templates {
 		applyReleaseVersionAnnotation(template)
-		result, err := r.applyTemplate(ctx, backplaneConfig, template)
+		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
 			return result, err
 		}
@@ -483,22 +532,27 @@ func (r *MultiClusterEngineReconciler) ensureAssistedService(ctx context.Context
 }
 
 func (r *MultiClusterEngineReconciler) ensureNoAssistedService(ctx context.Context,
-	backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	r.Log = log
+	mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 
-	targetNamespace := backplaneConfig.Spec.TargetNamespace
-	if backplaneConfig.Spec.Overrides != nil && backplaneConfig.Spec.Overrides.InfrastructureCustomNamespace != "" {
-		targetNamespace = backplaneConfig.Spec.Overrides.InfrastructureCustomNamespace
+	targetNamespace := mce.Spec.TargetNamespace
+	if mce.Spec.Overrides != nil && mce.Spec.Overrides.InfrastructureCustomNamespace != "" {
+		targetNamespace = mce.Spec.Overrides.InfrastructureCustomNamespace
 	}
 	namespacedName := types.NamespacedName{Name: "infrastructure-operator", Namespace: targetNamespace}
 
+	// Ensure that the InternalHubComponent CR instance is deleted for component in MCE.
+	if result, err := r.ensureNoInternalEngineComponent(ctx, mce, backplanev1.AssistedService); err != nil {
+		return result, err
+	}
+
 	// Renders all templates from charts
-	templates, errs := renderer.RenderChartWithNamespace(toggle.AssistedServiceChartDir, backplaneConfig,
-		r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides, targetNamespace)
+	chartPath := r.fetchChartOrCRDPath(backplanev1.AssistedService, false)
+	templates, errs := renderer.RenderChartWithNamespace(chartPath, mce, r.CacheSpec.ImageOverrides,
+		r.CacheSpec.TemplateOverrides, targetNamespace)
 
 	if len(errs) > 0 {
 		for _, err := range errs {
-			r.Log.Info(err.Error())
+			log.Info(err.Error())
 		}
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
@@ -508,9 +562,9 @@ func (r *MultiClusterEngineReconciler) ensureNoAssistedService(ctx context.Conte
 
 	// Deletes all templates
 	for _, template := range templates {
-		result, err := r.deleteTemplate(ctx, backplaneConfig, template)
+		result, err := r.deleteTemplate(ctx, mce, template)
 		if err != nil {
-			r.Log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
+			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
 			return result, err
 		}
 	}
@@ -518,25 +572,30 @@ func (r *MultiClusterEngineReconciler) ensureNoAssistedService(ctx context.Conte
 }
 
 func (r *MultiClusterEngineReconciler) ensureServerFoundation(ctx context.Context,
-	backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	r.Log = log
+	mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 
-	namespacedName := types.NamespacedName{Name: "ocm-controller", Namespace: backplaneConfig.Spec.TargetNamespace}
+	namespacedName := types.NamespacedName{Name: "ocm-controller", Namespace: mce.Spec.TargetNamespace}
 	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
-	namespacedName = types.NamespacedName{Name: "ocm-proxyserver", Namespace: backplaneConfig.Spec.TargetNamespace}
+	namespacedName = types.NamespacedName{Name: "ocm-proxyserver", Namespace: mce.Spec.TargetNamespace}
 	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
-	namespacedName = types.NamespacedName{Name: "ocm-webhook", Namespace: backplaneConfig.Spec.TargetNamespace}
+	namespacedName = types.NamespacedName{Name: "ocm-webhook", Namespace: mce.Spec.TargetNamespace}
 	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
 
-	templates, errs := renderer.RenderChart(toggle.ServerFoundationChartDir, backplaneConfig,
-		r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
+	// Ensure that the InternalHubComponent CR instance is created for component in MCE.
+	if result, err := r.ensureInternalEngineComponent(ctx, mce, backplanev1.ServerFoundation); err != nil {
+		return result, err
+	}
+
+	// Renders all templates from charts
+	chartPath := r.fetchChartOrCRDPath(backplanev1.ServerFoundation, false)
+	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
 		for _, err := range errs {
-			r.Log.Info(err.Error())
+			log.Info(err.Error())
 		}
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
@@ -544,7 +603,7 @@ func (r *MultiClusterEngineReconciler) ensureServerFoundation(ctx context.Contex
 	// Applies all templates
 	for _, template := range templates {
 		applyReleaseVersionAnnotation(template)
-		result, err := r.applyTemplate(ctx, backplaneConfig, template)
+		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
 			return result, err
 		}
@@ -554,32 +613,37 @@ func (r *MultiClusterEngineReconciler) ensureServerFoundation(ctx context.Contex
 }
 
 func (r *MultiClusterEngineReconciler) ensureNoServerFoundation(ctx context.Context,
-	backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+	mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+
+	// Ensure that the InternalHubComponent CR instance is created for component in MCE.
+	if result, err := r.ensureInternalEngineComponent(ctx, mce, backplanev1.ServerFoundation); err != nil {
+		return result, err
+	}
 
 	// Renders all templates from charts
-	templates, errs := renderer.RenderChart(toggle.ServerFoundationChartDir, backplaneConfig,
-		r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
+	chartPath := r.fetchChartOrCRDPath(backplanev1.ServerFoundation, false)
+	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
 		for _, err := range errs {
-			r.Log.Info(err.Error())
+			log.Info(err.Error())
 		}
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
 
-	namespacedName := types.NamespacedName{Name: "ocm-controller", Namespace: backplaneConfig.Spec.TargetNamespace}
+	namespacedName := types.NamespacedName{Name: "ocm-controller", Namespace: mce.Spec.TargetNamespace}
 	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
 	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
-	namespacedName = types.NamespacedName{Name: "ocm-proxyserver", Namespace: backplaneConfig.Spec.TargetNamespace}
+	namespacedName = types.NamespacedName{Name: "ocm-proxyserver", Namespace: mce.Spec.TargetNamespace}
 	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
 	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
-	namespacedName = types.NamespacedName{Name: "ocm-webhook", Namespace: backplaneConfig.Spec.TargetNamespace}
+	namespacedName = types.NamespacedName{Name: "ocm-webhook", Namespace: mce.Spec.TargetNamespace}
 	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
 	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 
 	// Deletes all templates
 	for _, template := range templates {
-		result, err := r.deleteTemplate(ctx, backplaneConfig, template)
+		result, err := r.deleteTemplate(ctx, mce, template)
 		if err != nil {
 			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
 			return result, err
@@ -588,21 +652,27 @@ func (r *MultiClusterEngineReconciler) ensureNoServerFoundation(ctx context.Cont
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterEngineReconciler) ensureImageBasedInstallOperator(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	r.Log = log
+func (r *MultiClusterEngineReconciler) ensureImageBasedInstallOperator(ctx context.Context,
+	mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 
-	targetNamespace := backplaneConfig.Spec.TargetNamespace
+	targetNamespace := mce.Spec.TargetNamespace
 
 	namespacedName := types.NamespacedName{Name: "image-based-install-operator", Namespace: targetNamespace}
 	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
 
-	templates, errs := renderer.RenderChartWithNamespace(toggle.ImageBasedInstallOperatorChartDir, backplaneConfig,
-		r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides, targetNamespace)
+	// Ensure that the InternalHubComponent CR instance is created for component in MCE.
+	if result, err := r.ensureInternalEngineComponent(ctx, mce, backplanev1.ImageBasedInstallOperator); err != nil {
+		return result, err
+	}
+
+	// Renders all templates from charts
+	chartPath := r.fetchChartOrCRDPath(backplanev1.ImageBasedInstallOperator, false)
+	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
 		for _, err := range errs {
-			r.Log.Info(err.Error())
+			log.Info(err.Error())
 		}
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
@@ -610,7 +680,7 @@ func (r *MultiClusterEngineReconciler) ensureImageBasedInstallOperator(ctx conte
 	// Applies all templates
 	for _, template := range templates {
 		applyReleaseVersionAnnotation(template)
-		result, err := r.applyTemplate(ctx, backplaneConfig, template)
+		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
 			return result, err
 		}
@@ -620,19 +690,23 @@ func (r *MultiClusterEngineReconciler) ensureImageBasedInstallOperator(ctx conte
 }
 
 func (r *MultiClusterEngineReconciler) ensureNoImageBasedInstallOperator(ctx context.Context,
-	backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	r.Log = log
+	mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 
-	targetNamespace := backplaneConfig.Spec.TargetNamespace
+	targetNamespace := mce.Spec.TargetNamespace
 	namespacedName := types.NamespacedName{Name: "image-based-install-operator", Namespace: targetNamespace}
 
+	// Ensure that the InternalHubComponent CR instance is deleted for component in MCE.
+	if result, err := r.ensureNoInternalEngineComponent(ctx, mce, backplanev1.ImageBasedInstallOperator); err != nil {
+		return result, err
+	}
+
 	// Renders all templates from charts
-	templates, errs := renderer.RenderChartWithNamespace(toggle.ImageBasedInstallOperatorChartDir, backplaneConfig,
-		r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides, targetNamespace)
+	chartPath := r.fetchChartOrCRDPath(backplanev1.ImageBasedInstallOperator, false)
+	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
 		for _, err := range errs {
-			r.Log.Info(err.Error())
+			log.Info(err.Error())
 		}
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
@@ -642,9 +716,9 @@ func (r *MultiClusterEngineReconciler) ensureNoImageBasedInstallOperator(ctx con
 
 	// Deletes all templates
 	for _, template := range templates {
-		result, err := r.deleteTemplate(ctx, backplaneConfig, template)
+		result, err := r.deleteTemplate(ctx, mce, template)
 		if err != nil {
-			r.Log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
+			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
 			return result, err
 		}
 	}
@@ -652,31 +726,37 @@ func (r *MultiClusterEngineReconciler) ensureNoImageBasedInstallOperator(ctx con
 }
 
 func (r *MultiClusterEngineReconciler) ensureClusterLifecycle(ctx context.Context,
-	backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	r.Log = log
+	mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 
-	namespacedName := types.NamespacedName{Name: "cluster-curator-controller", Namespace: backplaneConfig.Spec.TargetNamespace}
+	namespacedName := types.NamespacedName{Name: "cluster-curator-controller", Namespace: mce.Spec.TargetNamespace}
 	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
-	namespacedName = types.NamespacedName{Name: "clusterclaims-controller", Namespace: backplaneConfig.Spec.TargetNamespace}
+	namespacedName = types.NamespacedName{Name: "clusterclaims-controller", Namespace: mce.Spec.TargetNamespace}
 	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
-	namespacedName = types.NamespacedName{Name: "provider-credential-controller", Namespace: backplaneConfig.Spec.TargetNamespace}
+	namespacedName = types.NamespacedName{Name: "provider-credential-controller", Namespace: mce.Spec.TargetNamespace}
 	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
-	namespacedName = types.NamespacedName{Name: "clusterlifecycle-state-metrics-v2", Namespace: backplaneConfig.Spec.TargetNamespace}
+	namespacedName = types.NamespacedName{Name: "clusterlifecycle-state-metrics-v2", Namespace: mce.Spec.TargetNamespace}
 	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
-	namespacedName = types.NamespacedName{Name: "cluster-image-set-controller", Namespace: backplaneConfig.Spec.TargetNamespace}
+	namespacedName = types.NamespacedName{Name: "cluster-image-set-controller", Namespace: mce.Spec.TargetNamespace}
 	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
 
-	templates, errs := renderer.RenderChart(toggle.ClusterLifecycleChartDir, backplaneConfig,
-		r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
+	// Ensure that the InternalHubComponent CR instance is created for component in MCE.
+	if result, err := r.ensureInternalEngineComponent(ctx, mce, backplanev1.ClusterLifecycle); err != nil {
+		return result, err
+	}
+
+	// Renders all templates from charts
+	chartPath := r.fetchChartOrCRDPath(backplanev1.ClusterLifecycle, false)
+	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides,
+		r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
 		for _, err := range errs {
-			r.Log.Info(err.Error())
+			log.Info(err.Error())
 		}
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
@@ -684,7 +764,7 @@ func (r *MultiClusterEngineReconciler) ensureClusterLifecycle(ctx context.Contex
 	// Applies all templates
 	for _, template := range templates {
 		applyReleaseVersionAnnotation(template)
-		result, err := r.applyTemplate(ctx, backplaneConfig, template)
+		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
 			return result, err
 		}
@@ -694,35 +774,40 @@ func (r *MultiClusterEngineReconciler) ensureClusterLifecycle(ctx context.Contex
 }
 
 func (r *MultiClusterEngineReconciler) ensureNoClusterLifecycle(ctx context.Context,
-	backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+	mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+
+	// Ensure that the InternalHubComponent CR instance is deleted for component in MCE.
+	if result, err := r.ensureNoInternalEngineComponent(ctx, mce, backplanev1.ClusterLifecycle); err != nil {
+		return result, err
+	}
 
 	// Renders all templates from charts
-	templates, errs := renderer.RenderChart(toggle.ClusterLifecycleChartDir, backplaneConfig,
-		r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
+	chartPath := r.fetchChartOrCRDPath(backplanev1.ClusterLifecycle, false)
+	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
 		for _, err := range errs {
-			r.Log.Info(err.Error())
+			log.Info(err.Error())
 		}
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
 
-	namespacedName := types.NamespacedName{Name: "cluster-curator-controller", Namespace: backplaneConfig.Spec.TargetNamespace}
+	namespacedName := types.NamespacedName{Name: "cluster-curator-controller", Namespace: mce.Spec.TargetNamespace}
 	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
 	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
-	namespacedName = types.NamespacedName{Name: "clusterclaims-controller", Namespace: backplaneConfig.Spec.TargetNamespace}
+	namespacedName = types.NamespacedName{Name: "clusterclaims-controller", Namespace: mce.Spec.TargetNamespace}
 	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
 	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
-	namespacedName = types.NamespacedName{Name: "provider-credential-controller", Namespace: backplaneConfig.Spec.TargetNamespace}
+	namespacedName = types.NamespacedName{Name: "provider-credential-controller", Namespace: mce.Spec.TargetNamespace}
 	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
 	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
-	namespacedName = types.NamespacedName{Name: "cluster-image-set-controller", Namespace: backplaneConfig.Spec.TargetNamespace}
+	namespacedName = types.NamespacedName{Name: "cluster-image-set-controller", Namespace: mce.Spec.TargetNamespace}
 	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
 	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 
 	// Deletes all templates
 	for _, template := range templates {
-		result, err := r.deleteTemplate(ctx, backplaneConfig, template)
+		result, err := r.deleteTemplate(ctx, mce, template)
 		if err != nil {
 			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
 			return result, err
@@ -732,22 +817,27 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterLifecycle(ctx context.Cont
 }
 
 func (r *MultiClusterEngineReconciler) ensureClusterManager(ctx context.Context,
-	backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	r.Log = log
+	mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 
-	namespacedName := types.NamespacedName{Name: "cluster-manager", Namespace: backplaneConfig.Spec.TargetNamespace}
+	namespacedName := types.NamespacedName{Name: "cluster-manager", Namespace: mce.Spec.TargetNamespace}
 	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
 	r.StatusManager.AddComponent(status.ClusterManagerStatus{
 		NamespacedName: types.NamespacedName{Name: "cluster-manager"},
 	})
 
-	templates, errs := renderer.RenderChart(toggle.ClusterManagerChartDir, backplaneConfig,
-		r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
+	// Ensure that the InternalHubComponent CR instance is created for component in MCE.
+	if result, err := r.ensureInternalEngineComponent(ctx, mce, backplanev1.ClusterManager); err != nil {
+		return result, err
+	}
+
+	// Renders all templates from charts
+	chartPath := r.fetchChartOrCRDPath(backplanev1.ClusterManager, false)
+	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
 		for _, err := range errs {
-			r.Log.Info(err.Error())
+			log.Info(err.Error())
 		}
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
@@ -755,15 +845,15 @@ func (r *MultiClusterEngineReconciler) ensureClusterManager(ctx context.Context,
 	// Applies all templates
 	for _, template := range templates {
 		applyReleaseVersionAnnotation(template)
-		result, err := r.applyTemplate(ctx, backplaneConfig, template)
+		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
 			return result, err
 		}
 	}
 
 	// Apply clustermanager
-	cmTemplate := foundation.ClusterManager(backplaneConfig, r.CacheSpec.ImageOverrides)
-	if err := ctrl.SetControllerReference(backplaneConfig, cmTemplate, r.Scheme); err != nil {
+	cmTemplate := foundation.ClusterManager(mce, r.CacheSpec.ImageOverrides)
+	if err := ctrl.SetControllerReference(mce, cmTemplate, r.Scheme); err != nil {
 		return ctrl.Result{}, errors.Wrapf(err, "Error setting controller reference on resource %s", cmTemplate.GetName())
 	}
 	force := true
@@ -775,16 +865,21 @@ func (r *MultiClusterEngineReconciler) ensureClusterManager(ctx context.Context,
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterEngineReconciler) ensureNoClusterManager(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	namespacedName := types.NamespacedName{Name: "cluster-manager", Namespace: backplaneConfig.Spec.TargetNamespace}
+func (r *MultiClusterEngineReconciler) ensureNoClusterManager(ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+	namespacedName := types.NamespacedName{Name: "cluster-manager", Namespace: mce.Spec.TargetNamespace}
+
+	// Ensure that the InternalHubComponent CR instance is deleted for component in MCE.
+	if result, err := r.ensureNoInternalEngineComponent(ctx, mce, backplanev1.ClusterManager); err != nil {
+		return result, err
+	}
 
 	// Renders all templates from charts
-	templates, errs := renderer.RenderChart(toggle.ClusterManagerChartDir, backplaneConfig,
-		r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
+	chartPath := r.fetchChartOrCRDPath(backplanev1.ClusterManager, false)
+	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
 		for _, err := range errs {
-			r.Log.Info(err.Error())
+			log.Info(err.Error())
 		}
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
@@ -826,7 +921,7 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterManager(ctx context.Contex
 
 	// Deletes all templates
 	for _, template := range templates {
-		result, err := r.deleteTemplate(ctx, backplaneConfig, template)
+		result, err := r.deleteTemplate(ctx, mce, template)
 		if err != nil {
 			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
 			return result, err
@@ -835,20 +930,25 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterManager(ctx context.Contex
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterEngineReconciler) ensureHyperShift(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	r.Log = log
+func (r *MultiClusterEngineReconciler) ensureHyperShift(ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 
-	namespacedName := types.NamespacedName{Name: "hypershift-addon-manager", Namespace: backplaneConfig.Spec.TargetNamespace}
+	namespacedName := types.NamespacedName{Name: "hypershift-addon-manager", Namespace: mce.Spec.TargetNamespace}
 	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
 	r.StatusManager.AddComponent(status.NewPresentStatus(types.NamespacedName{Name: "hypershift-addon"}, clusterManagementAddOnGVK))
 
-	templates, errs := renderer.RenderChart(toggle.HyperShiftChartDir, backplaneConfig,
-		r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
+	// Ensure that the InternalHubComponent CR instance is created for component in MCE.
+	if result, err := r.ensureInternalEngineComponent(ctx, mce, backplanev1.HyperShift); err != nil {
+		return result, err
+	}
+
+	// Renders all templates from charts
+	chartPath := r.fetchChartOrCRDPath(backplanev1.HyperShift, false)
+	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
 		for _, err := range errs {
-			r.Log.Info(err.Error())
+			log.Info(err.Error())
 		}
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
@@ -857,14 +957,14 @@ func (r *MultiClusterEngineReconciler) ensureHyperShift(ctx context.Context, bac
 	missingCRDErrorOccured := false
 	for _, template := range templates {
 		applyReleaseVersionAnnotation(template)
-		result, err := r.applyTemplate(ctx, backplaneConfig, template)
+		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
 			if apimeta.IsNoMatchError(errors.Unwrap(err)) || apierrors.IsNotFound(err) {
 				// addon CRD does not yet exist. Replace status.
-				r.Log.Info("Couldn't apply template for hypershift due to missing CRD", "error is", err.Error())
+				log.Info("Couldn't apply template for hypershift due to missing CRD", "error is", err.Error())
 
 				missingCRDErrorOccured = true
-				r.StatusManager.AddComponent(clusterManagementAddOnNotFoundStatus("hypershift", backplaneConfig.Spec.TargetNamespace))
+				r.StatusManager.AddComponent(clusterManagementAddOnNotFoundStatus("hypershift", mce.Spec.TargetNamespace))
 			} else {
 				return result, err
 			}
@@ -878,9 +978,14 @@ func (r *MultiClusterEngineReconciler) ensureHyperShift(ctx context.Context, bac
 }
 
 func (r *MultiClusterEngineReconciler) ensureNoHyperShift(ctx context.Context,
-	backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+	mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 
-	namespacedName := types.NamespacedName{Name: "hypershift-addon-manager", Namespace: backplaneConfig.Spec.TargetNamespace}
+	// Ensure that the InternalHubComponent CR instance is deleted for component in MCE.
+	if result, err := r.ensureNoInternalEngineComponent(ctx, mce, backplanev1.HyperShift); err != nil {
+		return result, err
+	}
+
+	namespacedName := types.NamespacedName{Name: "hypershift-addon-manager", Namespace: mce.Spec.TargetNamespace}
 
 	// Ensure hypershift-addon is removed first
 	waitingForHypershiftAddon := status.StaticStatus{
@@ -896,7 +1001,7 @@ func (r *MultiClusterEngineReconciler) ensureNoHyperShift(ctx context.Context,
 			Message:   "Waiting for 'hypershift-addon' ManagedClusterAddOn to be removed",
 		},
 	}
-	hypershiftAddon, err := renderer.RenderHypershiftAddon(backplaneConfig)
+	hypershiftAddon, err := renderer.RenderHypershiftAddon(mce)
 	if err != nil {
 		return ctrl.Result{RequeueAfter: requeuePeriod}, err
 	}
@@ -915,20 +1020,21 @@ func (r *MultiClusterEngineReconciler) ensureNoHyperShift(ctx context.Context,
 	}
 
 	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
+
 	// Renders all templates from charts
-	templates, errs := renderer.RenderChart(toggle.HyperShiftChartDir, backplaneConfig,
-		r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
+	chartPath := r.fetchChartOrCRDPath(backplanev1.HyperShift, false)
+	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
 		for _, err := range errs {
-			r.Log.Info(err.Error())
+			log.Info(err.Error())
 		}
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
 
 	// Deletes all templates
 	for _, template := range templates {
-		result, err := r.deleteTemplate(ctx, backplaneConfig, template)
+		result, err := r.deleteTemplate(ctx, mce, template)
 		if err != nil {
 			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
 			return result, err
@@ -998,13 +1104,13 @@ func (r *MultiClusterEngineReconciler) reconcileHypershiftLocalHosting(ctx conte
 	return r.applyHypershiftLocalHosting(ctx, mce)
 }
 
-func (r *MultiClusterEngineReconciler) applyHypershiftLocalHosting(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	addon, err := renderer.RenderHypershiftAddon(backplaneConfig)
+func (r *MultiClusterEngineReconciler) applyHypershiftLocalHosting(ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+	addon, err := renderer.RenderHypershiftAddon(mce)
 	if err != nil {
 		return ctrl.Result{RequeueAfter: requeuePeriod}, err
 	}
 	applyReleaseVersionAnnotation(addon)
-	result, err := r.applyTemplate(ctx, backplaneConfig, addon)
+	result, err := r.applyTemplate(ctx, mce, addon)
 	if err != nil {
 		if apimeta.IsNoMatchError(errors.Unwrap(err)) || apierrors.IsNotFound(errors.Unwrap(err)) {
 			// addon CRD does not yet exist. Replace status.
@@ -1056,35 +1162,35 @@ func (r *MultiClusterEngineReconciler) applyHypershiftLocalHosting(ctx context.C
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterEngineReconciler) removeHypershiftLocalHosting(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	addon, err := renderer.RenderHypershiftAddon(backplaneConfig)
+func (r *MultiClusterEngineReconciler) removeHypershiftLocalHosting(ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+	addon, err := renderer.RenderHypershiftAddon(mce)
 	if err != nil {
 		return ctrl.Result{RequeueAfter: requeuePeriod}, err
 	}
-	result, err := r.deleteTemplate(ctx, backplaneConfig, addon)
+	result, err := r.deleteTemplate(ctx, mce, addon)
 	if err != nil {
 		return result, err
 	}
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterEngineReconciler) ensureClusterProxyAddon(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	r.Log = log
+func (r *MultiClusterEngineReconciler) ensureClusterProxyAddon(ctx context.Context, mce *backplanev1.MultiClusterEngine) (
+	ctrl.Result, error) {
 
-	namespacedName := types.NamespacedName{Name: "cluster-proxy-addon-manager", Namespace: backplaneConfig.Spec.TargetNamespace}
+	namespacedName := types.NamespacedName{Name: "cluster-proxy-addon-manager", Namespace: mce.Spec.TargetNamespace}
 	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
 	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
-	namespacedName = types.NamespacedName{Name: "cluster-proxy-addon-user", Namespace: backplaneConfig.Spec.TargetNamespace}
+	namespacedName = types.NamespacedName{Name: "cluster-proxy-addon-user", Namespace: mce.Spec.TargetNamespace}
 	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
 	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 	r.StatusManager.AddComponent(status.NewPresentStatus(types.NamespacedName{Name: "cluster-proxy"}, clusterManagementAddOnGVK))
 
-	templates, errs := renderer.RenderChart(toggle.ClusterProxyAddonDir, backplaneConfig, r.CacheSpec.ImageOverrides,
-		r.CacheSpec.TemplateOverrides)
+	chartPath := r.fetchChartOrCRDPath(backplanev1.ClusterProxyAddon, false)
+	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
 		for _, err := range errs {
-			r.Log.Info(err.Error())
+			log.Info(err.Error())
 		}
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
@@ -1093,11 +1199,11 @@ func (r *MultiClusterEngineReconciler) ensureClusterProxyAddon(ctx context.Conte
 	missingCRDErrorOccured := false
 	for _, template := range templates {
 		applyReleaseVersionAnnotation(template)
-		result, err := r.applyTemplate(ctx, backplaneConfig, template)
+		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
 			if apimeta.IsNoMatchError(errors.Unwrap(err)) || apierrors.IsNotFound(errors.Unwrap(err)) {
 				missingCRDErrorOccured = true
-				r.StatusManager.AddComponent(clusterManagementAddOnNotFoundStatus("cluster-proxy-addon", backplaneConfig.Spec.TargetNamespace))
+				r.StatusManager.AddComponent(clusterManagementAddOnNotFoundStatus("cluster-proxy-addon", mce.Spec.TargetNamespace))
 			} else {
 				return result, err
 			}
@@ -1110,28 +1216,35 @@ func (r *MultiClusterEngineReconciler) ensureClusterProxyAddon(ctx context.Conte
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterEngineReconciler) ensureNoClusterProxyAddon(ctx context.Context, backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	namespacedName := types.NamespacedName{Name: "cluster-proxy-addon-manager", Namespace: backplaneConfig.Spec.TargetNamespace}
+func (r *MultiClusterEngineReconciler) ensureNoClusterProxyAddon(ctx context.Context,
+	mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+
+	namespacedName := types.NamespacedName{Name: "cluster-proxy-addon-manager", Namespace: mce.Spec.TargetNamespace}
 	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
 	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
-	namespacedName = types.NamespacedName{Name: "cluster-proxy-addon-user", Namespace: backplaneConfig.Spec.TargetNamespace}
+	namespacedName = types.NamespacedName{Name: "cluster-proxy-addon-user", Namespace: mce.Spec.TargetNamespace}
 	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
 	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 
+	// Ensure that the InternalHubComponent CR instance is deleted for component in MCE.
+	if result, err := r.ensureNoInternalEngineComponent(ctx, mce, backplanev1.ClusterProxyAddon); err != nil {
+		return result, err
+	}
+
 	// Renders all templates from charts
-	templates, errs := renderer.RenderChart(toggle.ClusterProxyAddonDir, backplaneConfig, r.CacheSpec.ImageOverrides,
-		r.CacheSpec.TemplateOverrides)
+	chartPath := r.fetchChartOrCRDPath(backplanev1.ClusterProxyAddon, false)
+	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
 		for _, err := range errs {
-			r.Log.Info(err.Error())
+			log.Info(err.Error())
 		}
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
 
 	// Deletes all templates
 	for _, template := range templates {
-		result, err := r.deleteTemplate(ctx, backplaneConfig, template)
+		result, err := r.deleteTemplate(ctx, mce, template)
 		if err != nil {
 			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
 			return result, err
@@ -1181,7 +1294,7 @@ func (r *MultiClusterEngineReconciler) ensureLocalCluster(ctx context.Context, m
 	ctrl.Result, error) {
 
 	if utils.IsUnitTest() {
-		r.Log.Info("skipping local cluster creation in unit tests")
+		log.Info("skipping local cluster creation in unit tests")
 		return ctrl.Result{}, nil
 	}
 
@@ -1190,25 +1303,25 @@ func (r *MultiClusterEngineReconciler) ensureLocalCluster(ctx context.Context, m
 	r.StatusManager.RemoveComponent(lcs)
 	r.StatusManager.AddComponent(lcs)
 
-	r.Log.Info("Check if ManagedCluster CR exists")
+	log.Info("Check if ManagedCluster CR exists")
 	managedCluster := utils.NewManagedCluster()
 	err := r.Client.Get(ctx, types.NamespacedName{Name: utils.LocalClusterName}, managedCluster)
 	if apierrors.IsNotFound(err) {
-		r.Log.Info("ManagedCluster CR does not exist, need to create it")
-		r.Log.Info(fmt.Sprintf("Check if local cluster namespace %q exists", utils.LocalClusterName))
+		log.Info("ManagedCluster CR does not exist, need to create it")
+		log.Info(fmt.Sprintf("Check if local cluster namespace %q exists", utils.LocalClusterName))
 		localNS := utils.NewLocalNamespace()
 		err := r.Client.Get(ctx, types.NamespacedName{Name: localNS.GetName()}, localNS)
 		if err == nil {
-			r.Log.Info("Waiting on local cluster namespace to be removed before creating ManagedCluster CR", "Namespace", localNS.GetName())
+			log.Info("Waiting on local cluster namespace to be removed before creating ManagedCluster CR", "Namespace", localNS.GetName())
 			return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 		} else if apierrors.IsNotFound(err) {
-			r.Log.Info("Local cluster namespace does not exist. Creating ManagedCluster CR")
+			log.Info("Local cluster namespace does not exist. Creating ManagedCluster CR")
 			managedCluster = utils.NewManagedCluster()
 			err := r.Client.Create(ctx, managedCluster)
 			if err != nil {
 				if apierrors.IsInternalError(err) {
 					// webhook not available
-					r.Log.Info("ManagedCluster webhook not available, waiting for controller")
+					log.Info("ManagedCluster webhook not available, waiting for controller")
 					r.StatusManager.RemoveComponent(lcs)
 					r.StatusManager.AddComponent(status.StaticStatus{
 						NamespacedName: types.NamespacedName{Name: "local-cluster", Namespace: mce.Spec.TargetNamespace},
@@ -1225,14 +1338,14 @@ func (r *MultiClusterEngineReconciler) ensureLocalCluster(ctx context.Context, m
 					})
 					return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 				} else if apimeta.IsNoMatchError(err) || apierrors.IsNotFound(err) {
-					r.Log.Info("ManagedCluster CRD not available while creating ManagedCluster CR")
+					log.Info("ManagedCluster CRD not available while creating ManagedCluster CR")
 					return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 				} else {
 					log.Error(err, "Failed to create ManagedCluster CR")
 					return ctrl.Result{}, err
 				}
 			}
-			r.Log.Info("Created ManagedCluster CR")
+			log.Info("Created ManagedCluster CR")
 		} else {
 			log.Error(err, "Failed to get local cluster namespace")
 			return ctrl.Result{}, err
@@ -1256,7 +1369,7 @@ func (r *MultiClusterEngineReconciler) ensureLocalCluster(ctx context.Context, m
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	} else if apierrors.IsInternalError(err) {
 		// webhook not available
-		r.Log.Info("ManagedCluster webhook not available, waiting for controller")
+		log.Info("ManagedCluster webhook not available, waiting for controller")
 		r.StatusManager.RemoveComponent(lcs)
 		r.StatusManager.AddComponent(status.StaticStatus{
 			NamespacedName: types.NamespacedName{Name: "local-cluster", Namespace: mce.Spec.TargetNamespace},
@@ -1277,14 +1390,14 @@ func (r *MultiClusterEngineReconciler) ensureLocalCluster(ctx context.Context, m
 		return ctrl.Result{RequeueAfter: requeuePeriod}, err
 	}
 
-	r.Log.Info("Setting annotations on ManagedCluster CR")
+	log.Info("Setting annotations on ManagedCluster CR")
 	annotations := managedCluster.GetAnnotations()
 	if annotations == nil {
 		annotations = make(map[string]string)
 	}
 
 	if len(mce.Spec.NodeSelector) > 0 {
-		r.Log.Info("Adding NodeSelector annotation")
+		log.Info("Adding NodeSelector annotation")
 		nodeSelector, err := json.Marshal(mce.Spec.NodeSelector)
 		if err != nil {
 			log.Error(err, "Failed to json marshal MCE NodeSelector")
@@ -1292,13 +1405,13 @@ func (r *MultiClusterEngineReconciler) ensureLocalCluster(ctx context.Context, m
 		}
 		annotations[utils.AnnotationNodeSelector] = string(nodeSelector)
 	} else {
-		r.Log.Info("Removing NodeSelector annotation")
+		log.Info("Removing NodeSelector annotation")
 		delete(annotations, utils.AnnotationNodeSelector)
 	}
 	managedCluster.SetAnnotations(annotations)
 	applyReleaseVersionAnnotation(managedCluster)
 
-	r.Log.Info("Updating ManagedCluster CR")
+	log.Info("Updating ManagedCluster CR")
 	err = r.Client.Update(ctx, managedCluster)
 	if err != nil {
 		log.Error(err, "Failed to update ManagedCluster CR")
@@ -1307,10 +1420,11 @@ func (r *MultiClusterEngineReconciler) ensureLocalCluster(ctx context.Context, m
 	return ctrl.Result{}, err
 }
 
-func (r *MultiClusterEngineReconciler) ensureNoLocalCluster(ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+func (r *MultiClusterEngineReconciler) ensureNoLocalCluster(ctx context.Context, mce *backplanev1.MultiClusterEngine) (
+	ctrl.Result, error) {
 
 	if utils.IsUnitTest() {
-		r.Log.Info("skipping local cluster removal in unit tests")
+		log.Info("skipping local cluster removal in unit tests")
 		return ctrl.Result{}, nil
 	}
 
@@ -1322,15 +1436,15 @@ func (r *MultiClusterEngineReconciler) ensureNoLocalCluster(ctx context.Context,
 	r.StatusManager.RemoveComponent(lcs)
 	r.StatusManager.AddComponent(lcs)
 
-	r.Log.Info("Check if ManagedCluster CR exists")
+	log.Info("Check if ManagedCluster CR exists")
 	managedCluster := utils.NewManagedCluster()
 	err := r.Client.Get(ctx, types.NamespacedName{Name: utils.LocalClusterName}, managedCluster)
 	if apierrors.IsNotFound(err) || apimeta.IsNoMatchError(err) {
-		r.Log.Info("ManagedCluster CR is not present")
+		log.Info("ManagedCluster CR is not present")
 	} else if err != nil {
 		return ctrl.Result{RequeueAfter: requeuePeriod}, err
 	} else {
-		r.Log.Info("Deleting ManagedCluster CR")
+		log.Info("Deleting ManagedCluster CR")
 		managedCluster = utils.NewManagedCluster()
 		utils.AddBackplaneConfigLabels(managedCluster, mce.GetName())
 		err = r.Client.Delete(ctx, managedCluster)
@@ -1338,7 +1452,7 @@ func (r *MultiClusterEngineReconciler) ensureNoLocalCluster(ctx context.Context,
 			log.Error(err, "Error deleting ManagedCluster CR")
 			return ctrl.Result{}, err
 		}
-		r.Log.Info("ManagedCluster CR has been deleted")
+		log.Info("ManagedCluster CR has been deleted")
 
 		msg := "Waiting for local managed cluster to terminate."
 		condition := status.NewCondition(
@@ -1348,23 +1462,23 @@ func (r *MultiClusterEngineReconciler) ensureNoLocalCluster(ctx context.Context,
 			msg,
 		)
 		r.StatusManager.AddCondition(condition)
-		r.Log.Info(msg)
+		log.Info(msg)
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
 
-	r.Log.Info("Check if managed cluster namespace exists")
+	log.Info("Check if managed cluster namespace exists")
 	ns := utils.NewLocalNamespace()
 	err = r.Client.Get(ctx, types.NamespacedName{Name: ns.GetName()}, ns)
 	if apierrors.IsNotFound(err) {
-		r.Log.Info("Managed cluster namespace has been removed")
+		log.Info("Managed cluster namespace has been removed")
 		return ctrl.Result{}, nil
 	} else if err != nil {
 		log.Error(err, "Failed to get managed cluster namespace")
 		return ctrl.Result{RequeueAfter: requeuePeriod}, err
 	}
-	r.Log.Info("Managed cluster namespace still exists")
+	log.Info("Managed cluster namespace still exists")
 
-	r.Log.Info("Deleting managed cluster namespace")
+	log.Info("Deleting managed cluster namespace")
 	ns = utils.NewLocalNamespace()
 	err = r.Client.Delete(ctx, ns)
 	if err != nil && !apierrors.IsNotFound(err) {
@@ -1372,7 +1486,7 @@ func (r *MultiClusterEngineReconciler) ensureNoLocalCluster(ctx context.Context,
 		return ctrl.Result{}, err
 	}
 
-	r.Log.Info("Managed cluster namespace has been deleted")
+	log.Info("Managed cluster namespace has been deleted")
 	msg := "Waiting for local managed cluster namespace to terminate."
 	condition := status.NewCondition(
 		backplanev1.MultiClusterEngineProgressing,
@@ -1381,7 +1495,7 @@ func (r *MultiClusterEngineReconciler) ensureNoLocalCluster(ctx context.Context,
 		msg,
 	)
 	r.StatusManager.AddCondition(condition)
-	r.Log.Info(msg)
+	log.Info(msg)
 	return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 }
 
