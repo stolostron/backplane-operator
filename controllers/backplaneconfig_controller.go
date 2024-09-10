@@ -873,7 +873,7 @@ func (r *MultiClusterEngineReconciler) ensureInternalEngineComponent(
 	backplaneConfig *backplanev1.MultiClusterEngine,
 	component string) (ctrl.Result, error) {
 
-	componentCR := &backplanev1.InternalEngineComponent{
+	iec := &backplanev1.InternalEngineComponent{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: backplanev1.GroupVersion.String(),
 			Kind:       "InternalEngineComponent",
@@ -885,7 +885,7 @@ func (r *MultiClusterEngineReconciler) ensureInternalEngineComponent(
 	}
 
 	force := true
-	err := r.Client.Patch(ctx, componentCR, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
+	err := r.Client.Patch(ctx, iec, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
 	if err != nil {
 		r.Log.Info(fmt.Sprintf("error applying %s CR. Error: %s", component, err.Error()))
 		return ctrl.Result{Requeue: true}, err
@@ -894,29 +894,51 @@ func (r *MultiClusterEngineReconciler) ensureInternalEngineComponent(
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterEngineReconciler) ensureNoInternalEngineComponent(
-	ctx context.Context,
-	backplaneConfig *backplanev1.MultiClusterEngine,
-	component string) (ctrl.Result, error) {
+func (r *MultiClusterEngineReconciler) ensureNoInternalEngineComponent(ctx context.Context,
+	backplaneConfig *backplanev1.MultiClusterEngine, component string) (ctrl.Result, error) {
 
-	comp := &backplanev1.InternalEngineComponent{}
-	err := r.Client.Get(ctx, types.NamespacedName{Name: component, Namespace: backplaneConfig.Spec.TargetNamespace}, comp)
-	if apierrors.IsNotFound(err) {
-		return ctrl.Result{}, nil
-	}
-	if err != nil {
-		log.Error(err, fmt.Sprintf("Error getting InternalEngineComponent. Error: %v: Component was: %v", err, comp))
-		return reconcile.Result{Requeue: true}, err
-	}
+	iec := &backplanev1.InternalEngineComponent{}
+	if err := r.Client.Get(
+		ctx, types.NamespacedName{Name: component, Namespace: backplaneConfig.Spec.TargetNamespace}, iec); err != nil {
+		if apierrors.IsNotFound(err) {
+			return ctrl.Result{}, nil
+		}
 
-	log.Info(fmt.Sprintf("Ensuring No InternalEngineComponent: %s", component))
-	err = r.Client.Delete(ctx, comp)
-	if err != nil && !apierrors.IsNotFound(err) {
-		log.Error(err, fmt.Sprintf("Error deleting InternalEngineComponent. Error: %v", err))
-		return reconcile.Result{Requeue: true}, err
+		return ctrl.Result{}, fmt.Errorf("failed to get InternalEngineComponent: %s/%s: %v",
+			backplaneConfig.Spec.TargetNamespace, component, err)
 	}
 
-	return ctrl.Result{}, nil
+	// Check if it has a deletion timestamp (indicating it's in the process of being deleted)
+	if iec.GetDeletionTimestamp() != nil {
+		log.Info("InternalEngineComponent deletion in progress", "Name", iec.GetName(), "Namespace", iec.GetNamespace(),
+			"DeletionTimestamp", iec.GetDeletionTimestamp())
+
+		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+	}
+
+	log.Info("Deleting InternalEngineComponent", "Name", iec.GetName(), "Namespace", iec.GetNamespace())
+	if err := r.Client.Delete(ctx, iec); err != nil {
+		if !apierrors.IsNotFound(err) {
+			return ctrl.Result{}, fmt.Errorf("failed to delete InternalEngineComponent CR: %s/%s: %v",
+				iec.GetNamespace(), iec.GetName(), err)
+		}
+	}
+
+	// Ensure that the resource is fully deleted by attempting to refetch it
+	if err := r.Client.Get(ctx,
+		types.NamespacedName{Name: iec.GetName(), Namespace: iec.GetNamespace()}, iec); err != nil {
+		if apierrors.IsNotFound(err) {
+			log.Info("InternalEngineComponent successfully deleted", "Name", iec.GetName(),
+				"Namespace", iec.GetNamespace())
+			return ctrl.Result{}, nil
+		}
+
+		return ctrl.Result{}, fmt.Errorf("failed to get InternalEngineComponent %s/%s: %v",
+			iec.GetNamespace(), iec.GetName(), err)
+	}
+
+	// Requeue to check again after a short delay
+	return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 }
 
 func (r *MultiClusterEngineReconciler) fetchChartOrCRDPath(component string, useCRDPath bool) string {
@@ -945,7 +967,7 @@ func (r *MultiClusterEngineReconciler) fetchChartOrCRDPath(component string, use
 			return dir
 		}
 
-		log.Info("CRD path not found for component: %v", "Component", component)
+		log.Info("CRD path not found for component", "Component", component)
 		return "" // No CRD path defined for this component
 	}
 
