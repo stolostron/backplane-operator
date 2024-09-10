@@ -824,17 +824,29 @@ var _ = Describe("BackplaneConfig controller", func() {
 				}
 				createCtx := context.Background()
 				Expect(k8sClient.Create(createCtx, backplaneConfig)).Should(Succeed())
-				_, err := reconciler.ensureNoClusterManager(createCtx, backplaneConfig)
+
+				_, err := reconciler.ensureNoToggleableComponent(createCtx, backplaneConfig, backplanev1.ClusterManager,
+					reconciler.CacheSpec)
 				Expect(err).To(BeNil())
-				_, err = reconciler.ensureNoClusterLifecycle(createCtx, backplaneConfig)
+
+				_, err = reconciler.ensureNoToggleableComponent(createCtx, backplaneConfig, backplanev1.ClusterLifecycle,
+					reconciler.CacheSpec)
 				Expect(err).To(BeNil())
-				_, err = reconciler.ensureNoManagedServiceAccount(createCtx, backplaneConfig)
+
+				_, err = reconciler.ensureNoToggleableComponent(createCtx, backplaneConfig, backplanev1.ManagedServiceAccount,
+					reconciler.CacheSpec)
 				Expect(err).To(BeNil())
-				_, err = reconciler.ensureNoHive(createCtx, backplaneConfig)
+
+				_, err = reconciler.ensureNoToggleableComponent(createCtx, backplaneConfig, backplanev1.Hive,
+					reconciler.CacheSpec)
 				Expect(err).To(BeNil())
-				_, err = reconciler.ensureNoHyperShift(createCtx, backplaneConfig)
+
+				_, err = reconciler.ensureNoToggleableComponent(createCtx, backplaneConfig, backplanev1.HyperShift,
+					reconciler.CacheSpec)
 				Expect(err).To(BeNil())
-				_, err = reconciler.ensureNoServerFoundation(createCtx, backplaneConfig)
+
+				_, err = reconciler.ensureNoToggleableComponent(createCtx, backplaneConfig, backplanev1.ServerFoundation,
+					reconciler.CacheSpec)
 				Expect(err).To(BeNil())
 
 				By("ensuring each deployment and config is created")

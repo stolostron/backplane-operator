@@ -203,23 +203,35 @@ func RenderCharts(chartDir string, backplaneConfig *v1.MultiClusterEngine, image
 		chartDir = path.Join(val, chartDir)
 	}
 
+	// Read chart directory
 	charts, err := os.ReadDir(chartDir)
 	if err != nil {
+		// Append error and return early since chart directory cannot be read
 		errs = append(errs, err)
+		return nil, errs
 	}
 
 	for _, chart := range charts {
 		chartPath := filepath.Join(chartDir, chart.Name())
-		chartTemplates, errs := renderTemplates(chartPath, backplaneConfig, images, templateOverrides)
+		chartTemplates, chartErrs := renderTemplates(chartPath, backplaneConfig, images, templateOverrides)
 
-		if len(errs) > 0 {
-			for _, err := range errs {
+		if len(chartErrs) > 0 {
+			for _, err := range chartErrs {
 				log.Info(err.Error())
 			}
-			return nil, errs
+
+			errs = append(errs, chartErrs...)
+			continue // Continue processing other charts even if one fails
 		}
+
 		templates = append(templates, chartTemplates...)
 	}
+
+	// Return both collected templates and errors (if any)
+	if len(errs) > 0 {
+		return templates, errs
+	}
+
 	return templates, nil
 }
 
@@ -227,7 +239,6 @@ func RenderChart(chartPath string, backplaneConfig *v1.MultiClusterEngine, image
 	templates map[string]string) ([]*unstructured.Unstructured, []error) {
 
 	log := log.Log.WithName("reconcile")
-	errs := []error{}
 	if val, ok := os.LookupEnv("DIRECTORY_OVERRIDE"); ok {
 		chartPath = path.Join(val, chartPath)
 	}

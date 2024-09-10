@@ -6,12 +6,10 @@ import (
 	v1 "github.com/stolostron/backplane-operator/api/v1"
 	"github.com/stolostron/backplane-operator/pkg/utils"
 
-	// metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	// addonv1alpha1 "open-cluster-management.io/api/addon/v1alpha1"
 )
 
-func RenderHypershiftAddon(mce *v1.MultiClusterEngine) (*unstructured.Unstructured, error) {
+func RenderHypershiftAddon(mce *v1.MultiClusterEngine) *unstructured.Unstructured {
 	addon := &unstructured.Unstructured{
 		Object: map[string]interface{}{
 			"apiVersion": "addon.open-cluster-management.io/v1alpha1",
@@ -27,6 +25,5 @@ func RenderHypershiftAddon(mce *v1.MultiClusterEngine) (*unstructured.Unstructur
 	}
 
 	utils.AddBackplaneConfigLabels(addon, mce.GetName())
-
-	return addon, nil
+	return addon
 }

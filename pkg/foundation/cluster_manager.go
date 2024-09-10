@@ -100,6 +100,22 @@ func ClusterManager(m *v1.MultiClusterEngine, overrides map[string]string) *unst
 	return unstructured
 }
 
+func RenderClusterManager(mce *v1.MultiClusterEngine) *unstructured.Unstructured {
+	cm := &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"apiVersion": "operator.open-cluster-management.io/v1",
+			"kind":       "ClusterManager",
+			"metadata": map[string]interface{}{
+				"name": "cluster-manager",
+			},
+			"spec": map[string]interface{}{},
+		},
+	}
+
+	utils.AddBackplaneConfigLabels(cm, mce.GetName())
+	return cm
+}
+
 // CanInstallAddons returns true if addons can be installed
 func CanInstallAddons(ctx context.Context, client client.Client) bool {
 	addonCRD := &apixv1.CustomResourceDefinition{}

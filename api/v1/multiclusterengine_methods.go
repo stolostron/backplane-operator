@@ -71,9 +71,9 @@ var MCEComponents = []string{
 	Hive,
 	HyperShift,
 	HypershiftLocalHosting,
+	ImageBasedInstallOperator,
 	ManagedServiceAccount,
 	ServerFoundation,
-	ImageBasedInstallOperator,
 }
 
 var LegacyPrometheusKind = []string{"PrometheusRule", "ServiceMonitor"}

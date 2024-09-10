@@ -8,9 +8,9 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
-func HiveConfig(bpc *v1.MultiClusterEngine) *unstructured.Unstructured {
+func HiveConfig(mce *v1.MultiClusterEngine) *unstructured.Unstructured {
 
-	cm := &unstructured.Unstructured{
+	hc := &unstructured.Unstructured{
 		Object: map[string]interface{}{
 			"apiVersion": "hive.openshift.io/v1",
 			"kind":       "HiveConfig",
@@ -21,7 +21,6 @@ func HiveConfig(bpc *v1.MultiClusterEngine) *unstructured.Unstructured {
 		},
 	}
 
-	utils.AddBackplaneConfigLabels(cm, bpc.GetName())
-
-	return cm
+	utils.AddBackplaneConfigLabels(hc, mce.GetName())
+	return hc
 }

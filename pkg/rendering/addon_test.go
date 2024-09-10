@@ -17,11 +17,8 @@ func TestRenderHypershiftAddon(t *testing.T) {
 		Spec: v1.MultiClusterEngineSpec{},
 	}
 	t.Run("Adds MCE labels to resource", func(t *testing.T) {
-		got, err := RenderHypershiftAddon(mce)
-		if err != nil {
-			t.Errorf("RenderHypershiftAddon() error = %v, wantErr %v", err, nil)
-			return
-		}
+		got := RenderHypershiftAddon(mce)
+
 		if got.GetLabels()["backplaneconfig.name"] != mce.Name {
 			t.Errorf("RenderHypershiftAddon() did not return a resouce with MCE labels")
 		}
