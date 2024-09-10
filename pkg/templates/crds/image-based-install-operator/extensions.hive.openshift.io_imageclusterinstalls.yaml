@@ -284,10 +284,6 @@ spec:
                   access to instances. Equivalent to install-config.yaml's sshKey.
                   This key will be added to the host to allow ssh access
                 type: string
-              version:
-                description: 'Version is the target OCP version for the cluster TODO:
-                  should this use ImageSetRef?'
-                type: string
             required:
             - imageSetRef
             type: object
