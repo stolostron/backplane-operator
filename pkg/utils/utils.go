@@ -67,8 +67,8 @@ var offComponents = []string{
 var nonOCPComponents = []string{
 	backplanev1.ClusterManager,
 	backplanev1.ServerFoundation,
-	//	backplanev1.HyperShift,
-	//	backplanev1.HypershiftLocalHosting,
+	backplanev1.HyperShift,
+	backplanev1.HypershiftLocalHosting,
 	backplanev1.LocalCluster,
 }
 
@@ -77,9 +77,6 @@ var GlobalDeployOnOCP = true
 // SetDefaultComponents returns true if changes are made
 func SetDefaultComponents(m *backplanev1.MultiClusterEngine) bool {
 	components := onComponents
-	if !DeployOnOCP() {
-		components = nonOCPComponents
-	}
 	updated := false
 	for _, c := range components {
 		if !m.ComponentPresent(c) {
