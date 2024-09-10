@@ -1208,6 +1208,34 @@ func (r *MultiClusterEngineReconciler) applyEnvConfig(template *unstructured.Uns
 	return nil
 }
 
+func (r *MultiClusterEngineReconciler) applyComponentDeploymentOverrides(mce *backplanev1.MultiClusterEngine,
+	templates []*unstructured.Unstructured, component string) (ctrl.Result, error) {
+
+	// Check if the component has overrides available
+	if componentConfig, found := r.getComponentConfig(mce.Spec.Overrides.Components, component); found {
+		for _, template := range templates {
+			// Check if the template is of kind "Deployment"
+			if template.GetKind() == "Deployment" {
+				if deploymentConfig, found := r.getDeploymentConfig(
+					componentConfig.ConfigOverrides.Deployments, template.GetName()); found {
+					log.V(2).Info("Applying deployment overrides for template", "Name", template.GetName())
+					// Apply environment variable overrides for each container
+					for _, container := range deploymentConfig.Containers {
+						if err := r.applyEnvConfig(template, container.Name, container.Env); err != nil {
+							return ctrl.Result{}, err
+						}
+					}
+				} else {
+					log.V(2).Info("No deployment config found for deployment", "Name", template.GetName())
+				}
+			}
+		}
+	} else {
+		log.V(2).Info("No component config found", "Component", component)
+	}
+	return ctrl.Result{}, nil
+}
+
 func (r *MultiClusterEngineReconciler) applyTemplate(ctx context.Context,
 	backplaneConfig *backplanev1.MultiClusterEngine, template *unstructured.Unstructured) (ctrl.Result, error) {
 

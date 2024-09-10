@@ -63,6 +63,11 @@ func (r *MultiClusterEngineReconciler) ensureConsoleMCE(ctx context.Context, mce
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
 
+	// Apply deployment config overrides
+	if result, err := r.applyComponentDeploymentOverrides(mce, templates, backplanev1.ConsoleMCE); err != nil {
+		return result, err
+	}
+
 	// Applies all templates
 	for _, template := range templates {
 		applyReleaseVersionAnnotation(template)
@@ -180,6 +185,11 @@ func (r *MultiClusterEngineReconciler) ensureManagedServiceAccount(ctx context.C
 			log.Info(err.Error())
 		}
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+	}
+
+	// Apply deployment config overrides
+	if result, err := r.applyComponentDeploymentOverrides(mce, templates, backplanev1.ManagedServiceAccount); err != nil {
+		return result, err
 	}
 
 	// Applies all templates
@@ -341,14 +351,18 @@ func (r *MultiClusterEngineReconciler) ensureDiscovery(ctx context.Context, mce 
 
 	// Renders all templates from charts
 	chartPath := r.fetchChartOrCRDPath(backplanev1.Discovery, false)
-	templates, errs := renderer.RenderChart(chartPath, mce,
-		r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
+	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
 		for _, err := range errs {
 			log.Info(err.Error())
 		}
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+	}
+
+	// Apply deployment config overrides
+	if result, err := r.applyComponentDeploymentOverrides(mce, templates, backplanev1.Discovery); err != nil {
+		return result, err
 	}
 
 	// Applies all templates
@@ -419,6 +433,11 @@ func (r *MultiClusterEngineReconciler) ensureHive(ctx context.Context, mce *back
 			log.Info(err.Error())
 		}
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+	}
+
+	// Apply deployment config overrides
+	if result, err := r.applyComponentDeploymentOverrides(mce, templates, backplanev1.Hive); err != nil {
+		return result, err
 	}
 
 	// Applies all templates
@@ -519,6 +538,11 @@ func (r *MultiClusterEngineReconciler) ensureAssistedService(ctx context.Context
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
 
+	// Apply deployment config overrides
+	if result, err := r.applyComponentDeploymentOverrides(mce, templates, backplanev1.AssistedService); err != nil {
+		return result, err
+	}
+
 	// Applies all templates
 	for _, template := range templates {
 		applyReleaseVersionAnnotation(template)
@@ -600,6 +624,11 @@ func (r *MultiClusterEngineReconciler) ensureServerFoundation(ctx context.Contex
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
 
+	// Apply deployment config overrides
+	if result, err := r.applyComponentDeploymentOverrides(mce, templates, backplanev1.ServerFoundation); err != nil {
+		return result, err
+	}
+
 	// Applies all templates
 	for _, template := range templates {
 		applyReleaseVersionAnnotation(template)
@@ -675,6 +704,11 @@ func (r *MultiClusterEngineReconciler) ensureImageBasedInstallOperator(ctx conte
 			log.Info(err.Error())
 		}
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+	}
+
+	// Apply deployment config overrides
+	if result, err := r.applyComponentDeploymentOverrides(mce, templates, backplanev1.ImageBasedInstallOperator); err != nil {
+		return result, err
 	}
 
 	// Applies all templates
@@ -761,6 +795,11 @@ func (r *MultiClusterEngineReconciler) ensureClusterLifecycle(ctx context.Contex
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
 
+	// Apply deployment config overrides
+	if result, err := r.applyComponentDeploymentOverrides(mce, templates, backplanev1.ClusterLifecycle); err != nil {
+		return result, err
+	}
+
 	// Applies all templates
 	for _, template := range templates {
 		applyReleaseVersionAnnotation(template)
@@ -840,6 +879,11 @@ func (r *MultiClusterEngineReconciler) ensureClusterManager(ctx context.Context,
 			log.Info(err.Error())
 		}
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+	}
+
+	// Apply deployment config overrides
+	if result, err := r.applyComponentDeploymentOverrides(mce, templates, backplanev1.ClusterManager); err != nil {
+		return result, err
 	}
 
 	// Applies all templates
@@ -951,6 +995,11 @@ func (r *MultiClusterEngineReconciler) ensureHyperShift(ctx context.Context, mce
 			log.Info(err.Error())
 		}
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+	}
+
+	// Apply deployment config overrides
+	if result, err := r.applyComponentDeploymentOverrides(mce, templates, backplanev1.HyperShift); err != nil {
+		return result, err
 	}
 
 	// Applies all templates
@@ -1193,6 +1242,11 @@ func (r *MultiClusterEngineReconciler) ensureClusterProxyAddon(ctx context.Conte
 			log.Info(err.Error())
 		}
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+	}
+
+	// Apply deployment config overrides
+	if result, err := r.applyComponentDeploymentOverrides(mce, templates, backplanev1.ClusterProxyAddon); err != nil {
+		return result, err
 	}
 
 	// Applies all templates
