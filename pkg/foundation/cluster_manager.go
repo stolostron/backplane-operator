@@ -4,7 +4,6 @@ package foundation
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -123,7 +122,7 @@ func GetAddons() ([]*unstructured.Unstructured, error) {
 		if info == nil || info.IsDir() {
 			return nil
 		}
-		bytesFile, e := ioutil.ReadFile(path)
+		bytesFile, e := os.ReadFile(path)
 		if e != nil {
 			return err
 		}

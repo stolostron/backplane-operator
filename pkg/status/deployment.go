@@ -68,7 +68,7 @@ func mapDeployment(ds *appsv1.Deployment) bpv1.ComponentCondition {
 
 	// Because our definition of success is different than the deployment's it is possible we indicate failure
 	// despite an available deployment present. To avoid confusion we should show a different status.
-	if dcs.Type == appsv1.DeploymentAvailable && dcs.Status == corev1.ConditionTrue && ret.Available == false {
+	if dcs.Type == appsv1.DeploymentAvailable && dcs.Status == corev1.ConditionTrue && !ret.Available {
 		sub := progressingDeployCondition(ds.Status.Conditions)
 		ret = bpv1.ComponentCondition{
 			Name:               ds.Name,
@@ -116,10 +116,5 @@ func successfulDeploy(d *appsv1.Deployment) bool {
 		}
 	}
 
-	if d.Status.UnavailableReplicas > 0 {
-		return false
-	}
-
-	return true
-	// latest := latestDeployCondition(d.Status.Conditions)
+	return d.Status.UnavailableReplicas <= 0
 }

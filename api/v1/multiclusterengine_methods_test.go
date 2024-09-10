@@ -27,9 +27,8 @@ func makeMCE(configs ...api.ComponentConfig) *api.MultiClusterEngine {
 	mce.Spec.Overrides = &api.Overrides{
 		Components: make([]api.ComponentConfig, len(configs)),
 	}
-	for i := range configs {
-		mce.Spec.Overrides.Components[i] = configs[i]
-	}
+
+	copy(mce.Spec.Overrides.Components, configs)
 	return mce
 }
 
