@@ -5,7 +5,6 @@ package backplane_install_test
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"time"
@@ -794,7 +793,7 @@ var webhookTests = func() func() {
 }
 
 func applyResource(resourceFile, namespace string) {
-	resourceData, err := ioutil.ReadFile(resourceFile) // Get resource as bytes
+	resourceData, err := os.ReadFile(resourceFile) // Get resource as bytes
 	Expect(err).To(BeNil())
 
 	unstructured := &unstructured.Unstructured{Object: map[string]interface{}{}}
@@ -812,7 +811,7 @@ func applyResource(resourceFile, namespace string) {
 }
 
 func deleteResource(resourceFile, namespace string) {
-	resourceData, err := ioutil.ReadFile(resourceFile) // Get resource as bytes
+	resourceData, err := os.ReadFile(resourceFile) // Get resource as bytes
 	Expect(err).To(BeNil())
 
 	unstructured := &unstructured.Unstructured{Object: map[string]interface{}{}}

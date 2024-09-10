@@ -70,13 +70,18 @@ var MCEComponents = []string{
 	Discovery,
 	Hive,
 	HyperShift,
+	ImageBasedInstallOperator,
 	HypershiftLocalHosting,
 	ManagedServiceAccount,
 	ServerFoundation,
-	ImageBasedInstallOperator,
 }
 
-var LegacyPrometheusKind = []string{"PrometheusRule", "ServiceMonitor"}
+/*
+LegacyConfigKind is a slice of strings that represents the legacy resource kinds
+supported by the Operator SDK and Prometheus. These kinds include "PrometheusRule", "Service",
+and "ServiceMonitor".
+*/
+var LegacyConfigKind = []string{"PrometheusRule", "ServiceMonitor"}
 
 // MCELegacyPrometheusRules is a map that associates certain component names with their corresponding prometheus rules.
 var MCELegacyPrometheusRules = map[string]string{
@@ -217,11 +222,11 @@ func IsInHostedMode(mce *MultiClusterEngine) bool {
 }
 
 /*
-GetLegacyPrometheusKind returns a list of legacy kind resources that are required to be removed before updating to
-ACM 2.9 and later.
+GetLegacyConfigKind returns a list of legacy kind resources that are required to be removed before updating to
+MCE 2.4 and later.
 */
-func GetLegacyPrometheusKind() []string {
-	return LegacyPrometheusKind
+func GetLegacyConfigKind() []string {
+	return LegacyConfigKind
 }
 
 // GetLegacyPrometheusRulesName returns the name of the PrometheusRules based on the provided component name.
