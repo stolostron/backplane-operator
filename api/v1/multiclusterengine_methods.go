@@ -33,12 +33,12 @@ const (
 	HyperShift                       = "hypershift"
 	HypershiftLocalHosting           = "hypershift-local-hosting"
 	HyperShiftPreview                = "hypershift-preview"
+	ImageBasedInstallOperator        = "image-based-install-operator"
+	ImageBasedInstallOperatorPreview = "image-based-install-operator-preview"
 	LocalCluster                     = "local-cluster"
 	ManagedServiceAccount            = "managedserviceaccount"
 	ManagedServiceAccountPreview     = "managedserviceaccount-preview"
 	ServerFoundation                 = "server-foundation"
-	ImageBasedInstallOperator        = "image-based-install-operator"
-	ImageBasedInstallOperatorPreview = "image-based-install-operator-preview"
 )
 
 var allComponents = []string{
@@ -52,12 +52,12 @@ var allComponents = []string{
 	HyperShift,
 	HypershiftLocalHosting,
 	HyperShiftPreview,
+	ImageBasedInstallOperator,
+	ImageBasedInstallOperatorPreview,
 	LocalCluster,
 	ManagedServiceAccount,
 	ManagedServiceAccountPreview,
 	ServerFoundation,
-	ImageBasedInstallOperator,
-	ImageBasedInstallOperatorPreview,
 }
 
 // MCEComponents is a slice containing component names specific to the "MCE" category.
@@ -70,8 +70,8 @@ var MCEComponents = []string{
 	Discovery,
 	Hive,
 	HyperShift,
-	ImageBasedInstallOperator,
 	HypershiftLocalHosting,
+	ImageBasedInstallOperator,
 	ManagedServiceAccount,
 	ServerFoundation,
 }
