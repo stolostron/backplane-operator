@@ -624,7 +624,12 @@ var _ = Describe("BackplaneConfig controller", func() {
 				for _, mcecomponent := range backplanev1.MCEComponents {
 					if backplaneConfig.Enabled(mcecomponent) {
 						By(fmt.Sprintf("ensuring %s CR is created", mcecomponent))
-						Eventually(k8sClient.Get(ctx, types.NamespacedName{Name: mcecomponent, Namespace: backplaneConfig.Spec.TargetNamespace}, &backplanev1.InternalEngineComponent{})).Should(Succeed())
+						iec := &backplanev1.InternalEngineComponent{}
+						err := k8sClient.Get(ctx, types.NamespacedName{Name: mcecomponent,
+							Namespace: backplaneConfig.Spec.TargetNamespace}, iec)
+
+						log.Info("iec", "Name", iec.GetName(), "Namespace", iec.GetNamespace())
+						Eventually(err).Should(BeNil())
 					}
 				}
 

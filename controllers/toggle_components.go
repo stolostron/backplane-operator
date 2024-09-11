@@ -1241,6 +1241,12 @@ func (r *MultiClusterEngineReconciler) ensureClusterProxyAddon(ctx context.Conte
 	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 	r.StatusManager.AddComponent(status.NewPresentStatus(types.NamespacedName{Name: "cluster-proxy"}, clusterManagementAddOnGVK))
 
+	// Ensure that the InternalHubComponent CR instance is created for component in MCE.
+	if result, err := r.ensureInternalEngineComponent(ctx, mce, backplanev1.HyperShift); err != nil {
+		return result, err
+	}
+
+	// Renders all templates from charts
 	chartPath := r.fetchChartOrCRDPath(backplanev1.ClusterProxyAddon, false)
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
