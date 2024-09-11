@@ -811,6 +811,7 @@ func (r *MultiClusterEngineReconciler) ensureInternalEngineComponent(
 	backplaneConfig *backplanev1.MultiClusterEngine,
 	component string) (ctrl.Result, error) {
 
+	log.Info(fmt.Sprintf("Ensuring InternalEngineComponent: %v", component))
 	iec := &backplanev1.InternalEngineComponent{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: backplanev1.GroupVersion.String(),
@@ -911,6 +912,7 @@ func (r *MultiClusterEngineReconciler) fetchChartOrCRDPath(component string, use
 
 func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Context,
 	backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+	log.Info("Ensuring Toggleable Components")
 
 	errs := map[string]error{}
 	requeue := false
