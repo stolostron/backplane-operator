@@ -504,6 +504,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 						err := k8sClient.Get(ctx, types.NamespacedName{Name: mcecomponent, Namespace: backplaneConfig.Spec.TargetNamespace}, componentCR)
 						log.Info(fmt.Sprintf("component retrieved: %v", componentCR))
 						Eventually(errors.IsNotFound(err)).Should(BeTrue())
+
 					}
 				}
 				By("expecting the finalized Discovery InternalEngineComponent to still exist")
