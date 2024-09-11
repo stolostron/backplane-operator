@@ -250,7 +250,7 @@ func (r *MultiClusterEngineReconciler) ensureNoManagedServiceAccount(ctx context
 	}
 
 	// Render CRD templates
-	crdPath := toggle.ManagedServiceAccountCRDPath
+	crdPath := r.fetchChartOrCRDPath(backplanev1.ManagedServiceAccount, true)
 	crds, errs := renderer.RenderCRDs(crdPath, mce)
 	if len(errs) > 0 {
 		for _, err := range errs {
