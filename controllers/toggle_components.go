@@ -147,11 +147,13 @@ func (r *MultiClusterEngineReconciler) ensureNoConsoleMCE(ctx context.Context, m
 func (r *MultiClusterEngineReconciler) ensureManagedServiceAccount(ctx context.Context,
 	mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 
-	r.StatusManager.RemoveComponent(toggle.DisabledStatus(types.NamespacedName{Name: "managedservice", Namespace: mce.Spec.TargetNamespace}, []*unstructured.Unstructured{}))
+	r.StatusManager.RemoveComponent(toggle.DisabledStatus(types.NamespacedName{Name: "managedservice",
+		Namespace: mce.Spec.TargetNamespace}, []*unstructured.Unstructured{}))
+
 	// from 2.9, we change the managed-serviceaccount to a template type addon, so the agent will be managed by the
 	// global addon manager, no need to add the managed-serviceaccount-addon-manager deployment as a component here
-	// r.StatusManager.AddComponent(toggle.EnabledStatus(types.NamespacedName{Name: "managed-serviceaccount-addon-manager", Namespace: mce.Spec.TargetNamespace}))
-	r.StatusManager.AddComponent(status.NewPresentStatus(types.NamespacedName{Name: "managed-serviceaccount"}, clusterManagementAddOnGVK))
+	r.StatusManager.AddComponent(status.NewPresentStatus(types.NamespacedName{Name: "managed-serviceaccount"},
+		clusterManagementAddOnGVK))
 
 	// Ensure that the InternalHubComponent CR instance is created for component in MCE.
 	if result, err := r.ensureInternalEngineComponent(ctx, mce, backplanev1.ManagedServiceAccount); err != nil {
@@ -203,7 +205,8 @@ func (r *MultiClusterEngineReconciler) ensureManagedServiceAccount(ctx context.C
 				log.Info("Couldn't apply template for managed-serviceaccount due to missing CRD", "error is", err.Error())
 
 				missingCRDErrorOccured = true
-				r.StatusManager.AddComponent(clusterManagementAddOnNotFoundStatus("managed-serviceaccount", mce.Spec.TargetNamespace))
+				r.StatusManager.AddComponent(clusterManagementAddOnNotFoundStatus("managed-serviceaccount",
+					mce.Spec.TargetNamespace))
 			} else {
 				return result, err
 			}
@@ -234,7 +237,8 @@ func (r *MultiClusterEngineReconciler) ensureNoManagedServiceAccount(ctx context
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
 
-	r.StatusManager.AddComponent(toggle.DisabledStatus(types.NamespacedName{Name: "managedservice", Namespace: mce.Spec.TargetNamespace}, []*unstructured.Unstructured{}))
+	r.StatusManager.AddComponent(toggle.DisabledStatus(types.NamespacedName{Name: "managedservice",
+		Namespace: mce.Spec.TargetNamespace}, []*unstructured.Unstructured{}))
 
 	// Deletes all templates
 	for _, template := range templates {
@@ -705,7 +709,8 @@ func (r *MultiClusterEngineReconciler) ensureImageBasedInstallOperator(ctx conte
 	}
 
 	// Apply deployment config overrides
-	if result, err := r.applyComponentDeploymentOverrides(mce, templates, backplanev1.ImageBasedInstallOperator); err != nil {
+	if result, err := r.applyComponentDeploymentOverrides(mce, templates,
+		backplanev1.ImageBasedInstallOperator); err != nil {
 		return result, err
 	}
 
@@ -907,7 +912,8 @@ func (r *MultiClusterEngineReconciler) ensureClusterManager(ctx context.Context,
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterEngineReconciler) ensureNoClusterManager(ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+func (r *MultiClusterEngineReconciler) ensureNoClusterManager(ctx context.Context,
+	mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 	namespacedName := types.NamespacedName{Name: "cluster-manager", Namespace: mce.Spec.TargetNamespace}
 
 	// Ensure that the InternalHubComponent CR instance is deleted for component in MCE.
@@ -956,8 +962,8 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterManager(ctx context.Contex
 	err = r.Client.Get(ctx, types.NamespacedName{Name: "open-cluster-management-hub"}, ocmHubNamespace)
 	if err == nil {
 		return ctrl.Result{RequeueAfter: requeuePeriod}, fmt.Errorf("waiting for 'open-cluster-management-hub' namespace to be terminated before proceeding with clustermanager cleanup")
-	}
-	if err != nil && !apierrors.IsNotFound(err) { // Return error, if error is not not found error
+
+	} else if !apierrors.IsNotFound(err) { // Return error, if error is not not found error
 		return ctrl.Result{RequeueAfter: requeuePeriod}, err
 	}
 
@@ -972,7 +978,8 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterManager(ctx context.Contex
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterEngineReconciler) ensureHyperShift(ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+func (r *MultiClusterEngineReconciler) ensureHyperShift(ctx context.Context, mce *backplanev1.MultiClusterEngine) (
+	ctrl.Result, error) {
 
 	namespacedName := types.NamespacedName{Name: "hypershift-addon-manager", Namespace: mce.Spec.TargetNamespace}
 	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
@@ -1151,7 +1158,8 @@ func (r *MultiClusterEngineReconciler) reconcileHypershiftLocalHosting(ctx conte
 	return r.applyHypershiftLocalHosting(ctx, mce)
 }
 
-func (r *MultiClusterEngineReconciler) applyHypershiftLocalHosting(ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+func (r *MultiClusterEngineReconciler) applyHypershiftLocalHosting(ctx context.Context,
+	mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 	addon, err := renderer.RenderHypershiftAddon(mce)
 	if err != nil {
 		return ctrl.Result{RequeueAfter: requeuePeriod}, err
@@ -1209,7 +1217,8 @@ func (r *MultiClusterEngineReconciler) applyHypershiftLocalHosting(ctx context.C
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterEngineReconciler) removeHypershiftLocalHosting(ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+func (r *MultiClusterEngineReconciler) removeHypershiftLocalHosting(ctx context.Context,
+	mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 	addon, err := renderer.RenderHypershiftAddon(mce)
 	if err != nil {
 		return ctrl.Result{RequeueAfter: requeuePeriod}, err
@@ -1221,8 +1230,8 @@ func (r *MultiClusterEngineReconciler) removeHypershiftLocalHosting(ctx context.
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterEngineReconciler) ensureClusterProxyAddon(ctx context.Context, mce *backplanev1.MultiClusterEngine) (
-	ctrl.Result, error) {
+func (r *MultiClusterEngineReconciler) ensureClusterProxyAddon(ctx context.Context,
+	mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 
 	namespacedName := types.NamespacedName{Name: "cluster-proxy-addon-manager", Namespace: mce.Spec.TargetNamespace}
 	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
@@ -1364,7 +1373,9 @@ func (r *MultiClusterEngineReconciler) ensureLocalCluster(ctx context.Context, m
 		localNS := utils.NewLocalNamespace()
 		err := r.Client.Get(ctx, types.NamespacedName{Name: localNS.GetName()}, localNS)
 		if err == nil {
-			log.Info("Waiting on local cluster namespace to be removed before creating ManagedCluster CR", "Namespace", localNS.GetName())
+			log.Info("Waiting on local cluster namespace to be removed before creating ManagedCluster CR",
+				"Namespace", localNS.GetName())
+
 			return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 		} else if apierrors.IsNotFound(err) {
 			log.Info("Local cluster namespace does not exist. Creating ManagedCluster CR")

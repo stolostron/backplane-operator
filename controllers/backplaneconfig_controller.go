@@ -1145,8 +1145,8 @@ getComponentConfig searches for a component configuration in the provided list
 by component name. It returns the configuration and a boolean indicating
 whether it was found.
 */
-func (r *MultiClusterEngineReconciler) getComponentConfig(components []backplanev1.ComponentConfig, componentName string) (
-	backplanev1.ComponentConfig, bool) {
+func (r *MultiClusterEngineReconciler) getComponentConfig(components []backplanev1.ComponentConfig,
+	componentName string) (backplanev1.ComponentConfig, bool) {
 	for _, c := range components {
 		if c.Name == componentName {
 			return c, true
@@ -1207,7 +1207,8 @@ func (r *MultiClusterEngineReconciler) applyEnvConfig(template *unstructured.Uns
 		}
 	}
 
-	if err = unstructured.SetNestedSlice(template.Object, containers, "spec", "template", "spec", "containers"); err != nil {
+	if err = unstructured.SetNestedSlice(template.Object, containers, "spec", "template", "spec",
+		"containers"); err != nil {
 		log.Error(err, "Failed to set containers in template", "Template", template.GetName())
 		return err
 	}
