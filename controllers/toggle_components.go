@@ -649,7 +649,7 @@ func (r *MultiClusterEngineReconciler) ensureNoServerFoundation(ctx context.Cont
 	mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 
 	// Ensure that the InternalHubComponent CR instance is created for component in MCE.
-	if result, err := r.ensureInternalEngineComponent(ctx, mce, backplanev1.ServerFoundation); err != nil {
+	if result, err := r.ensureNoInternalEngineComponent(ctx, mce, backplanev1.ServerFoundation); err != nil {
 		return result, err
 	}
 
