@@ -684,9 +684,7 @@ func (r *MultiClusterEngineReconciler) ensureNoServerFoundation(ctx context.Cont
 func (r *MultiClusterEngineReconciler) ensureImageBasedInstallOperator(ctx context.Context,
 	mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 
-	targetNamespace := mce.Spec.TargetNamespace
-
-	namespacedName := types.NamespacedName{Name: "image-based-install-operator", Namespace: targetNamespace}
+	namespacedName := types.NamespacedName{Name: "image-based-install-operator", Namespace: mce.Spec.TargetNamespace}
 	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
 
