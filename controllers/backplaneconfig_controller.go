@@ -797,7 +797,7 @@ func (r *MultiClusterEngineReconciler) ensureInternalEngineComponent(
 	backplaneConfig *backplanev1.MultiClusterEngine,
 	component string) (ctrl.Result, error) {
 
-	componentCR := &backplanev1.InternalEngineComponent{
+	iec := &backplanev1.InternalEngineComponent{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: backplanev1.GroupVersion.String(),
 			Kind:       "InternalEngineComponent",
@@ -808,11 +808,18 @@ func (r *MultiClusterEngineReconciler) ensureInternalEngineComponent(
 		},
 	}
 
-	force := true
-	err := r.Client.Patch(ctx, componentCR, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
-	if err != nil {
-		r.Log.Info(fmt.Sprintf("error applying %s CR. Error: %s", component, err.Error()))
-		return ctrl.Result{Requeue: true}, err
+	if err := r.Client.Get(
+		ctx, types.NamespacedName{Name: iec.GetName(), Namespace: iec.GetNamespace()}, iec); err != nil {
+
+		if apierrors.IsNotFound(err) {
+			if err := r.Client.Create(ctx, iec); err != nil {
+				return ctrl.Result{}, fmt.Errorf("failed to create InternalEngineComponent CR: %s/%s: %v",
+					iec.GetNamespace(), iec.GetName(), err)
+			}
+		} else {
+			return ctrl.Result{}, fmt.Errorf("failed to get InternalEngineComponent CR: %s/%s: %v",
+				iec.GetNamespace(), iec.GetName(), err)
+		}
 	}
 
 	return ctrl.Result{}, nil
