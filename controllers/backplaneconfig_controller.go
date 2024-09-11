@@ -812,6 +812,7 @@ func (r *MultiClusterEngineReconciler) ensureInternalEngineComponent(
 		ctx, types.NamespacedName{Name: iec.GetName(), Namespace: iec.GetNamespace()}, iec); err != nil {
 
 		if apierrors.IsNotFound(err) {
+			log.Info("Creating InternalEngineComponent", "Name", iec.GetName(), "Namespace", iec.GetNamespace())
 			if err := r.Client.Create(ctx, iec); err != nil {
 				return ctrl.Result{}, fmt.Errorf("failed to create InternalEngineComponent CR: %s/%s: %v",
 					iec.GetNamespace(), iec.GetName(), err)
