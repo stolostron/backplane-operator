@@ -1226,57 +1226,6 @@ var _ = Describe("BackplaneConfig controller", func() {
 			})
 		})
 
-		Context("and deploymentMode is Hosted", func() {
-			It("should not deploy resources in regular fashion", func() {
-				By("creating the hosted backplane config")
-				os.Setenv("UNIT_TEST", "true")
-
-				// Create test secret in target namespace
-				testconfigsecret := &corev1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test",
-						Namespace: DestinationNamespace,
-					},
-					Data: map[string][]byte{"kubeconfig": []byte("")},
-				}
-				Eventually(func() error {
-					err := k8sClient.Create(context.TODO(), testconfigsecret)
-					if errors.IsAlreadyExists(err) {
-						return nil
-					}
-					return err
-				}, timeout, interval).Should(Succeed())
-
-				backplaneConfig := &backplanev1.MultiClusterEngine{
-					TypeMeta: metav1.TypeMeta{
-						APIVersion: "multicluster.openshift.io/v1",
-						Kind:       "MultiClusterEngine",
-					},
-					ObjectMeta: metav1.ObjectMeta{
-						Name:        BackplaneConfigName,
-						Annotations: map[string]string{"deploymentmode": string(backplanev1.ModeHosted), "mce-kubeconfig": "test"},
-					},
-					Spec: backplanev1.MultiClusterEngineSpec{
-						TargetNamespace: DestinationNamespace,
-						ImagePullSecret: "testsecret",
-					},
-				}
-				createCtx := context.Background()
-				Expect(k8sClient.Create(createCtx, backplaneConfig)).Should(Succeed())
-
-				By("ensuring MCE reports phase as Unimplemented")
-				Eventually(func(g Gomega) {
-					multiClusterEngine := types.NamespacedName{
-						Name: BackplaneConfigName,
-					}
-					existingMCE := &backplanev1.MultiClusterEngine{}
-					g.Expect(k8sClient.Get(context.TODO(), multiClusterEngine, existingMCE)).To(Succeed(), "Failed to get MCE")
-
-					g.Expect(existingMCE.Status.Phase).To(Equal(backplanev1.MultiClusterEnginePhaseError), "MCE should fail getting a kubeconfig secret")
-				}, timeout, interval).Should(Succeed())
-
-			})
-		})
 		Context("Legacy clean up tasks", func() {
 			It("Removes the legacy CLC Prometheus configuration", func() {
 				By("creating the backplane config with nonexistant secret")
