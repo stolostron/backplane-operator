@@ -857,10 +857,12 @@ func (r *MultiClusterEngineReconciler) ensureNoInternalEngineComponent(
 	}
 
 	if comp.DeletionTimestamp != nil {
-		log.Info(fmt.Sprintf("DeletionTimestamp: %v", comp.DeletionTimestamp))
+		log.Info(fmt.Sprintf("DeletionTimestamp found: %v", comp.DeletionTimestamp))
+		log.Info("Skipping resource deletion")
 		return reconcile.Result{RequeueAfter: requeuePeriod}, nil
 	}
 
+	log.Info(fmt.Sprintf("Deleting %v InternalEngineComponent", component))
 	err = r.Client.Delete(ctx, comp)
 	if err != nil && !apierrors.IsNotFound(err) {
 		log.Error(err, fmt.Sprintf("Error deleting InternalEngineComponent. Error: %v", err))
