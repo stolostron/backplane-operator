@@ -87,11 +87,12 @@ var _ = Describe("BackplaneConfig controller", func() {
 
 	AfterEach(func() {
 		log.Info("----- AFTER EACH -----")
-		Expect(k8sClient.Delete(context.Background(), &backplanev1.MultiClusterEngine{
+		err := k8sClient.Delete(context.Background(), &backplanev1.MultiClusterEngine{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: BackplaneConfigName,
 			},
-		})).To(Succeed())
+		})
+		Expect(err == nil || errors.IsNotFound(err)).To(BeTrue())
 		Eventually(func() bool {
 			foundMCE := &backplanev1.MultiClusterEngine{}
 			err := k8sClient.Get(context.TODO(), types.NamespacedName{Name: BackplaneConfigName}, foundMCE)
@@ -492,18 +493,29 @@ var _ = Describe("BackplaneConfig controller", func() {
 				Expect(len(discoveryIEC.Finalizers) > 0).To(BeTrue())
 				Expect(discoveryIEC.Finalizers[0] == "test").To(BeTrue())
 
+				// Eventually(func() bool {
+				// 	foundMCE := &backplanev1.MultiClusterEngine{}
+				// 	err := k8sClient.Get(context.TODO(), types.NamespacedName{Name: BackplaneConfigName}, foundMCE)
+				// 	return errors.IsNotFound(err)
+				// }, timeout, interval).Should(BeTrue())
 				By("deleting the backplane config")
-				Eventually(k8sClient.Delete(context.Background(), backplaneConfig), timeout, interval).Should(Succeed())
+				Expect(k8sClient.Delete(context.Background(), &backplanev1.MultiClusterEngine{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: BackplaneConfigName,
+					},
+				})).To(Succeed())
 
 				By("expecting the non-finalized InternalEngineComponents to not exist")
 				for _, mcecomponent := range backplanev1.MCEComponents {
 					if mcecomponent != backplanev1.Discovery { // don't check discovery. It has a finalizer
 						By(fmt.Sprintf("ensuring %s CR is not present", mcecomponent))
 
-						componentCR := &backplanev1.InternalEngineComponent{}
-						err := k8sClient.Get(ctx, types.NamespacedName{Name: mcecomponent, Namespace: backplaneConfig.Spec.TargetNamespace}, componentCR)
-						log.Info(fmt.Sprintf("component retrieved: %v", componentCR))
-						Eventually(errors.IsNotFound(err)).Should(BeTrue())
+						Eventually(func() bool {
+							foundCR := &backplanev1.InternalEngineComponent{}
+							err := k8sClient.Get(context.Background(), types.NamespacedName{Name: mcecomponent, Namespace: backplaneConfig.Spec.DeepCopy().TargetNamespace}, foundCR)
+							log.Info(fmt.Sprintf("component retrieved: %v", componentCR))
+							return errors.IsNotFound(err)
+						}, timeout, interval).Should(BeTrue())
 
 					}
 				}
@@ -527,8 +539,14 @@ var _ = Describe("BackplaneConfig controller", func() {
 					},
 				}
 				Expect(k8sClient.Patch(context.Background(), componentCR, client.Apply, &client.PatchOptions{Force: &force, FieldManager: BackplaneConfigName})).To(Succeed())
-				Eventually(k8sClient.Get(ctx, types.NamespacedName{Name: backplanev1.Discovery, Namespace: backplaneConfig.Spec.TargetNamespace}, &backplanev1.InternalEngineComponent{})).ShouldNot(Succeed())
-				Eventually(k8sClient.Get(ctx, types.NamespacedName{Name: BackplaneConfigName, Namespace: backplaneConfig.Spec.TargetNamespace}, &backplanev1.MultiClusterEngine{})).ShouldNot(Succeed())
+				Eventually(func() bool {
+					err := k8sClient.Get(ctx, types.NamespacedName{Name: backplanev1.Discovery, Namespace: backplaneConfig.Spec.TargetNamespace}, &backplanev1.InternalEngineComponent{})
+					return errors.IsNotFound(err)
+				}, timeout, interval).Should(BeTrue())
+				Eventually(func() bool {
+					err := k8sClient.Get(ctx, types.NamespacedName{Name: BackplaneConfigName, Namespace: backplaneConfig.Spec.TargetNamespace}, &backplanev1.MultiClusterEngine{})
+					return errors.IsNotFound(err)
+				}, timeout, interval).Should(BeTrue())
 			})
 		})
 
