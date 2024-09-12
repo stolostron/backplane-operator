@@ -56,6 +56,7 @@ var _ = Describe("Non-OCP cert management", func() {
 		}
 
 		cfg, err := testEnv.Start()
+		Expect(err).NotTo(HaveOccurred())
 
 		k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
 		Expect(err).NotTo(HaveOccurred())

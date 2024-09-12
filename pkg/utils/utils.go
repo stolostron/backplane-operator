@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"path"
@@ -309,8 +308,6 @@ func SetDeployOnOCP(v bool) {
 func DeployOnOCP() bool {
 	return GlobalDeployOnOCP
 }
-
-var projectGVR = schema.GroupVersionResource{Group: "project.openshift.io", Version: "v1", Resource: "projects"}
 
 func DetectOpenShift(cl client.Client) error {
 	checkNs := &corev1.Namespace{}

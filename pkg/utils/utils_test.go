@@ -221,24 +221,3 @@ func TestGetHubType(t *testing.T) {
 		})
 	}
 }
-
-// func TestDetect(t *testing.T) {
-// 	tests := []struct {
-// 		name string
-// 		env  string
-// 		mce  *backplanev1.MultiClusterEngine
-// 		want error
-// 	}{
-// 		{
-// 			name: "stolostron",
-// 			env:  "stolostron-engine",
-// 			mce: &backplanev1.MultiClusterEngine{
-// 				ObjectMeta: metav1.ObjectMeta{
-// 					Name:   "mce",
-// 					Labels: map[string]string{"multiclusterhubs.operator.open-cluster-management.io/managed-by": "true"},
-// 				},
-// 			},
-// 			want: nil,
-// 		},
-// 	}
-// }
