@@ -167,7 +167,7 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 	if err != nil && !apierrors.IsNotFound(err) {
 		// Unknown error. Requeue
 		r.Log.Info("Failed to fetch backplaneConfig")
-		return ctrl.Result{RequeueAfter: requeuePeriod}, err
+		return ctrl.Result{}, err
 	} else if err != nil && apierrors.IsNotFound(err) {
 		// BackplaneConfig deleted or not found
 		// Return and don't requeue
@@ -314,7 +314,7 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing,
 			metav1.ConditionFalse, status.RequirementsNotMetReason, "No image references defined in deployment"))
 
-		return ctrl.Result{RequeueAfter: requeuePeriod}, errors.New(
+		return ctrl.Result{}, errors.New(
 			"no image references exist. images must be defined as environment variables")
 	}
 
@@ -598,7 +598,7 @@ func (r *MultiClusterEngineReconciler) createTrustBundleConfigmap(ctx context.Co
 	if err != nil && !apierrors.IsNotFound(err) {
 		// Unknown error. Requeue
 		log.Info(fmt.Sprintf("error while getting trust bundle configmap %s: %s", trustBundleName, err))
-		return ctrl.Result{RequeueAfter: requeuePeriod}, err
+		return ctrl.Result{}, err
 	} else if err == nil {
 		// configmap exists
 		return ctrl.Result{}, nil
@@ -626,7 +626,7 @@ func (r *MultiClusterEngineReconciler) createTrustBundleConfigmap(ctx context.Co
 	if err != nil {
 		// Error creating configmap
 		log.Info(fmt.Sprintf("error creating trust bundle configmap %s: %s", trustBundleName, err))
-		return ctrl.Result{RequeueAfter: requeuePeriod}, err
+		return ctrl.Result{}, err
 	}
 	// Configmap created successfully
 	return ctrl.Result{}, nil
@@ -651,7 +651,7 @@ func (r *MultiClusterEngineReconciler) createMetricsService(ctx context.Context,
 			// Unknown error. Requeue
 			log.Error(err, fmt.Sprintf("error while getting multicluster-engine metrics service: %s/%s",
 				sNamespace, sName))
-			return ctrl.Result{RequeueAfter: requeuePeriod}, err
+			return ctrl.Result{}, err
 		}
 
 		// Create metrics service
@@ -687,7 +687,7 @@ func (r *MultiClusterEngineReconciler) createMetricsService(ctx context.Context,
 		if err = r.Client.Create(ctx, s); err != nil {
 			// Error creating metrics service
 			log.Error(err, fmt.Sprintf("error creating multicluster-engine metrics service: %s", sName))
-			return ctrl.Result{RequeueAfter: requeuePeriod}, err
+			return ctrl.Result{}, err
 		}
 
 		log.Info(fmt.Sprintf("Created multicluster-engine metrics service: %s", sName))
@@ -713,7 +713,7 @@ func (r *MultiClusterEngineReconciler) createMetricsServiceMonitor(ctx context.C
 			// Unknown error. Requeue
 			log.Error(err, fmt.Sprintf("error while getting multicluster-engine metrics service: %s/%s",
 				smNamespace, smName))
-			return ctrl.Result{RequeueAfter: requeuePeriod}, err
+			return ctrl.Result{}, err
 		}
 
 		// Create metrics service
@@ -756,7 +756,7 @@ func (r *MultiClusterEngineReconciler) createMetricsServiceMonitor(ctx context.C
 		if err = r.Client.Create(ctx, sm); err != nil {
 			// Error creating metrics servicemonitor
 			log.Error(err, fmt.Sprintf("error creating metrics servicemonitor: %s", smName))
-			return ctrl.Result{RequeueAfter: requeuePeriod}, err
+			return ctrl.Result{}, err
 		}
 
 		log.Info(fmt.Sprintf("Created multicluster-engine metrics servicemonitor: %s", smName))
@@ -1141,7 +1141,7 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 		combinedError := fmt.Sprintf(": %s", strings.Join(errorMessages, "; "))
 
 		r.Log.Error(errors.New("errors applying components"), combinedError)
-		return ctrl.Result{RequeueAfter: requeuePeriod}, errors.New(combinedError)
+		return ctrl.Result{}, errors.New(combinedError)
 	}
 	if requeue {
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
@@ -1775,7 +1775,7 @@ func (r *MultiClusterEngineReconciler) validateImagePullSecret(ctx context.Conte
 				m.Spec.TargetNamespace))
 
 		r.StatusManager.AddCondition(missingPullSecret)
-		return ctrl.Result{RequeueAfter: requeuePeriod}, err
+		return ctrl.Result{}, err
 	}
 	if err != nil {
 		return ctrl.Result{Requeue: true}, err
