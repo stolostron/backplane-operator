@@ -46,7 +46,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -404,8 +403,8 @@ var _ = Describe("BackplaneConfig controller", func() {
 					},
 				}
 
-				res, _ := reconciler.ensureOpenShiftNamespaceLabel(createCtx, backplaneConfig2)
-				Expect(res).To(Equal(ctrl.Result{Requeue: true}))
+				_, err := reconciler.ensureOpenShiftNamespaceLabel(createCtx, backplaneConfig2)
+				Expect(err).To(Not(BeNil()))
 
 				By("ensuring each deployment and config is created")
 				for _, test := range tests {
