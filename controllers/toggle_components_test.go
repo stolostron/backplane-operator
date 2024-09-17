@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
-	v1 "github.com/stolostron/backplane-operator/api/v1"
 	"github.com/stolostron/backplane-operator/pkg/status"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -17,20 +16,20 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-func getComponent(components []v1.ComponentCondition, name string) v1.ComponentCondition {
+func getComponent(components []backplanev1.ComponentCondition, name string) backplanev1.ComponentCondition {
 	for i := range components {
 		if components[i].Name == name {
 			return components[i]
 		}
 	}
-	return v1.ComponentCondition{}
+	return backplanev1.ComponentCondition{}
 }
 
 func Test_reconcileLocalHosting(t *testing.T) {
 	scheme := runtime.NewScheme()
 	corev1.AddToScheme(scheme)
 	appsv1.AddToScheme(scheme)
-	v1.AddToScheme(scheme)
+	backplanev1.AddToScheme(scheme)
 	addonv1alpha1.AddToScheme(scheme)
 
 	cl := fake.NewClientBuilder().WithScheme(scheme).Build()
@@ -43,20 +42,20 @@ func Test_reconcileLocalHosting(t *testing.T) {
 		Images:        images,
 		StatusManager: statusManager,
 	}
-	mce := &v1.MultiClusterEngine{
+	mce := &backplanev1.MultiClusterEngine{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: BackplaneConfigName,
 		},
-		Spec: v1.MultiClusterEngineSpec{
+		Spec: backplanev1.MultiClusterEngineSpec{
 			TargetNamespace: DestinationNamespace,
-			Overrides: &v1.Overrides{
-				Components: []v1.ComponentConfig{
+			Overrides: &backplanev1.Overrides{
+				Components: []backplanev1.ComponentConfig{
 					{
-						Name:    v1.HypershiftLocalHosting,
+						Name:    backplanev1.HypershiftLocalHosting,
 						Enabled: true,
 					},
 					{
-						Name:    v1.LocalCluster,
+						Name:    backplanev1.LocalCluster,
 						Enabled: true,
 					},
 				},
@@ -74,8 +73,8 @@ func Test_reconcileLocalHosting(t *testing.T) {
 	r.StatusManager.Reset("")
 
 	// LocalHosting not enabled
-	mce.Spec.Overrides.Components = []v1.ComponentConfig{
-		{Name: v1.HypershiftLocalHosting, Enabled: false},
+	mce.Spec.Overrides.Components = []backplanev1.ComponentConfig{
+		{Name: backplanev1.HypershiftLocalHosting, Enabled: false},
 	}
 	_, _ = r.reconcileHypershiftLocalHosting(ctx, mce)
 	mceStatus = r.StatusManager.ReportStatus(*mce)
@@ -86,10 +85,10 @@ func Test_reconcileLocalHosting(t *testing.T) {
 	r.StatusManager.Reset("")
 
 	// Hypershift enabled but local-cluster namespace not present
-	mce.Spec.Overrides.Components = []v1.ComponentConfig{
-		{Name: v1.HypershiftLocalHosting, Enabled: true},
-		{Name: v1.HyperShift, Enabled: true},
-		{Name: v1.LocalCluster, Enabled: true},
+	mce.Spec.Overrides.Components = []backplanev1.ComponentConfig{
+		{Name: backplanev1.HypershiftLocalHosting, Enabled: true},
+		{Name: backplanev1.HyperShift, Enabled: true},
+		{Name: backplanev1.LocalCluster, Enabled: true},
 	}
 	_, _ = r.reconcileHypershiftLocalHosting(ctx, mce)
 	mceStatus = r.StatusManager.ReportStatus(*mce)

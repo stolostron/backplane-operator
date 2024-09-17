@@ -23,7 +23,6 @@ import (
 	"fmt"
 
 	"k8s.io/apimachinery/pkg/api/errors"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
 	configv1 "github.com/openshift/api/config/v1"
 	v1 "github.com/stolostron/backplane-operator/api/v1"
@@ -125,7 +124,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 		}
 		Eventually(func() error {
 			err := k8sClient.Create(context.TODO(), testsecret)
-			if apierrors.IsAlreadyExists(err) {
+			if errors.IsAlreadyExists(err) {
 				return nil
 			}
 			return err

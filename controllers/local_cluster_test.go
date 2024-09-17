@@ -64,25 +64,6 @@ func newMC() *unstructured.Unstructured {
 	return mc
 }
 
-type lcTestCase struct {
-	desc string
-	mc   *unstructured.Unstructured
-	err  string
-}
-
-func lcTests() []lcTestCase {
-	tests := []lcTestCase{}
-	tests = append(tests,
-		lcTestCase{
-			desc: "test",
-			mc:   nil,
-			err:  "",
-		},
-	)
-
-	return tests
-}
-
 func TestEnsureLocalCluster(t *testing.T) {
 	if utils.IsUnitTest() {
 		SetUnitTest(false)

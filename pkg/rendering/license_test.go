@@ -4,7 +4,6 @@
 package renderer
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -41,7 +40,7 @@ func TestLicense(t *testing.T) {
 			return nil
 		}
 
-		src, err := ioutil.ReadFile(path)
+		src, err := os.ReadFile(path)
 		if err != nil {
 			return nil
 		}

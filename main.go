@@ -163,11 +163,11 @@ func main() {
 		},
 		WebhookServer: webhook.NewServer(webhook.Options{
 			Port: 9443,
-			TLSOpts: []func(*tls.Config){func(config *tls.Config) {
-				config = &tls.Config{
-					MinVersion: tls.VersionTLS12,
-				}
-			}},
+			TLSOpts: []func(*tls.Config){
+				func(config *tls.Config) {
+					config.MinVersion = tls.VersionTLS12
+				},
+			},
 		}),
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
@@ -319,9 +319,11 @@ func ensureCRD(ctx context.Context, c client.Client, crd *unstructured.Unstructu
 		if err != nil {
 			return fmt.Errorf("error creating CRD '%s': %w", crd.GetName(), err)
 		}
+
 	} else if err != nil {
 		return fmt.Errorf("error getting CRD '%s': %w", crd.GetName(), err)
-	} else if err == nil {
+
+	} else {
 		// CRD already exists. Update and return
 		if utils.AnnotationPresent(utils.AnnotationMCEIgnore, existingCRD) {
 			setupLog.Info(fmt.Sprintf("CRD '%s' has ignore label. Skipping update.", crd.GetName()))
@@ -390,7 +392,8 @@ func ensureWebhooks(k8sClient client.Client) error {
 			setupLog.Error(err, "Error getting validatingwebhookconfiguration")
 			time.Sleep(5 * time.Second)
 			continue
-		} else if err == nil {
+
+		} else {
 			// Webhook already exists. Update and return
 			setupLog.Info("Updating existing validatingwebhookconfiguration")
 			existingWebhook.Webhooks = validatingWebhook.Webhooks

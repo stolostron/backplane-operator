@@ -27,9 +27,8 @@ func makeMCE(configs ...api.ComponentConfig) *api.MultiClusterEngine {
 	mce.Spec.Overrides = &api.Overrides{
 		Components: make([]api.ComponentConfig, len(configs)),
 	}
-	for i := range configs {
-		mce.Spec.Overrides.Components[i] = configs[i]
-	}
+
+	copy(mce.Spec.Overrides.Components, configs)
 	return mce
 }
 
@@ -85,19 +84,19 @@ func TestGetLegacyPrometheusKind(t *testing.T) {
 			name:  "legacy Prometheus Configuration Kind",
 			kind:  "PrometheusRule",
 			want:  2,
-			want2: api.LegacyPrometheusKind,
+			want2: api.LegacyConfigKind,
 		},
 		{
 			name:  "legacy Prometheus Configuration Kind",
 			kind:  "ServiceMonitor",
 			want:  2,
-			want2: api.LegacyPrometheusKind,
+			want2: api.LegacyConfigKind,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := api.GetLegacyPrometheusKind()
+			got := api.GetLegacyConfigKind()
 			if len(got) == 0 {
 				t.Errorf("GetLegacyPrometheusKind() = %v, want: %v", len(got), tt.want)
 			}
