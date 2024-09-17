@@ -369,6 +369,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 			// 	Expected:       nil,
 			// },
 		}
+		log.Info("----- TEST CASE -----")
 	})
 
 	When("deleting a BackplaneConfig", func() {
@@ -376,8 +377,6 @@ var _ = Describe("BackplaneConfig controller", func() {
 			It("should deploy sub components", func() {
 				createCtx := context.Background()
 				By("creating the backplane config with everything enabled")
-				os.Setenv("ACM_HUB_OCP_VERSION", "4.12.0")
-				defer os.Unsetenv("ACM_HUB_OCP_VERSION")
 				backplaneConfig := &backplanev1.MultiClusterEngine{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "multicluster.openshift.io/v1",
@@ -493,11 +492,6 @@ var _ = Describe("BackplaneConfig controller", func() {
 				Expect(len(discoveryIEC.Finalizers) > 0).To(BeTrue())
 				Expect(discoveryIEC.Finalizers[0] == "test").To(BeTrue())
 
-				// Eventually(func() bool {
-				// 	foundMCE := &backplanev1.MultiClusterEngine{}
-				// 	err := k8sClient.Get(context.TODO(), types.NamespacedName{Name: BackplaneConfigName}, foundMCE)
-				// 	return errors.IsNotFound(err)
-				// }, timeout, interval).Should(BeTrue())
 				By("deleting the backplane config")
 				Expect(k8sClient.Delete(context.Background(), &backplanev1.MultiClusterEngine{
 					ObjectMeta: metav1.ObjectMeta{
@@ -553,7 +547,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 		Context("ensuring No InternalEngineComponent CRs", func() {
 			It("should deploy sub components", func() {
 				createCtx := context.Background()
-				By("creating the backplane config with everything enabled")
+				By("creating the backplane config with everything disabled")
 				backplaneConfig := &backplanev1.MultiClusterEngine{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "multicluster.openshift.io/v1",
@@ -653,6 +647,99 @@ var _ = Describe("BackplaneConfig controller", func() {
 		})
 	})
 
+	When("ensuring NoInternalEngineComponent", func() {
+		Context("and an invalid namespace is specified", func() {
+			It("should throw an API error", func() {
+				createCtx := context.Background()
+				By("creating the backplane config with everything enabled")
+				// backplaneConfig := &backplanev1.MultiClusterEngine{
+				// 	TypeMeta: metav1.TypeMeta{
+				// 		APIVersion: "multicluster.openshift.io/v1",
+				// 		Kind:       "MultiClusterEngine",
+				// 	},
+				// 	ObjectMeta: metav1.ObjectMeta{
+				// 		Name: BackplaneConfigName,
+				// 	},
+				// 	Spec: backplanev1.MultiClusterEngineSpec{
+				// 		TargetNamespace: DestinationNamespace,
+				// 		ImagePullSecret: "testsecret",
+				// 		Overrides: &backplanev1.Overrides{
+				// 			Components: []backplanev1.ComponentConfig{
+				// 				{
+				// 					Name:    backplanev1.AssistedService,
+				// 					Enabled: true,
+				// 				},
+				// 				{
+				// 					Name:    backplanev1.ClusterLifecycle,
+				// 					Enabled: true,
+				// 				},
+				// 				{
+				// 					Name:    backplanev1.ClusterManager,
+				// 					Enabled: true,
+				// 				},
+				// 				{
+				// 					Name:    backplanev1.ClusterProxyAddon,
+				// 					Enabled: true,
+				// 				},
+				// 				{
+				// 					Name:    backplanev1.ConsoleMCE,
+				// 					Enabled: false,
+				// 				},
+				// 				{
+				// 					Name:    backplanev1.Discovery,
+				// 					Enabled: true,
+				// 				},
+				// 				{
+				// 					Name:    backplanev1.Hive,
+				// 					Enabled: true,
+				// 				},
+				// 				{
+				// 					Name:    backplanev1.HyperShift,
+				// 					Enabled: true,
+				// 				},
+				// 				{
+				// 					Name:    backplanev1.HypershiftLocalHosting,
+				// 					Enabled: false,
+				// 				},
+				// 				{
+				// 					Name:    backplanev1.ManagedServiceAccount,
+				// 					Enabled: true,
+				// 				},
+				// 				{
+				// 					Name:    backplanev1.ServerFoundation,
+				// 					Enabled: true,
+				// 				},
+				// 				{
+				// 					Name:    backplanev1.ImageBasedInstallOperator,
+				// 					Enabled: true,
+				// 				},
+				// 			},
+				// 		},
+				// 	},
+				// }
+				// Expect(k8sClient.Create(createCtx, backplaneConfig)).Should(Succeed())
+
+				crd := &apixv1.CustomResourceDefinition{}
+
+				Expect(k8sClient.Get(createCtx, types.NamespacedName{Name: "internalenginecomponents.multicluster.openshift.io"}, crd)).To(Succeed())
+
+				Expect(k8sClient.Delete(createCtx, crd)).To(Succeed())
+
+				badBackplaneConfig := &backplanev1.MultiClusterEngine{
+					Spec: backplanev1.MultiClusterEngineSpec{
+						TargetNamespace: DestinationNamespace,
+					},
+				}
+				_, err := reconciler.ensureNoAllInternalEngineComponents(createCtx, badBackplaneConfig)
+				Expect(err).NotTo(BeNil())
+
+				// Expect(k8sClient.Create(createCtx, crd)).To(Succeed())
+				// reconciler.ensureCustomResources(ctx, backplaneConfig)
+
+				Expect(false).To(BeTrue())
+			})
+		})
+	})
 	When("creating a new BackplaneConfig", func() {
 		Context("and no image pull policy is specified", func() {
 			It("should deploy sub components", func() {

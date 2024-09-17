@@ -849,6 +849,7 @@ func (r *MultiClusterEngineReconciler) ensureNoInternalEngineComponent(
 	comp := &backplanev1.InternalEngineComponent{}
 	err := r.Client.Get(ctx, types.NamespacedName{Name: component, Namespace: backplaneConfig.Spec.TargetNamespace}, comp)
 	if apierrors.IsNotFound(err) {
+		log.Info(fmt.Sprintf("Component not found during Get(): %v", component))
 		return ctrl.Result{}, nil
 	}
 	if err != nil {
