@@ -167,7 +167,7 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 	if err != nil && !apierrors.IsNotFound(err) {
 		// Unknown error. Requeue
 		r.Log.Info("Failed to fetch backplaneConfig")
-		return ctrl.Result{}, err
+		return ctrl.Result{RequeueAfter: requeuePeriod}, err
 	} else if err != nil && apierrors.IsNotFound(err) {
 		// BackplaneConfig deleted or not found
 		// Return and don't requeue
@@ -258,7 +258,7 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return ctrl.Result{}, err
 	}
 	if err != nil {
-		return ctrl.Result{}, err
+		return ctrl.Result{Requeue: true}, err
 	}
 
 	if !utils.ShouldIgnoreOCPVersion(backplaneConfig) && utils.DeployOnOCP() {
@@ -279,7 +279,7 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return ctrl.Result{}, err
 	}
 	if err != nil {
-		return ctrl.Result{}, err
+		return ctrl.Result{Requeue: true}, err
 	}
 
 	/*
@@ -299,7 +299,7 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return ctrl.Result{}, err
 	}
 	if err != nil {
-		return ctrl.Result{}, err
+		return ctrl.Result{Requeue: true}, err
 	}
 
 	// Attempt to retrieve image overrides from environmental variables.
@@ -318,7 +318,7 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing,
 			metav1.ConditionFalse, status.RequirementsNotMetReason, "No image references defined in deployment"))
 
-		return ctrl.Result{}, errors.New(
+		return ctrl.Result{RequeueAfter: requeuePeriod}, errors.New(
 			"no image references exist. images must be defined as environment variables")
 	}
 
