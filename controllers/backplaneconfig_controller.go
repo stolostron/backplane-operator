@@ -969,25 +969,25 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 		errs[backplanev1.HypershiftLocalHosting] = err
 	}
 	if utils.DeployOnOCP() {
-	ocpConsole, err := r.CheckConsole(ctx)
-	if err != nil {
-		return ctrl.Result{RequeueAfter: requeuePeriod}, err
-	}
-
-	if backplaneConfig.Enabled(backplanev1.ConsoleMCE) && ocpConsole {
-		result, err = r.ensureConsoleMCE(ctx, backplaneConfig)
-		if result != (ctrl.Result{}) {
-			requeue = true
-		}
+		ocpConsole, err := r.CheckConsole(ctx)
 		if err != nil {
-			errs[backplanev1.ConsoleMCE] = err
+			return ctrl.Result{RequeueAfter: requeuePeriod}, err
 		}
-	} else {
-		result, err = r.ensureNoConsoleMCE(ctx, backplaneConfig, ocpConsole)
-		if result != (ctrl.Result{}) {
-			requeue = true
+
+		if backplaneConfig.Enabled(backplanev1.ConsoleMCE) && ocpConsole {
+			result, err = r.ensureConsoleMCE(ctx, backplaneConfig)
+			if result != (ctrl.Result{}) {
+				requeue = true
+			}
+			if err != nil {
+				errs[backplanev1.ConsoleMCE] = err
+			}
+		} else {
+			result, err = r.ensureNoConsoleMCE(ctx, backplaneConfig, ocpConsole)
+			if result != (ctrl.Result{}) {
+				requeue = true
+			}
 		}
-	}
 	}
 
 	if backplaneConfig.Enabled(backplanev1.Discovery) {
