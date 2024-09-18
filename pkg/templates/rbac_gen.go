@@ -300,7 +300,9 @@ package main
 //+kubebuilder:rbac:groups=metal3.io,resources=baremetalhosts,verbs=get;list;patch;update;watch
 //+kubebuilder:rbac:groups=metal3.io,resources=baremetalhosts,verbs=get;list;patch;update;watch
 //+kubebuilder:rbac:groups=metal3.io,resources=baremetalhosts,verbs=get;list;watch;update
+//+kubebuilder:rbac:groups=metal3.io,resources=baremetalhosts/finalizers,verbs=update
 //+kubebuilder:rbac:groups=metal3.io,resources=baremetalhosts;provisionings,verbs=list;watch
+//+kubebuilder:rbac:groups=metal3.io,resources=dataimages,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=metal3.io,resources=preprovisioningimages,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=metal3.io,resources=preprovisioningimages/status,verbs=get;patch;update
 //+kubebuilder:rbac:groups=metal3.io,resources=provisionings,verbs=get
