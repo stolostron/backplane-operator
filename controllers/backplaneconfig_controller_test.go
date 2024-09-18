@@ -47,6 +47,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -647,99 +648,6 @@ var _ = Describe("BackplaneConfig controller", func() {
 		})
 	})
 
-	When("ensuring NoInternalEngineComponent", func() {
-		Context("and an invalid namespace is specified", func() {
-			It("should throw an API error", func() {
-				createCtx := context.Background()
-				By("creating the backplane config with everything enabled")
-				// backplaneConfig := &backplanev1.MultiClusterEngine{
-				// 	TypeMeta: metav1.TypeMeta{
-				// 		APIVersion: "multicluster.openshift.io/v1",
-				// 		Kind:       "MultiClusterEngine",
-				// 	},
-				// 	ObjectMeta: metav1.ObjectMeta{
-				// 		Name: BackplaneConfigName,
-				// 	},
-				// 	Spec: backplanev1.MultiClusterEngineSpec{
-				// 		TargetNamespace: DestinationNamespace,
-				// 		ImagePullSecret: "testsecret",
-				// 		Overrides: &backplanev1.Overrides{
-				// 			Components: []backplanev1.ComponentConfig{
-				// 				{
-				// 					Name:    backplanev1.AssistedService,
-				// 					Enabled: true,
-				// 				},
-				// 				{
-				// 					Name:    backplanev1.ClusterLifecycle,
-				// 					Enabled: true,
-				// 				},
-				// 				{
-				// 					Name:    backplanev1.ClusterManager,
-				// 					Enabled: true,
-				// 				},
-				// 				{
-				// 					Name:    backplanev1.ClusterProxyAddon,
-				// 					Enabled: true,
-				// 				},
-				// 				{
-				// 					Name:    backplanev1.ConsoleMCE,
-				// 					Enabled: false,
-				// 				},
-				// 				{
-				// 					Name:    backplanev1.Discovery,
-				// 					Enabled: true,
-				// 				},
-				// 				{
-				// 					Name:    backplanev1.Hive,
-				// 					Enabled: true,
-				// 				},
-				// 				{
-				// 					Name:    backplanev1.HyperShift,
-				// 					Enabled: true,
-				// 				},
-				// 				{
-				// 					Name:    backplanev1.HypershiftLocalHosting,
-				// 					Enabled: false,
-				// 				},
-				// 				{
-				// 					Name:    backplanev1.ManagedServiceAccount,
-				// 					Enabled: true,
-				// 				},
-				// 				{
-				// 					Name:    backplanev1.ServerFoundation,
-				// 					Enabled: true,
-				// 				},
-				// 				{
-				// 					Name:    backplanev1.ImageBasedInstallOperator,
-				// 					Enabled: true,
-				// 				},
-				// 			},
-				// 		},
-				// 	},
-				// }
-				// Expect(k8sClient.Create(createCtx, backplaneConfig)).Should(Succeed())
-
-				crd := &apixv1.CustomResourceDefinition{}
-
-				Expect(k8sClient.Get(createCtx, types.NamespacedName{Name: "internalenginecomponents.multicluster.openshift.io"}, crd)).To(Succeed())
-
-				Expect(k8sClient.Delete(createCtx, crd)).To(Succeed())
-
-				badBackplaneConfig := &backplanev1.MultiClusterEngine{
-					Spec: backplanev1.MultiClusterEngineSpec{
-						TargetNamespace: DestinationNamespace,
-					},
-				}
-				_, err := reconciler.ensureNoAllInternalEngineComponents(createCtx, badBackplaneConfig)
-				Expect(err).NotTo(BeNil())
-
-				// Expect(k8sClient.Create(createCtx, crd)).To(Succeed())
-				// reconciler.ensureCustomResources(ctx, backplaneConfig)
-
-				Expect(false).To(BeTrue())
-			})
-		})
-	})
 	When("creating a new BackplaneConfig", func() {
 		Context("and no image pull policy is specified", func() {
 			It("should deploy sub components", func() {
@@ -1941,6 +1849,34 @@ func Test_applyEnvConfig(t *testing.T) {
 					}
 					break
 				}
+			}
+		})
+	}
+}
+
+func Test_NoInternalEngineComponent(t *testing.T) {
+	recon := MultiClusterEngineReconciler{Client: fake.NewClientBuilder().Build()}
+	tests := []struct {
+		name        string
+		mce         *backplanev1.MultiClusterEngine
+		errorNotNil bool
+	}{
+		{
+			name: "should ensure no InternalEngineComponent",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "mce",
+				},
+			},
+			errorNotNil: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			if _, err := recon.ensureNoAllInternalEngineComponents(context.Background(), tt.mce); (err != nil && !errors.IsNotFound(err)) != tt.errorNotNil {
+				t.Errorf("failed to ensure no InternalEngineComponents: %v", err)
 			}
 		})
 	}
