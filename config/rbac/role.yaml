@@ -1981,6 +1981,24 @@ rules:
 - apiGroups:
   - metal3.io
   resources:
+  - baremetalhosts/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - metal3.io
+  resources:
+  - dataimages
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - metal3.io
+  resources:
   - preprovisioningimages
   verbs:
   - create
