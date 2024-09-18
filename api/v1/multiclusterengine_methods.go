@@ -143,8 +143,9 @@ func (mce *MultiClusterEngine) Enable(s string) {
 		}
 	}
 	mce.Spec.Overrides.Components = append(mce.Spec.Overrides.Components, ComponentConfig{
-		Name:    s,
-		Enabled: true,
+		ConfigOverrides: ConfigOverride{},
+		Enabled:         true,
+		Name:            s,
 	})
 }
 
@@ -188,8 +189,9 @@ func (mce *MultiClusterEngine) Disable(s string) {
 		}
 	}
 	mce.Spec.Overrides.Components = append(mce.Spec.Overrides.Components, ComponentConfig{
-		Name:    s,
-		Enabled: false,
+		ConfigOverrides: ConfigOverride{},
+		Enabled:         false,
+		Name:            s,
 	})
 }
 
