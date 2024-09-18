@@ -82,15 +82,29 @@ spec:
                 additionalProperties:
                   type: string
                 description: Map of label string keys and values that will be applied
-                  to the created MachineSet's MachineSpec. This list will overwrite
-                  any modifications made to Node labels on an ongoing basis.
+                  to the created MachineSet's MachineSpec. This affects the labels
+                  that will end up on the *Nodes* (in contrast with the MachineLabels
+                  field). This list will overwrite any modifications made to Node
+                  labels on an ongoing basis.
+                type: object
+              machineLabels:
+                additionalProperties:
+                  type: string
+                description: 'Map of label string keys and values that will be applied
+                  to the created MachineSet''s MachineTemplateSpec. This affects the
+                  labels that will end up on the *Machines* (in contrast with the
+                  Labels field). This list will overwrite any modifications made to
+                  Machine labels on an ongoing basis. Note: We ignore entries that
+                  conflict with generated labels.'
                 type: object
               name:
                 description: Name is the name of the machine pool.
                 type: string
               platform:
                 description: Platform is configuration for machine pool specific to
-                  the platform.
+                  the platform. When using a MachinePool to control the default worker
+                  machines created by installer, these must match the values provided
+                  in the install-config.
                 properties:
                   aws:
                     description: AWS is the configuration used when installing on
@@ -191,6 +205,16 @@ spec:
                     description: Azure is the configuration used when installing on
                       Azure.
                     properties:
+                      computeSubnet:
+                        description: ComputeSubnet specifies an existing subnet for
+                          use by compute nodes. If omitted, the default (${infraID}-worker-subnet)
+                          will be used.
+                        type: string
+                      networkResourceGroupName:
+                        description: NetworkResourceGroupName specifies the network
+                          resource group that contains an existing VNet. Ignored unless
+                          VirtualNetwork is also specified.
+                        type: string
                       osDisk:
                         description: OSDisk defines the storage for instance.
                         properties:
@@ -255,6 +279,20 @@ spec:
                       type:
                         description: InstanceType defines the azure instance type.
                           eg. Standard_DS_V2
+                        type: string
+                      virtualNetwork:
+                        description: VirtualNetwork specifies the name of an existing
+                          VNet for the Machines to use If omitted, the default (${infraID}-vnet)
+                          will be used.
+                        type: string
+                      vmNetworkingType:
+                        description: 'VMNetworkingType specifies whether to enable
+                          accelerated networking. Accelerated networking enables single
+                          root I/O virtualization (SR-IOV) to a VM, greatly improving
+                          its networking performance. eg. values: "Accelerated", "Basic"'
+                        enum:
+                        - Accelerated
+                        - Basic
                         type: string
                       zones:
                         description: Zones is list of availability zones that can
@@ -356,10 +394,61 @@ spec:
                         - Enabled
                         - Disabled
                         type: string
+                      serviceAccount:
+                        description: ServiceAccount is the email of a gcp service
+                          account to be attached to worker nodes in order to provide
+                          the permissions required by the cloud provider. For the
+                          default worker MachinePool, it is the user's responsibility
+                          to match this to the value provided in the install-config.
+                        type: string
                       type:
                         description: InstanceType defines the GCP instance type. eg.
                           n1-standard-4
                         type: string
+                      userTags:
+                        description: userTags has additional keys and values that
+                          we will add as tags to the providerSpec of MachineSets that
+                          we creates on GCP. Tag key and tag value should be the shortnames
+                          of the tag key and tag value resource. Consumer is responsible
+                          for using this only for spokes where custom tags are supported.
+                        items:
+                          description: UserTag is a tag to apply to GCP resources
+                            created for the cluster.
+                          properties:
+                            key:
+                              description: key is the key part of the tag. A tag key
+                                can have a maximum of 63 characters and cannot be
+                                empty. Tag key must begin and end with an alphanumeric
+                                character, and must contain only uppercase, lowercase
+                                alphanumeric characters, and the following special
+                                characters `._-`.
+                              type: string
+                            parentID:
+                              description: 'parentID is the ID of the hierarchical
+                                resource where the tags are defined, e.g. at the Organization
+                                or the Project level. To find the Organization ID
+                                or Project ID refer to the following pages: https://cloud.google.com/resource-manager/docs/creating-managing-organization#retrieving_your_organization_id,
+                                https://cloud.google.com/resource-manager/docs/creating-managing-projects#identifying_projects.
+                                An OrganizationID must consist of decimal numbers,
+                                and cannot have leading zeroes. A ProjectID must be
+                                6 to 30 characters in length, can only contain lowercase
+                                letters, numbers, and hyphens, and must start with
+                                a letter, and cannot end with a hyphen.'
+                              type: string
+                            value:
+                              description: value is the value part of the tag. A tag
+                                value can have a maximum of 63 characters and cannot
+                                be empty. Tag value must begin and end with an alphanumeric
+                                character, and must contain only uppercase, lowercase
+                                alphanumeric characters, and the following special
+                                characters `_-.@%=+:,*#&(){}[]` and spaces.
+                              type: string
+                          required:
+                          - key
+                          - parentID
+                          - value
+                          type: object
+                        type: array
                       zones:
                         description: Zones is list of availability zones that can
                           be used.
@@ -668,9 +757,17 @@ spec:
                 type: array
               ownedLabels:
                 description: OwnedLabels lists the keys of labels this MachinePool
-                  created on the remote MachineSet. Used to identify labels to remove
-                  from the remote MachineSet when they are absent from the MachinePool's
-                  spec.labels.
+                  created on the remote MachineSet's MachineSpec. (In contrast with
+                  OwnedMachineLabels.) Used to identify labels to remove from the
+                  remote MachineSet when they are absent from the MachinePool's spec.labels.
+                items:
+                  type: string
+                type: array
+              ownedMachineLabels:
+                description: OwnedMachineLabels lists the keys of labels this MachinePool
+                  created on the remote MachineSet's MachineTemplateSpec. (In contrast
+                  with OwnedLabels.) Used to identify labels to remove from the remote
+                  MachineSet when they are absent from the MachinePool's spec.machineLabels.
                 items:
                   type: string
                 type: array
