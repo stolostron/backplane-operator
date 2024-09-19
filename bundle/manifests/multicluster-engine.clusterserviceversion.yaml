@@ -14,8 +14,8 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    createdAt: "2024-05-29T13:26:27Z"
-    operators.operatorframework.io/builder: operator-sdk-v1.32.0
+    createdAt: "2024-09-19T18:57:53Z"
+    operators.operatorframework.io/builder: operator-sdk-v1.35.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
   name: multicluster-engine.v0.0.1
   namespace: placeholder
@@ -79,17 +79,6 @@ spec:
     spec:
       clusterPermissions:
       - rules:
-        - apiGroups:
-          - multicluster.openshift.io
-          resources:
-            - internalenginecomponents
-          verbs:
-            - create
-            - get
-            - delete
-            - patch
-            - list
-            - watch
         - apiGroups:
           - ""
           resources:
@@ -1241,6 +1230,30 @@ spec:
           - list
           - watch
         - apiGroups:
+          - cert-manager.io
+          resources:
+          - certificates
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - cert-manager.io
+          resources:
+          - issuers
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
           - certificates.k8s.io
           resources:
           - certificatesigningrequests
@@ -1763,6 +1776,7 @@ spec:
           - events
           verbs:
           - create
+          - patch
         - apiGroups:
           - extensions.hive.openshift.io
           resources:
@@ -2043,6 +2057,24 @@ spec:
         - apiGroups:
           - metal3.io
           resources:
+          - baremetalhosts/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - metal3.io
+          resources:
+          - dataimages
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - metal3.io
+          resources:
           - preprovisioningimages
           verbs:
           - create
@@ -2106,6 +2138,17 @@ spec:
         - apiGroups:
           - multicluster.openshift.io
           resources:
+          - internalenginecomponents
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - watch
+        - apiGroups:
+          - multicluster.openshift.io
+          resources:
           - multiclusterengines
           verbs:
           - create
@@ -2129,6 +2172,18 @@ spec:
           - get
           - patch
           - update
+        - apiGroups:
+          - networking.k8s.io
+          resources:
+          - ingresses
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
         - apiGroups:
           - operator.open-cluster-management.io
           resources:
