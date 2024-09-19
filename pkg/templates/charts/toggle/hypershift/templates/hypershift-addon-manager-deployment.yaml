@@ -62,10 +62,12 @@ spec:
       hostPID: false
       hostIPC: false
       securityContext:
-        runAsNonRoot: true
+      #  runAsNonRoot: true
+        {{- if .Values.global.deployOnOCP }}
         {{- if semverCompare ">=4.11.0" .Values.hubconfig.ocpVersion }}
         seccompProfile:
           type: RuntimeDefault
+        {{- end }}
         {{- end }}
         # runAsUser: 1001
       terminationGracePeriodSeconds: 30

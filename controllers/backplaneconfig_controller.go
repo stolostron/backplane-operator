@@ -94,64 +94,64 @@ var (
 	log = logf.Log.WithName("reconcile")
 )
 
-//+kubebuilder:rbac:groups=multicluster.openshift.io,resources=multiclusterengines,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=multicluster.openshift.io,resources=multiclusterengines/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=multicluster.openshift.io,resources=multiclusterengines/finalizers,verbs=update
-//+kubebuilder:rbac:groups=apiextensions.k8s.io;rbac.authorization.k8s.io;"";apps,resources=deployments;serviceaccounts;customresourcedefinitions;clusterrolebindings;clusterroles,verbs=get;create;update;list
-//+kubebuilder:rbac:groups=monitoring.coreos.com,resources=servicemonitors,verbs=get;create;update;list;watch;delete;patch
-//+kubebuilder:rbac:groups="discovery.open-cluster-management.io",resources=discoveryconfigs,verbs=get
-//+kubebuilder:rbac:groups="discovery.open-cluster-management.io",resources=discoveryconfigs,verbs=list
-//+kubebuilder:rbac:groups="discovery.open-cluster-management.io",resources=discoveryconfigs;discoveredclusters,verbs=create;get;list;watch;update;delete;deletecollection;patch;approve;escalate;bind
-//+kubebuilder:rbac:groups=config.openshift.io,resources=clusterversions,verbs=get;list;watch;
-//+kubebuilder:rbac:groups=console.openshift.io,resources=consoleplugins;consolequickstarts,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=operator.openshift.io,resources=consoles,verbs=get;list;watch;update;patch
+// +kubebuilder:rbac:groups=multicluster.openshift.io,resources=multiclusterengines,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=multicluster.openshift.io,resources=multiclusterengines/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=multicluster.openshift.io,resources=multiclusterengines/finalizers,verbs=update
+// +kubebuilder:rbac:groups=apiextensions.k8s.io;rbac.authorization.k8s.io;"";apps,resources=deployments;serviceaccounts;customresourcedefinitions;clusterrolebindings;clusterroles,verbs=get;create;update;list
+// +kubebuilder:rbac:groups=monitoring.coreos.com,resources=servicemonitors,verbs=get;create;update;list;watch;delete;patch
+// +kubebuilder:rbac:groups="discovery.open-cluster-management.io",resources=discoveryconfigs,verbs=get
+// +kubebuilder:rbac:groups="discovery.open-cluster-management.io",resources=discoveryconfigs,verbs=list
+// +kubebuilder:rbac:groups="discovery.open-cluster-management.io",resources=discoveryconfigs;discoveredclusters,verbs=create;get;list;watch;update;delete;deletecollection;patch;approve;escalate;bind
+// +kubebuilder:rbac:groups=config.openshift.io,resources=clusterversions,verbs=get;list;watch;
+// +kubebuilder:rbac:groups=console.openshift.io,resources=consoleplugins;consolequickstarts,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=operator.openshift.io,resources=consoles,verbs=get;list;watch;update;patch
 
 // AgentServiceConfig webhook delete check
-//+kubebuilder:rbac:groups=agent-install.openshift.io,resources=agentserviceconfigs,verbs=get;list;watch
+// +kubebuilder:rbac:groups=agent-install.openshift.io,resources=agentserviceconfigs,verbs=get;list;watch
 
 // ClusterManager RBAC
-//+kubebuilder:rbac:groups="",resources=configmaps;configmaps/status;namespaces;serviceaccounts;services;secrets,verbs=create;get;list;update;watch;patch;delete
-//+kubebuilder:rbac:groups="",resources=nodes;endpoints,verbs=get;list;watch
-//+kubebuilder:rbac:groups=authorization.k8s.io,resources=subjectaccessreviews,verbs=create
-//+kubebuilder:rbac:groups="";events.k8s.io,resources=events,verbs=create;update;patch
-//+kubebuilder:rbac:groups=apps,resources=deployments;replicasets,verbs=create;get;list;update;watch;patch;delete
-//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterrolebindings;rolebindings,verbs=create;get;list;update;watch;patch;delete
-//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles;roles,verbs=create;get;list;update;watch;patch;delete;escalate;bind
-//+kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=create;get;list;update;watch;patch;delete
-//+kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions/status,verbs=update;patch
-//+kubebuilder:rbac:groups=apiregistration.k8s.io,resources=apiservices,verbs=create;get;list;update;watch;patch;delete
-//+kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=validatingwebhookconfigurations;mutatingwebhookconfigurations,verbs=create;get;list;update;watch;patch;delete
-//+kubebuilder:rbac:groups=operator.open-cluster-management.io,resources=clustermanagers,verbs=create;get;list;watch;update;delete;patch
-//+kubebuilder:rbac:groups=operator.open-cluster-management.io,resources=clustermanagers/status,verbs=update;patch
-//+kubebuilder:rbac:groups=imageregistry.open-cluster-management.io,resources=managedclusterimageregistries;managedclusterimageregistries/status,verbs=approve;bind;create;delete;deletecollection;escalate;get;list;patch;update;watch
-//+kubebuilder:rbac:groups=cluster.open-cluster-management.io;agent.open-cluster-management.io;operator.open-cluster-management.io,resources=klusterletaddonconfigs;managedclusters;multiclusterhubs,verbs=get;list;watch;create;delete;watch;update;patch
-//+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclustersets/join,verbs=create
-//+kubebuilder:rbac:groups=migration.k8s.io,resources=storageversionmigrations,verbs=create;get;list;update;patch;watch;delete
-//+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=create;get;list;update;patch;watch;delete
-//+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=clustermanagementaddons;clustermanagementaddons/finalizers;managedclusteraddons;managedclusteraddons/finalizers;managedclusteraddons/status,verbs=create;get;list;update;patch;watch;delete;deletecollection
-//+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=addondeploymentconfigs,verbs=get;list;watch;
-//+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=addonplacementscores,verbs=create;get;list;update;patch;watch;delete;deletecollection
-//+kubebuilder:rbac:groups=proxy.open-cluster-management.io,resources=managedproxyconfigurations,verbs=create;get;list;update;patch;watch;delete;deletecollection
-//+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclustersetbindings,verbs=create;get;list;update;patch;watch;delete;deletecollection
-//+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclustersets/bind,verbs=create
+// +kubebuilder:rbac:groups="",resources=configmaps;configmaps/status;namespaces;serviceaccounts;services;secrets,verbs=create;get;list;update;watch;patch;delete
+// +kubebuilder:rbac:groups="",resources=nodes;endpoints,verbs=get;list;watch
+// +kubebuilder:rbac:groups=authorization.k8s.io,resources=subjectaccessreviews,verbs=create
+// +kubebuilder:rbac:groups="";events.k8s.io,resources=events,verbs=create;update;patch
+// +kubebuilder:rbac:groups=apps,resources=deployments;replicasets,verbs=create;get;list;update;watch;patch;delete
+// +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterrolebindings;rolebindings,verbs=create;get;list;update;watch;patch;delete
+// +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles;roles,verbs=create;get;list;update;watch;patch;delete;escalate;bind
+// +kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=create;get;list;update;watch;patch;delete
+// +kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions/status,verbs=update;patch
+// +kubebuilder:rbac:groups=apiregistration.k8s.io,resources=apiservices,verbs=create;get;list;update;watch;patch;delete
+// +kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=validatingwebhookconfigurations;mutatingwebhookconfigurations,verbs=create;get;list;update;watch;patch;delete
+// +kubebuilder:rbac:groups=operator.open-cluster-management.io,resources=clustermanagers,verbs=create;get;list;watch;update;delete;patch
+// +kubebuilder:rbac:groups=operator.open-cluster-management.io,resources=clustermanagers/status,verbs=update;patch
+// +kubebuilder:rbac:groups=imageregistry.open-cluster-management.io,resources=managedclusterimageregistries;managedclusterimageregistries/status,verbs=approve;bind;create;delete;deletecollection;escalate;get;list;patch;update;watch
+// +kubebuilder:rbac:groups=cluster.open-cluster-management.io;agent.open-cluster-management.io;operator.open-cluster-management.io,resources=klusterletaddonconfigs;managedclusters;multiclusterhubs,verbs=get;list;watch;create;delete;watch;update;patch
+// +kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclustersets/join,verbs=create
+// +kubebuilder:rbac:groups=migration.k8s.io,resources=storageversionmigrations,verbs=create;get;list;update;patch;watch;delete
+// +kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=create;get;list;update;patch;watch;delete
+// +kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=clustermanagementaddons;clustermanagementaddons/finalizers;managedclusteraddons;managedclusteraddons/finalizers;managedclusteraddons/status,verbs=create;get;list;update;patch;watch;delete;deletecollection
+// +kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=addondeploymentconfigs,verbs=get;list;watch;
+// +kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=addonplacementscores,verbs=create;get;list;update;patch;watch;delete;deletecollection
+// +kubebuilder:rbac:groups=proxy.open-cluster-management.io,resources=managedproxyconfigurations,verbs=create;get;list;update;patch;watch;delete;deletecollection
+// +kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclustersetbindings,verbs=create;get;list;update;patch;watch;delete;deletecollection
+// +kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclustersets/bind,verbs=create
 
 // Hive RBAC
-//+kubebuilder:rbac:groups="hive.openshift.io",resources=hiveconfigs,verbs=get;create;update;delete;list;watch
-//+kubebuilder:rbac:groups="hive.openshift.io",resources=clusterdeployments;clusterpools;clusterclaims;machinepools,verbs=approve;bind;create;delete;deletecollection;escalate;get;list;patch;update;watch
+// +kubebuilder:rbac:groups="hive.openshift.io",resources=hiveconfigs,verbs=get;create;update;delete;list;watch
+// +kubebuilder:rbac:groups="hive.openshift.io",resources=clusterdeployments;clusterpools;clusterclaims;machinepools,verbs=approve;bind;create;delete;deletecollection;escalate;get;list;patch;update;watch
 
 // CLC RBAC
-//+kubebuilder:rbac:groups="internal.open-cluster-management.io",resources="managedclusterinfos",verbs=get;list;watch
-//+kubebuilder:rbac:groups="config.openshift.io";"authentication.k8s.io",resources=clusterversions;tokenreviews,verbs=get;create
-//+kubebuilder:rbac:groups="register.open-cluster-management.io",resources=managedclusters/accept,verbs=update
-//+kubebuilder:rbac:groups="tower.ansible.com";"";"batch",resources=ansiblejobs;jobs;secrets;serviceaccounts,verbs=create
-//+kubebuilder:rbac:groups="tower.ansible.com";"";"batch",resources=ansiblejobs;jobs;clusterdeployments;serviceaccounts;machinepools,verbs=get
-//+kubebuilder:rbac:groups="action.open-cluster-management.io",resources=managedclusteractions,verbs=get;create;update;delete
-//+kubebuilder:rbac:groups="cluster.open-cluster-management.io",resources=clustercurators;clustercurators/status,verbs=create;delete;get;list;patch;update;watch
-//+kubebuilder:rbac:groups="config.open-cluster-management.io",resources=klusterletconfigs,verbs=create;delete;get;list;patch;update;watch
-//+kubebuilder:rbac:groups="operators.coreos.com",resources=subscriptions,verbs=get;list;watch
-//+kubebuilder:rbac:groups="operators.coreos.com",resources=operatorconditions,verbs=create;get;list;patch;update;delete;watch
-//+kubebuilder:rbac:groups="",resources=serviceaccounts/token,verbs=create
-//+kubebuilder:rbac:groups=authentication.k8s.io,resources=tokenrequests,verbs=create
+// +kubebuilder:rbac:groups="internal.open-cluster-management.io",resources="managedclusterinfos",verbs=get;list;watch
+// +kubebuilder:rbac:groups="config.openshift.io";"authentication.k8s.io",resources=clusterversions;tokenreviews,verbs=get;create
+// +kubebuilder:rbac:groups="register.open-cluster-management.io",resources=managedclusters/accept,verbs=update
+// +kubebuilder:rbac:groups="tower.ansible.com";"";"batch",resources=ansiblejobs;jobs;secrets;serviceaccounts,verbs=create
+// +kubebuilder:rbac:groups="tower.ansible.com";"";"batch",resources=ansiblejobs;jobs;clusterdeployments;serviceaccounts;machinepools,verbs=get
+// +kubebuilder:rbac:groups="action.open-cluster-management.io",resources=managedclusteractions,verbs=get;create;update;delete
+// +kubebuilder:rbac:groups="cluster.open-cluster-management.io",resources=clustercurators;clustercurators/status,verbs=create;delete;get;list;patch;update;watch
+// +kubebuilder:rbac:groups="config.open-cluster-management.io",resources=klusterletconfigs,verbs=create;delete;get;list;patch;update;watch
+// +kubebuilder:rbac:groups="operators.coreos.com",resources=subscriptions,verbs=get;list;watch
+// +kubebuilder:rbac:groups="operators.coreos.com",resources=operatorconditions,verbs=create;get;list;patch;update;delete;watch
+// +kubebuilder:rbac:groups="",resources=serviceaccounts/token,verbs=create
+// +kubebuilder:rbac:groups=authentication.k8s.io,resources=tokenrequests,verbs=create
 
 // InternalEngineComponent
 // +kubebuilder:rbac:groups="multicluster.openshift.io",resources="internalenginecomponents",verbs=create;get;delete;patch;list;watch
@@ -191,11 +191,14 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 	r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing, metav1.ConditionTrue,
 		status.WaitingForResourceReason, "Setting the operator"))
 
-	upgrade, err := r.setOperatorUpgradeableStatus(ctx, backplaneConfig)
-	if err != nil {
-		r.Log.Error(err, "Trouble with Upgradable Operator Condition")
-		r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing,
-			metav1.ConditionFalse, status.RequirementsNotMetReason, err.Error()))
+	upgrade := false
+	if utils.DeployOnOCP() {
+		upgrade, err = r.setOperatorUpgradeableStatus(ctx, backplaneConfig)
+		if err != nil {
+			r.Log.Error(err, "Trouble with Upgradable Operator Condition")
+			r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing,
+				metav1.ConditionFalse, status.RequirementsNotMetReason, err.Error()))
+		}
 	}
 
 	defer func() {
@@ -254,7 +257,7 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return ctrl.Result{Requeue: true}, err
 	}
 
-	if !utils.ShouldIgnoreOCPVersion(backplaneConfig) {
+	if !utils.ShouldIgnoreOCPVersion(backplaneConfig) && utils.DeployOnOCP() {
 		currentOCPVersion, err := r.getClusterVersion(ctx)
 		if err != nil {
 			return ctrl.Result{}, fmt.Errorf("failed to detect clusterversion: %w", err)
@@ -421,8 +424,10 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return result, err
 	}
 
-	for _, kind := range backplanev1.GetLegacyConfigKind() {
-		_ = r.removeLegacyPrometheusConfigurations(ctx, "openshift-monitoring", kind)
+	if utils.DeployOnOCP() {
+		for _, kind := range backplanev1.GetLegacyConfigKind() {
+			_ = r.removeLegacyPrometheusConfigurations(ctx, "openshift-monitoring", kind)
+		}
 	}
 
 	result, err = r.ensureToggleableComponents(ctx, backplaneConfig)
@@ -435,16 +440,17 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return result, err
 	}
 
-	result, err = r.createMetricsService(ctx, backplaneConfig)
-	if err != nil {
-		return result, err
-	}
+	if utils.DeployOnOCP() {
+		result, err = r.createMetricsService(ctx, backplaneConfig)
+		if err != nil {
+			return result, err
+		}
 
-	result, err = r.createMetricsServiceMonitor(ctx, backplaneConfig)
-	if err != nil {
-		return result, err
+		result, err = r.createMetricsServiceMonitor(ctx, backplaneConfig)
+		if err != nil {
+			return result, err
+		}
 	}
-
 	result, err = r.ensureRemovalsGone(backplaneConfig)
 	if err != nil {
 		return result, err
@@ -508,7 +514,7 @@ func (r *MultiClusterEngineReconciler) setOperatorUpgradeableStatus(ctx context.
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *MultiClusterEngineReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
+	mceBuilder := ctrl.NewControllerManagedBy(mgr).
 		For(&backplanev1.MultiClusterEngine{}).
 		WithEventFilter(predicate.Or(predicate.GenerationChangedPredicate{}, predicate.LabelChangedPredicate{},
 			predicate.AnnotationChangedPredicate{})).
@@ -536,8 +542,10 @@ func (r *MultiClusterEngineReconciler) SetupWithManager(mgr ctrl.Manager) error 
 					Name: labels["backplaneconfig.name"],
 				}})
 			},
-		}, builder.WithPredicates(predicate.LabelChangedPredicate{})).
-		Watches(&monitorv1.ServiceMonitor{}, &handler.Funcs{
+		}, builder.WithPredicates(predicate.LabelChangedPredicate{}))
+
+	if utils.DeployOnOCP() {
+		mceBuilder.Watches(&monitorv1.ServiceMonitor{}, &handler.Funcs{
 			DeleteFunc: func(ctx context.Context, e event.DeleteEvent, q workqueue.RateLimitingInterface) {
 				labels := e.Object.GetLabels()
 				if label, ok := labels["backplaneconfig.name"]; ok {
@@ -547,23 +555,25 @@ func (r *MultiClusterEngineReconciler) SetupWithManager(mgr ctrl.Manager) error 
 				}
 			},
 		}, builder.WithPredicates(predicate.LabelChangedPredicate{})).
-		Watches(&configv1.ClusterVersion{},
-			handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, a client.Object) []reconcile.Request {
-				req := []reconcile.Request{}
-				multiclusterengineList := &backplanev1.MultiClusterEngineList{}
-				if err := r.Client.List(ctx, multiclusterengineList); err == nil && len(multiclusterengineList.Items) > 0 {
-					for _, mce := range multiclusterengineList.Items {
-						tmpreq := reconcile.Request{
-							NamespacedName: types.NamespacedName{
-								Name: mce.GetName(),
-							},
+			Watches(&configv1.ClusterVersion{},
+				handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, a client.Object) []reconcile.Request {
+					req := []reconcile.Request{}
+					multiclusterengineList := &backplanev1.MultiClusterEngineList{}
+					if err := r.Client.List(ctx, multiclusterengineList); err == nil && len(multiclusterengineList.Items) > 0 {
+						for _, mce := range multiclusterengineList.Items {
+							tmpreq := reconcile.Request{
+								NamespacedName: types.NamespacedName{
+									Name: mce.GetName(),
+								},
+							}
+							req = append(req, tmpreq)
 						}
-						req = append(req, tmpreq)
 					}
-				}
-				return req
-			})).
-		Complete(r)
+					return req
+				}))
+	}
+
+	return mceBuilder.Complete(r)
 }
 
 // createTrustBundleConfigmap creates a configmap that will be injected with the
@@ -950,6 +960,7 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 			errs[backplanev1.HyperShift] = err
 		}
 	}
+
 	result, err := r.reconcileHypershiftLocalHosting(ctx, backplaneConfig)
 	if result != (ctrl.Result{}) {
 		requeue = true
@@ -957,27 +968,25 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 	if err != nil {
 		errs[backplanev1.HypershiftLocalHosting] = err
 	}
-
-	ocpConsole, err := r.CheckConsole(ctx)
-	if err != nil {
-		return ctrl.Result{RequeueAfter: requeuePeriod}, err
-	}
-
-	if backplaneConfig.Enabled(backplanev1.ConsoleMCE) && ocpConsole {
-		result, err = r.ensureConsoleMCE(ctx, backplaneConfig)
-		if result != (ctrl.Result{}) {
-			requeue = true
-		}
+	if utils.DeployOnOCP() {
+		ocpConsole, err := r.CheckConsole(ctx)
 		if err != nil {
-			errs[backplanev1.ConsoleMCE] = err
+			return ctrl.Result{RequeueAfter: requeuePeriod}, err
 		}
-	} else {
-		result, err = r.ensureNoConsoleMCE(ctx, backplaneConfig, ocpConsole)
-		if result != (ctrl.Result{}) {
-			requeue = true
-		}
-		if err != nil {
-			errs[backplanev1.ConsoleMCE] = err
+
+		if backplaneConfig.Enabled(backplanev1.ConsoleMCE) && ocpConsole {
+			result, err = r.ensureConsoleMCE(ctx, backplaneConfig)
+			if result != (ctrl.Result{}) {
+				requeue = true
+			}
+			if err != nil {
+				errs[backplanev1.ConsoleMCE] = err
+			}
+		} else {
+			result, err = r.ensureNoConsoleMCE(ctx, backplaneConfig, ocpConsole)
+			if result != (ctrl.Result{}) {
+				requeue = true
+			}
 		}
 	}
 
@@ -1106,7 +1115,6 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 			errs[backplanev1.ClusterProxyAddon] = err
 		}
 	}
-
 	if backplaneConfig.Enabled(backplanev1.LocalCluster) {
 		result, err := r.ensureLocalCluster(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
@@ -1389,15 +1397,17 @@ func (r *MultiClusterEngineReconciler) ensureOpenShiftNamespaceLabel(ctx context
 func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Context,
 	backplaneConfig *backplanev1.MultiClusterEngine) error {
 
-	ocpConsole, err := r.CheckConsole(ctx)
-	if err != nil {
-		return err
-	}
-	if ocpConsole {
-		_, err := r.removePluginFromConsoleResource(ctx)
+	if utils.DeployOnOCP() {
+		ocpConsole, err := r.CheckConsole(ctx)
 		if err != nil {
-			log.Info("Error ensuring plugin is removed from console resource")
 			return err
+		}
+		if ocpConsole {
+			_, err := r.removePluginFromConsoleResource(ctx)
+			if err != nil {
+				log.Info("Error ensuring plugin is removed from console resource")
+				return err
+			}
 		}
 	}
 
@@ -1650,57 +1660,58 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 		updateNecessary = true
 	}
 
-	// Set and store cluster Ingress domain for use later
-	clusterIngressDomain, err := r.getClusterIngressDomain(ctx, m)
-	if err != nil {
-		return ctrl.Result{}, pkgerrors.Wrapf(err, "failed to detect cluster ingress domain")
-	}
-
-	// Set OCP version as env var, so that charts can render this value
-	os.Setenv("ACM_CLUSTER_INGRESS_DOMAIN", clusterIngressDomain)
-
-	// If OCP 4.10+ then set then enable the MCE console. Else ensure it is disabled
-	currentClusterVersion, err := r.getClusterVersion(ctx)
-	if err != nil {
-		return ctrl.Result{}, pkgerrors.Wrapf(err, "failed to detect clusterversion")
-	}
-
-	// Set OCP version as env var, so that charts can render this value
-	os.Setenv("ACM_HUB_OCP_VERSION", currentClusterVersion)
-
-	currentVersion, err := semver.NewVersion(currentClusterVersion)
-	if err != nil {
-		log.Error(err, fmt.Sprintf("Failed to convert currentClusterVersion %s to semver compatible value for comparison", currentClusterVersion))
-		return ctrl.Result{}, err
-	}
-
-	// -0 allows for prerelease builds to pass the validation.
-	// If -0 is removed, developer/rc builds will not pass this check
-	constraint, err := semver.NewConstraint(">= 4.10.0-0")
-	if err != nil {
-		log.Error(err, "Failed to set constraint of minimum supported version for plugins")
-		return ctrl.Result{}, err
-	}
-
-	if constraint.Check(currentVersion) {
-		// If ConsoleMCE config already exists, then don't overwrite it
-		if !m.ComponentPresent(backplanev1.ConsoleMCE) {
-			log.Info("Dynamic plugins are supported. ConsoleMCE Config is not detected. Enabling ConsoleMCE")
-			m.Enable(backplanev1.ConsoleMCE)
-			updateNecessary = true
+	if utils.DeployOnOCP() {
+		// Set and store cluster Ingress domain for use later
+		clusterIngressDomain, err := r.getClusterIngressDomain(ctx, m)
+		if err != nil {
+			return ctrl.Result{}, pkgerrors.Wrapf(err, "failed to detect cluster ingress domain")
 		}
-	} else {
-		if m.Enabled(backplanev1.ConsoleMCE) {
-			log.Info("Dynamic plugins are not supported. Disabling MCE console")
-			m.Disable(backplanev1.ConsoleMCE)
-			updateNecessary = true
+
+		// Set OCP version as env var, so that charts can render this value
+		os.Setenv("ACM_CLUSTER_INGRESS_DOMAIN", clusterIngressDomain)
+
+		// If OCP 4.10+ then set then enable the MCE console. Else ensure it is disabled
+		currentClusterVersion, err := r.getClusterVersion(ctx)
+		if err != nil {
+			return ctrl.Result{}, pkgerrors.Wrapf(err, "failed to detect clusterversion")
+		}
+
+		// Set OCP version as env var, so that charts can render this value
+		os.Setenv("ACM_HUB_OCP_VERSION", currentClusterVersion)
+
+		currentVersion, err := semver.NewVersion(currentClusterVersion)
+		if err != nil {
+			log.Error(err, fmt.Sprintf("Failed to convert currentClusterVersion %s to semver compatible value for comparison", currentClusterVersion))
+			return ctrl.Result{}, err
+		}
+		// -0 allows for prerelease builds to pass the validation.
+		// If -0 is removed, developer/rc builds will not pass this check
+		constraint, err := semver.NewConstraint(">= 4.10.0-0")
+		if err != nil {
+			log.Error(err, "Failed to set constraint of minimum supported version for plugins")
+			return ctrl.Result{}, err
+		}
+
+		if constraint.Check(currentVersion) {
+			// If ConsoleMCE config already exists, then don't overwrite it
+			if !m.ComponentPresent(backplanev1.ConsoleMCE) {
+				log.Info("Dynamic plugins are supported. ConsoleMCE Config is not detected. Enabling ConsoleMCE")
+				m.Enable(backplanev1.ConsoleMCE)
+				updateNecessary = true
+			}
+		} else {
+			if m.Enabled(backplanev1.ConsoleMCE) {
+				log.Info("Dynamic plugins are not supported. Disabling MCE console")
+				m.Disable(backplanev1.ConsoleMCE)
+				updateNecessary = true
+			}
 		}
 	}
 
 	// Apply defaults to server
 	if updateNecessary {
 		log.Info("Setting defaults")
-		err = r.Client.Update(ctx, m)
+		err := r.Client.Update(ctx, m)
 		if err != nil {
 			log.Error(err, "Failed to update MultiClusterEngine")
 			return ctrl.Result{}, err
@@ -1796,7 +1807,7 @@ func (r *MultiClusterEngineReconciler) getClusterVersion(ctx context.Context) (s
 	return clusterVersion.Status.History[0].Version, nil
 }
 
-//+kubebuilder:rbac:groups="config.openshift.io",resources="ingresses",verbs=get;list;watch
+// +kubebuilder:rbac:groups="config.openshift.io",resources="ingresses",verbs=get;list;watch
 
 func (r *MultiClusterEngineReconciler) getClusterIngressDomain(ctx context.Context, mce *backplanev1.MultiClusterEngine) (string, error) {
 	// If Unit test
