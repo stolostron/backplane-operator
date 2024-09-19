@@ -49,15 +49,15 @@ spec:
         - name: NO_PROXY
           value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
 {{- end }}
-        - name: ROUTE_NAMESPACE
+        - name: SERVICE_NAMESPACE
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
-        - name: ROUTE_NAME
-          value: images
-        - name: ROUTE_PORT
-          value: '443'
-        - name: ROUTE_SCHEME
+        - name: SERVICE_NAME
+          value: image-based-install-config
+        - name: SERVICE_PORT
+          value: '8000'
+        - name: SERVICE_SCHEME
           value: https
         image: '{{ .Values.global.imageOverrides.image_based_install_operator }}'
         imagePullPolicy: '{{ .Values.global.pullPolicy }}'
