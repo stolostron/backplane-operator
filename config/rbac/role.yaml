@@ -1701,6 +1701,7 @@ rules:
   - events
   verbs:
   - create
+  - patch
 - apiGroups:
   - extensions.hive.openshift.io
   resources:
