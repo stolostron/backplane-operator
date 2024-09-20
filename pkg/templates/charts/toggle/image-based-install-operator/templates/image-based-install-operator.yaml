@@ -152,7 +152,7 @@ spec:
         seccompProfile:
           type: RuntimeDefault
 {{- end }}
-      serviceAccountName: controller-manager
+      serviceAccountName: image-based-install-operator
       terminationGracePeriodSeconds: 10
 {{- with .Values.hubconfig.tolerations }}
       tolerations:
