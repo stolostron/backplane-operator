@@ -167,7 +167,7 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 	if err != nil && !apierrors.IsNotFound(err) {
 		// Unknown error. Requeue
 		r.Log.Info("Failed to fetch backplaneConfig")
-		return ctrl.Result{RequeueAfter: requeuePeriod}, err
+		return ctrl.Result{}, err
 	} else if err != nil && apierrors.IsNotFound(err) {
 		// BackplaneConfig deleted or not found
 		// Return and don't requeue
@@ -318,7 +318,7 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing,
 			metav1.ConditionFalse, status.RequirementsNotMetReason, "No image references defined in deployment"))
 
-		return ctrl.Result{RequeueAfter: requeuePeriod}, errors.New(
+		return ctrl.Result{}, errors.New(
 			"no image references exist. images must be defined as environment variables")
 	}
 
@@ -984,7 +984,7 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 	if utils.DeployOnOCP() {
 		ocpConsole, err := r.CheckConsole(ctx)
 		if err != nil {
-			return ctrl.Result{RequeueAfter: requeuePeriod}, err
+			return ctrl.Result{}, err
 		}
 
 		if backplaneConfig.Enabled(backplanev1.ConsoleMCE) && ocpConsole {
@@ -999,6 +999,9 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 			result, err = r.ensureNoConsoleMCE(ctx, backplaneConfig, ocpConsole)
 			if result != (ctrl.Result{}) {
 				requeue = true
+			}
+			if err != nil {
+				errs[backplanev1.ConsoleMCE] = err
 			}
 		}
 	}
@@ -1443,7 +1446,7 @@ func (r *MultiClusterEngineReconciler) ensureNoAllInternalEngineComponents(ctx c
 			errorMessages = append(errorMessages, fmt.Sprintf("error ensuring %s: %s", k, v.Error()))
 		}
 		combinedError := fmt.Sprintf(": %s", strings.Join(errorMessages, "; "))
-		return ctrl.Result{RequeueAfter: requeuePeriod}, errors.New(combinedError)
+		return ctrl.Result{}, errors.New(combinedError)
 	}
 	if requeue {
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
@@ -1457,7 +1460,7 @@ func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Conte
 
 	result, err := r.ensureNoAllInternalEngineComponents(ctx, backplaneConfig)
 	if err != nil {
-		return ctrl.Result{RequeueAfter: requeuePeriod}, err
+		return ctrl.Result{}, err
 	}
 	if result != (ctrl.Result{}) {
 		return result, nil
@@ -1465,13 +1468,13 @@ func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Conte
 	if utils.DeployOnOCP() {
 		ocpConsole, err := r.CheckConsole(ctx)
 		if err != nil {
-			return ctrl.Result{RequeueAfter: requeuePeriod}, err
+			return ctrl.Result{}, err
 		}
 		if ocpConsole {
 			_, err := r.removePluginFromConsoleResource(ctx)
 			if err != nil {
 				log.Info("Error ensuring plugin is removed from console resource")
-				return ctrl.Result{RequeueAfter: requeuePeriod}, err
+				return ctrl.Result{}, err
 			}
 		}
 	}
@@ -1479,7 +1482,7 @@ func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Conte
 	// Remove hypershift-addon ManagedClusterAddOn if present
 	hypershiftAddon, err := renderer.RenderHypershiftAddon(backplaneConfig)
 	if err != nil {
-		return ctrl.Result{RequeueAfter: requeuePeriod}, err
+		return ctrl.Result{}, err
 	}
 	err = r.Client.Get(ctx, types.NamespacedName{Name: hypershiftAddon.GetName(),
 		Namespace: hypershiftAddon.GetNamespace()}, hypershiftAddon)
@@ -1487,14 +1490,14 @@ func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Conte
 	if err != nil {
 		if !(apierrors.IsNotFound(err) || apimeta.IsNoMatchError(err)) {
 			log.Error(err, "error while looking for hypershift-addon ManagedClusterAddOn")
-			return ctrl.Result{RequeueAfter: requeuePeriod}, err
+			return ctrl.Result{}, err
 		}
 	} else {
 		log.Info("finalizing hypershift-addon ManagedClusterAddOn")
 		err := r.Client.Delete(ctx, hypershiftAddon)
 		if err != nil {
 			log.Error(err, "error deleting hypershift-addon ManagedClusterAddOn")
-			return ctrl.Result{RequeueAfter: requeuePeriod}, err
+			return ctrl.Result{}, err
 		}
 
 		// If wait time exceeds expected then uninstall may not be able to progress
@@ -1506,7 +1509,7 @@ func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Conte
 			r.StatusManager.AddCondition(terminatingCondition)
 		}
 
-		return ctrl.Result{RequeueAfter: requeuePeriod}, fmt.Errorf("waiting for 'hypershift-addon' ManagedClusterAddOn to be terminated before proceeding with uninstallation")
+		return ctrl.Result{}, fmt.Errorf("waiting for 'hypershift-addon' ManagedClusterAddOn to be terminated before proceeding with uninstallation")
 	}
 
 	localCluster := &unstructured.Unstructured{}
@@ -1523,7 +1526,7 @@ func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Conte
 		err := r.Client.Delete(ctx, localCluster)
 		if err != nil {
 			log.Error(err, "error deleting local-cluster ManagedCluster CR")
-			return ctrl.Result{RequeueAfter: requeuePeriod}, err
+			return ctrl.Result{}, err
 		}
 
 		// If wait time exceeds expected then uninstall may not be able to progress
@@ -1541,12 +1544,12 @@ func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Conte
 
 			r.StatusManager.AddCondition(terminatingCondition)
 		}
-		return ctrl.Result{RequeueAfter: requeuePeriod}, fmt.Errorf(
+		return ctrl.Result{}, fmt.Errorf(
 			"waiting for 'local-cluster' ManagedCluster to be terminated before proceeding with uninstallation")
 
 	} else if err != nil && !apierrors.IsNotFound(err) { // Return error, if error is not not found error
 		log.Error(err, "error while looking for local-cluster ManagedCluster CR")
-		return ctrl.Result{RequeueAfter: requeuePeriod}, err
+		return ctrl.Result{}, err
 	}
 
 	clusterManager := &unstructured.Unstructured{}
@@ -1563,7 +1566,7 @@ func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Conte
 		log.Info("finalizing cluster-manager custom resource")
 		err := r.Client.Delete(ctx, clusterManager)
 		if err != nil {
-			return ctrl.Result{RequeueAfter: requeuePeriod}, err
+			return ctrl.Result{}, err
 		}
 		// If wait time exceeds expected then uninstall may not be able to progress
 		if time.Since(backplaneConfig.DeletionTimestamp.Time) < 10*time.Minute {
@@ -1580,11 +1583,11 @@ func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Conte
 
 			r.StatusManager.AddCondition(terminatingCondition)
 		}
-		return ctrl.Result{RequeueAfter: requeuePeriod}, fmt.Errorf(
+		return ctrl.Result{}, fmt.Errorf(
 			"waiting for 'cluster-manager' ClusterManager to be terminated before proceeding with uninstallation")
 
 	} else if err != nil && !apierrors.IsNotFound(err) { // Return error, if error is not not found error
-		return ctrl.Result{RequeueAfter: requeuePeriod}, err
+		return ctrl.Result{}, err
 	}
 
 	ocmHubNamespace := &corev1.Namespace{}
@@ -1607,10 +1610,10 @@ func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Conte
 			r.StatusManager.AddCondition(terminatingCondition)
 		}
 
-		return ctrl.Result{RequeueAfter: requeuePeriod}, fmt.Errorf(
+		return ctrl.Result{}, fmt.Errorf(
 			"waiting for 'open-cluster-management-hub' namespace to be terminated before proceeding with uninstallation")
 	} else if err != nil && !apierrors.IsNotFound(err) { // Return error, if error is not not found error
-		return ctrl.Result{RequeueAfter: requeuePeriod}, err
+		return ctrl.Result{}, err
 	}
 
 	globalSetNamespace := &corev1.Namespace{}
@@ -1618,10 +1621,10 @@ func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Conte
 	if err == nil {
 		err := r.Client.Delete(ctx, globalSetNamespace)
 		if err != nil {
-			return ctrl.Result{RequeueAfter: requeuePeriod}, err
+			return ctrl.Result{}, err
 		}
 	} else if err != nil && !apierrors.IsNotFound(err) {
-		return ctrl.Result{RequeueAfter: requeuePeriod}, err
+		return ctrl.Result{}, err
 	}
 
 	return ctrl.Result{}, nil
