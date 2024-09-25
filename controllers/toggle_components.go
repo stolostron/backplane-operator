@@ -283,7 +283,7 @@ func (r *MultiClusterEngineReconciler) addPluginToConsoleResource(ctx context.Co
 	err := r.Client.Get(ctx, types.NamespacedName{Name: "cluster"}, console)
 	if err != nil {
 		log.Info("Failed to find console: cluster")
-		return ctrl.Result{Requeue: true}, err
+		return ctrl.Result{}, err
 	}
 
 	if console.Spec.Plugins == nil {
@@ -297,7 +297,7 @@ func (r *MultiClusterEngineReconciler) addPluginToConsoleResource(ctx context.Co
 		err = r.Client.Update(ctx, console)
 		if err != nil {
 			log.Info("Failed to add mce consoleplugin to console")
-			return ctrl.Result{Requeue: true}, err
+			return ctrl.Result{}, err
 		} else {
 			log.Info("Added mce consoleplugin to console")
 		}
@@ -318,7 +318,7 @@ func (r *MultiClusterEngineReconciler) removePluginFromConsoleResource(ctx conte
 	err := r.Client.Get(ctx, types.NamespacedName{Name: "cluster"}, console)
 	if err != nil {
 		log.Info("Failed to find console: cluster")
-		return ctrl.Result{Requeue: true}, err
+		return ctrl.Result{}, err
 	}
 
 	// If No plugins, it is already removed
@@ -332,7 +332,7 @@ func (r *MultiClusterEngineReconciler) removePluginFromConsoleResource(ctx conte
 		err = r.Client.Update(ctx, console)
 		if err != nil {
 			log.Info("Failed to remove mce consoleplugin to console")
-			return ctrl.Result{Requeue: true}, err
+			return ctrl.Result{}, err
 		} else {
 			log.Info("Removed mce consoleplugin to console")
 		}
@@ -496,7 +496,7 @@ func (r *MultiClusterEngineReconciler) ensureNoHive(ctx context.Context, mce *ba
 	if err == nil { // If resource exists, delete
 		err := r.Client.Delete(ctx, hiveConfig)
 		if err != nil {
-			return ctrl.Result{RequeueAfter: requeuePeriod}, err
+			return ctrl.Result{}, err
 		}
 	} else if err != nil && !apierrors.IsNotFound(err) {
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
@@ -958,20 +958,20 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterManager(ctx context.Contex
 	if err == nil { // If resource exists, delete
 		err := r.Client.Delete(ctx, clusterManager)
 		if err != nil {
-			return ctrl.Result{RequeueAfter: requeuePeriod}, err
+			return ctrl.Result{}, err
 		}
 	} else if err != nil && !apierrors.IsNotFound(err) { // Return error, if error is not not found error
-		return ctrl.Result{RequeueAfter: requeuePeriod}, err
+		return ctrl.Result{}, err
 	}
 
 	// Verify clustermanager namespace deleted
 	ocmHubNamespace := &corev1.Namespace{}
 	err = r.Client.Get(ctx, types.NamespacedName{Name: "open-cluster-management-hub"}, ocmHubNamespace)
 	if err == nil {
-		return ctrl.Result{RequeueAfter: requeuePeriod}, fmt.Errorf("waiting for 'open-cluster-management-hub' namespace to be terminated before proceeding with clustermanager cleanup")
+		return ctrl.Result{}, fmt.Errorf("waiting for 'open-cluster-management-hub' namespace to be terminated before proceeding with clustermanager cleanup")
 
 	} else if !apierrors.IsNotFound(err) { // Return error, if error is not not found error
-		return ctrl.Result{RequeueAfter: requeuePeriod}, err
+		return ctrl.Result{}, err
 	}
 
 	// Deletes all templates
@@ -1064,7 +1064,7 @@ func (r *MultiClusterEngineReconciler) ensureNoHyperShift(ctx context.Context,
 	}
 	hypershiftAddon, err := renderer.RenderHypershiftAddon(mce)
 	if err != nil {
-		return ctrl.Result{RequeueAfter: requeuePeriod}, err
+		return ctrl.Result{}, err
 	}
 	err = r.Client.Get(ctx, types.NamespacedName{Name: hypershiftAddon.GetName(), Namespace: hypershiftAddon.GetNamespace()}, hypershiftAddon)
 	if err != nil {
@@ -1107,7 +1107,7 @@ func (r *MultiClusterEngineReconciler) ensureNoHyperShift(ctx context.Context,
 func (r *MultiClusterEngineReconciler) reconcileHypershiftLocalHosting(ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 	addon, err := renderer.RenderHypershiftAddon(mce)
 	if err != nil {
-		return ctrl.Result{RequeueAfter: requeuePeriod}, err
+		return ctrl.Result{}, err
 	}
 
 	if !mce.Enabled(backplanev1.HypershiftLocalHosting) {
@@ -1169,7 +1169,7 @@ func (r *MultiClusterEngineReconciler) applyHypershiftLocalHosting(ctx context.C
 	mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 	addon, err := renderer.RenderHypershiftAddon(mce)
 	if err != nil {
-		return ctrl.Result{RequeueAfter: requeuePeriod}, err
+		return ctrl.Result{}, err
 	}
 	applyReleaseVersionAnnotation(addon)
 	result, err := r.applyTemplate(ctx, mce, addon)
@@ -1228,7 +1228,7 @@ func (r *MultiClusterEngineReconciler) removeHypershiftLocalHosting(ctx context.
 	mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 	addon, err := renderer.RenderHypershiftAddon(mce)
 	if err != nil {
-		return ctrl.Result{RequeueAfter: requeuePeriod}, err
+		return ctrl.Result{}, err
 	}
 	result, err := r.deleteTemplate(ctx, mce, addon)
 	if err != nil {
@@ -1463,7 +1463,7 @@ func (r *MultiClusterEngineReconciler) ensureLocalCluster(ctx context.Context, m
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	} else if err != nil {
 		log.Error(err, "Failed to get ManagedCluster CR")
-		return ctrl.Result{RequeueAfter: requeuePeriod}, err
+		return ctrl.Result{}, err
 	}
 
 	log.Info("Setting annotations on ManagedCluster CR")
@@ -1518,7 +1518,7 @@ func (r *MultiClusterEngineReconciler) ensureNoLocalCluster(ctx context.Context,
 	if apierrors.IsNotFound(err) || apimeta.IsNoMatchError(err) {
 		log.Info("ManagedCluster CR is not present")
 	} else if err != nil {
-		return ctrl.Result{RequeueAfter: requeuePeriod}, err
+		return ctrl.Result{}, err
 	} else {
 		log.Info("Deleting ManagedCluster CR")
 		managedCluster = utils.NewManagedCluster()
@@ -1550,7 +1550,7 @@ func (r *MultiClusterEngineReconciler) ensureNoLocalCluster(ctx context.Context,
 		return ctrl.Result{}, nil
 	} else if err != nil {
 		log.Error(err, "Failed to get managed cluster namespace")
-		return ctrl.Result{RequeueAfter: requeuePeriod}, err
+		return ctrl.Result{}, err
 	}
 	log.Info("Managed cluster namespace still exists")
 
