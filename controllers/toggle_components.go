@@ -772,19 +772,21 @@ func (r *MultiClusterEngineReconciler) ensureNoImageBasedInstallOperator(ctx con
 func (r *MultiClusterEngineReconciler) ensureClusterLifecycle(ctx context.Context,
 	mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 
-	namespacedName := types.NamespacedName{Name: "cluster-curator-controller", Namespace: mce.Spec.TargetNamespace}
-	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
-	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
-	namespacedName = types.NamespacedName{Name: "clusterclaims-controller", Namespace: mce.Spec.TargetNamespace}
-	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
-	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
-	namespacedName = types.NamespacedName{Name: "provider-credential-controller", Namespace: mce.Spec.TargetNamespace}
-	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
-	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
-	namespacedName = types.NamespacedName{Name: "clusterlifecycle-state-metrics-v2", Namespace: mce.Spec.TargetNamespace}
-	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
-	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
-	namespacedName = types.NamespacedName{Name: "cluster-image-set-controller", Namespace: mce.Spec.TargetNamespace}
+	if utils.DeployOnOCP() {
+		namespacedName := types.NamespacedName{Name: "cluster-curator-controller", Namespace: mce.Spec.TargetNamespace}
+		r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
+		r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
+		namespacedName = types.NamespacedName{Name: "clusterclaims-controller", Namespace: mce.Spec.TargetNamespace}
+		r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
+		r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
+		namespacedName = types.NamespacedName{Name: "provider-credential-controller", Namespace: mce.Spec.TargetNamespace}
+		r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
+		r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
+		namespacedName = types.NamespacedName{Name: "cluster-image-set-controller", Namespace: mce.Spec.TargetNamespace}
+		r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
+		r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
+	}
+	namespacedName := types.NamespacedName{Name: "clusterlifecycle-state-metrics-v2", Namespace: mce.Spec.TargetNamespace}
 	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
 
@@ -841,18 +843,20 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterLifecycle(ctx context.Cont
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
 
-	namespacedName := types.NamespacedName{Name: "cluster-curator-controller", Namespace: mce.Spec.TargetNamespace}
-	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
-	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
-	namespacedName = types.NamespacedName{Name: "clusterclaims-controller", Namespace: mce.Spec.TargetNamespace}
-	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
-	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
-	namespacedName = types.NamespacedName{Name: "provider-credential-controller", Namespace: mce.Spec.TargetNamespace}
-	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
-	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
-	namespacedName = types.NamespacedName{Name: "cluster-image-set-controller", Namespace: mce.Spec.TargetNamespace}
-	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
-	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
+	if utils.DeployOnOCP() {
+		namespacedName := types.NamespacedName{Name: "cluster-curator-controller", Namespace: mce.Spec.TargetNamespace}
+		r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
+		r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
+		namespacedName = types.NamespacedName{Name: "clusterclaims-controller", Namespace: mce.Spec.TargetNamespace}
+		r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
+		r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
+		namespacedName = types.NamespacedName{Name: "provider-credential-controller", Namespace: mce.Spec.TargetNamespace}
+		r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
+		r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
+		namespacedName = types.NamespacedName{Name: "cluster-image-set-controller", Namespace: mce.Spec.TargetNamespace}
+		r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
+		r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
+	}
 
 	// Deletes all templates
 	for _, template := range templates {

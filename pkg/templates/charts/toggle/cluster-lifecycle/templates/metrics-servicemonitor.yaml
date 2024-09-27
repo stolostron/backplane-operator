@@ -1,5 +1,5 @@
 # Copyright Contributors to the Open Cluster Management project
-
+{{- if .Values.global.deployOnOCP }}
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
@@ -21,3 +21,4 @@ spec:
   namespaceSelector:
     matchNames:
       - {{ .Values.global.namespace }}
+{{- end }}

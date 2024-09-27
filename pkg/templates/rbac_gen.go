@@ -35,6 +35,7 @@ package main
 //+kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 //+kubebuilder:rbac:groups="",resources=namespaces,verbs=create;get;list;watch
 //+kubebuilder:rbac:groups="",resources=namespaces,verbs=delete
+//+kubebuilder:rbac:groups="",resources=namespaces,verbs=get
 //+kubebuilder:rbac:groups="",resources=namespaces;secrets,verbs=create;get;list;update;watch
 //+kubebuilder:rbac:groups="",resources=namespaces;secrets;pods;pods/portforward,verbs=*
 //+kubebuilder:rbac:groups="",resources=nodes,verbs=get;list;watch
