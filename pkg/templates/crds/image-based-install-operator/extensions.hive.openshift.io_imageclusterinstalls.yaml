@@ -25,9 +25,6 @@ spec:
     - jsonPath: .status.conditions[?(@.type=='Completed')].reason
       name: Completed
       type: string
-    - jsonPath: .status.configurationImageURL
-      name: ConfigurationImageURL
-      type: string
     - jsonPath: .spec.bareMetalHostRef.name
       name: BareMetalHostRef
       type: string
@@ -347,10 +344,6 @@ spec:
                   - type
                   type: object
                 type: array
-              configurationImageURL:
-                description: ConfigurationImageURL is the externally accessible URL
-                  for downloading the image containing the SNO configuration
-                type: string
               installRestarts:
                 description: InstallRestarts is the total count of container restarts
                   on the clusters install job.
