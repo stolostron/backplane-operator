@@ -1644,7 +1644,7 @@ func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Conte
 	}
 
 	localClusterNS := &corev1.Namespace{}
-	if err := r.Client.Get(ctx, types.NamespacedName{Name: "local-cluster"}, localClusterNS); err != nil {
+	if err := r.Client.Get(ctx, types.NamespacedName{Name: "local-cluster"}, localClusterNS); err == nil {
 		// If wait time exceeds expected then uninstall may not be able to progress
 		if time.Since(backplaneConfig.DeletionTimestamp.Time) < 10*time.Minute {
 			terminatingCondition := status.NewCondition(
