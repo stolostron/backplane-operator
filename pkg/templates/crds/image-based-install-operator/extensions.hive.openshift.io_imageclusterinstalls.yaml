@@ -164,7 +164,7 @@ spec:
                 - clusterID
                 - infraID
                 type: object
-              extraManifestsRef:
+              extraManifestsRefs:
                 description: ExtraManifestsRefs is list of config map references containing
                   additional manifests to be applied to the relocated cluster.
                 items:
