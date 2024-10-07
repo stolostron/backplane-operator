@@ -435,7 +435,7 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}
 
 	result, err = r.ensureToggleableComponents(ctx, backplaneConfig)
-	if (result != ctrl.Result{}) || err != nil {
+	if err != nil {
 		return result, err
 	}
 
@@ -994,6 +994,7 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 	if err != nil {
 		errs[backplanev1.HypershiftLocalHosting] = err
 	}
+
 	if utils.DeployOnOCP() {
 		ocpConsole, err := r.CheckConsole(ctx)
 		if err != nil {
