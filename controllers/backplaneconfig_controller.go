@@ -389,9 +389,9 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 	if val, ok := os.LookupEnv("UNIT_TEST"); ok && val == "true" {
 		crdsDir = "test/unit-test-crds"
 	} else {
-
-		crdsDir = " pkg/templates/crds"
+		crdsDir = "pkg/templates/crds"
 	}
+
 	crds, errs := renderer.RenderCRDs(crdsDir, backplaneConfig)
 	if len(errs) > 0 {
 		for _, err := range errs {
@@ -435,7 +435,7 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}
 
 	result, err = r.ensureToggleableComponents(ctx, backplaneConfig)
-	if err != nil {
+	if (result != ctrl.Result{}) || err != nil {
 		return result, err
 	}
 
@@ -811,7 +811,6 @@ func (r *MultiClusterEngineReconciler) ensureInternalEngineComponent(
 	backplaneConfig *backplanev1.MultiClusterEngine,
 	component string) (ctrl.Result, error) {
 
-	log.Info(fmt.Sprintf("Ensuring InternalEngineComponent: %v", component))
 	iec := &backplanev1.InternalEngineComponent{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: backplanev1.GroupVersion.String(),
@@ -841,36 +840,51 @@ func (r *MultiClusterEngineReconciler) ensureInternalEngineComponent(
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterEngineReconciler) ensureNoInternalEngineComponent(
-	ctx context.Context,
-	backplaneConfig *backplanev1.MultiClusterEngine,
-	component string) (ctrl.Result, error) {
-	log.Info(fmt.Sprintf("Ensuring No InternalEngineComponent: %s", component))
-	comp := &backplanev1.InternalEngineComponent{}
-	err := r.Client.Get(ctx, types.NamespacedName{Name: component, Namespace: backplaneConfig.Spec.TargetNamespace}, comp)
-	if apierrors.IsNotFound(err) {
-		log.Info(fmt.Sprintf("Component not found during Get(): %v", component))
-		return ctrl.Result{}, nil
-	}
-	if err != nil {
-		log.Error(err, fmt.Sprintf("Error getting InternalEngineComponent. Error: %v: Component was: %v", err, comp))
-		return reconcile.Result{RequeueAfter: requeuePeriod}, err
+func (r *MultiClusterEngineReconciler) ensureNoInternalEngineComponent(ctx context.Context,
+	backplaneConfig *backplanev1.MultiClusterEngine, component string) (ctrl.Result, error) {
+	// Get target namespace for MCE
+	mceNS := backplaneConfig.Spec.TargetNamespace
+
+	iec := &backplanev1.InternalEngineComponent{}
+	if err := r.Client.Get(ctx, types.NamespacedName{Name: component, Namespace: mceNS}, iec); err != nil {
+		if apierrors.IsNotFound(err) {
+			return ctrl.Result{}, nil
+		}
+
+		return reconcile.Result{}, fmt.Errorf("failed to get InternalEngineComponent: %s/%s: %v",
+			mceNS, component, err)
 	}
 
-	if comp.DeletionTimestamp != nil {
-		log.Info(fmt.Sprintf("DeletionTimestamp found: %v", comp.DeletionTimestamp))
-		log.Info("Skipping resource deletion")
+	// Check if it has a deletion timestamp (indicating it's in the process of being deleted)
+	if iec.GetDeletionTimestamp() != nil {
+		log.Info("InternalEngineComponent deletion in progress", "Name", iec.GetName(), "Namespace", iec.GetNamespace(),
+			"DeletionTimestamp", iec.GetDeletionTimestamp())
+
 		return reconcile.Result{RequeueAfter: requeuePeriod}, nil
 	}
 
-	log.Info(fmt.Sprintf("Deleting %v InternalEngineComponent", component))
-	err = r.Client.Delete(ctx, comp)
-	if err != nil && !apierrors.IsNotFound(err) {
-		log.Error(err, fmt.Sprintf("Error deleting InternalEngineComponent. Error: %v", err))
-		return reconcile.Result{RequeueAfter: requeuePeriod}, err
+	log.Info("Deleting InternalEngineComponent", "Name", iec.GetName(), "Namespace", iec.GetNamespace())
+	if err := r.Client.Delete(ctx, iec); err != nil {
+		if !apierrors.IsNotFound(err) {
+			return ctrl.Result{}, fmt.Errorf("failed to delete InternalEngineComponent CR: %s/%s: %v",
+				iec.GetNamespace(), iec.GetName(), err)
+		}
 	}
 
-	return ctrl.Result{}, nil
+	// Ensure that the resource is fully deleted by attempting to refetch it
+	if err := r.Client.Get(ctx,
+		types.NamespacedName{Name: iec.GetName(), Namespace: iec.GetNamespace()}, iec); err != nil {
+		if apierrors.IsNotFound(err) {
+			log.Info("InternalEngineComponent successfully deleted", "Name", iec.GetName(), "Namespace", iec.GetNamespace())
+			return ctrl.Result{}, nil
+		}
+
+		return ctrl.Result{}, fmt.Errorf("failed to get InternalEngineComponent %s/%s: %v",
+			iec.GetNamespace(), iec.GetName(), err)
+	}
+
+	// Requeue to check again after a short delay
+	return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 }
 
 func (r *MultiClusterEngineReconciler) fetchChartOrCRDPath(component string, useCRDPath bool) string {
@@ -915,7 +929,6 @@ func (r *MultiClusterEngineReconciler) fetchChartOrCRDPath(component string, use
 
 func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Context,
 	backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	log.Info("Ensuring Toggleable Components")
 
 	errs := map[string]error{}
 	requeue := false
@@ -1465,6 +1478,7 @@ func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Conte
 	if result != (ctrl.Result{}) {
 		return result, nil
 	}
+
 	if utils.DeployOnOCP() {
 		ocpConsole, err := r.CheckConsole(ctx)
 		if err != nil {
@@ -1520,11 +1534,11 @@ func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Conte
 			Kind:    "ManagedCluster",
 		},
 	)
-	err = r.Client.Get(ctx, types.NamespacedName{Name: "local-cluster"}, localCluster)
-	if err == nil { // If resource exists, delete
+
+	if err = r.Client.Get(ctx, types.NamespacedName{Name: "local-cluster"}, localCluster); err == nil { // If resource exists, delete
 		log.Info("finalizing local-cluster custom resource")
-		err := r.Client.Delete(ctx, localCluster)
-		if err != nil {
+
+		if err := r.Client.Delete(ctx, localCluster); err != nil {
 			log.Error(err, "error deleting local-cluster ManagedCluster CR")
 			return ctrl.Result{}, err
 		}
@@ -1544,10 +1558,11 @@ func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Conte
 
 			r.StatusManager.AddCondition(terminatingCondition)
 		}
+
 		return ctrl.Result{}, fmt.Errorf(
 			"waiting for 'local-cluster' ManagedCluster to be terminated before proceeding with uninstallation")
 
-	} else if err != nil && !apierrors.IsNotFound(err) { // Return error, if error is not not found error
+	} else if !apierrors.IsNotFound(err) { // Return error, if error is not not found error
 		log.Error(err, "error while looking for local-cluster ManagedCluster CR")
 		return ctrl.Result{}, err
 	}
@@ -1561,13 +1576,12 @@ func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Conte
 		},
 	)
 
-	err = r.Client.Get(ctx, types.NamespacedName{Name: "cluster-manager"}, clusterManager)
-	if err == nil { // If resource exists, delete
+	if err = r.Client.Get(ctx, types.NamespacedName{Name: "cluster-manager"}, clusterManager); err == nil { // If resource exists, delete
 		log.Info("finalizing cluster-manager custom resource")
-		err := r.Client.Delete(ctx, clusterManager)
-		if err != nil {
+		if err := r.Client.Delete(ctx, clusterManager); err != nil {
 			return ctrl.Result{}, err
 		}
+
 		// If wait time exceeds expected then uninstall may not be able to progress
 		if time.Since(backplaneConfig.DeletionTimestamp.Time) < 10*time.Minute {
 			terminatingCondition := status.NewCondition(
@@ -1583,16 +1597,17 @@ func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Conte
 
 			r.StatusManager.AddCondition(terminatingCondition)
 		}
+
 		return ctrl.Result{}, fmt.Errorf(
 			"waiting for 'cluster-manager' ClusterManager to be terminated before proceeding with uninstallation")
 
-	} else if err != nil && !apierrors.IsNotFound(err) { // Return error, if error is not not found error
+	} else if !apierrors.IsNotFound(err) { // Return error, if error is not not found error
 		return ctrl.Result{}, err
 	}
 
 	ocmHubNamespace := &corev1.Namespace{}
-	err = r.Client.Get(ctx, types.NamespacedName{Name: "open-cluster-management-hub"}, ocmHubNamespace)
-	if err == nil {
+
+	if err = r.Client.Get(ctx, types.NamespacedName{Name: "open-cluster-management-hub"}, ocmHubNamespace); err == nil {
 		// If wait time exceeds expected then uninstall may not be able to progress
 		if time.Since(backplaneConfig.DeletionTimestamp.Time) < 10*time.Minute {
 			terminatingCondition := status.NewCondition(
@@ -1612,18 +1627,44 @@ func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Conte
 
 		return ctrl.Result{}, fmt.Errorf(
 			"waiting for 'open-cluster-management-hub' namespace to be terminated before proceeding with uninstallation")
-	} else if err != nil && !apierrors.IsNotFound(err) { // Return error, if error is not not found error
+
+	} else if !apierrors.IsNotFound(err) { // Return error, if error is not not found error
 		return ctrl.Result{}, err
 	}
 
 	globalSetNamespace := &corev1.Namespace{}
-	err = r.Client.Get(ctx, types.NamespacedName{Name: "open-cluster-management-global-set"}, globalSetNamespace)
-	if err == nil {
-		err := r.Client.Delete(ctx, globalSetNamespace)
-		if err != nil {
+	if err = r.Client.Get(ctx, types.NamespacedName{Name: "open-cluster-management-global-set"}, globalSetNamespace); err == nil {
+		if err := r.Client.Delete(ctx, globalSetNamespace); err != nil {
 			return ctrl.Result{}, err
 		}
-	} else if err != nil && !apierrors.IsNotFound(err) {
+
+	} else if !apierrors.IsNotFound(err) {
+		return ctrl.Result{}, err
+	}
+
+	localClusterNS := &corev1.Namespace{}
+	if err := r.Client.Get(ctx, types.NamespacedName{Name: "local-cluster"}, localClusterNS); err != nil {
+		// If wait time exceeds expected then uninstall may not be able to progress
+		if time.Since(backplaneConfig.DeletionTimestamp.Time) < 10*time.Minute {
+			terminatingCondition := status.NewCondition(
+				backplanev1.MultiClusterEngineConditionType(
+					backplanev1.MultiClusterEngineProgressing), metav1.ConditionTrue, status.WaitingForResourceReason,
+				"Waiting for namespace local-cluster to terminate.")
+
+			r.StatusManager.AddCondition(terminatingCondition)
+		} else {
+			terminatingCondition := status.NewCondition(
+				backplanev1.MultiClusterEngineConditionType(backplanev1.MultiClusterEngineProgressing),
+				metav1.ConditionFalse, status.WaitingForResourceReason,
+				"Namespace local-cluster still exists.")
+
+			r.StatusManager.AddCondition(terminatingCondition)
+		}
+
+		return ctrl.Result{}, fmt.Errorf(
+			"waiting for 'local-cluster' namespace to be terminated before proceeding with uninstallation")
+
+	} else if !apierrors.IsNotFound(err) {
 		return ctrl.Result{}, err
 	}
 
