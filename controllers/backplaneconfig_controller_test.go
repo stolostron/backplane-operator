@@ -2019,6 +2019,10 @@ func Test_ensureNoInternalEngineComponent(t *testing.T) {
 				// Reset finalizers on the InternalEngineComponent
 				iec.SetFinalizers([]string{})
 
+				if err := recon.Client.Update(context.TODO(), iec); err != nil {
+					t.Errorf("failed to update InternalEngineComponent: %v", err)
+				}
+
 				// Resource should be deleted
 				if _, err := recon.ensureNoInternalEngineComponent(context.TODO(), tt.mce, c.Name); err != nil {
 					t.Errorf("ensureInternalEngineComponent(context.TODO(), tt.mce, c.Name) = %v", err)
@@ -2060,11 +2064,12 @@ func Test_ensureNoAllInternalEngineComponents(t *testing.T) {
 
 func Test_finalizeBackplaneConfig(t *testing.T) {
 	tests := []struct {
-		name string
-		cv   *configv1.ClusterVersion
-		mce  *backplanev1.MultiClusterEngine
-		lcNS *corev1.Namespace
-		want bool
+		name  string
+		cv    *configv1.ClusterVersion
+		mce   *backplanev1.MultiClusterEngine
+		mceNS *corev1.Namespace
+		lcNS  *corev1.Namespace
+		want  bool
 	}{
 		{
 			name: "should finalize BackplaneConfig",
@@ -2088,6 +2093,11 @@ func Test_finalizeBackplaneConfig(t *testing.T) {
 					TargetNamespace: "test-ns",
 				},
 			},
+			mceNS: &corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-ns",
+				},
+			},
 			lcNS: &corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "local-cluster",
@@ -2100,8 +2110,27 @@ func Test_finalizeBackplaneConfig(t *testing.T) {
 	registerScheme()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			if err := recon.Client.Create(ctx, tt.mceNS); err != nil {
+				t.Errorf("failed to create MCE namespace: %v", err)
+			}
+
+			for _, c := range backplanev1.MCEComponents {
+				if c == backplanev1.HypershiftLocalHosting {
+					continue
+				}
+
+				if _, err := recon.ensureInternalEngineComponent(context.TODO(), tt.mce, c); err != nil {
+					t.Errorf("failed to ensure internal engine component: %v", err)
+				}
+			}
+
+			iecList := &backplanev1.InternalEngineComponentList{}
+			if err := recon.Client.List(context.TODO(), iecList); err != nil {
+				t.Errorf("failed to list internal engine components: %v", err)
+			}
+
 			if err := recon.Client.Create(ctx, tt.cv); err != nil {
-				t.Errorf("failed to create ClusterVersion 'version': %v", err)
+				t.Errorf("failed to create ClusterVersion: %v", err)
 			}
 
 			if err := recon.Client.Create(ctx, tt.mce); err != nil {
