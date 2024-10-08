@@ -102,7 +102,8 @@ func (r *MultiClusterEngineReconciler) ensureNoConsoleMCE(ctx context.Context, m
 	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
 
 	// Ensure that the InternalHubComponent CR instance is deleted for component in MCE.
-	if result, err := r.ensureNoInternalEngineComponent(ctx, mce, backplanev1.ConsoleMCE); err != nil {
+	if result, err := r.ensureNoInternalEngineComponent(ctx, mce,
+		backplanev1.ConsoleMCE); (result != ctrl.Result{}) || err != nil {
 		return result, err
 	}
 
@@ -223,7 +224,8 @@ func (r *MultiClusterEngineReconciler) ensureNoManagedServiceAccount(ctx context
 	mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 
 	// Ensure that the InternalHubComponent CR instance is deleted for component in MCE.
-	if result, err := r.ensureNoInternalEngineComponent(ctx, mce, backplanev1.ManagedServiceAccount); err != nil {
+	if result, err := r.ensureNoInternalEngineComponent(ctx, mce,
+		backplanev1.ManagedServiceAccount); (result != ctrl.Result{}) || err != nil {
 		return result, err
 	}
 
@@ -387,7 +389,8 @@ func (r *MultiClusterEngineReconciler) ensureNoDiscovery(ctx context.Context,
 	namespacedName := types.NamespacedName{Name: "discovery-operator", Namespace: mce.Spec.TargetNamespace}
 
 	// Ensure that the InternalHubComponent CR instance is deleted for component in MCE.
-	if result, err := r.ensureNoInternalEngineComponent(ctx, mce, backplanev1.Discovery); err != nil {
+	if result, err := r.ensureNoInternalEngineComponent(ctx, mce,
+		backplanev1.Discovery); (result != ctrl.Result{}) || err != nil {
 		return result, err
 	}
 
@@ -472,7 +475,8 @@ func (r *MultiClusterEngineReconciler) ensureNoHive(ctx context.Context, mce *ba
 	namespacedName := types.NamespacedName{Name: "hive-operator", Namespace: mce.Spec.TargetNamespace}
 
 	// Ensure that the InternalHubComponent CR instance is deleted for component in MCE.
-	if result, err := r.ensureNoInternalEngineComponent(ctx, mce, backplanev1.Hive); err != nil {
+	if result, err := r.ensureNoInternalEngineComponent(ctx, mce,
+		backplanev1.Hive); (result != ctrl.Result{}) || err != nil {
 		return result, err
 	}
 
@@ -569,7 +573,8 @@ func (r *MultiClusterEngineReconciler) ensureNoAssistedService(ctx context.Conte
 	namespacedName := types.NamespacedName{Name: "infrastructure-operator", Namespace: targetNamespace}
 
 	// Ensure that the InternalHubComponent CR instance is deleted for component in MCE.
-	if result, err := r.ensureNoInternalEngineComponent(ctx, mce, backplanev1.AssistedService); err != nil {
+	if result, err := r.ensureNoInternalEngineComponent(ctx, mce,
+		backplanev1.AssistedService); (result != ctrl.Result{}) || err != nil {
 		return result, err
 	}
 
@@ -652,7 +657,8 @@ func (r *MultiClusterEngineReconciler) ensureNoServerFoundation(ctx context.Cont
 	mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 
 	// Ensure that the InternalHubComponent CR instance is created for component in MCE.
-	if result, err := r.ensureNoInternalEngineComponent(ctx, mce, backplanev1.ServerFoundation); err != nil {
+	if result, err := r.ensureNoInternalEngineComponent(ctx, mce,
+		backplanev1.ServerFoundation); (result != ctrl.Result{}) || err != nil {
 		return result, err
 	}
 
@@ -740,7 +746,8 @@ func (r *MultiClusterEngineReconciler) ensureNoImageBasedInstallOperator(ctx con
 	namespacedName := types.NamespacedName{Name: "image-based-install-operator", Namespace: targetNamespace}
 
 	// Ensure that the InternalHubComponent CR instance is deleted for component in MCE.
-	if result, err := r.ensureNoInternalEngineComponent(ctx, mce, backplanev1.ImageBasedInstallOperator); err != nil {
+	if result, err := r.ensureNoInternalEngineComponent(ctx, mce,
+		backplanev1.ImageBasedInstallOperator); (result != ctrl.Result{}) || err != nil {
 		return result, err
 	}
 
@@ -826,7 +833,8 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterLifecycle(ctx context.Cont
 	mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 
 	// Ensure that the InternalHubComponent CR instance is deleted for component in MCE.
-	if result, err := r.ensureNoInternalEngineComponent(ctx, mce, backplanev1.ClusterLifecycle); err != nil {
+	if result, err := r.ensureNoInternalEngineComponent(ctx, mce,
+		backplanev1.ClusterLifecycle); (result != ctrl.Result{}) || err != nil {
 		return result, err
 	}
 
@@ -924,7 +932,8 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterManager(ctx context.Contex
 	namespacedName := types.NamespacedName{Name: "cluster-manager", Namespace: mce.Spec.TargetNamespace}
 
 	// Ensure that the InternalHubComponent CR instance is deleted for component in MCE.
-	if result, err := r.ensureNoInternalEngineComponent(ctx, mce, backplanev1.ClusterManager); err != nil {
+	if result, err := r.ensureNoInternalEngineComponent(ctx, mce,
+		backplanev1.ClusterManager); (result != ctrl.Result{}) || err != nil {
 		return result, err
 	}
 
@@ -1042,7 +1051,8 @@ func (r *MultiClusterEngineReconciler) ensureNoHyperShift(ctx context.Context,
 	mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 
 	// Ensure that the InternalHubComponent CR instance is deleted for component in MCE.
-	if result, err := r.ensureNoInternalEngineComponent(ctx, mce, backplanev1.HyperShift); err != nil {
+	if result, err := r.ensureNoInternalEngineComponent(ctx, mce,
+		backplanev1.HyperShift); (result != ctrl.Result{}) || err != nil {
 		return result, err
 	}
 
@@ -1301,7 +1311,8 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterProxyAddon(ctx context.Con
 	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 
 	// Ensure that the InternalHubComponent CR instance is deleted for component in MCE.
-	if result, err := r.ensureNoInternalEngineComponent(ctx, mce, backplanev1.ClusterProxyAddon); err != nil {
+	if result, err := r.ensureNoInternalEngineComponent(ctx, mce,
+		backplanev1.ClusterProxyAddon); (result != ctrl.Result{}) || err != nil {
 		return result, err
 	}
 
