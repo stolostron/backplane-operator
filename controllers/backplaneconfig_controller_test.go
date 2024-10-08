@@ -30,6 +30,7 @@ import (
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes/scheme"
 
 	configv1 "github.com/openshift/api/config/v1"
 
@@ -65,6 +66,10 @@ const (
 	timeout  = time.Second * 60
 	duration = time.Second * 10
 	interval = time.Millisecond * 250
+)
+
+var (
+	recon = MultiClusterEngineReconciler{Client: fake.NewClientBuilder().Build()}
 )
 
 type testList []struct {
@@ -1611,6 +1616,10 @@ var _ = Describe("BackplaneConfig controller", func() {
 	})
 })
 
+func registerScheme() {
+	backplanev1.AddToScheme(scheme.Scheme)
+}
+
 func Test_getComponentConfig(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -1854,8 +1863,166 @@ func Test_applyEnvConfig(t *testing.T) {
 	}
 }
 
-func Test_NoInternalEngineComponent(t *testing.T) {
-	recon := MultiClusterEngineReconciler{Client: fake.NewClientBuilder().Build()}
+func Test_ensureInternalEngineComponent(t *testing.T) {
+	tests := []struct {
+		name string
+		mce  *backplanev1.MultiClusterEngine
+		ns   *corev1.Namespace
+		want bool
+	}{
+		{
+			name: "should ensure InternalEngineComponent created",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{Name: "mce"},
+				Spec: backplanev1.MultiClusterEngineSpec{
+					Overrides: &backplanev1.Overrides{
+						Components: []backplanev1.ComponentConfig{
+							{
+								Enabled: true,
+								Name:    "cluster-manager",
+							},
+							{
+								Enabled: true,
+								Name:    "discovery",
+							},
+						},
+					},
+					TargetNamespace: "test-ns",
+				},
+			},
+			ns: &corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{Name: "test-ns"},
+			},
+			want: false,
+		},
+	}
+
+	registerScheme()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			iec := &backplanev1.InternalEngineComponent{}
+
+			defer func() {
+				if err := recon.Client.Delete(context.TODO(), tt.ns); err != nil {
+					t.Errorf("failed to delete namespace: %v", err)
+				}
+			}()
+
+			if err := recon.Client.Create(context.TODO(), tt.ns); err != nil {
+				t.Errorf("failed to create namespace %v: %v", tt.name, err)
+			}
+
+			for _, c := range tt.mce.Spec.Overrides.Components {
+				if _, err := recon.ensureInternalEngineComponent(context.TODO(), tt.mce, c.Name); err != nil {
+					t.Errorf("ensureInternalEngineComponent(context.TODO(), tt.mce, c.Name) = %v", err)
+				}
+
+				if err := recon.Client.Get(context.TODO(), types.NamespacedName{Name: c.Name,
+					Namespace: tt.mce.Spec.TargetNamespace}, iec); err != nil {
+					t.Errorf("failed to get InternalEngineComponent: %v", err)
+				}
+			}
+		})
+	}
+}
+
+func Test_ensureNoInternalEngineComponent(t *testing.T) {
+	tests := []struct {
+		name string
+		mce  *backplanev1.MultiClusterEngine
+		ns   *corev1.Namespace
+		want bool
+	}{
+		{
+			name: "should ensure no InternalEngineComponent exist",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{Name: "mce"},
+				Spec: backplanev1.MultiClusterEngineSpec{
+					Overrides: &backplanev1.Overrides{
+						Components: []backplanev1.ComponentConfig{
+							{
+								Enabled: true,
+								Name:    "cluster-manager",
+							},
+							{
+								Enabled: true,
+								Name:    "discovery",
+							},
+						},
+					},
+					TargetNamespace: "test-ns",
+				},
+			},
+			ns: &corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{Name: "test-ns"},
+			},
+			want: false,
+		},
+	}
+
+	registerScheme()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			defer func() {
+				if err := recon.Client.Delete(context.TODO(), tt.ns); err != nil {
+					t.Errorf("failed to delete namespace: %v", err)
+				}
+			}()
+
+			if err := recon.Client.Create(context.TODO(), tt.ns); err != nil {
+				t.Errorf("failed to create namespace %v: %v", tt.name, err)
+			}
+
+			for _, c := range tt.mce.Spec.Overrides.Components {
+				// Should return nil since we haven't created any InternalEngineComponents yet
+				if _, err := recon.ensureNoInternalEngineComponent(context.TODO(), tt.mce, c.Name); err != nil {
+					t.Errorf("ensureNoInternalEngineComponent(context.TODO(), tt.mce, c.Name) = %v", err)
+				}
+
+				// Create instances of the InternalEngineComponent
+				if _, err := recon.ensureInternalEngineComponent(context.TODO(), tt.mce, c.Name); err != nil {
+					t.Errorf("ensureInternalEngineComponent(context.TODO(), tt.mce, c.Name) = %v", err)
+				}
+
+				iec := &backplanev1.InternalEngineComponent{}
+				if err := recon.Client.Get(context.TODO(), types.NamespacedName{Name: c.Name,
+					Namespace: tt.mce.Spec.TargetNamespace}, iec); err != nil {
+					t.Errorf("failed to get InternalEngineComponent: %v", err)
+				}
+
+				// Add finalizer to the InternalEngineComponent
+				iec.SetFinalizers([]string{"foo/bar"})
+				if err := recon.Client.Update(context.TODO(), iec); err != nil {
+					t.Errorf("failed to update InternalEngineComponent: %v", err)
+				}
+
+				// Should delete the InternalEngineComponent but leave it existing due to the finalizer
+				if _, err := recon.ensureNoInternalEngineComponent(context.TODO(), tt.mce, c.Name); err != nil {
+					t.Errorf("ensureInternalEngineComponent(context.TODO(), tt.mce, c.Name) = %v", err)
+				}
+
+				// Check for the DeletionTimestamp on the InternalEngineComponent
+				if err := recon.Client.Get(context.TODO(), types.NamespacedName{Name: iec.GetName(),
+					Namespace: iec.GetNamespace()}, iec); err != nil {
+					t.Errorf("failed to get InternalEngineComponent: %v", err)
+				}
+				if iec.GetDeletionTimestamp() == nil {
+					t.Errorf("InternalEngineComponent should have DeletionTimestamp")
+				}
+
+				// Reset finalizers on the InternalEngineComponent
+				iec.SetFinalizers([]string{})
+
+				// Resource should be deleted
+				if _, err := recon.ensureNoInternalEngineComponent(context.TODO(), tt.mce, c.Name); err != nil {
+					t.Errorf("ensureInternalEngineComponent(context.TODO(), tt.mce, c.Name) = %v", err)
+				}
+			}
+		})
+	}
+}
+
+func Test_ensureNoAllInternalEngineComponents(t *testing.T) {
 	tests := []struct {
 		name        string
 		mce         *backplanev1.MultiClusterEngine
@@ -1866,6 +2033,9 @@ func Test_NoInternalEngineComponent(t *testing.T) {
 			mce: &backplanev1.MultiClusterEngine{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "mce",
+				},
+				Spec: backplanev1.MultiClusterEngineSpec{
+					TargetNamespace: "test-ns",
 				},
 			},
 			errorNotNil: true,
