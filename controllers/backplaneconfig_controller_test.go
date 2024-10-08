@@ -2024,9 +2024,9 @@ func Test_ensureNoInternalEngineComponent(t *testing.T) {
 
 func Test_ensureNoAllInternalEngineComponents(t *testing.T) {
 	tests := []struct {
-		name        string
-		mce         *backplanev1.MultiClusterEngine
-		errorNotNil bool
+		name string
+		mce  *backplanev1.MultiClusterEngine
+		want bool
 	}{
 		{
 			name: "should ensure no InternalEngineComponent",
@@ -2038,14 +2038,14 @@ func Test_ensureNoAllInternalEngineComponents(t *testing.T) {
 					TargetNamespace: "test-ns",
 				},
 			},
-			errorNotNil: true,
+			want: false,
 		},
 	}
 
+	registerScheme()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
-			if _, err := recon.ensureNoAllInternalEngineComponents(context.Background(), tt.mce); (err != nil && !errors.IsNotFound(err)) != tt.errorNotNil {
+			if _, err := recon.ensureNoAllInternalEngineComponents(context.Background(), tt.mce); err != nil {
 				t.Errorf("failed to ensure no InternalEngineComponents: %v", err)
 			}
 		})
