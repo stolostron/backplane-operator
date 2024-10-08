@@ -35,6 +35,7 @@ import (
 	configv1 "github.com/openshift/api/config/v1"
 
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
+	"github.com/stolostron/backplane-operator/pkg/status"
 	"github.com/stolostron/backplane-operator/pkg/utils"
 
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
@@ -69,7 +70,11 @@ const (
 )
 
 var (
-	recon = MultiClusterEngineReconciler{Client: fake.NewClientBuilder().Build()}
+	mockClient = fake.NewClientBuilder().Build()
+	recon      = MultiClusterEngineReconciler{
+		Client:        mockClient,
+		StatusManager: &status.StatusTracker{Client: mockClient},
+	}
 )
 
 type testList []struct {
@@ -1618,6 +1623,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 
 func registerScheme() {
 	backplanev1.AddToScheme(scheme.Scheme)
+	configv1.AddToScheme(scheme.Scheme)
 }
 
 func Test_getComponentConfig(t *testing.T) {
@@ -2047,6 +2053,77 @@ func Test_ensureNoAllInternalEngineComponents(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if _, err := recon.ensureNoAllInternalEngineComponents(context.Background(), tt.mce); err != nil {
 				t.Errorf("failed to ensure no InternalEngineComponents: %v", err)
+			}
+		})
+	}
+}
+
+func Test_finalizeBackplaneConfig(t *testing.T) {
+	tests := []struct {
+		name string
+		cv   *configv1.ClusterVersion
+		mce  *backplanev1.MultiClusterEngine
+		lcNS *corev1.Namespace
+		want bool
+	}{
+		{
+			name: "should finalize BackplaneConfig",
+			cv: &configv1.ClusterVersion{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "version",
+				},
+				Status: configv1.ClusterVersionStatus{
+					History: []configv1.UpdateHistory{
+						{
+							Version: "4.16.0",
+						},
+					},
+				},
+			},
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "mce",
+				},
+				Spec: backplanev1.MultiClusterEngineSpec{
+					TargetNamespace: "test-ns",
+				},
+			},
+			lcNS: &corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "local-cluster",
+				},
+			},
+			want: false,
+		},
+	}
+
+	registerScheme()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := recon.Client.Create(ctx, tt.cv); err != nil {
+				t.Errorf("failed to create ClusterVersion 'version': %v", err)
+			}
+
+			if err := recon.Client.Create(ctx, tt.mce); err != nil {
+				t.Errorf("failed to create MultiClusterEngine: %v", err)
+			}
+
+			if err := recon.Client.Create(ctx, tt.lcNS); err != nil {
+				t.Errorf("failed to create local-cluster namespace: %v", err)
+			}
+
+			// Should fail since local-cluster namespace has not been deleted
+			if _, err := recon.finalizeBackplaneConfig(context.TODO(), tt.mce); err == nil {
+				t.Errorf("finalizeBackplaneConfig(context.TODO(), tt.mce) expected error, got: %v", err)
+			}
+
+			if err := recon.Client.Delete(ctx, tt.lcNS); err != nil {
+				t.Errorf("failed to delete local-cluster namespace: %v", err)
+			}
+
+			// Should fail since local-cluster namespace has not been deleted
+			if _, err := recon.finalizeBackplaneConfig(context.TODO(), tt.mce); err != nil {
+				t.Errorf("failed to finalize Backplane config: %v", err)
 			}
 		})
 	}
