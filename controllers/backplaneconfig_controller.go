@@ -1499,6 +1499,7 @@ func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Conte
 	if err != nil {
 		return ctrl.Result{}, err
 	}
+
 	err = r.Client.Get(ctx, types.NamespacedName{Name: hypershiftAddon.GetName(),
 		Namespace: hypershiftAddon.GetNamespace()}, hypershiftAddon)
 
@@ -1646,13 +1647,16 @@ func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Conte
 	localClusterNS := &corev1.Namespace{}
 	if err := r.Client.Get(ctx, types.NamespacedName{Name: "local-cluster"}, localClusterNS); err == nil {
 		// If wait time exceeds expected then uninstall may not be able to progress
-		if time.Since(backplaneConfig.DeletionTimestamp.Time) < 10*time.Minute {
-			terminatingCondition := status.NewCondition(
-				backplanev1.MultiClusterEngineConditionType(
-					backplanev1.MultiClusterEngineProgressing), metav1.ConditionTrue, status.WaitingForResourceReason,
-				"Waiting for namespace local-cluster to terminate.")
+		if backplaneConfig.GetDeletionTimestamp() != nil {
+			deletionTime := backplaneConfig.GetDeletionTimestamp().Time
+			if time.Since(deletionTime) < 10*time.Minute {
+				terminatingCondition := status.NewCondition(
+					backplanev1.MultiClusterEngineConditionType(
+						backplanev1.MultiClusterEngineProgressing), metav1.ConditionTrue, status.WaitingForResourceReason,
+					"Waiting for namespace local-cluster to terminate.")
 
-			r.StatusManager.AddCondition(terminatingCondition)
+				r.StatusManager.AddCondition(terminatingCondition)
+			}
 		} else {
 			terminatingCondition := status.NewCondition(
 				backplanev1.MultiClusterEngineConditionType(backplanev1.MultiClusterEngineProgressing),
