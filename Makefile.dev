@@ -1,4 +1,11 @@
+# Copyright Contributors to the Open Cluster Management project
 
+ORG ?= stolostron
+REPO ?= installer-dev-tools
+BRANCH ?= main
+
+PIPELINE_REPO ?= backplane-pipeline
+PIPELINE_BRANCH ?= 2.7-integration
 
 .PHONY: subscriptions
 
@@ -21,19 +28,19 @@ upstream-install: ## Installs the upstream Backplane Operator by deploying a Cat
 
 lint-operator-bundles: ## Lints the operator bundles
 	pip3 install -r hack/bundle-automation/requirements.txt
-	python3 ./hack/bundle-automation/generate-shell.py --lint-bundles
+	python3 ./hack/bundle-automation/generate-shell.py --lint-bundles --org $(ORG) --repo $(REPO) --branch $(BRANCH)
 
 regenerate-charts-from-bundles: ## Regenerates the operator charts from bundles
 	pip3 install -r hack/bundle-automation/requirements.txt
-	python3 ./hack/bundle-automation/generate-shell.py --update-charts-from-bundles
+	python3 ./hack/bundle-automation/generate-shell.py --update-charts-from-bundles --org $(ORG) --repo $(REPO) --branch $(BRANCH)
 
 regenerate-operator-sha-commits: ## Regenerates the operator bundles
 	pip3 install -r hack/bundle-automation/requirements.txt
-	python3 ./hack/bundle-automation/generate-shell.py --update-commits --repo backplane-pipeline --branch 2.7-integration
+	python3 ./hack/bundle-automation/generate-shell.py --update-commits --org $(ORG) --repo $(REPO) --branch $(BRANCH) --pipeline-repo $(PIPELINE_REPO) --pipeline-branch $(PIPELINE_BRANCH)
 
 regenerate-charts: ## Regenerates the charts 
 	pip3 install -r hack/bundle-automation/chart-requirements.txt
-	python3 ./hack/bundle-automation/generate-shell.py --update-charts
+	python3 ./hack/bundle-automation/generate-shell.py --update-charts --org $(ORG) --repo $(REPO) --branch $(BRANCH)
 
 catalog-deploy: ## Deploys backplane operator via subscription
 	IMG="${IMAGE_TAG_BASE}-catalog:v${VERSION}" yq eval -i '.spec.image = env(IMG)' hack/catalog/catalogsource.yaml
