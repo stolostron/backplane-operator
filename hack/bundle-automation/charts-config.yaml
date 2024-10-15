@@ -1,7 +1,7 @@
 
 - repo_name: "managed-serviceaccount"
   github_ref: "https://github.com/stolostron/managed-serviceaccount.git"
-  branch: "main"
+  branch: "backplane-2.8"
   charts:
     - name: "managed-serviceaccount"
       chart-path: "charts/managed-serviceaccount"
