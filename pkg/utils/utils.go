@@ -69,6 +69,7 @@ var nonOCPComponents = []string{
 	backplanev1.HyperShift,
 	backplanev1.HypershiftLocalHosting,
 	backplanev1.LocalCluster,
+	backplanev1.ClusterLifecycle,
 }
 
 var GlobalDeployOnOCP = true
