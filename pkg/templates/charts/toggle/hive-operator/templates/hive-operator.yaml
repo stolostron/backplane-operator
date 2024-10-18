@@ -45,14 +45,6 @@ spec:
         - --log-level
         - info
         env:
-{{- if .Values.hubconfig.proxyConfigs }}
-        - name: HTTP_PROXY
-          value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
-        - name: HTTPS_PROXY
-          value: {{ .Values.hubconfig.proxyConfigs.HTTPS_PROXY }}
-        - name: NO_PROXY
-          value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
-{{- end }}
         - name: CLI_CACHE_DIR
           value: /var/cache/kubectl
         - name: HIVE_OPERATOR_NS
@@ -95,32 +87,15 @@ spec:
       hostIPC: false
       hostNetwork: false
       hostPID: false
-{{- if .Values.global.pullSecret }}
-      imagePullSecrets:
-      - name: {{ .Values.global.pullSecret }}
-{{- end }}
-{{- with .Values.hubconfig.nodeSelector }}
-      nodeSelector:
-{{ toYaml . | indent 8 }}
-{{- end }}
+      imagePullSecrets: ''
+      nodeSelector: ''
       securityContext:
         runAsNonRoot: true
-{{- if semverCompare ">=4.11.0" .Values.hubconfig.ocpVersion }}
         seccompProfile:
           type: RuntimeDefault
-{{- end }}
       serviceAccountName: hive-operator
       terminationGracePeriodSeconds: 10
-{{- with .Values.hubconfig.tolerations }}
-      tolerations:
-      {{- range . }}
-      - {{ if .Key }} key: {{ .Key }} {{- end }}
-        {{ if .Operator }} operator: {{ .Operator }} {{- end }}
-        {{ if .Value }} value: {{ .Value }} {{- end }}
-        {{ if .Effect }} effect: {{ .Effect }} {{- end }}
-        {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
-        {{- end }}
-{{- end }}
+      tolerations: ''
       volumes:
       - emptyDir: {}
         name: kubectl-cache
