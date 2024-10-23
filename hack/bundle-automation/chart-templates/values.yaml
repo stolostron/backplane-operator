@@ -2,15 +2,16 @@
 # Copyright Contributors to the Open Cluster Management project
 
 global:
+  deployOnOCP: true
+  hubSize: Small
   imageOverrides: {}
-  templateOverrides: {}
   namespace: default
   pullSecret: null
-  hubSize: Small
+  templateOverrides: {}
 hubconfig:
   nodeSelector: null
+  ocpVersion: 4.12.0
   proxyConfigs: {}
   replicaCount: 1
   tolerations: []
-  ocpVersion: 4.12.0
 org: open-cluster-management
