@@ -82,6 +82,7 @@ func main() {
 	testImages := map[string]string{}
 	for _, v := range utils.GetTestImages() {
 		testImages[v] = "quay.io/test/test:Test"
+		fmt.Printf("%v = %v\n", v, testImages[v])
 	}
 	testTemplateOverrides := map[string]string{}
 
