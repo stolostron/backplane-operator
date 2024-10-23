@@ -46,13 +46,6 @@ data:
         from:
           kind: DockerImage
           name: {{ .Values.global.imageOverrides.cluster_api_provider_aws }}
-      - name: cluster-api-provider-azure
-        annotations:
-          io.openshift.build.commit.id: e17ba23dd8ff1b2698d80499a416917c2084a0c1
-          io.openshift.build.source-location: https://github.com/openshift/cluster-api-provider-azure
-        from:
-          kind: DockerImage
-          name: {{ .Values.global.imageOverrides.cluster_api_provider_azure }}
       - name: cluster-api-provider-kubevirt
         annotations:
           io.openshift.build.commit.id: 'dbdc825088513dc962ba2103efe2c1a4eb3cf524'

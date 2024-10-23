@@ -156,3 +156,24 @@ func TestGetHubType(t *testing.T) {
 		})
 	}
 }
+
+func Test_GetTestImages(t *testing.T) {
+	tests := []struct {
+		name string
+	}{
+		{
+			name: "should get test images",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			i := GetTestImages()
+
+			// Check that the returned slice is not empty
+			if got := len(i); got <= 0 {
+				t.Errorf("GetTestImages() returned an empty slice; got %d, want > 0", got)
+			}
+		})
+	}
+}
