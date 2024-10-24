@@ -1,6 +1,7 @@
 
 # Copyright Contributors to the Open Cluster Management project
 ---
+{{- if .Values.global.deployOnOCP }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -13,3 +14,4 @@ roleRef:
   kind: ClusterRole
   name: {{ .Values.org }}.cluster-lifecycle.clusterclaims
   apiGroup: rbac.authorization.k8s.io
+{{- end }}
