@@ -1900,6 +1900,13 @@ rules:
   - hypershift.openshift.io
   resources:
   - hostedclusters
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - hypershift.openshift.io
+  resources:
+  - hostedclusters
   - nodepools
   verbs:
   - delete
