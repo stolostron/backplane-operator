@@ -46,7 +46,7 @@ def main(args):
     logging.info("🔄 Initiating the generate-shell script for operator bundle management and updates.")
 
     # Extract org, repo, branch, pipeline_repo, and pipeline_branch from command-line arguments
-    # Use the specified org and branch or the defaults ('stolostron', 'installer-dev-tools', 'main', 'bacplane-pipeline', '2.5-integration')
+    # Use the specified org and branch or the defaults ('stolostron', 'installer-dev-tools', 'main', 'backplane-pipeline', '2.6-integration')
     org = args.org
     repo = args.repo
     branch = args.branch
