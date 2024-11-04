@@ -2,6 +2,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
+  creationTimestamp: null
   name: multicluster-engine-operator-role
 rules:
 - apiGroups:
@@ -2430,6 +2431,13 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - search.open-cluster-management.io
+  resources:
+  - searches
+  verbs:
+  - list
+  - watch
 - apiGroups:
   - storage.k8s.io
   resources:
