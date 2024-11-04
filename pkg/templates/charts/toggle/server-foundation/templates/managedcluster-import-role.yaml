@@ -256,3 +256,11 @@ rules:
     - create
     - patch
     - update
+- apiGroups:
+  - hypershift.openshift.io
+  resources:
+  - hostedclusters
+  verbs:
+  - get
+  - list
+  - watch
