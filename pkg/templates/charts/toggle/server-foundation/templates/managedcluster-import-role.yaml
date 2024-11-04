@@ -263,3 +263,11 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - hypershift.openshift.io
+  resources:
+  - hostedclusters
+  verbs:
+  - get
+  - list
+  - watch
