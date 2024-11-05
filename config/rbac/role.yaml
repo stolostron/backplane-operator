@@ -2431,6 +2431,13 @@ rules:
   - patch
   - update
 - apiGroups:
+  - search.open-cluster-management.io
+  resources:
+  - searches
+  verbs:
+  - list
+  - watch
+- apiGroups:
   - storage.k8s.io
   resources:
   - storageclasses
