@@ -5,7 +5,7 @@ REPO ?= installer-dev-tools
 BRANCH ?= main
 
 PIPELINE_REPO ?= backplane-pipeline
-PIPELINE_BRANCH ?= 2.7-integration
+PIPELINE_BRANCH ?= 2.8-integration
 
 .PHONY: subscriptions
 
