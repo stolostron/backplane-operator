@@ -395,7 +395,7 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		crdsDir = "test/unit-test-crds"
 	} else {
 
-		crdsDir = " pkg/templates/crds"
+		crdsDir = "pkg/templates/crds"
 	}
 	crds, errs := renderer.RenderCRDs(crdsDir, backplaneConfig)
 	if len(errs) > 0 {

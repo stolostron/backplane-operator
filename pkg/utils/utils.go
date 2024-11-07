@@ -184,11 +184,13 @@ func GetImagePullPolicy(m *backplanev1.MultiClusterEngine) corev1.PullPolicy {
 func GetTestImages() []string {
 	return []string{"registration_operator", "openshift_hive", "multicloud_manager",
 		"managedcluster_import_controller", "registration", "work", "discovery_operator", "cluster_curator_controller",
-		"clusterlifecycle_state_metrics", "clusterclaims_controller", "provider_credential_controller", "managed_serviceaccount",
-		"assisted_service", "assisted_image_service", "postgresql_12", "assisted_installer_agent", "assisted_installer_controller",
-		"assisted_installer", "console_mce", "hypershift_addon_operator", "hypershift_operator",
-		"apiserver_network_proxy", "aws_encryption_provider", "cluster_api", "cluster_api_provider_agent", "cluster_api_provider_aws",
-		"cluster_api_provider_azure", "cluster_api_provider_kubevirt", "kube_rbac_proxy_mce", "cluster_proxy_addon", "cluster_proxy", "cluster_image_set_controller", "image_based_install_operator"}
+		"clusterlifecycle_state_metrics", "clusterclaims_controller", "provider_credential_controller",
+		"managed_serviceaccount", "assisted_service", "assisted_image_service", "postgresql_12",
+		"assisted_installer_agent", "assisted_installer_controller", "assisted_installer", "console_mce",
+		"hypershift_addon_operator", "hypershift_operator", "apiserver_network_proxy", "aws_encryption_provider",
+		"cluster_api", "cluster_api_provider_agent", "cluster_api_provider_aws", "cluster_api_provider_kubevirt",
+		"kube_rbac_proxy_mce", "cluster_proxy_addon", "cluster_proxy", "cluster_image_set_controller",
+		"image_based_install_operator"}
 }
 
 func IsUnitTest() bool {

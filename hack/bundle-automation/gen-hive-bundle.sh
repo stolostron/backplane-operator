@@ -11,7 +11,40 @@
 # Note: The output directory is removed at the start of each run to ensure
 #       a clean/consistent result.
 
+cleanup() {
+   echo "Performing cleanup tasks... $tmp_dir"
+   if [[ -d "$tmp_dir" ]]; then
+      rm -rf "$tmp_dir"
+   fi
+
+   prefix="gen-hive-bundle.sh."
+   find $(pwd) -type f -name "$prefix*" | while IFS= read -r file; do
+   # Check if the file exists and delete it
+      if [ -f "$file" ]; then
+         rm "$file"
+         echo "Deleted file: $file"
+      fi
+   done
+
+   prefix="hive-operator-bundle-"
+   find $(pwd)/bundle -type d -name "$prefix*" | while IFS= read -r file; do
+      # Check if the file exists and delete it
+      if [ -d "$file" ]; then
+         rm -rf "$file"
+         echo "Deleted directory: $file"
+      fi
+   done
+}
+
+# Define a temporary directory
 me=$(basename "$0")
+
+tmp_dir=$(mktemp -td "$me.XXXXXXXX")
+echo -e "Temporary directory created: $tmp_dir"
+
+# Trap for cleanup on exit or Ctrl+C (SIGINT)
+trap 'cleanup' EXIT
+trap 'cleanup' SIGINT
 
 branch="$1"
 commit_ish="$2"
@@ -25,8 +58,6 @@ fi
 hive_repo="https://github.com/openshift/hive.git"
 gen_tool="hack/bundle-gen.py"  # Path within Hive's repo.
 
-tmp_dir=$(mktemp -td "$me.XXXXXXXX")
-
 start_cwd="$PWD"
 rm -rf "$output_dir"
 
@@ -36,12 +67,17 @@ cd "$tmp_dir"
 
 echo "Cloning/checking out Hive repo at branch/commit ($commit_ish)."
 hive_repo_spot="$PWD/hive"
+if [[ -d "$hive_repo_spot" ]]; then
+   rm -rf "$hive_repo_spot"
+fi
+
 git clone --no-progress "$hive_repo" "hive"
 rc=$?
 if [[ $rc -ne 0 ]]; then
    >&2 echo "Error: Could not clone openshift/hive (rc: $rc)."
    exit 3
 fi
+
 cd hive
 git fetch origin $branch
 git checkout $branch
@@ -100,4 +136,3 @@ fi
 echo "Hive bundle copied to $output_dir."
 
 rm -rf "$tmp_dir"
-
