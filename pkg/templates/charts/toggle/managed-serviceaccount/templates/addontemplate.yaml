@@ -61,7 +61,8 @@ spec:
                 - --kubeconfig={{ `{{HUB_KUBECONFIG}}` }}
                 - --feature-gates=EphemeralIdentity=true
                 command:
-                - /agent
+                - /msa
+                - agent
                 image: '{{ .Values.global.imageOverrides.managed_serviceaccount }}'
                 imagePullPolicy: IfNotPresent
                 livenessProbe:
