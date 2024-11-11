@@ -313,6 +313,8 @@ package main
 //+kubebuilder:rbac:groups=monitoring.coreos.com,resources=servicemonitors,verbs=get;create
 //+kubebuilder:rbac:groups=multicluster.openshift.io,resources=multiclusterengines,verbs=list
 //+kubebuilder:rbac:groups=multicluster.openshift.io,resources=multiclusterengines,verbs=list;watch
+//+kubebuilder:rbac:groups=multicluster.x-k8s.io,resources=clusterprofiles,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=multicluster.x-k8s.io,resources=clusterprofiles/status,verbs=update;patch
 //+kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=operator.open-cluster-management.io,resources=clustermanagers,verbs=get;list;watch;update;delete;patch
 //+kubebuilder:rbac:groups=operator.open-cluster-management.io,resources=clustermanagers/status,verbs=update;patch
