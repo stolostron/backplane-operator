@@ -15,6 +15,12 @@ rules:
   - update
   - get
   - delete
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  verbs:
+  - get
 # Allow hub to monitor and update status of csr
 - apiGroups: ["hive.openshift.io"]
   resources: ["clusterdeployments"]

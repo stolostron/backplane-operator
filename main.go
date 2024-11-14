@@ -270,6 +270,10 @@ func main() {
 					Name:      "ocm-webhook",
 					HostNames: []string{fmt.Sprintf("ocm-webhook.%s.svc", operatorNamespace)},
 				},
+				{
+					Name:      "clusterlifecycle-state-metrics-certs",
+					HostNames: []string{fmt.Sprintf("clusterlifecycle-state-metrics-v2.%s.svc", operatorNamespace)},
+				},
 			}).Start(ctx)
 
 		if err = (&mcewebhook.Reconciler{

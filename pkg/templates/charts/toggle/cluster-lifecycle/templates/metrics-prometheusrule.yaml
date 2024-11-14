@@ -1,5 +1,5 @@
 # Copyright Contributors to the Open Cluster Management project
-
+{{- if .Values.global.deployOnOCP }}
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
@@ -11,3 +11,4 @@ spec:
       rules:
         - expr: max by (hub_cluster_id, managed_cluster_id) (acm_managed_cluster_worker_cores)
           record: 'acm_managed_cluster_worker_cores:max'
+{{- end }}
