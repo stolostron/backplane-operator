@@ -7,12 +7,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"path"
+	"path/filepath"
+
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
-	"path"
-	"path/filepath"
 
 	"os"
 
@@ -61,6 +62,8 @@ var onComponents = []string{
 
 var offComponents = []string{
 	backplanev1.ImageBasedInstallOperator,
+	backplanev1.CAPICore,
+	backplanev1.CAPA,
 }
 
 var nonOCPComponents = []string{

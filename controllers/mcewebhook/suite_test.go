@@ -42,6 +42,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	v1 "github.com/stolostron/backplane-operator/api/v1"
+
 	// "github.com/stolostron/backplane-operator/pkg/controllers"
 	"github.com/stolostron/backplane-operator/controllers"
 	"github.com/stolostron/backplane-operator/pkg/status"
@@ -92,6 +93,8 @@ var _ = BeforeSuite(func() {
 			filepath.Join("../..", "pkg", "templates", "crds", "foundation"),
 			filepath.Join("../..", "pkg", "templates", "crds", "cluster-lifecycle"),
 			filepath.Join("../..", "pkg", "templates", "crds", "discovery-operator"),
+			filepath.Join("../..", "pkg", "templates", "crds", "capi-core-operator"),
+			filepath.Join("../..", "pkg", "templates", "crds", "capa-operator"),
 			filepath.Join("../..", "pkg", "templates", "crds", "cluster-proxy-addon"),
 			filepath.Join("../..", "pkg", "templates", "crds", "internal"),
 			filepath.Join("../..", "hack", "unit-test-crds"),

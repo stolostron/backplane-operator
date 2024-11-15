@@ -24,6 +24,8 @@ import (
 
 const (
 	AssistedService                  = "assisted-service"
+	CAPICore                         = "capi-core"
+	CAPA                             = "capa"
 	ClusterLifecycle                 = "cluster-lifecycle"
 	ClusterManager                   = "cluster-manager"
 	ClusterProxyAddon                = "cluster-proxy-addon"
@@ -43,6 +45,8 @@ const (
 
 var allComponents = []string{
 	AssistedService,
+	CAPICore,
+	CAPA,
 	ClusterLifecycle,
 	ClusterManager,
 	ClusterProxyAddon,
@@ -63,6 +67,8 @@ var allComponents = []string{
 // MCEComponents is a slice containing component names specific to the "MCE" category.
 var MCEComponents = []string{
 	AssistedService,
+	CAPICore,
+	CAPA,
 	ClusterLifecycle,
 	ClusterManager,
 	ClusterProxyAddon,
