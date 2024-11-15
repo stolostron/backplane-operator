@@ -1748,8 +1748,27 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 		updateNecessary = true
 	}
 
+	if m.Enabled(backplanev1.HyperShift) {
+		// if the preview was pruned, enable the non-preview version instead
+		m.Enable(backplanev1.HyperShiftPreview)
+		// no need to disable -preview version, as it will get pruned below
+		updateNecessary = true
+	}
+
 	// hypershift preview component upgraded in ACM 2.8.0
 	if m.Prune(backplanev1.HyperShiftPreview) {
+		hyperShiftPreviewClusterRoleBinding := &unstructured.Unstructured{}
+		err := r.Client.Get(ctx, types.NamespacedName{Name: "", Namespace: m.Namespace}, hyperShiftPreviewClusterRoleBinding)
+		if err == nil {
+			err = r.Client.Delete(ctx, hyperShiftPreviewClusterRoleBinding)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+		} else {
+			if !apierrors.IsNotFound(err) {
+				return ctrl.Result{}, err
+			}
+		}
 		updateNecessary = true
 	}
 
