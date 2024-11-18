@@ -43,6 +43,11 @@ const (
 	ServerFoundation                 = "server-foundation"
 )
 
+const (
+	CAPICoreNamespaced = "capi-core-operator"
+	CAPANamespaced     = "capa-operator"
+)
+
 var allComponents = []string{
 	AssistedService,
 	CAPICore,

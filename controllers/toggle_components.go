@@ -386,7 +386,7 @@ func (r *MultiClusterEngineReconciler) ensureDiscovery(ctx context.Context, mce 
 func (r *MultiClusterEngineReconciler) ensureCAPICore(ctx context.Context, mce *backplanev1.MultiClusterEngine) (
 	ctrl.Result, error) {
 
-	namespacedName := types.NamespacedName{Name: "capi-core-operator", Namespace: mce.Spec.TargetNamespace}
+	namespacedName := types.NamespacedName{Name: backplanev1.CAPICoreNamespaced, Namespace: mce.Spec.TargetNamespace}
 	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
 
@@ -501,7 +501,7 @@ func (r *MultiClusterEngineReconciler) ensureNoDiscovery(ctx context.Context,
 func (r *MultiClusterEngineReconciler) ensureNoCAPICore(ctx context.Context,
 	mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 
-	namespacedName := types.NamespacedName{Name: "capi-core-operator", Namespace: mce.Spec.TargetNamespace}
+	namespacedName := types.NamespacedName{Name: backplanev1.CAPICoreNamespaced, Namespace: mce.Spec.TargetNamespace}
 
 	// Ensure that the InternalHubComponent CR instance is deleted for component in MCE.
 	if result, err := r.ensureNoInternalEngineComponent(ctx, mce,

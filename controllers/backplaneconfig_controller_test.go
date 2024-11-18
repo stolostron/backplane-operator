@@ -261,6 +261,18 @@ var _ = Describe("BackplaneConfig controller", func() {
 				Expected:       nil,
 			},
 			{
+				Name:           "Capi Core Operator Deployment",
+				NamespacedName: types.NamespacedName{Name: backplanev1.CAPICoreNamespaced, Namespace: DestinationNamespace},
+				ResourceType:   &appsv1.Deployment{},
+				Expected:       nil,
+			},
+			{
+				Name:           "Capa Operator Deployment",
+				NamespacedName: types.NamespacedName{Name: backplanev1.CAPANamespaced, Namespace: DestinationNamespace},
+				ResourceType:   &appsv1.Deployment{},
+				Expected:       nil,
+			},
+			{
 				Name:           "Discovery Operator Deployment",
 				NamespacedName: types.NamespacedName{Name: "discovery-operator", Namespace: DestinationNamespace},
 				ResourceType:   &appsv1.Deployment{},
@@ -407,6 +419,14 @@ var _ = Describe("BackplaneConfig controller", func() {
 								},
 								{
 									Name:    backplanev1.ClusterLifecycle,
+									Enabled: true,
+								},
+								{
+									Name:    backplanev1.CAPICore,
+									Enabled: true,
+								},
+								{
+									Name:    backplanev1.CAPA,
 									Enabled: true,
 								},
 								{
@@ -574,6 +594,14 @@ var _ = Describe("BackplaneConfig controller", func() {
 							Components: []backplanev1.ComponentConfig{
 								{
 									Name:    backplanev1.AssistedService,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.CAPICore,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.CAPA,
 									Enabled: false,
 								},
 								{
@@ -850,6 +878,14 @@ var _ = Describe("BackplaneConfig controller", func() {
 									Enabled: true,
 								},
 								{
+									Name:    backplanev1.CAPICore,
+									Enabled: true,
+								},
+								{
+									Name:    backplanev1.CAPA,
+									Enabled: true,
+								},
+								{
 									Name:    backplanev1.ClusterLifecycle,
 									Enabled: true,
 								},
@@ -951,6 +987,14 @@ var _ = Describe("BackplaneConfig controller", func() {
 							Components: []backplanev1.ComponentConfig{
 								{
 									Name:    backplanev1.AssistedService,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.CAPICore,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.CAPA,
 									Enabled: false,
 								},
 								{
