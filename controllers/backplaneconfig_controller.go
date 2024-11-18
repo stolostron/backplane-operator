@@ -1755,9 +1755,10 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 		// no need to disable -preview version, as it will get pruned below
 		updateNecessary = true
 	}
-
+	log.Info("entering the check")
 	// hypershift preview component upgraded in ACM 2.8.0
 	if m.Prune(backplanev1.HyperShiftPreview) {
+		log.Info("we pruning")
 		hyperShiftPreviewClusterRoleBinding := &rbacv1.ClusterRoleBinding{}
 		err := r.Client.Get(ctx, types.NamespacedName{Name: "open-cluster-management:hypershift-preview:hypershift-addon-manager"}, hyperShiftPreviewClusterRoleBinding)
 		if err == nil {
@@ -1790,6 +1791,7 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 
 		updateNecessary = true
 	}
+	log.Info("exiting the check")
 
 	if m.Enabled(backplanev1.ManagedServiceAccountPreview) {
 		// if the preview was pruned, enable the non-preview version instead
