@@ -1777,7 +1777,7 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 			}
 		}
 		hyperShiftPreviewClusterRole := &rbacv1.ClusterRole{}
-		err = r.Client.Get(ctx, types.NamespacedName{Name: "open-cluster-management:hypershift-preview:hypershift-addon-manager"}, hyperShiftPreviewClusterRoleBinding)
+		err = r.Client.Get(ctx, types.NamespacedName{Name: "open-cluster-management:hypershift-preview:hypershift-addon-manager"}, hyperShiftPreviewClusterRole)
 		if err == nil {
 			err = r.Client.Delete(ctx, hyperShiftPreviewClusterRole)
 			if err != nil {
