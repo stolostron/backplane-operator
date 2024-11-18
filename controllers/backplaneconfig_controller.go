@@ -1750,7 +1750,7 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 	}
 
 	if m.Enabled(backplanev1.HyperShiftPreview) {
-		// if the preview was pruned, enable the non-preview version instead
+		// if the preview was pruned, enable the non-preview version instea
 		m.Enable(backplanev1.HyperShift)
 		// no need to disable -preview version, as it will get pruned below
 		updateNecessary = true
@@ -1761,8 +1761,10 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 		hyperShiftPreviewClusterRoleBinding := &rbacv1.ClusterRoleBinding{}
 		err := r.Client.Get(ctx, types.NamespacedName{Name: "open-cluster-management:hypershift-preview:hypershift-addon-manager"}, hyperShiftPreviewClusterRoleBinding)
 		if err == nil {
+			log.Info("got the resource")
 			err = r.Client.Delete(ctx, hyperShiftPreviewClusterRoleBinding)
 			if err != nil {
+				log.Error(err, "failed to delete the resource")
 				return ctrl.Result{}, err
 			}
 		} else {
