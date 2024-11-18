@@ -1769,7 +1769,10 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 			}
 		} else {
 			if !apierrors.IsNotFound(err) {
+				log.Error(err, "trouble getting the resource")
 				return ctrl.Result{}, err
+			} else {
+				log.Info("couldn't find the resource")
 			}
 		}
 		hyperShiftPreviewClusterRole := &rbacv1.ClusterRole{}
