@@ -43,6 +43,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -1748,16 +1749,16 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 		updateNecessary = true
 	}
 
-	if m.Enabled(backplanev1.HyperShift) {
+	if m.Enabled(backplanev1.HyperShiftPreview) {
 		// if the preview was pruned, enable the non-preview version instead
-		m.Enable(backplanev1.HyperShiftPreview)
+		m.Enable(backplanev1.HyperShift)
 		// no need to disable -preview version, as it will get pruned below
 		updateNecessary = true
 	}
 
 	// hypershift preview component upgraded in ACM 2.8.0
 	if m.Prune(backplanev1.HyperShiftPreview) {
-		hyperShiftPreviewClusterRoleBinding := &unstructured.Unstructured{}
+		hyperShiftPreviewClusterRoleBinding := &rbacv1.ClusterRoleBinding{}
 		err := r.Client.Get(ctx, types.NamespacedName{Name: "open-cluster-management:hypershift-preview:hypershift-addon-manager"}, hyperShiftPreviewClusterRoleBinding)
 		if err == nil {
 			err = r.Client.Delete(ctx, hyperShiftPreviewClusterRoleBinding)
@@ -1769,7 +1770,7 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 				return ctrl.Result{}, err
 			}
 		}
-		hyperShiftPreviewClusterRole := &unstructured.Unstructured{}
+		hyperShiftPreviewClusterRole := &rbacv1.ClusterRole{}
 		err = r.Client.Get(ctx, types.NamespacedName{Name: "open-cluster-management:hypershift-preview:hypershift-addon-manager"}, hyperShiftPreviewClusterRoleBinding)
 		if err == nil {
 			err = r.Client.Delete(ctx, hyperShiftPreviewClusterRole)
