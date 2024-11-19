@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: multicluster-engine
+  creationTimestamp: null
+  labels:
+    app: hello_world_capa
+  name: hello_world_capa
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hello_world
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: hello_world
+    spec:
+      containers:
+      - image: docker.io/hello-world
+        name: hello-world
+        resources: {}

@@ -22,8 +22,8 @@ const (
 	ConsoleMCEChartsDir               = "pkg/templates/charts/toggle/console-mce"
 	ManagedServiceAccountCRDPath      = "pkg/templates/managed-serviceaccount/crds"
 	ImageBasedInstallOperatorChartDir = "pkg/templates/charts/toggle/image-based-install-operator"
-	CAPICoreChartDir                  = "pkg/templates/charts/toggle/" + bpv1.CAPICore
-	CAPAChartDir                      = "pkg/templates/charts/toggle/capa"
+	CAPICoreChartDir                  = "pkg/templates/charts/toggle/" + bpv1.CAPICoreNamespaced
+	CAPAChartDir                      = "pkg/templates/charts/toggle/capa-operator" + bpv1.CAPANamespaced
 	DiscoveryChartDir                 = "pkg/templates/charts/toggle/discovery-operator"
 	HostedImportChartDir              = "pkg/templates/charts/hosted/server-foundation"
 	HostingImportChartDir             = "pkg/templates/charts/hosting/server-foundation"

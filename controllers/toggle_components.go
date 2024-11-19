@@ -391,12 +391,12 @@ func (r *MultiClusterEngineReconciler) ensureCAPICore(ctx context.Context, mce *
 	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
 
 	// Ensure that the InternalHubComponent CR instance is created for component in MCE.
-	if result, err := r.ensureInternalEngineComponent(ctx, mce, backplanev1.CAPICore); err != nil {
+	if result, err := r.ensureInternalEngineComponent(ctx, mce, backplanev1.CAPICorePreview); err != nil {
 		return result, err
 	}
 
 	// Renders all templates from charts
-	chartPath := r.fetchChartOrCRDPath(backplanev1.CAPICore, false)
+	chartPath := r.fetchChartOrCRDPath(backplanev1.CAPICorePreview, false)
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
@@ -407,7 +407,7 @@ func (r *MultiClusterEngineReconciler) ensureCAPICore(ctx context.Context, mce *
 	}
 
 	// Apply deployment config overrides
-	if result, err := r.applyComponentDeploymentOverrides(mce, templates, backplanev1.CAPICore); err != nil {
+	if result, err := r.applyComponentDeploymentOverrides(mce, templates, backplanev1.CAPICorePreview); err != nil {
 		return result, err
 	}
 
@@ -431,12 +431,12 @@ func (r *MultiClusterEngineReconciler) ensureCAPA(ctx context.Context, mce *back
 	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
 
 	// Ensure that the InternalHubComponent CR instance is created for component in MCE.
-	if result, err := r.ensureInternalEngineComponent(ctx, mce, backplanev1.CAPA); err != nil {
+	if result, err := r.ensureInternalEngineComponent(ctx, mce, backplanev1.CAPAWSPreview); err != nil {
 		return result, err
 	}
 
 	// Renders all templates from charts
-	chartPath := r.fetchChartOrCRDPath(backplanev1.CAPA, false)
+	chartPath := r.fetchChartOrCRDPath(backplanev1.CAPAWSPreview, false)
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
@@ -447,7 +447,7 @@ func (r *MultiClusterEngineReconciler) ensureCAPA(ctx context.Context, mce *back
 	}
 
 	// Apply deployment config overrides
-	if result, err := r.applyComponentDeploymentOverrides(mce, templates, backplanev1.CAPA); err != nil {
+	if result, err := r.applyComponentDeploymentOverrides(mce, templates, backplanev1.CAPAWSPreview); err != nil {
 		return result, err
 	}
 
@@ -505,12 +505,12 @@ func (r *MultiClusterEngineReconciler) ensureNoCAPICore(ctx context.Context,
 
 	// Ensure that the InternalHubComponent CR instance is deleted for component in MCE.
 	if result, err := r.ensureNoInternalEngineComponent(ctx, mce,
-		backplanev1.CAPICore); (result != ctrl.Result{}) || err != nil {
+		backplanev1.CAPICorePreview); (result != ctrl.Result{}) || err != nil {
 		return result, err
 	}
 
 	// Renders all templates from charts
-	chartPath := r.fetchChartOrCRDPath(backplanev1.CAPICore, false)
+	chartPath := r.fetchChartOrCRDPath(backplanev1.CAPICorePreview, false)
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
@@ -540,12 +540,12 @@ func (r *MultiClusterEngineReconciler) ensureNoCAPA(ctx context.Context,
 
 	// Ensure that the InternalHubComponent CR instance is deleted for component in MCE.
 	if result, err := r.ensureNoInternalEngineComponent(ctx, mce,
-		backplanev1.CAPA); (result != ctrl.Result{}) || err != nil {
+		backplanev1.CAPAWSPreview); (result != ctrl.Result{}) || err != nil {
 		return result, err
 	}
 
 	// Renders all templates from charts
-	chartPath := r.fetchChartOrCRDPath(backplanev1.CAPA, false)
+	chartPath := r.fetchChartOrCRDPath(backplanev1.CAPAWSPreview, false)
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {

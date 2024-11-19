@@ -62,8 +62,8 @@ var onComponents = []string{
 
 var offComponents = []string{
 	backplanev1.ImageBasedInstallOperator,
-	backplanev1.CAPICore,
-	backplanev1.CAPA,
+	backplanev1.CAPICorePreview,
+	backplanev1.CAPAWSPreview,
 }
 
 var nonOCPComponents = []string{

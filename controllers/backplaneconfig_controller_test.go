@@ -422,11 +422,11 @@ var _ = Describe("BackplaneConfig controller", func() {
 									Enabled: true,
 								},
 								{
-									Name:    backplanev1.CAPICore,
+									Name:    backplanev1.CAPICorePreview,
 									Enabled: true,
 								},
 								{
-									Name:    backplanev1.CAPA,
+									Name:    backplanev1.CAPAWSPreview,
 									Enabled: true,
 								},
 								{
@@ -597,11 +597,11 @@ var _ = Describe("BackplaneConfig controller", func() {
 									Enabled: false,
 								},
 								{
-									Name:    backplanev1.CAPICore,
+									Name:    backplanev1.CAPICorePreview,
 									Enabled: false,
 								},
 								{
-									Name:    backplanev1.CAPA,
+									Name:    backplanev1.CAPAWSPreview,
 									Enabled: false,
 								},
 								{
@@ -878,11 +878,11 @@ var _ = Describe("BackplaneConfig controller", func() {
 									Enabled: true,
 								},
 								{
-									Name:    backplanev1.CAPICore,
+									Name:    backplanev1.CAPICorePreview,
 									Enabled: true,
 								},
 								{
-									Name:    backplanev1.CAPA,
+									Name:    backplanev1.CAPAWSPreview,
 									Enabled: true,
 								},
 								{
@@ -990,11 +990,11 @@ var _ = Describe("BackplaneConfig controller", func() {
 									Enabled: false,
 								},
 								{
-									Name:    backplanev1.CAPICore,
+									Name:    backplanev1.CAPICorePreview,
 									Enabled: false,
 								},
 								{
-									Name:    backplanev1.CAPA,
+									Name:    backplanev1.CAPAWSPreview,
 									Enabled: false,
 								},
 								{
