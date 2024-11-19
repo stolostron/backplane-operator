@@ -426,7 +426,7 @@ func (r *MultiClusterEngineReconciler) ensureCAPICore(ctx context.Context, mce *
 func (r *MultiClusterEngineReconciler) ensureCAPA(ctx context.Context, mce *backplanev1.MultiClusterEngine) (
 	ctrl.Result, error) {
 
-	namespacedName := types.NamespacedName{Name: "capa-operator", Namespace: mce.Spec.TargetNamespace}
+	namespacedName := types.NamespacedName{Name: backplanev1.CAPANamespaced, Namespace: mce.Spec.TargetNamespace}
 	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
 
