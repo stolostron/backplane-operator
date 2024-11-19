@@ -1749,50 +1749,41 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 		updateNecessary = true
 	}
 
-	if m.Enabled(backplanev1.HyperShiftPreview) {
-		// if the preview was pruned, enable the non-preview version instea
-		m.Enable(backplanev1.HyperShift)
-		// no need to disable -preview version, as it will get pruned below
-		updateNecessary = true
-	}
-	log.Info("entering the check")
 	// hypershift preview component upgraded in ACM 2.8.0
 	if m.Prune(backplanev1.HyperShiftPreview) {
-		log.Info("we pruning")
-		hyperShiftPreviewClusterRoleBinding := &rbacv1.ClusterRoleBinding{}
-		err := r.Client.Get(ctx, types.NamespacedName{Name: "open-cluster-management:hypershift-preview:hypershift-addon-manager"}, hyperShiftPreviewClusterRoleBinding)
-		if err == nil {
-			log.Info("got the resource")
-			err = r.Client.Delete(ctx, hyperShiftPreviewClusterRoleBinding)
-			if err != nil {
-				log.Error(err, "failed to delete the resource")
-				return ctrl.Result{}, err
-			}
-		} else {
-			if !apierrors.IsNotFound(err) {
-				log.Error(err, "trouble getting the resource")
-				return ctrl.Result{}, err
-			} else {
-				log.Info("couldn't find the resource")
-			}
-		}
-		hyperShiftPreviewClusterRole := &rbacv1.ClusterRole{}
-		err = r.Client.Get(ctx, types.NamespacedName{Name: "open-cluster-management:hypershift-preview:hypershift-addon-manager"}, hyperShiftPreviewClusterRole)
-		if err == nil {
-			err = r.Client.Delete(ctx, hyperShiftPreviewClusterRole)
-			if err != nil {
-				return ctrl.Result{}, err
-			}
-		} else {
-			if !apierrors.IsNotFound(err) {
-				return ctrl.Result{}, err
-			}
-		}
 
 		updateNecessary = true
 	}
-	log.Info("exiting the check")
-
+	log.Info("we pruning")
+	hyperShiftPreviewClusterRoleBinding := &rbacv1.ClusterRoleBinding{}
+	err := r.Client.Get(ctx, types.NamespacedName{Name: "open-cluster-management:hypershift-preview:hypershift-addon-manager"}, hyperShiftPreviewClusterRoleBinding)
+	if err == nil {
+		log.Info("got the resource")
+		err = r.Client.Delete(ctx, hyperShiftPreviewClusterRoleBinding)
+		if err != nil {
+			log.Error(err, "failed to delete the resource")
+			return ctrl.Result{}, err
+		}
+	} else {
+		if !apierrors.IsNotFound(err) {
+			log.Error(err, "trouble getting the resource")
+			return ctrl.Result{}, err
+		} else {
+			log.Info("couldn't find the resource")
+		}
+	}
+	hyperShiftPreviewClusterRole := &rbacv1.ClusterRole{}
+	err = r.Client.Get(ctx, types.NamespacedName{Name: "open-cluster-management:hypershift-preview:hypershift-addon-manager"}, hyperShiftPreviewClusterRole)
+	if err == nil {
+		err = r.Client.Delete(ctx, hyperShiftPreviewClusterRole)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+	} else {
+		if !apierrors.IsNotFound(err) {
+			return ctrl.Result{}, err
+		}
+	}
 	if m.Enabled(backplanev1.ManagedServiceAccountPreview) {
 		// if the preview was pruned, enable the non-preview version instead
 		m.Enable(backplanev1.ManagedServiceAccount)
