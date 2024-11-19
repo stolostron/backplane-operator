@@ -18,6 +18,10 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
+const (
+	rbacAuthorization = "rbac.authorization.k8s.io"
+)
+
 var (
 	// The uninstallList is the list of all resources from previous installs to remove. Items can be removed
 	// from this list in future releases if they are sure to not exist prior to the current installer version
@@ -33,19 +37,19 @@ var (
 			),
 			newUnstructured(
 				types.NamespacedName{Name: "open-cluster-management:hypershift-preview:hypershiftDeployment-leader-election", Namespace: backplaneConfig.Spec.TargetNamespace},
-				schema.GroupVersionKind{Group: "rbac.authorization.k8s.io", Kind: "Role", Version: "v1"},
+				schema.GroupVersionKind{Group: rbacAuthorization, Kind: "Role", Version: "v1"},
 			),
 			newUnstructured(
 				types.NamespacedName{Name: "open-cluster-management:hypershift-preview:hypershiftDeployment-leader-election", Namespace: backplaneConfig.Spec.TargetNamespace},
-				schema.GroupVersionKind{Group: "rbac.authorization.k8s.io", Kind: "RoleBinding", Version: "v1"},
+				schema.GroupVersionKind{Group: rbacAuthorization, Kind: "RoleBinding", Version: "v1"},
 			),
 			newUnstructured(
 				types.NamespacedName{Name: "open-cluster-management:hypershift-preview:hypershift-deployment-controller"},
-				schema.GroupVersionKind{Group: "rbac.authorization.k8s.io", Kind: "ClusterRole", Version: "v1"},
+				schema.GroupVersionKind{Group: rbacAuthorization, Kind: "ClusterRole", Version: "v1"},
 			),
 			newUnstructured(
 				types.NamespacedName{Name: "open-cluster-management:hypershift-preview:hypershift-deployment-controller"},
-				schema.GroupVersionKind{Group: "rbac.authorization.k8s.io", Kind: "ClusterRoleBinding", Version: "v1"},
+				schema.GroupVersionKind{Group: rbacAuthorization, Kind: "ClusterRoleBinding", Version: "v1"},
 			),
 			// managed-serviceaccount
 			// TODO: Remove this in the next release

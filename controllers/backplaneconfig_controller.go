@@ -87,7 +87,8 @@ const (
 	trustBundleNameEnvVar  = "TRUSTED_CA_BUNDLE"
 	defaultTrustBundleName = "trusted-ca-bundle"
 
-	controlPlane = "backplane-operator"
+	controlPlane        = "backplane-operator"
+	backplaneConfigName = "backplaneconfig.name"
 )
 
 var (
@@ -529,7 +530,7 @@ func (r *MultiClusterEngineReconciler) SetupWithManager(mgr ctrl.Manager) error 
 			DeleteFunc: func(ctx context.Context, e event.DeleteEvent, q workqueue.RateLimitingInterface) {
 				labels := e.Object.GetLabels()
 				q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
-					Name: labels["backplaneconfig.name"],
+					Name: labels[backplaneConfigName],
 				}})
 			},
 		}, builder.WithPredicates(predicate.LabelChangedPredicate{})).
@@ -537,13 +538,13 @@ func (r *MultiClusterEngineReconciler) SetupWithManager(mgr ctrl.Manager) error 
 			DeleteFunc: func(ctx context.Context, e event.DeleteEvent, q workqueue.RateLimitingInterface) {
 				labels := e.Object.GetLabels()
 				q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
-					Name: labels["backplaneconfig.name"],
+					Name: labels[backplaneConfigName],
 				}})
 			},
 			UpdateFunc: func(ctx context.Context, e event.UpdateEvent, q workqueue.RateLimitingInterface) {
 				labels := e.ObjectOld.GetLabels()
 				q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
-					Name: labels["backplaneconfig.name"],
+					Name: labels[backplaneConfigName],
 				}})
 			},
 		}, builder.WithPredicates(predicate.LabelChangedPredicate{}))
@@ -552,7 +553,7 @@ func (r *MultiClusterEngineReconciler) SetupWithManager(mgr ctrl.Manager) error 
 		mceBuilder.Watches(&monitorv1.ServiceMonitor{}, &handler.Funcs{
 			DeleteFunc: func(ctx context.Context, e event.DeleteEvent, q workqueue.RateLimitingInterface) {
 				labels := e.Object.GetLabels()
-				if label, ok := labels["backplaneconfig.name"]; ok {
+				if label, ok := labels[backplaneConfigName]; ok {
 					q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
 						Name: label,
 					}})
@@ -1315,7 +1316,7 @@ func (r *MultiClusterEngineReconciler) applyTemplate(ctx context.Context,
 		// Apply the object data.
 		force := true
 		err := r.Client.Patch(ctx, template, client.Apply,
-			&client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
+			&client.PatchOptions{Force: &force, FieldManager: controlPlane})
 
 		if err != nil {
 			errMessage := fmt.Errorf(
@@ -1379,7 +1380,7 @@ func (r *MultiClusterEngineReconciler) ensureCustomResources(ctx context.Context
 			}
 			force := true
 			err := r.Client.Patch(ctx, addonTemplate, client.Apply,
-				&client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
+				&client.PatchOptions{Force: &force, FieldManager: controlPlane})
 			if err != nil {
 				return ctrl.Result{}, pkgerrors.Wrapf(err, "error applying object Name: %s Kind: %s",
 					addonTemplate.GetName(), addonTemplate.GetKind())

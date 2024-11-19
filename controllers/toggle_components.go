@@ -33,6 +33,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	localCluster = "local-cluster"
+)
+
 var clusterManagementAddOnGVK = schema.GroupVersionKind{
 	Group:   "addon.open-cluster-management.io",
 	Version: "v1alpha1",
@@ -412,7 +416,7 @@ func (r *MultiClusterEngineReconciler) ensureNoDiscovery(ctx context.Context,
 	for _, template := range templates {
 		result, err := r.deleteTemplate(ctx, mce, template)
 		if err != nil {
-			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
+			logTemplateDeletionError(err, template.GetName())
 			return result, err
 		}
 	}
@@ -510,7 +514,7 @@ func (r *MultiClusterEngineReconciler) ensureNoHive(ctx context.Context, mce *ba
 	for _, template := range templates {
 		result, err := r.deleteTemplate(ctx, mce, template)
 		if err != nil {
-			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
+			logTemplateDeletionError(err, template.GetName())
 			return result, err
 		}
 	}
@@ -597,7 +601,7 @@ func (r *MultiClusterEngineReconciler) ensureNoAssistedService(ctx context.Conte
 	for _, template := range templates {
 		result, err := r.deleteTemplate(ctx, mce, template)
 		if err != nil {
-			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
+			logTemplateDeletionError(err, template.GetName())
 			return result, err
 		}
 	}
@@ -691,7 +695,7 @@ func (r *MultiClusterEngineReconciler) ensureNoServerFoundation(ctx context.Cont
 	for _, template := range templates {
 		result, err := r.deleteTemplate(ctx, mce, template)
 		if err != nil {
-			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
+			logTemplateDeletionError(err, template.GetName())
 			return result, err
 		}
 	}
@@ -769,7 +773,7 @@ func (r *MultiClusterEngineReconciler) ensureNoImageBasedInstallOperator(ctx con
 	for _, template := range templates {
 		result, err := r.deleteTemplate(ctx, mce, template)
 		if err != nil {
-			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
+			logTemplateDeletionError(err, template.GetName())
 			return result, err
 		}
 	}
@@ -870,7 +874,7 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterLifecycle(ctx context.Cont
 	for _, template := range templates {
 		result, err := r.deleteTemplate(ctx, mce, template)
 		if err != nil {
-			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
+			logTemplateDeletionError(err, template.GetName())
 			return result, err
 		}
 	}
@@ -923,7 +927,7 @@ func (r *MultiClusterEngineReconciler) ensureClusterManager(ctx context.Context,
 		return ctrl.Result{}, errors.Wrapf(err, "Error setting controller reference on resource %s", cmTemplate.GetName())
 	}
 	force := true
-	err := r.Client.Patch(ctx, cmTemplate, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
+	err := r.Client.Patch(ctx, cmTemplate, client.Apply, &client.PatchOptions{Force: &force, FieldManager: controlPlane})
 	if err != nil {
 		return ctrl.Result{}, errors.Wrapf(err, "error applying object Name: %s Kind: %s", cmTemplate.GetName(), cmTemplate.GetKind())
 	}
@@ -991,7 +995,7 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterManager(ctx context.Contex
 	for _, template := range templates {
 		result, err := r.deleteTemplate(ctx, mce, template)
 		if err != nil {
-			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
+			logTemplateDeletionError(err, template.GetName())
 			return result, err
 		}
 	}
@@ -1111,7 +1115,7 @@ func (r *MultiClusterEngineReconciler) ensureNoHyperShift(ctx context.Context,
 	for _, template := range templates {
 		result, err := r.deleteTemplate(ctx, mce, template)
 		if err != nil {
-			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
+			logTemplateDeletionError(err, template.GetName())
 			return result, err
 		}
 	}
@@ -1153,7 +1157,7 @@ func (r *MultiClusterEngineReconciler) reconcileHypershiftLocalHosting(ctx conte
 		return r.removeHypershiftLocalHosting(ctx, mce)
 	}
 
-	localNS := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "local-cluster"}}
+	localNS := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: localCluster}}
 	err = r.Client.Get(context.TODO(), types.NamespacedName{Name: localNS.GetName()}, localNS)
 	if apierrors.IsNotFound(err) {
 		// wait for local-cluster namespace
@@ -1335,7 +1339,7 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterProxyAddon(ctx context.Con
 	for _, template := range templates {
 		result, err := r.deleteTemplate(ctx, mce, template)
 		if err != nil {
-			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
+			logTemplateDeletionError(err, template.GetName())
 			return result, err
 		}
 	}
@@ -1387,7 +1391,7 @@ func (r *MultiClusterEngineReconciler) ensureLocalCluster(ctx context.Context, m
 		return ctrl.Result{}, nil
 	}
 
-	nsn := types.NamespacedName{Name: "local-cluster", Namespace: mce.Spec.TargetNamespace}
+	nsn := types.NamespacedName{Name: localCluster, Namespace: mce.Spec.TargetNamespace}
 	lcs := status.LocalClusterStatus{NamespacedName: nsn, Enabled: true}
 	r.StatusManager.RemoveComponent(lcs)
 	r.StatusManager.AddComponent(lcs)
@@ -1415,14 +1419,14 @@ func (r *MultiClusterEngineReconciler) ensureLocalCluster(ctx context.Context, m
 					log.Info("ManagedCluster webhook not available, waiting for controller")
 					r.StatusManager.RemoveComponent(lcs)
 					r.StatusManager.AddComponent(status.StaticStatus{
-						NamespacedName: types.NamespacedName{Name: "local-cluster", Namespace: mce.Spec.TargetNamespace},
-						Kind:           "local-cluster",
+						NamespacedName: types.NamespacedName{Name: localCluster, Namespace: mce.Spec.TargetNamespace},
+						Kind:           localCluster,
 						Condition: backplanev1.ComponentCondition{
 							Type:      "Available",
-							Name:      "local-cluster",
+							Name:      localCluster,
 							Status:    metav1.ConditionFalse,
 							Reason:    status.WaitingForResourceReason,
-							Kind:      "local-cluster",
+							Kind:      localCluster,
 							Available: false,
 							Message:   "Waiting for ManagedCluster webhook",
 						},
@@ -1445,14 +1449,14 @@ func (r *MultiClusterEngineReconciler) ensureLocalCluster(ctx context.Context, m
 		// managedCluster CRD does not yet exist. Replace status.
 		r.StatusManager.RemoveComponent(lcs)
 		r.StatusManager.AddComponent(status.StaticStatus{
-			NamespacedName: types.NamespacedName{Name: "local-cluster", Namespace: mce.Spec.TargetNamespace},
-			Kind:           "local-cluster",
+			NamespacedName: types.NamespacedName{Name: localCluster, Namespace: mce.Spec.TargetNamespace},
+			Kind:           localCluster,
 			Condition: backplanev1.ComponentCondition{
 				Type:      "Available",
-				Name:      "local-cluster",
+				Name:      localCluster,
 				Status:    metav1.ConditionFalse,
 				Reason:    status.WaitingForResourceReason,
-				Kind:      "local-cluster",
+				Kind:      localCluster,
 				Available: false,
 				Message:   "Waiting for ManagedCluster CRD to be available",
 			},
@@ -1463,14 +1467,14 @@ func (r *MultiClusterEngineReconciler) ensureLocalCluster(ctx context.Context, m
 		log.Info("ManagedCluster webhook not available, waiting for controller")
 		r.StatusManager.RemoveComponent(lcs)
 		r.StatusManager.AddComponent(status.StaticStatus{
-			NamespacedName: types.NamespacedName{Name: "local-cluster", Namespace: mce.Spec.TargetNamespace},
-			Kind:           "local-cluster",
+			NamespacedName: types.NamespacedName{Name: localCluster, Namespace: mce.Spec.TargetNamespace},
+			Kind:           localCluster,
 			Condition: backplanev1.ComponentCondition{
 				Type:      "Available",
-				Name:      "local-cluster",
+				Name:      localCluster,
 				Status:    metav1.ConditionFalse,
 				Reason:    status.WaitingForResourceReason,
-				Kind:      "local-cluster",
+				Kind:      localCluster,
 				Available: false,
 				Message:   "Waiting for ManagedCluster webhook",
 			},
@@ -1519,7 +1523,7 @@ func (r *MultiClusterEngineReconciler) ensureNoLocalCluster(ctx context.Context,
 		return ctrl.Result{}, nil
 	}
 
-	nsn := types.NamespacedName{Name: "local-cluster", Namespace: mce.Spec.TargetNamespace}
+	nsn := types.NamespacedName{Name: localCluster, Namespace: mce.Spec.TargetNamespace}
 	lcs := status.LocalClusterStatus{
 		NamespacedName: nsn,
 		Enabled:        false,
@@ -1617,4 +1621,8 @@ func applyReleaseVersionAnnotation(template *unstructured.Unstructured) {
 	}
 	annotations[utils.AnnotationReleaseVersion] = version.Version
 	template.SetAnnotations(annotations)
+}
+
+func logTemplateDeletionError(err error, name string) {
+	log.Error(err, fmt.Sprintf("Failed to delete template: %s", name))
 }

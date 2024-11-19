@@ -7,12 +7,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"path"
+	"path/filepath"
+
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
-	"path"
-	"path/filepath"
 
 	"os"
 
@@ -388,20 +389,24 @@ func DumpServingCertSecret() error {
 		case os.IsNotExist(err):
 			// create file
 			if err := os.WriteFile(filename, data, 0600); err != nil {
-				return fmt.Errorf("unable to write file %q: %w", filename, err)
+				return fileWriteError(filename, err)
 			}
 		case err != nil:
-			return fmt.Errorf("unable to write file %q: %w", filename, err)
+			return fileWriteError(filename, err)
 		case bytes.Equal(lastData, data):
 			// skip file without any change
 			continue
 		default:
 			// update file
 			if err := os.WriteFile(path.Clean(filename), data, 0600); err != nil {
-				return fmt.Errorf("unable to write file %q: %w", filename, err)
+				return fileWriteError(filename, err)
 			}
 		}
 	}
 
 	return nil
+}
+
+func fileWriteError(filename string, err error) error {
+	return fmt.Errorf("unable to write file %q: %w", filename, err)
 }
