@@ -5,10 +5,12 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/pkg/errors"
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 	"github.com/stolostron/backplane-operator/pkg/status"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -126,6 +128,64 @@ func Test_reconcileLocalHosting(t *testing.T) {
 		t.Errorf("Got status %s, expected %s", component.Type, "Available")
 	}
 	r.StatusManager.Reset("")
+}
+
+func Test_HypershiftPreview(t *testing.T) {
+	scheme := runtime.NewScheme()
+	corev1.AddToScheme(scheme)
+	appsv1.AddToScheme(scheme)
+	backplanev1.AddToScheme(scheme)
+	addonv1alpha1.AddToScheme(scheme)
+	rbacv1.AddToScheme(scheme)
+
+	cl := fake.NewClientBuilder().WithScheme(scheme).Build()
+	images := map[string]string{}
+	// ctx := context.TODO()
+	statusManager := &status.StatusTracker{Client: cl}
+	r := &MultiClusterEngineReconciler{
+		Client:        cl,
+		Scheme:        cl.Scheme(),
+		Images:        images,
+		StatusManager: statusManager,
+	}
+
+	clusterRole := &rbacv1.ClusterRole{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "open-cluster-management:hypershift-preview:hypershift-addon-manager", // Name of the cluster role
+		},
+		Rules: []rbacv1.PolicyRule{}, // No rules, so it's empty
+	}
+
+	err := cl.Create(context.Background(), clusterRole)
+	if err != nil {
+		wrappedErr := errors.Wrap(err, "failed to create ClusterRole")
+
+		t.Errorf(wrappedErr.Error())
+	}
+
+	clusterRoleBinding := &rbacv1.ClusterRoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "open-cluster-management:hypershift-preview:hypershift-addon-manager", // Name of the ClusterRoleBinding
+		},
+		// No subjects and no roleRef, meaning it doesn't bind any ClusterRole
+		Subjects: []rbacv1.Subject{},
+		RoleRef:  rbacv1.RoleRef{},
+	}
+
+	// Create the ClusterRoleBinding in the fake client
+	err = cl.Create(context.Background(), clusterRoleBinding)
+	if err != nil {
+		wrappedErr := errors.Wrap(err, "failed to create ClusterRoleBinding")
+
+		t.Errorf(wrappedErr.Error())
+	}
+	_, err = r.removeDeprecatedRBAC(context.Background())
+	if err != nil {
+		wrappedErr := errors.Wrap(err, "failed to delete")
+
+		t.Errorf(wrappedErr.Error())
+	}
+
 }
 
 func Test_clusterManagementAddOnNotFoundStatus(t *testing.T) {

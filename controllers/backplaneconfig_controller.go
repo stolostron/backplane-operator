@@ -261,6 +261,13 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 	if err != nil {
 		return ctrl.Result{Requeue: true}, err
 	}
+	result, err = r.removeDeprecatedRBAC(ctx)
+	if result != (ctrl.Result{}) {
+		return ctrl.Result{}, err
+	}
+	if err != nil {
+		return ctrl.Result{Requeue: true}, err
+	}
 
 	if !utils.ShouldIgnoreOCPVersion(backplaneConfig) && utils.DeployOnOCP() {
 		currentOCPVersion, err := r.getClusterVersion(ctx)
@@ -1754,36 +1761,7 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 
 		updateNecessary = true
 	}
-	log.Info("we pruning")
-	hyperShiftPreviewClusterRoleBinding := &rbacv1.ClusterRoleBinding{}
-	err := r.Client.Get(ctx, types.NamespacedName{Name: "open-cluster-management:hypershift-preview:hypershift-addon-manager"}, hyperShiftPreviewClusterRoleBinding)
-	if err == nil {
-		log.Info("got the resource")
-		err = r.Client.Delete(ctx, hyperShiftPreviewClusterRoleBinding)
-		if err != nil {
-			log.Error(err, "failed to delete the resource")
-			return ctrl.Result{}, err
-		}
-	} else {
-		if !apierrors.IsNotFound(err) {
-			log.Error(err, "trouble getting the resource")
-			return ctrl.Result{}, err
-		} else {
-			log.Info("couldn't find the resource")
-		}
-	}
-	hyperShiftPreviewClusterRole := &rbacv1.ClusterRole{}
-	err = r.Client.Get(ctx, types.NamespacedName{Name: "open-cluster-management:hypershift-preview:hypershift-addon-manager"}, hyperShiftPreviewClusterRole)
-	if err == nil {
-		err = r.Client.Delete(ctx, hyperShiftPreviewClusterRole)
-		if err != nil {
-			return ctrl.Result{}, err
-		}
-	} else {
-		if !apierrors.IsNotFound(err) {
-			return ctrl.Result{}, err
-		}
-	}
+
 	if m.Enabled(backplanev1.ManagedServiceAccountPreview) {
 		// if the preview was pruned, enable the non-preview version instead
 		m.Enable(backplanev1.ManagedServiceAccount)
@@ -2023,4 +2001,36 @@ func ensureCRD(ctx context.Context, c client.Client, crd *unstructured.Unstructu
 		}
 	}
 	return nil
+}
+
+func (r *MultiClusterEngineReconciler) removeDeprecatedRBAC(ctx context.Context) (ctrl.Result, error) {
+	hyperShiftPreviewClusterRoleBinding := &rbacv1.ClusterRoleBinding{}
+	err := r.Client.Get(ctx, types.NamespacedName{Name: "open-cluster-management:hypershift-preview:hypershift-addon-manager"}, hyperShiftPreviewClusterRoleBinding)
+	if err == nil {
+		err = r.Client.Delete(ctx, hyperShiftPreviewClusterRoleBinding)
+		if err != nil {
+			log.Error(err, "failed to delete the resource")
+			return ctrl.Result{}, err
+		}
+	} else {
+		if !apierrors.IsNotFound(err) {
+			log.Error(err, "trouble getting the resource")
+			return ctrl.Result{}, err
+		} else {
+			log.Info("couldn't find the resource")
+		}
+	}
+	hyperShiftPreviewClusterRole := &rbacv1.ClusterRole{}
+	err = r.Client.Get(ctx, types.NamespacedName{Name: "open-cluster-management:hypershift-preview:hypershift-addon-manager"}, hyperShiftPreviewClusterRole)
+	if err == nil {
+		err = r.Client.Delete(ctx, hyperShiftPreviewClusterRole)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+	} else {
+		if !apierrors.IsNotFound(err) {
+			return ctrl.Result{}, err
+		}
+	}
+	return ctrl.Result{}, nil
 }
