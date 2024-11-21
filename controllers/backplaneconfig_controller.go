@@ -2006,12 +2006,10 @@ func (r *MultiClusterEngineReconciler) removeDeprecatedRBAC(ctx context.Context)
 	if err == nil {
 		err = r.Client.Delete(ctx, hyperShiftPreviewClusterRoleBinding)
 		if err != nil {
-			log.Error(err, "failed to delete the resource")
 			return ctrl.Result{}, err
 		}
 	} else {
 		if !apierrors.IsNotFound(err) {
-			log.Error(err, "trouble getting the resource")
 			return ctrl.Result{}, err
 		}
 	}
@@ -2020,12 +2018,10 @@ func (r *MultiClusterEngineReconciler) removeDeprecatedRBAC(ctx context.Context)
 	if err == nil {
 		err = r.Client.Delete(ctx, hyperShiftPreviewClusterRole)
 		if err != nil {
-			log.Error(err, "failed to delete the resource")
 			return ctrl.Result{}, err
 		}
 	} else {
 		if !apierrors.IsNotFound(err) {
-			log.Error(err, "trouble getting the resource")
 			return ctrl.Result{}, err
 		}
 	}
