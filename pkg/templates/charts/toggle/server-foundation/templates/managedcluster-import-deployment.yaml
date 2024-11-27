@@ -85,6 +85,12 @@ spec:
         image: "{{ .Values.global.imageOverrides.managedcluster_import_controller }}"
         imagePullPolicy: {{ .Values.global.pullPolicy }}
         {{- if .Values.global.deployOnOCP }}
+        args:
+          - "managedcluster-import-controller"
+          - "--cluster-ingress-domain={{ .Values.hubconfig.clusterIngressDomain }}"
+          {{- if .Values.hubconfig.enableFlightCtl }}
+          - "--enable-flightctl=true"
+          {{- end }}
         volumeMounts:
           - name: agent-registration-server-tls
             mountPath: /server
@@ -94,6 +100,10 @@ spec:
           - "managedcluster-import-controller"
           - "--feature-gates=AgentRegistration=false"
           - "--deploy-on-ocp=false"
+          - "--cluster-ingress-domain={{ .Values.hubconfig.clusterIngressDomain }}"
+          {{- if .Values.hubconfig.enableFlightCtl }}
+          - "--enable-flightctl=true"
+          {{- end }}
         {{- end }}
         ports:
           - containerPort: 9091
