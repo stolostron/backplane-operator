@@ -279,3 +279,9 @@ rules:
   - create
   - get
   - update
+- apiGroups:
+  - register.open-cluster-management.io
+  resources:
+  - managedclusters/accept
+  verbs:
+  - update
