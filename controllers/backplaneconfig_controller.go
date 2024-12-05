@@ -43,6 +43,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -259,6 +260,11 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}
 	if err != nil {
 		return ctrl.Result{Requeue: true}, err
+	}
+
+	result, err = r.removeDeprecatedRBAC(ctx)
+	if err != nil {
+		return result, err
 	}
 
 	if !utils.ShouldIgnoreOCPVersion(backplaneConfig) && utils.DeployOnOCP() {
@@ -1992,4 +1998,32 @@ func ensureCRD(ctx context.Context, c client.Client, crd *unstructured.Unstructu
 		}
 	}
 	return nil
+}
+
+func (r *MultiClusterEngineReconciler) removeDeprecatedRBAC(ctx context.Context) (ctrl.Result, error) {
+	hyperShiftPreviewClusterRoleBinding := &rbacv1.ClusterRoleBinding{}
+	err := r.Client.Get(ctx, types.NamespacedName{Name: "open-cluster-management:hypershift-preview:hypershift-addon-manager"}, hyperShiftPreviewClusterRoleBinding)
+	if err == nil {
+		err = r.Client.Delete(ctx, hyperShiftPreviewClusterRoleBinding)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+	} else {
+		if !apierrors.IsNotFound(err) {
+			return ctrl.Result{}, err
+		}
+	}
+	hyperShiftPreviewClusterRole := &rbacv1.ClusterRole{}
+	err = r.Client.Get(ctx, types.NamespacedName{Name: "open-cluster-management:hypershift-preview:hypershift-addon-manager"}, hyperShiftPreviewClusterRole)
+	if err == nil {
+		err = r.Client.Delete(ctx, hyperShiftPreviewClusterRole)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+	} else {
+		if !apierrors.IsNotFound(err) {
+			return ctrl.Result{}, err
+		}
+	}
+	return ctrl.Result{}, nil
 }
