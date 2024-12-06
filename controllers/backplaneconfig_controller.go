@@ -902,6 +902,8 @@ func (r *MultiClusterEngineReconciler) fetchChartOrCRDPath(component string, use
 		backplanev1.ClusterProxyAddon:         toggle.ClusterProxyAddonDir,
 		backplanev1.ConsoleMCE:                toggle.ConsoleMCEChartsDir,
 		backplanev1.Discovery:                 toggle.DiscoveryChartDir,
+		backplanev1.CAPICorePreview:           toggle.CAPICoreChartDir,
+		backplanev1.CAPAWSPreview:             toggle.CAPAChartDir,
 		backplanev1.Hive:                      toggle.HiveChartDir,
 		backplanev1.HyperShift:                toggle.HyperShiftChartDir,
 		backplanev1.ImageBasedInstallOperator: toggle.ImageBasedInstallOperatorChartDir,
@@ -1041,6 +1043,40 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 		}
 		if err != nil {
 			errs[backplanev1.Discovery] = err
+		}
+	}
+	if backplaneConfig.Enabled(backplanev1.CAPICorePreview) {
+		result, err = r.ensureCAPICore(ctx, backplaneConfig)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.CAPICorePreview] = err
+		}
+	} else {
+		result, err = r.ensureNoCAPICore(ctx, backplaneConfig)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.CAPICorePreview] = err
+		}
+	}
+	if backplaneConfig.Enabled(backplanev1.CAPAWSPreview) {
+		result, err = r.ensureCAPA(ctx, backplaneConfig)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.CAPAWSPreview] = err
+		}
+	} else {
+		result, err = r.ensureNoCAPA(ctx, backplaneConfig)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.CAPAWSPreview] = err
 		}
 	}
 
