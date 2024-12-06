@@ -12,7 +12,7 @@ def getLatestManifest():
     pipelineDir = os.path.join(os.getcwd(), "bin/pipeline")
     if os.path.exists(pipelineDir):
         shutil.rmtree(pipelineDir)
-    repo = Repo.clone_from("https://github.com/stolostron/backplane-pipeline.git", pipelineDir)
+    repo = Repo.clone_from("ssh://git@github.com/stolostron/backplane-pipeline.git", pipelineDir)
     repo.git.checkout("2.5-integration")
     manifests = glob.glob('bin/pipeline/snapshots/manifest-*.json')
     manifests.sort()

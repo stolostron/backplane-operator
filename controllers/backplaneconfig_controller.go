@@ -778,7 +778,6 @@ func (r *MultiClusterEngineReconciler) createMetricsServiceMonitor(ctx context.C
 // DeployAlwaysSubcomponents ensures all subcomponents exist
 func (r *MultiClusterEngineReconciler) DeployAlwaysSubcomponents(ctx context.Context,
 	backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-
 	chartsDir := renderer.AlwaysChartsDir
 	// Renders all templates from charts
 	templates, errs := renderer.RenderCharts(chartsDir, backplaneConfig, r.CacheSpec.ImageOverrides,
@@ -935,11 +934,10 @@ func (r *MultiClusterEngineReconciler) fetchChartOrCRDPath(component string, use
 
 func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Context,
 	backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-
 	errs := map[string]error{}
 	requeue := false
 
-	if backplaneConfig.Enabled(backplanev1.ManagedServiceAccount) {
+	if backplaneConfig.Enabled(backplanev1.ManagedServiceAccount) && foundation.CanInstallAddons(ctx, r.Client) {
 		result, err := r.ensureManagedServiceAccount(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
 			requeue = true
@@ -975,7 +973,7 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 		}
 	}
 
-	if backplaneConfig.Enabled(backplanev1.HyperShift) {
+	if backplaneConfig.Enabled(backplanev1.HyperShift) && foundation.CanInstallAddons(ctx, r.Client) {
 		result, err := r.ensureHyperShift(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
 			requeue = true
@@ -1098,7 +1096,7 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 		}
 	}
 
-	if backplaneConfig.Enabled(backplanev1.ClusterManager) {
+	if backplaneConfig.Enabled(backplanev1.ClusterManager) && foundation.CanInstallAddons(ctx, r.Client) {
 		result, err = r.ensureClusterManager(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
 			requeue = true
@@ -1134,7 +1132,7 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 		}
 	}
 
-	if backplaneConfig.Enabled(backplanev1.ClusterProxyAddon) {
+	if backplaneConfig.Enabled(backplanev1.ClusterProxyAddon) && foundation.CanInstallAddons(ctx, r.Client) {
 		result, err = r.ensureClusterProxyAddon(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
 			requeue = true
