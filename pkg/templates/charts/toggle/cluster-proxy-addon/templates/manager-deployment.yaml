@@ -86,6 +86,10 @@ spec:
             - --agent-image-name={{ .Values.global.imageOverrides.cluster_proxy }}
             - --agent-install-namespace=open-cluster-management-agent-addon
             - --enable-kube-api-proxy=false
+          resources:
+            requests:
+              cpu: 25m
+              memory: 128Mi
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
