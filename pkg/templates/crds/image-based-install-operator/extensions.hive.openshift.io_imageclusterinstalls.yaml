@@ -54,6 +54,13 @@ spec:
           spec:
             description: ImageClusterInstallSpec defines the desired state of ImageClusterInstall
             properties:
+              additionalNTPSources:
+                description: |-
+                  AdditionalNTPSources is a list of NTP sources (hostname or IP) to be added to all cluster
+                  hosts. They are added to any NTP sources that were configured through other means.
+                items:
+                  type: string
+                type: array
               bareMetalHostRef:
                 description: BareMetalHostRef identifies a BareMetalHost object to
                   be used to attach the configuration to the host.
@@ -75,8 +82,12 @@ spec:
                   The tls-ca-bundle.pem entry in the config map will be written to /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem
                 properties:
                   name:
+                    default: ""
                     description: |-
                       Name of the referent.
+                      This field is effectively required, but due to backwards compatibility is
+                      allowed to be empty. Instances of this type with an empty value here are
+                      almost certainly wrong.
                       More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
                     type: string
                 type: object
@@ -85,8 +96,12 @@ spec:
                 description: ClusterDeploymentRef is a reference to the ClusterDeployment.
                 properties:
                   name:
+                    default: ""
                     description: |-
                       Name of the referent.
+                      This field is effectively required, but due to backwards compatibility is
+                      allowed to be empty. Instances of this type with an empty value here are
+                      almost certainly wrong.
                       More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
                     type: string
                 type: object
@@ -101,8 +116,12 @@ spec:
                       the admin kubeconfig for this cluster.
                     properties:
                       name:
+                        default: ""
                         description: |-
                           Name of the referent.
+                          This field is effectively required, but due to backwards compatibility is
+                          allowed to be empty. Instances of this type with an empty value here are
+                          almost certainly wrong.
                           More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
                         type: string
                     type: object
@@ -113,8 +132,12 @@ spec:
                       cluster.
                     properties:
                       name:
+                        default: ""
                         description: |-
                           Name of the referent.
+                          This field is effectively required, but due to backwards compatibility is
+                          allowed to be empty. Instances of this type with an empty value here are
+                          almost certainly wrong.
                           More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
                         type: string
                     type: object
@@ -173,8 +196,12 @@ spec:
                     referenced object inside the same namespace.
                   properties:
                     name:
+                      default: ""
                       description: |-
                         Name of the referent.
+                        This field is effectively required, but due to backwards compatibility is
+                        allowed to be empty. Instances of this type with an empty value here are
+                        almost certainly wrong.
                         More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
                       type: string
                   type: object

@@ -59,6 +59,8 @@ spec:
           value: '8000'
         - name: SERVICE_SCHEME
           value: https
+        - name: MAX_CONCURRENT_RECONCILES
+          value: '1'
         image: '{{ .Values.global.imageOverrides.image_based_install_operator }}'
         imagePullPolicy: '{{ .Values.global.pullPolicy }}'
         livenessProbe:
