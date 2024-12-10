@@ -23,6 +23,7 @@ const (
 	ManagedServiceAccountCRDPath      = "pkg/templates/managed-serviceaccount/crds"
 	ImageBasedInstallOperatorChartDir = "pkg/templates/charts/toggle/image-based-install-operator"
 	DiscoveryChartDir                 = "pkg/templates/charts/toggle/discovery-operator"
+	CAPICoreChartDir                  = "pkg/templates/charts/toggle/" + bpv1.CAPICoreNamespaced
 	HostedImportChartDir              = "pkg/templates/charts/hosted/server-foundation"
 	HostingImportChartDir             = "pkg/templates/charts/hosting/server-foundation"
 	HiveChartDir                      = "pkg/templates/charts/toggle/hive-operator"

@@ -4,6 +4,7 @@
 | Name                      | Description                                                                                                          | Enabled |
 |---------------------------|----------------------------------------------------------------------------------------------------------------------|---------|
 | assisted-service          | Installs OpenShift with minimal infrastructure prerequisites and comprehensive pre-flight validations.               | True    |
+| capi-core | Provides capabilities for declaratively handling the Cluster API lifecycle from within a managment cluster | True |
 | cluster-lifecycle         | Provides cluster management capabilities for {ocp-short} and {product-title-short} hub clusters.                     | True    |
 | cluster-manager           | Manages various cluster-related operations within the cluster environment.                                           | True    |
 | cluster-proxy-addon       | Automates the installation of apiserver-network-proxy on both hub and managed clusters using a reverse proxy server. | True    |

@@ -85,6 +85,7 @@ var _ = BeforeSuite(func() {
 			filepath.Join("..", "pkg", "templates", "crds", "foundation"),
 			filepath.Join("..", "pkg", "templates", "crds", "cluster-lifecycle"),
 			filepath.Join("..", "pkg", "templates", "crds", "discovery-operator"),
+			filepath.Join("../..", "pkg", "templates", "crds", "capi-core-operator"),
 			filepath.Join("..", "pkg", "templates", "crds", "cluster-proxy-addon"),
 			filepath.Join("..", "pkg", "templates", "crds", "internal"),
 			filepath.Join("..", "hack", "unit-test-crds"),

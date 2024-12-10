@@ -896,6 +896,7 @@ func (r *MultiClusterEngineReconciler) fetchChartOrCRDPath(component string, use
 
 	chartDirs := map[string]string{
 		backplanev1.AssistedService:           toggle.AssistedServiceChartDir,
+		backplanev1.CAPICorePreview:           toggle.CAPICoreChartDir,
 		backplanev1.ClusterLifecycle:          toggle.ClusterLifecycleChartDir,
 		backplanev1.ClusterManager:            toggle.ClusterManagerChartDir,
 		backplanev1.ClusterProxyAddon:         toggle.ClusterProxyAddonDir,
@@ -1039,6 +1040,23 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 		}
 		if err != nil {
 			errs[backplanev1.Discovery] = err
+		}
+	}
+	if backplaneConfig.Enabled(backplanev1.CAPICorePreview) {
+		result, err = r.ensureCAPICore(ctx, backplaneConfig)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.CAPICorePreview] = err
+		}
+	} else {
+		result, err = r.ensureNoCAPICore(ctx, backplaneConfig)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.CAPICorePreview] = err
 		}
 	}
 
