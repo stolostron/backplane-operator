@@ -267,6 +267,12 @@ var _ = Describe("BackplaneConfig controller", func() {
 				Expected:       nil,
 			},
 			{
+				Name:           "Capi Core Operator Deployment",
+				NamespacedName: types.NamespacedName{Name: backplanev1.CAPICoreNamespaced, Namespace: DestinationNamespace},
+				ResourceType:   &appsv1.Deployment{},
+				Expected:       nil,
+			},
+			{
 				Name:           "Managed Cluster Import Controller",
 				NamespacedName: types.NamespacedName{Name: "managedcluster-import-controller-v2", Namespace: DestinationNamespace},
 				ResourceType:   &appsv1.Deployment{},
@@ -597,6 +603,10 @@ var _ = Describe("BackplaneConfig controller", func() {
 									Enabled: false,
 								},
 								{
+									Name:    backplanev1.CAPICorePreview,
+									Enabled: false,
+								},
+								{
 									Name:    backplanev1.Hive,
 									Enabled: false,
 								},
@@ -870,6 +880,10 @@ var _ = Describe("BackplaneConfig controller", func() {
 									Enabled: true,
 								},
 								{
+									Name:    backplanev1.CAPICorePreview,
+									Enabled: true,
+								},
+								{
 									Name:    backplanev1.Hive,
 									Enabled: true,
 								},
@@ -971,6 +985,10 @@ var _ = Describe("BackplaneConfig controller", func() {
 								},
 								{
 									Name:    backplanev1.Discovery,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.CAPICorePreview,
 									Enabled: false,
 								},
 								{
