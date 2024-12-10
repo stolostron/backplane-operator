@@ -412,6 +412,10 @@ var _ = Describe("BackplaneConfig controller", func() {
 									Enabled: true,
 								},
 								{
+									Name:    backplanev1.CAPICorePreview,
+									Enabled: true,
+								},
+								{
 									Name:    backplanev1.ClusterLifecycle,
 									Enabled: true,
 								},
