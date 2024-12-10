@@ -48,6 +48,7 @@ const (
 
 var allComponents = []string{
 	AssistedService,
+	CAPICorePreview,
 	ClusterLifecycle,
 	ClusterManager,
 	ClusterProxyAddon,
