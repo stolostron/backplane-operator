@@ -25,6 +25,7 @@ import (
 const (
 	AssistedService                  = "assisted-service"
 	CAPICorePreview                  = "capi-core-preview"
+	CAPAWSPreview                    = "capa-preview"
 	ClusterLifecycle                 = "cluster-lifecycle"
 	ClusterManager                   = "cluster-manager"
 	ClusterProxyAddon                = "cluster-proxy-addon"
@@ -44,11 +45,13 @@ const (
 
 const (
 	CAPICoreNamespaced = "capi-core-operator"
+	CAPANamespaced     = "capa-operator"
 )
 
 var allComponents = []string{
 	AssistedService,
 	CAPICorePreview,
+	CAPAWSPreview,
 	ClusterLifecycle,
 	ClusterManager,
 	ClusterProxyAddon,
@@ -70,6 +73,7 @@ var allComponents = []string{
 var MCEComponents = []string{
 	AssistedService,
 	CAPICorePreview,
+	CAPAWSPreview,
 	ClusterLifecycle,
 	ClusterManager,
 	ClusterProxyAddon,
