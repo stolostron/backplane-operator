@@ -1096,7 +1096,7 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 		}
 	}
 
-	if backplaneConfig.Enabled(backplanev1.ClusterManager) && foundation.CanInstallAddons(ctx, r.Client) {
+	if backplaneConfig.Enabled(backplanev1.ClusterManager) {
 		result, err = r.ensureClusterManager(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
 			requeue = true
