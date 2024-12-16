@@ -16,6 +16,8 @@ spec:
     value: "true"
   - name: aroHcp
     value: "true"
+  - name: autoImportDisabled
+    value: "true"
 {{- end }}
   nodePlacement:
     {{- with .Values.hubconfig.tolerations }}
