@@ -7,12 +7,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"path"
+	"path/filepath"
+
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
-	"path"
-	"path/filepath"
 
 	"os"
 
@@ -60,16 +61,17 @@ var onComponents = []string{
 }
 
 var offComponents = []string{
+	backplanev1.ClusterAPIProviderAWSPreview,
 	backplanev1.ImageBasedInstallOperator,
 }
 
 var nonOCPComponents = []string{
+	backplanev1.ClusterLifecycle,
 	backplanev1.ClusterManager,
-	backplanev1.ServerFoundation,
 	backplanev1.HyperShift,
 	backplanev1.HypershiftLocalHosting,
 	backplanev1.LocalCluster,
-	backplanev1.ClusterLifecycle,
+	backplanev1.ServerFoundation,
 }
 
 var GlobalDeployOnOCP = true
@@ -192,8 +194,10 @@ func GetTestImages() []string {
 		"clusterlifecycle_state_metrics", "clusterclaims_controller", "provider_credential_controller", "managed_serviceaccount",
 		"assisted_service_8", "assisted_service_9", "assisted_image_service", "postgresql_12", "assisted_installer_agent", "assisted_installer_controller",
 		"assisted_installer", "console_mce", "hypershift_addon_operator", "hypershift_operator",
-		"apiserver_network_proxy", "aws_encryption_provider", "cluster_api", "cluster_api_provider_agent", "cluster_api_provider_aws",
-		"cluster_api_provider_azure", "cluster_api_provider_kubevirt", "kube_rbac_proxy_mce", "cluster_proxy_addon", "cluster_proxy", "cluster_image_set_controller", "image_based_install_operator"}
+		"apiserver_network_proxy", "aws_encryption_provider", "cluster_api", "cluster_api_provider_agent",
+		"cluster_api_provider_aws", "cluster_api_provider_azure", "cluster_api_provider_kubevirt",
+		"kube_rbac_proxy_mce", "cluster_proxy_addon", "cluster_proxy", "cluster_image_set_controller",
+		"image_based_install_operator", "ose_aws_cluster_api_controllers_rhel9"}
 }
 
 func IsUnitTest() bool {
