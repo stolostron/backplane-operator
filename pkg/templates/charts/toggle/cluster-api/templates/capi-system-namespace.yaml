@@ -1,0 +1,13 @@
+
+# Source: cluster-api/templates/namespace.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  annotations:
+    openshift.io/sa.scc.mcs: s0:c26,c0
+    openshift.io/sa.scc.supplemental-groups: 65500/10000
+    openshift.io/sa.scc.uid-range: 65500/10000
+  labels:
+    cluster.x-k8s.io/provider: cluster-api
+    control-plane: controller-manager
+  name: capi-system
