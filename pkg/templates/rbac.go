@@ -44,10 +44,12 @@ const (
 //+kubebuilder:rbac:groups=proxy.open-cluster-management.io,resources=managedproxyconfigurations;managedproxyserviceresolvers,verbs=get;create;update;list;watch;delete;patch
 
 var resources = []string{
+	"AddOnDeploymentConfig",
+	"AddOnTemplate",
 	"APIService",
 	"ClusterManagementAddOn",
-	"ClusterRoleBinding",
 	"ClusterRole",
+	"ClusterRoleBinding",
 	"ConfigMap",
 	"ConsolePlugin",
 	"ConsoleQuickStart",
@@ -56,16 +58,16 @@ var resources = []string{
 	"ManagedProxyConfiguration",
 	"ManagedProxyServiceResolver",
 	"MutatingWebhookConfiguration",
+	"Namespace",
 	"PrometheusRule",
 	"Role",
 	"RoleBinding",
 	"Route",
+	"Secret",
 	"Service",
 	"ServiceAccount",
 	"ServiceMonitor",
 	"ValidatingWebhookConfiguration",
-	"AddOnDeploymentConfig",
-	"AddOnTemplate",
 }
 
 func main() {
