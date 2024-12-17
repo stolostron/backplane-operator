@@ -17,3 +17,21 @@
         - "HUB_KUBECONFIG"
         - "INSTALL_NAMESPACE"
       auto-install-for-all-clusters: true
+
+- repo_name: "cluster-api-installer"
+  github_ref: "https://github.com/stolostron/cluster-api-installer.git"
+  branch: "main"
+  charts:
+    - name: "cluster-api-provider-aws"
+      chart-path: "charts/cluster-api-provider-aws"
+      always-or-toggle: "toggle"
+      imageMappings:
+        ose-aws-cluster-api-controllers-rhel9: ose_aws_cluster_api_controllers_rhel9
+      inclusions:
+        - "pullSecretOverride"
+      skipRBACOverrides: true
+      updateChartVersion: true # the chart version will be retrieved from trimmed branch name, e.g. backplane-2.6 -> 2.6
+      escape-template-variables:
+        - "CLUSTER_NAME"
+        - "HUB_KUBECONFIG"
+        - "INSTALL_NAMESPACE"
