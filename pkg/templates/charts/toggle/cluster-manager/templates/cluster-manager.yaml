@@ -69,8 +69,6 @@ spec:
             scheme: HTTPS
           initialDelaySeconds: 2
         resources:
-          limits:
-            memory: 2Gi
           requests:
             cpu: 2m
             memory: 16Mi
