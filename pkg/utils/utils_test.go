@@ -221,3 +221,67 @@ func TestGetHubType(t *testing.T) {
 		})
 	}
 }
+
+func Test_GetTestImages(t *testing.T) {
+	tests := []struct {
+		name string
+		want int
+	}{
+		{
+			name: "should return correct number of test images",
+			want: 70,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			images := GetTestImages()
+			got := len(images)
+
+			if got != tt.want {
+				t.Errorf("GetTestImages() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_DefaultReplicaCount(t *testing.T) {
+	tests := []struct {
+		name string
+		mce  *backplanev1.MultiClusterEngine
+		want int
+	}{
+		{
+			name: "should get default replica count for HABasic",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "engine",
+				},
+				Spec: backplanev1.MultiClusterEngineSpec{
+					AvailabilityConfig: backplanev1.HABasic,
+				},
+			},
+			want: 1,
+		},
+		{
+			name: "should get default replica count for HAHigh",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "engine",
+				},
+				Spec: backplanev1.MultiClusterEngineSpec{
+					AvailabilityConfig: backplanev1.HAHigh,
+				},
+			},
+			want: 2,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := DefaultReplicaCount(tt.mce); got != tt.want {
+				t.Errorf("DefaultReplicaCount(tt.mce) = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

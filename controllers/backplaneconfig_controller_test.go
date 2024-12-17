@@ -255,6 +255,12 @@ var _ = Describe("BackplaneConfig controller", func() {
 				Expected:       nil,
 			},
 			{
+				Name:           "CAPI Controller Manager Deployment",
+				NamespacedName: types.NamespacedName{Name: "capi-controller-manager", Namespace: DestinationNamespace},
+				ResourceType:   &appsv1.Deployment{},
+				Expected:       nil,
+			},
+			{
 				Name:           "Hive Operator Deployment",
 				NamespacedName: types.NamespacedName{Name: "hive-operator", Namespace: DestinationNamespace},
 				ResourceType:   &appsv1.Deployment{},
@@ -403,6 +409,10 @@ var _ = Describe("BackplaneConfig controller", func() {
 							Components: []backplanev1.ComponentConfig{
 								{
 									Name:    backplanev1.AssistedService,
+									Enabled: true,
+								},
+								{
+									Name:    backplanev1.ClusterAPIPreview,
 									Enabled: true,
 								},
 								{
@@ -574,6 +584,10 @@ var _ = Describe("BackplaneConfig controller", func() {
 							Components: []backplanev1.ComponentConfig{
 								{
 									Name:    backplanev1.AssistedService,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.ClusterAPIPreview,
 									Enabled: false,
 								},
 								{
@@ -847,6 +861,10 @@ var _ = Describe("BackplaneConfig controller", func() {
 							Components: []backplanev1.ComponentConfig{
 								{
 									Name:    backplanev1.AssistedService,
+									Enabled: true,
+								},
+								{
+									Name:    backplanev1.ClusterAPIPreview,
 									Enabled: true,
 								},
 								{
