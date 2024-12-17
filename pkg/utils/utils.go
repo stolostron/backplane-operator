@@ -7,12 +7,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"path"
+	"path/filepath"
+
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
-	"path"
-	"path/filepath"
 
 	"os"
 
@@ -187,13 +188,25 @@ func GetImagePullPolicy(m *backplanev1.MultiClusterEngine) corev1.PullPolicy {
 }
 
 func GetTestImages() []string {
-	return []string{"registration_operator", "openshift_hive", "multicloud_manager",
-		"managedcluster_import_controller", "registration", "work", "discovery_operator", "cluster_curator_controller",
-		"clusterlifecycle_state_metrics", "clusterclaims_controller", "provider_credential_controller", "managed_serviceaccount",
-		"assisted_service_8", "assisted_service_9", "assisted_image_service", "postgresql_12", "assisted_installer_agent", "assisted_installer_controller",
-		"assisted_installer", "console_mce", "hypershift_addon_operator", "hypershift_operator",
-		"apiserver_network_proxy", "aws_encryption_provider", "cluster_api", "cluster_api_provider_agent", "cluster_api_provider_aws",
-		"cluster_api_provider_azure", "cluster_api_provider_kubevirt", "kube_rbac_proxy_mce", "cluster_proxy_addon", "cluster_proxy", "cluster_image_set_controller", "image_based_install_operator"}
+	return []string{
+		"REGISTRATION_OPERATOR", "OPENSHIFT_HIVE", "MULTICLOUD_MANAGER", "MANAGEDCLUSTER_IMPORT_CONTROLLER",
+		"REGISTRATION", "WORK", "DISCOVERY_OPERATOR", "CLUSTER_CURATOR_CONTROLLER", "CLUSTERLIFECYCLE_STATE_METRICS",
+		"CLUSTERCLAIMS_CONTROLLER", "PROVIDER_CREDENTIAL_CONTROLLER", "MANAGED_SERVICEACCOUNT", "ASSISTED_SERVICE_8",
+		"ASSISTED_SERVICE_9", "ASSISTED_IMAGE_SERVICE", "POSTGRESQL_12", "ASSISTED_INSTALLER_AGENT",
+		"ASSISTED_INSTALLER_CONTROLLER", "ASSISTED_INSTALLER", "CONSOLE_MCE", "HYPERSHIFT_ADDON_OPERATOR",
+		"HYPERSHIFT_OPERATOR", "APISERVER_NETWORK_PROXY", "AWS_ENCRYPTION_PROVIDER", "CLUSTER_API",
+		"CLUSTER_API_PROVIDER_AGENT", "CLUSTER_API_PROVIDER_AWS", "CLUSTER_API_PROVIDER_AZURE",
+		"CLUSTER_API_PROVIDER_KUBEVIRT", "KUBE_RBAC_PROXY_MCE", "CLUSTER_PROXY_ADDON", "CLUSTER_PROXY",
+		"CLUSTER_IMAGE_SET_CONTROLLER", "IMAGE_BASED_INSTALL_OPERATOR", "OSE_CLUSTER_API_RHEL9",
+		"registration_operator", "openshift_hive", "multicloud_manager", "managedcluster_import_controller",
+		"registration", "work", "discovery_operator", "cluster_curator_controller", "clusterlifecycle_state_metrics",
+		"clusterclaims_controller", "provider_credential_controller", "managed_serviceaccount", "assisted_service_8",
+		"assisted_service_9", "assisted_image_service", "postgresql_12", "assisted_installer_agent",
+		"assisted_installer_controller", "assisted_installer", "console_mce", "hypershift_addon_operator",
+		"hypershift_operator", "apiserver_network_proxy", "aws_encryption_provider", "cluster_api",
+		"cluster_api_provider_agent", "cluster_api_provider_aws", "cluster_api_provider_azure",
+		"cluster_api_provider_kubevirt", "kube_rbac_proxy_mce", "cluster_proxy_addon", "cluster_proxy",
+		"cluster_image_set_controller", "image_based_install_operator", "ose_cluster_api_rhel9"}
 }
 
 func IsUnitTest() bool {
