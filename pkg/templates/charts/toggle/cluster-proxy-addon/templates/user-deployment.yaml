@@ -115,6 +115,10 @@ spec:
         - name: NO_PROXY
           value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
         {{- end }}
+        resources:
+          requests:
+            cpu: 25m
+            memory: 256Mi
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:

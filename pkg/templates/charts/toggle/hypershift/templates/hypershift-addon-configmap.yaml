@@ -13,13 +13,6 @@ data:
       lookupPolicy:
         local: false
       tags:
-      - name: cluster-api
-        annotations:
-          io.openshift.build.commit.id: e09ed61cc9ba8bd37b0760291c833b4da744a985
-          io.openshift.build.source-location: https://github.com/openshift/cluster-api
-        from:
-          kind: DockerImage
-          name: {{ .Values.global.imageOverrides.cluster_api }}
       - name: cluster-api-provider-agent
         annotations:
           io.openshift.build.commit.id: dd6353f609dc9e7bfd0312ce4b2c8d3dac5d749e

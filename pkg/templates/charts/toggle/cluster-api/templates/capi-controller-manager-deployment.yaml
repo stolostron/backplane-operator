@@ -1,18 +1,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ocm-controller
+  labels:
+    cluster.x-k8s.io/provider: cluster-api
+    control-plane: controller-manager
+  name: capi-controller-manager
 spec:
   replicas: {{ .Values.hubconfig.replicaCount }}
   selector:
     matchLabels:
-      control-plane: ocm-controller
-      ocm-antiaffinity-selector: ocm-controller
+      cluster.x-k8s.io/provider: cluster-api
+      control-plane: controller-manager
   template:
     metadata:
       labels:
-        control-plane: ocm-controller
-        ocm-antiaffinity-selector: ocm-controller
+        cluster.x-k8s.io/provider: cluster-api
+        control-plane: controller-manager
+        ocm-antiaffinity-selector: capi-controller-manager
     spec:
       affinity:
         podAntiAffinity:
@@ -23,7 +27,7 @@ spec:
                 - key: ocm-antiaffinity-selector
                   operator: In
                   values:
-                  - ocm-controller
+                  - capi-controller-manager
               topologyKey: topology.kubernetes.io/zone
             weight: 70
           - podAffinityTerm:
@@ -32,15 +36,23 @@ spec:
                 - key: ocm-antiaffinity-selector
                   operator: In
                   values:
-                  - ocm-controller
+                  - capi-controller-manager
               topologyKey: kubernetes.io/hostname
             weight: 35
       containers:
       - args:
-        - /controller
-        - "--enable-agent-deploy=true"
-        - "--agent-addon-image={{ .Values.global.imageOverrides.multicloud_manager }}"
+        - --leader-elect
+        - --diagnostics-address=:8443
+        - --insecure-diagnostics=false
+        - --use-deprecated-infra-machine-naming=false
+        - --feature-gates=MachinePool=true,ClusterResourceSet=true,ClusterTopology=false,RuntimeSDK=false,MachineSetPreflightChecks=false
+        command:
+        - /bin/cluster-api-controller-manager
         env:
+{{- if .Values.global.pullSecret }}
+        - name: AGENT_IMAGE_PULL_SECRET
+          value: {{ .Values.global.pullSecret }}
+{{- end }}
 {{- if .Values.hubconfig.proxyConfigs }}
         - name: HTTP_PROXY
           value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
@@ -49,33 +61,39 @@ spec:
         - name: NO_PROXY
           value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
 {{- end }}
-        - name: GOMEMLIMIT
-          value: "3840MiB"
-        image: '{{ .Values.global.imageOverrides.multicloud_manager }}'
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_UID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.uid
+        image: '{{ .Values.global.imageOverrides.ose_cluster_api_rhel9 }}'
         imagePullPolicy: '{{ .Values.global.pullPolicy }}'
-        name: ocm-controller
         livenessProbe:
-          failureThreshold: 3
           httpGet:
             path: /healthz
-            port: 8000
-            scheme: HTTP
-          periodSeconds: 10
-          successThreshold: 1
-          timeoutSeconds: 1
+            port: healthz
+        name: manager
+        ports:
+        - containerPort: 9443
+          name: webhook-server
+          protocol: TCP
+        - containerPort: 9440
+          name: healthz
+          protocol: TCP
+        - containerPort: 8443
+          name: metrics
+          protocol: TCP
         readinessProbe:
-          failureThreshold: 3
           httpGet:
             path: /readyz
-            port: 8000
-            scheme: HTTP
-          periodSeconds: 10
-          successThreshold: 1
-          timeoutSeconds: 1
-        resources:
-          requests:
-            cpu: 100m
-            memory: 256Mi
+            port: healthz
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -83,12 +101,14 @@ spec:
             - ALL
           privileged: false
           readOnlyRootFilesystem: true
-      dnsPolicy: ClusterFirst
-      restartPolicy: Always
-      schedulerName: default-scheduler
-      serviceAccount: ocm-foundation-sa
-      serviceAccountName: ocm-foundation-sa
-      terminationGracePeriodSeconds: 30
+          runAsGroup: 65532
+          runAsNonRoot: true
+          runAsUser: 65532
+        terminationMessagePolicy: FallbackToLogsOnError
+        volumeMounts:
+        - mountPath: /tmp/k8s-webhook-server/serving-certs
+          name: cert
+          readOnly: true
       hostIPC: false
       hostNetwork: false
       hostPID: false
@@ -102,12 +122,14 @@ spec:
 {{- end }}
       securityContext:
         runAsNonRoot: true
-        {{- if .Values.global.deployOnOCP }}
-        {{- if semverCompare ">=4.11.0" .Values.hubconfig.ocpVersion }}
+{{- if .Values.global.deployOnOCP }}
+{{- if semverCompare ">=4.11.0" .Values.hubconfig.ocpVersion }}
         seccompProfile:
           type: RuntimeDefault
-        {{- end }}
-        {{- end }}
+{{- end }}
+{{- end }}
+      serviceAccountName: capi-manager
+      terminationGracePeriodSeconds: 10
 {{- with .Values.hubconfig.tolerations }}
       tolerations:
       {{- range . }}
@@ -118,3 +140,7 @@ spec:
         {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
         {{- end }}
 {{- end }}
+      volumes:
+      - name: cert
+        secret:
+          secretName: capi-webhook-service-cert
