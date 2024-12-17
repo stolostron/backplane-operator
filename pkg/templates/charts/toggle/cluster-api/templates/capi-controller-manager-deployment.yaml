@@ -101,9 +101,9 @@ spec:
             - ALL
           privileged: false
           readOnlyRootFilesystem: true
-          runAsGroup: 65532
+          # runAsGroup: 65532
           runAsNonRoot: true
-          runAsUser: 65532
+          # runAsUser: 65532
         terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
         - mountPath: /tmp/k8s-webhook-server/serving-certs

@@ -421,7 +421,7 @@ func (r *MultiClusterEngineReconciler) ensureNoDiscovery(ctx context.Context,
 func (r *MultiClusterEngineReconciler) ensureClusterAPI(ctx context.Context, mce *backplanev1.MultiClusterEngine) (
 	ctrl.Result, error) {
 
-	namespacedName := types.NamespacedName{Name: "cluster-api", Namespace: mce.Spec.TargetNamespace}
+	namespacedName := types.NamespacedName{Name: "capi-controller-manager", Namespace: mce.Spec.TargetNamespace}
 	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
 
@@ -460,7 +460,7 @@ func (r *MultiClusterEngineReconciler) ensureClusterAPI(ctx context.Context, mce
 
 func (r *MultiClusterEngineReconciler) ensureNoClusterAPI(ctx context.Context,
 	mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	namespacedName := types.NamespacedName{Name: "cluster-api", Namespace: mce.Spec.TargetNamespace}
+	namespacedName := types.NamespacedName{Name: "capi-controller-manager", Namespace: mce.Spec.TargetNamespace}
 
 	// Ensure that the InternalHubComponent CR instance is deleted for component in MCE.
 	if result, err := r.ensureNoInternalEngineComponent(ctx, mce,
