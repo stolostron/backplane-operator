@@ -972,6 +972,10 @@ var _ = Describe("BackplaneConfig controller", func() {
 									Enabled: false,
 								},
 								{
+									Name:    backplanev1.ClusterAPIPreview,
+									Enabled: false,
+								},
+								{
 									Name:    backplanev1.ClusterLifecycle,
 									Enabled: false,
 								},
