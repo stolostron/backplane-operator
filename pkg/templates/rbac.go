@@ -63,6 +63,7 @@ var resources = []string{
 	"Role",
 	"RoleBinding",
 	"Route",
+	"Secret",
 	"Service",
 	"ServiceAccount",
 	"ServiceMonitor",
