@@ -1,0 +1,17 @@
+
+# Source: cluster-api-provider-aws/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    service.beta.openshift.io/serving-cert-secret-name: capa-webhook-service-cert
+  labels:
+    cluster.x-k8s.io/provider: infrastructure-aws
+  name: capa-webhook-service
+  namespace: capa-system
+spec:
+  ports:
+    - port: 443
+      targetPort: webhook-server
+  selector:
+    cluster.x-k8s.io/provider: infrastructure-aws
