@@ -938,7 +938,7 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 	errs := map[string]error{}
 	requeue := false
 
-	if backplaneConfig.Enabled(backplanev1.ManagedServiceAccount) {
+	if backplaneConfig.Enabled(backplanev1.ManagedServiceAccount) && foundation.CanInstallAddons(ctx, r.Client) {
 		result, err := r.ensureManagedServiceAccount(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
 			requeue = true
@@ -974,7 +974,7 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 		}
 	}
 
-	if backplaneConfig.Enabled(backplanev1.HyperShift) {
+	if backplaneConfig.Enabled(backplanev1.HyperShift) && foundation.CanInstallAddons(ctx, r.Client) {
 		result, err := r.ensureHyperShift(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
 			requeue = true
@@ -1133,7 +1133,7 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 		}
 	}
 
-	if backplaneConfig.Enabled(backplanev1.ClusterProxyAddon) {
+	if backplaneConfig.Enabled(backplanev1.ClusterProxyAddon) && foundation.CanInstallAddons(ctx, r.Client) {
 		result, err = r.ensureClusterProxyAddon(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
 			requeue = true
