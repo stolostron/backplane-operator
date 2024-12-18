@@ -6,7 +6,7 @@ metadata:
     control-plane: controller-manager
   name: capi-controller-manager
 spec:
-  replicas: {{ .Values.hubconfig.replicaCount }}
+  replicas: 1
   selector:
     matchLabels:
       cluster.x-k8s.io/provider: cluster-api
@@ -101,9 +101,9 @@ spec:
             - ALL
           privileged: false
           readOnlyRootFilesystem: true
-          runAsGroup: 65532
+          # runAsGroup: 65532
           runAsNonRoot: true
-          runAsUser: 65532
+          # runAsUser: 65532
         terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
         - mountPath: /tmp/k8s-webhook-server/serving-certs
@@ -122,11 +122,9 @@ spec:
 {{- end }}
       securityContext:
         runAsNonRoot: true
-{{- if .Values.global.deployOnOCP }}
 {{- if semverCompare ">=4.11.0" .Values.hubconfig.ocpVersion }}
         seccompProfile:
           type: RuntimeDefault
-{{- end }}
 {{- end }}
       serviceAccountName: capi-manager
       terminationGracePeriodSeconds: 10
