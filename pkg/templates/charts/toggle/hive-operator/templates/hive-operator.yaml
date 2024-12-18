@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: hive-operator
 spec:
-  replicas: 1
+  replicas: {{ .Values.hubconfig.replicaCount }}
   revisionHistoryLimit: 4
   selector:
     matchLabels:
@@ -105,9 +105,11 @@ spec:
 {{- end }}
       securityContext:
         runAsNonRoot: true
+{{- if .Values.global.deployOnOCP }}
 {{- if semverCompare ">=4.11.0" .Values.hubconfig.ocpVersion }}
         seccompProfile:
           type: RuntimeDefault
+{{- end }}
 {{- end }}
       serviceAccountName: hive-operator
       terminationGracePeriodSeconds: 10
