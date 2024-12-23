@@ -1312,25 +1312,51 @@ func (r *MultiClusterEngineReconciler) applyTemplate(ctx context.Context,
 			return result, err
 		}
 	} else {
-		// Apply the object data.
-		force := true
-		err := r.Client.Patch(ctx, template, client.Apply,
-			&client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
+		err := r.Client.Get(ctx, types.NamespacedName{Name: template.GetName(), Namespace: template.GetNamespace()}, template)
+		template.SetManagedFields(nil)
 
+		// object needs to be created
 		if err != nil {
-			errMessage := fmt.Errorf(
-				"error applying object Name: %s Kind: %s Error: %w", template.GetName(), template.GetKind(), err)
+			err := r.Client.Create(ctx, template, &client.CreateOptions{FieldManager: "backplane-operator"})
+			// failed to perform create operator
+			if err != nil {
+				errMessage := fmt.Errorf(
+					"error applying object Name: %s Kind: %s Error: %w", template.GetName(), template.GetKind(), err)
 
-			condType := fmt.Sprintf("%v: %v (Kind:%v)", backplanev1.MultiClusterEngineComponentFailure,
-				template.GetName(), template.GetKind())
+				condType := fmt.Sprintf("%v: %v (Kind:%v)", backplanev1.MultiClusterEngineComponentFailure,
+					template.GetName(), template.GetKind())
 
-			r.StatusManager.AddCondition(
-				status.NewCondition(
-					backplanev1.MultiClusterEngineConditionType(condType), metav1.ConditionTrue,
-					status.ApplyFailedReason, errMessage.Error()),
-			)
+				r.StatusManager.AddCondition(
+					status.NewCondition(
+						backplanev1.MultiClusterEngineConditionType(condType), metav1.ConditionTrue,
+						status.ApplyFailedReason, errMessage.Error()),
+				)
 
-			return ctrl.Result{}, errMessage
+				return ctrl.Result{}, errMessage
+			} else { // template was created
+				r.Log.Info("Creating resource", "Name", template.GetName(), "Kind", template.GetKind())
+			}
+		} else {
+			// Apply the object data.
+			force := true
+			err := r.Client.Patch(ctx, template, client.Apply,
+				&client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
+
+			if err != nil {
+				errMessage := fmt.Errorf(
+					"error applying object Name: %s Kind: %s Error: %w", template.GetName(), template.GetKind(), err)
+
+				condType := fmt.Sprintf("%v: %v (Kind:%v)", backplanev1.MultiClusterEngineComponentFailure,
+					template.GetName(), template.GetKind())
+
+				r.StatusManager.AddCondition(
+					status.NewCondition(
+						backplanev1.MultiClusterEngineConditionType(condType), metav1.ConditionTrue,
+						status.ApplyFailedReason, errMessage.Error()),
+				)
+
+				return ctrl.Result{}, errMessage
+			}
 		}
 	}
 
@@ -1354,14 +1380,15 @@ func (r *MultiClusterEngineReconciler) deleteTemplate(ctx context.Context,
 		return ctrl.Result{}, err
 	}
 
-	log.Info("Finalizing template", "Kind", template.GetKind(), "Name", template.GetName())
 	err = r.Client.Delete(ctx, template)
 	if err != nil && !apierrors.IsNotFound(err) {
 		log.Error(err, "Failed to delete template")
 		return ctrl.Result{}, err
-	}
+	} else {
+		r.Log.Info("Finalizing template... Deleting resource", "Name", template.GetName(), "Kind", template.GetKind())
 
-	return ctrl.Result{}, nil
+		return ctrl.Result{}, nil
+	}
 }
 
 func (r *MultiClusterEngineReconciler) ensureCustomResources(ctx context.Context,
