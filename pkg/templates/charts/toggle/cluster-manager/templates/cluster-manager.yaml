@@ -52,6 +52,8 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.name
+        - name: AGENT_IMAGE
+          value: '{{ .Values.global.imageOverrides.registration_operator }}'
         image: '{{ .Values.global.imageOverrides.registration_operator }}'
         imagePullPolicy: '{{ .Values.global.pullPolicy }}'
         livenessProbe:
@@ -69,8 +71,6 @@ spec:
             scheme: HTTPS
           initialDelaySeconds: 2
         resources:
-          limits:
-            memory: 2Gi
           requests:
             cpu: 2m
             memory: 16Mi
