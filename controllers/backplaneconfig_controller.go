@@ -779,6 +779,7 @@ func (r *MultiClusterEngineReconciler) createMetricsServiceMonitor(ctx context.C
 func (r *MultiClusterEngineReconciler) DeployAlwaysSubcomponents(ctx context.Context,
 	backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 	chartsDir := renderer.AlwaysChartsDir
+
 	// Renders all templates from charts
 	templates, errs := renderer.RenderCharts(chartsDir, backplaneConfig, r.CacheSpec.ImageOverrides,
 		r.CacheSpec.TemplateOverrides)
@@ -893,19 +894,19 @@ func (r *MultiClusterEngineReconciler) ensureNoInternalEngineComponent(ctx conte
 }
 
 func (r *MultiClusterEngineReconciler) fetchChartOrCRDPath(component string, useCRDPath bool) string {
-
 	chartDirs := map[string]string{
-		backplanev1.AssistedService:           toggle.AssistedServiceChartDir,
-		backplanev1.ClusterLifecycle:          toggle.ClusterLifecycleChartDir,
-		backplanev1.ClusterManager:            toggle.ClusterManagerChartDir,
-		backplanev1.ClusterProxyAddon:         toggle.ClusterProxyAddonDir,
-		backplanev1.ConsoleMCE:                toggle.ConsoleMCEChartsDir,
-		backplanev1.Discovery:                 toggle.DiscoveryChartDir,
-		backplanev1.Hive:                      toggle.HiveChartDir,
-		backplanev1.HyperShift:                toggle.HyperShiftChartDir,
-		backplanev1.ImageBasedInstallOperator: toggle.ImageBasedInstallOperatorChartDir,
-		backplanev1.ManagedServiceAccount:     toggle.ManagedServiceAccountChartDir,
-		backplanev1.ServerFoundation:          toggle.ServerFoundationChartDir,
+		backplanev1.AssistedService:              toggle.AssistedServiceChartDir,
+		backplanev1.ClusterAPIProviderAWSPreview: toggle.ClusterAPIProviderAWSDir,
+		backplanev1.ClusterLifecycle:             toggle.ClusterLifecycleChartDir,
+		backplanev1.ClusterManager:               toggle.ClusterManagerChartDir,
+		backplanev1.ClusterProxyAddon:            toggle.ClusterProxyAddonDir,
+		backplanev1.ConsoleMCE:                   toggle.ConsoleMCEChartsDir,
+		backplanev1.Discovery:                    toggle.DiscoveryChartDir,
+		backplanev1.Hive:                         toggle.HiveChartDir,
+		backplanev1.HyperShift:                   toggle.HyperShiftChartDir,
+		backplanev1.ImageBasedInstallOperator:    toggle.ImageBasedInstallOperatorChartDir,
+		backplanev1.ManagedServiceAccount:        toggle.ManagedServiceAccountChartDir,
+		backplanev1.ServerFoundation:             toggle.ServerFoundationChartDir,
 	}
 
 	crdDirs := map[string]string{
@@ -1149,6 +1150,25 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 			errs[backplanev1.ClusterProxyAddon] = err
 		}
 	}
+
+	if backplaneConfig.Enabled(backplanev1.ClusterAPIProviderAWSPreview) {
+		result, err = r.ensureClusterAPIProviderAWS(ctx, backplaneConfig)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.ClusterAPIProviderAWSPreview] = err
+		}
+	} else {
+		result, err = r.ensureNoClusterAPIProviderAWS(ctx, backplaneConfig)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.ClusterAPIProviderAWSPreview] = err
+		}
+	}
+
 	if backplaneConfig.Enabled(backplanev1.LocalCluster) {
 		result, err := r.ensureLocalCluster(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
@@ -2000,7 +2020,10 @@ func ensureCRD(ctx context.Context, c client.Client, crd *unstructured.Unstructu
 
 func (r *MultiClusterEngineReconciler) removeDeprecatedRBAC(ctx context.Context) (ctrl.Result, error) {
 	hyperShiftPreviewClusterRoleBinding := &rbacv1.ClusterRoleBinding{}
-	err := r.Client.Get(ctx, types.NamespacedName{Name: "open-cluster-management:hypershift-preview:hypershift-addon-manager"}, hyperShiftPreviewClusterRoleBinding)
+	err := r.Client.Get(ctx,
+		types.NamespacedName{Name: "open-cluster-management:hypershift-preview:hypershift-addon-manager"},
+		hyperShiftPreviewClusterRoleBinding)
+
 	if err == nil {
 		err = r.Client.Delete(ctx, hyperShiftPreviewClusterRoleBinding)
 		if err != nil {
@@ -2011,8 +2034,12 @@ func (r *MultiClusterEngineReconciler) removeDeprecatedRBAC(ctx context.Context)
 			return ctrl.Result{}, err
 		}
 	}
+
 	hyperShiftPreviewClusterRole := &rbacv1.ClusterRole{}
-	err = r.Client.Get(ctx, types.NamespacedName{Name: "open-cluster-management:hypershift-preview:hypershift-addon-manager"}, hyperShiftPreviewClusterRole)
+	err = r.Client.Get(ctx,
+		types.NamespacedName{Name: "open-cluster-management:hypershift-preview:hypershift-addon-manager"},
+		hyperShiftPreviewClusterRole)
+
 	if err == nil {
 		err = r.Client.Delete(ctx, hyperShiftPreviewClusterRole)
 		if err != nil {
