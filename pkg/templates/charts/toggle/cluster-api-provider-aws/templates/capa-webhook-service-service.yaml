@@ -1,5 +1,5 @@
 
-# Source: cluster-api-provider-aws/templates/service.yaml
+# Source: cluster-api-provider-aws/templates/v1_service_capa-webhook-service.yaml
 apiVersion: v1
 kind: Service
 metadata:
@@ -11,7 +11,7 @@ metadata:
   namespace: capa-system
 spec:
   ports:
-    - port: 443
-      targetPort: webhook-server
+  - port: 443
+    targetPort: webhook-server
   selector:
     cluster.x-k8s.io/provider: infrastructure-aws

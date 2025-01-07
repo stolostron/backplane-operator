@@ -1,5 +1,5 @@
 
-# Source: cluster-api-provider-aws/templates/namespace.yaml
+# Source: cluster-api-provider-aws/templates/v1_namespace_capa-system.yaml
 apiVersion: v1
 kind: Namespace
 metadata:
