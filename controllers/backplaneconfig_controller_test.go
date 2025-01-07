@@ -406,6 +406,10 @@ var _ = Describe("BackplaneConfig controller", func() {
 									Enabled: true,
 								},
 								{
+									Name:    backplanev1.ClusterAPIProviderAWSPreview,
+									Enabled: true,
+								},
+								{
 									Name:    backplanev1.ClusterLifecycle,
 									Enabled: true,
 								},
@@ -574,6 +578,10 @@ var _ = Describe("BackplaneConfig controller", func() {
 							Components: []backplanev1.ComponentConfig{
 								{
 									Name:    backplanev1.AssistedService,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.ClusterAPIProviderAWSPreview,
 									Enabled: false,
 								},
 								{
@@ -850,6 +858,10 @@ var _ = Describe("BackplaneConfig controller", func() {
 									Enabled: true,
 								},
 								{
+									Name:    backplanev1.ClusterAPIProviderAWSPreview,
+									Enabled: true,
+								},
+								{
 									Name:    backplanev1.ClusterLifecycle,
 									Enabled: true,
 								},
@@ -952,6 +964,10 @@ var _ = Describe("BackplaneConfig controller", func() {
 								{
 									Name:    backplanev1.AssistedService,
 									Enabled: false,
+								},
+								{
+									Name:    backplanev1.ClusterAPIProviderAWSPreview,
+									Enabled: true,
 								},
 								{
 									Name:    backplanev1.ClusterLifecycle,

@@ -895,17 +895,18 @@ func (r *MultiClusterEngineReconciler) ensureNoInternalEngineComponent(ctx conte
 func (r *MultiClusterEngineReconciler) fetchChartOrCRDPath(component string, useCRDPath bool) string {
 
 	chartDirs := map[string]string{
-		backplanev1.AssistedService:           toggle.AssistedServiceChartDir,
-		backplanev1.ClusterLifecycle:          toggle.ClusterLifecycleChartDir,
-		backplanev1.ClusterManager:            toggle.ClusterManagerChartDir,
-		backplanev1.ClusterProxyAddon:         toggle.ClusterProxyAddonDir,
-		backplanev1.ConsoleMCE:                toggle.ConsoleMCEChartsDir,
-		backplanev1.Discovery:                 toggle.DiscoveryChartDir,
-		backplanev1.Hive:                      toggle.HiveChartDir,
-		backplanev1.HyperShift:                toggle.HyperShiftChartDir,
-		backplanev1.ImageBasedInstallOperator: toggle.ImageBasedInstallOperatorChartDir,
-		backplanev1.ManagedServiceAccount:     toggle.ManagedServiceAccountChartDir,
-		backplanev1.ServerFoundation:          toggle.ServerFoundationChartDir,
+		backplanev1.AssistedService:              toggle.AssistedServiceChartDir,
+		backplanev1.ClusterAPIProviderAWSPreview: toggle.ClusterAPIProviderAWSDir,
+		backplanev1.ClusterLifecycle:             toggle.ClusterLifecycleChartDir,
+		backplanev1.ClusterManager:               toggle.ClusterManagerChartDir,
+		backplanev1.ClusterProxyAddon:            toggle.ClusterProxyAddonDir,
+		backplanev1.ConsoleMCE:                   toggle.ConsoleMCEChartsDir,
+		backplanev1.Discovery:                    toggle.DiscoveryChartDir,
+		backplanev1.Hive:                         toggle.HiveChartDir,
+		backplanev1.HyperShift:                   toggle.HyperShiftChartDir,
+		backplanev1.ImageBasedInstallOperator:    toggle.ImageBasedInstallOperatorChartDir,
+		backplanev1.ManagedServiceAccount:        toggle.ManagedServiceAccountChartDir,
+		backplanev1.ServerFoundation:             toggle.ServerFoundationChartDir,
 	}
 
 	crdDirs := map[string]string{
@@ -1149,6 +1150,25 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 			errs[backplanev1.ClusterProxyAddon] = err
 		}
 	}
+
+	if backplaneConfig.Enabled(backplanev1.ClusterAPIProviderAWSPreview) {
+		result, err = r.ensureClusterAPIProviderAWS(ctx, backplaneConfig)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.ClusterAPIProviderAWSPreview] = err
+		}
+	} else {
+		result, err = r.ensureNoClusterAPIProviderAWS(ctx, backplaneConfig)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.ClusterAPIProviderAWSPreview] = err
+		}
+	}
+
 	if backplaneConfig.Enabled(backplanev1.LocalCluster) {
 		result, err := r.ensureLocalCluster(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
@@ -1446,6 +1466,7 @@ func (r *MultiClusterEngineReconciler) ensureNoAllInternalEngineComponents(ctx c
 		backplanev1.ClusterProxyAddon,
 		backplanev1.LocalCluster,
 		backplanev1.ClusterManager,
+		backplanev1.ClusterAPIProviderAWSPreview,
 	}
 
 	for _, v := range components {
