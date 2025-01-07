@@ -1,5 +1,5 @@
 
-# Source: cluster-api-provider-aws/templates/service.yaml
+# Source: cluster-api-provider-aws/templates/v1_service_capa-metrics-service.yaml
 apiVersion: v1
 kind: Service
 metadata:
@@ -9,9 +9,9 @@ metadata:
   namespace: capa-system
 spec:
   ports:
-    - port: 8080
-      protocol: TCP
-      targetPort: metrics
+  - port: 8080
+    protocol: TCP
+    targetPort: metrics
   selector:
     cluster.x-k8s.io/provider: infrastructure-aws
   type: ClusterIP

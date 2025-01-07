@@ -1,5 +1,5 @@
 
-# Source: cluster-api-provider-aws/templates/roles.yaml
+# Source: cluster-api-provider-aws/templates/rbac.authorization.k8s.io_v1_rolebinding_capa-leader-elect-rolebinding.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
@@ -12,6 +12,6 @@ roleRef:
   kind: Role
   name: capa-leader-elect-role
 subjects:
-  - kind: ServiceAccount
-    name: capa-controller-manager
-    namespace: capa-system
+- kind: ServiceAccount
+  name: capa-controller-manager
+  namespace: capa-system
