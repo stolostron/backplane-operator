@@ -1743,7 +1743,7 @@ func (r *MultiClusterEngineReconciler) ensureUnstructuredResource(ctx context.Co
 			return ctrl.Result{}, err
 		}
 		// Creation was successful
-		r.Log.Info("Creating resource", "Name", "Kind", u.GetName(), u.GetKind())
+		r.Log.Info("Creating resource", "Name", u.GetName(), "Kind", u.GetKind())
 		return ctrl.Result{}, nil
 
 	} else if err != nil {
