@@ -898,7 +898,7 @@ func (r *MultiClusterEngineReconciler) fetchChartOrCRDPath(component string, use
 	chartDirs := map[string]string{
 		backplanev1.AssistedService:              toggle.AssistedServiceChartDir,
 		backplanev1.ClusterAPIPreview:            toggle.ClusterAPIChartDir,
-		backplanev1.ClusterAPIProviderAWSPreview: toggle.ClusterAPIProviderAWSDir,
+		backplanev1.ClusterAPIProviderAWSPreview: toggle.ClusterAPIProviderAWSChartDir,
 		backplanev1.ClusterLifecycle:             toggle.ClusterLifecycleChartDir,
 		backplanev1.ClusterManager:               toggle.ClusterManagerChartDir,
 		backplanev1.ClusterProxyAddon:            toggle.ClusterProxyAddonDir,
