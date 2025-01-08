@@ -81,6 +81,7 @@ var _ = BeforeSuite(func() {
 		CRDDirectoryPaths: []string{
 			filepath.Join("..", "config", "crd", "bases"),
 			filepath.Join("..", "pkg", "templates", "crds", "cluster-api"),
+			filepath.Join("..", "pkg", "templates", "crds", "cluster-api-provider-aws"),
 			filepath.Join("..", "pkg", "templates", "crds", "cluster-lifecycle"),
 			filepath.Join("..", "pkg", "templates", "crds", "cluster-manager"),
 			filepath.Join("..", "pkg", "templates", "crds", "cluster-proxy-addon"),
@@ -88,7 +89,6 @@ var _ = BeforeSuite(func() {
 			filepath.Join("..", "pkg", "templates", "crds", "foundation"),
 			filepath.Join("..", "pkg", "templates", "crds", "hive-operator"),
 			filepath.Join("..", "pkg", "templates", "crds", "internal"),
-			filepath.Join("..", "pkg", "templates", "crds", "cluster-api-provider-aws"),
 			filepath.Join("..", "hack", "unit-test-crds"),
 		},
 		CRDInstallOptions: envtest.CRDInstallOptions{
