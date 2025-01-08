@@ -4,6 +4,7 @@
 | Name                             | Description                                                                                                          | Enabled |
 |----------------------------------|----------------------------------------------------------------------------------------------------------------------|---------|
 | assisted-service                 | Installs OpenShift with minimal infrastructure prerequisites and comprehensive pre-flight validations.               | True    |
+| cluster-api-preview              | Provides capabilities for declaratively handling the Cluster API lifecycle from within a managment cluster           | False   |
 | cluster-api-provider-aws-preview | Provides declarative, Kubernetes-style APIs to cluster creation, configuration and management.                       | False   |
 | cluster-lifecycle                | Provides cluster management capabilities for {ocp-short} and {product-title-short} hub clusters.                     | True    |
 | cluster-manager                  | Manages various cluster-related operations within the cluster environment.                                           | True    |
@@ -13,6 +14,7 @@
 | hive                             | Provisions and performs initial configuration of {ocp-short} clusters.                                               | True    |
 | hypershift                       | Hosts OpenShift control planes at scale with cost and time efficiency, and cross-cloud portability.                  | True    |
 | hypershift-local-hosting         | Enables local hosting capabilities for within the local cluster environment.                                         | True    |
+| image-based-install-operator     | Provide site configuration to Single Node OpenShift clusters to complete installation.                               | False   |
 | local-cluster                    | Enables the import and self-management of the local hub cluster where the {mce-short} is deployed.                   | True    |
 | managedserviceaccount            | Syncronizes service accounts to the managed clusters and collects tokens as secret resources back to the hub cluster.| True    |
 | server-foundation                | Provides foundational services for server-side operations within the cluster environment.                            | True    |

@@ -406,6 +406,10 @@ var _ = Describe("BackplaneConfig controller", func() {
 									Enabled: true,
 								},
 								{
+									Name:    backplanev1.ClusterAPIPreview,
+									Enabled: true,
+								},
+								{
 									Name:    backplanev1.ClusterAPIProviderAWSPreview,
 									Enabled: true,
 								},
@@ -522,7 +526,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 						Eventually(func() bool {
 							foundCR := &backplanev1.InternalEngineComponent{}
 							err := k8sClient.Get(context.Background(), types.NamespacedName{Name: mcecomponent, Namespace: backplaneConfig.Spec.DeepCopy().TargetNamespace}, foundCR)
-							log.Info(fmt.Sprintf("component retrieved: %v", componentCR))
+							log.Info(fmt.Sprintf("component retrieved: %v", foundCR))
 							return errors.IsNotFound(err)
 						}, timeout, interval).Should(BeTrue())
 
@@ -582,6 +586,10 @@ var _ = Describe("BackplaneConfig controller", func() {
 								},
 								{
 									Name:    backplanev1.ClusterAPIProviderAWSPreview,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.ClusterAPIPreview,
 									Enabled: false,
 								},
 								{
@@ -857,12 +865,16 @@ var _ = Describe("BackplaneConfig controller", func() {
 									Name:    backplanev1.AssistedService,
 									Enabled: true,
 								},
+								{
+									Name:    backplanev1.ClusterAPIPreview,
+									Enabled: true,
+								},
 								// EnvTest does not support namespace deletion; therefore, if we try to re-enable this component, the test will fail.
-								// https://book.kubebuilder.io/reference/envtest
-								// {
-								// 	Name:    backplanev1.ClusterAPIProviderAWSPreview,
-								// 	Enabled: true,
-								// },
+								// https: //book.kubebuilder.io/reference/envtest
+								{
+									Name:    backplanev1.ClusterAPIProviderAWSPreview,
+									Enabled: false,
+								},
 								{
 									Name:    backplanev1.ClusterLifecycle,
 									Enabled: true,
@@ -965,6 +977,10 @@ var _ = Describe("BackplaneConfig controller", func() {
 							Components: []backplanev1.ComponentConfig{
 								{
 									Name:    backplanev1.AssistedService,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.ClusterAPIPreview,
 									Enabled: false,
 								},
 								{

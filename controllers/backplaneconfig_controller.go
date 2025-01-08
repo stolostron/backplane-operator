@@ -779,6 +779,7 @@ func (r *MultiClusterEngineReconciler) createMetricsServiceMonitor(ctx context.C
 func (r *MultiClusterEngineReconciler) DeployAlwaysSubcomponents(ctx context.Context,
 	backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 	chartsDir := renderer.AlwaysChartsDir
+
 	// Renders all templates from charts
 	templates, errs := renderer.RenderCharts(chartsDir, backplaneConfig, r.CacheSpec.ImageOverrides,
 		r.CacheSpec.TemplateOverrides)
@@ -896,6 +897,7 @@ func (r *MultiClusterEngineReconciler) fetchChartOrCRDPath(component string, use
 
 	chartDirs := map[string]string{
 		backplanev1.AssistedService:              toggle.AssistedServiceChartDir,
+		backplanev1.ClusterAPIPreview:            toggle.ClusterAPIChartDir,
 		backplanev1.ClusterAPIProviderAWSPreview: toggle.ClusterAPIProviderAWSDir,
 		backplanev1.ClusterLifecycle:             toggle.ClusterLifecycleChartDir,
 		backplanev1.ClusterManager:               toggle.ClusterManagerChartDir,
@@ -1148,6 +1150,24 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 		}
 		if err != nil {
 			errs[backplanev1.ClusterProxyAddon] = err
+		}
+	}
+
+	if backplaneConfig.Enabled(backplanev1.ClusterAPIPreview) {
+		result, err = r.ensureClusterAPI(ctx, backplaneConfig)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.ClusterAPIPreview] = err
+		}
+	} else {
+		result, err = r.ensureNoClusterAPI(ctx, backplaneConfig)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.ClusterAPIPreview] = err
 		}
 	}
 
@@ -1454,19 +1474,20 @@ func (r *MultiClusterEngineReconciler) ensureNoAllInternalEngineComponents(ctx c
 	requeue := false
 
 	components := []string{
+		backplanev1.AssistedService,
+		backplanev1.ClusterAPIPreview,
+		backplanev1.ClusterAPIProviderAWSPreview,
+		backplanev1.ClusterLifecycle,
+		backplanev1.ClusterManager,
+		backplanev1.ClusterProxyAddon,
 		backplanev1.ConsoleMCE,
-		backplanev1.ManagedServiceAccount,
 		backplanev1.Discovery,
 		backplanev1.Hive,
-		backplanev1.AssistedService,
-		backplanev1.ServerFoundation,
-		backplanev1.ImageBasedInstallOperator,
-		backplanev1.ClusterLifecycle,
 		backplanev1.HyperShift,
-		backplanev1.ClusterProxyAddon,
+		backplanev1.ImageBasedInstallOperator,
 		backplanev1.LocalCluster,
-		backplanev1.ClusterManager,
-		backplanev1.ClusterAPIProviderAWSPreview,
+		backplanev1.ManagedServiceAccount,
+		backplanev1.ServerFoundation,
 	}
 
 	for _, v := range components {
@@ -1742,9 +1763,7 @@ func (r *MultiClusterEngineReconciler) ensureUnstructuredResource(ctx context.Co
 			return ctrl.Result{}, err
 		}
 		// Creation was successful
-		r.Log.Info(fmt.Sprintf("Created new resource - kind: %s name: %s", u.GetKind(), u.GetName()))
-		// condition := NewHubCondition(operatorsv1.Progressing, metav1.ConditionTrue, NewComponentReason, "Created new resource")
-		// SetHubCondition(&m.Status, *condition)
+		r.Log.Info("Creating resource", "Name", u.GetName(), "Kind", u.GetKind())
 		return ctrl.Result{}, nil
 
 	} else if err != nil {
