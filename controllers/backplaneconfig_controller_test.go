@@ -857,10 +857,12 @@ var _ = Describe("BackplaneConfig controller", func() {
 									Name:    backplanev1.AssistedService,
 									Enabled: true,
 								},
-								{
-									Name:    backplanev1.ClusterAPIProviderAWSPreview,
-									Enabled: true,
-								},
+								// EnvTest does not support namespace deletion; therefore, if we try to re-enable this component, the test will fail.
+								// https://book.kubebuilder.io/reference/envtest
+								// {
+								// 	Name:    backplanev1.ClusterAPIProviderAWSPreview,
+								// 	Enabled: true,
+								// },
 								{
 									Name:    backplanev1.ClusterLifecycle,
 									Enabled: true,
@@ -967,7 +969,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 								},
 								{
 									Name:    backplanev1.ClusterAPIProviderAWSPreview,
-									Enabled: true,
+									Enabled: false,
 								},
 								{
 									Name:    backplanev1.ClusterLifecycle,
