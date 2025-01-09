@@ -64,7 +64,7 @@ const (
 	DestinationNamespace       = "test"
 	JobName                    = "test-job"
 
-	timeout  = time.Second * 60
+	timeout  = time.Second * 20
 	duration = time.Second * 10
 	interval = time.Millisecond * 250
 )

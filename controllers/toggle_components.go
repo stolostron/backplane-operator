@@ -649,10 +649,11 @@ func (r *MultiClusterEngineReconciler) ensureNoHive(ctx context.Context, mce *ba
 	err := r.Client.Get(ctx, types.NamespacedName{Name: "hive"}, hiveConfig)
 	if err == nil { // If resource exists, delete
 		err := r.Client.Delete(ctx, hiveConfig)
-		if err != nil {
+		if err != nil && !apierrors.IsNotFound(err) {
 			return ctrl.Result{}, err
 		}
-	} else if err != nil && !apierrors.IsNotFound(err) {
+
+	} else if !apierrors.IsNotFound(err) {
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
 
