@@ -21,6 +21,15 @@ rules:
   - deletecollection
 - apiGroups:
   - ''
+  resourceNames:
+  - cluster-bootstrap
+  resources:
+  - serviceaccounts/token
+  verbs:
+  - get
+  - create
+- apiGroups:
+  - ''
   resources:
   - pods
   verbs:
