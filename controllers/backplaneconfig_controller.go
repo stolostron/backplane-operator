@@ -1356,6 +1356,21 @@ func (r *MultiClusterEngineReconciler) applyTemplate(ctx context.Context,
 			return result, err
 		}
 	} else {
+		// Check if the namespace exists if the template specifies a namespace.
+		if template.GetNamespace() != backplaneConfig.Spec.TargetNamespace && template.GetNamespace() != "" {
+			ns := &corev1.Namespace{}
+			if err := r.Client.Get(ctx, types.NamespacedName{Name: template.GetNamespace()}, ns); err != nil {
+				if apierrors.IsNotFound(err) {
+					r.Log.Info("Namespace does not exist; skipping resource creation",
+						"Name", template.GetName(), "Kind", template.GetKind(), "Namespace", template.GetNamespace())
+
+					// Skip further processing if the namespace does not exist.
+					return ctrl.Result{}, nil
+				}
+				return ctrl.Result{}, err
+			}
+		}
+
 		// Apply the object data.
 		force := true
 		err := r.Client.Patch(ctx, template, client.Apply,
