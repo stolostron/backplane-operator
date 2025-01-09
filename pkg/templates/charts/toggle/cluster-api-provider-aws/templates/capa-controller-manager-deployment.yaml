@@ -117,7 +117,6 @@ spec:
 {{ toYaml . | indent 8 }}
 {{- end }}
       securityContext:
-        fsGroup: 1000
         runAsNonRoot: true
 {{- if .Values.global.deployOnOCP }}
 {{- if semverCompare ">=4.11.0" .Values.hubconfig.ocpVersion }}
