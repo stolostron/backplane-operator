@@ -6,7 +6,7 @@ metadata:
   labels:
     cluster.x-k8s.io/provider: cluster-api
   name: capi-leader-election-rolebinding
-  namespace: capi-system
+  namespace: {{ default "capi-system" .Values.global.namespace }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -14,4 +14,4 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: capi-manager
-  namespace: capi-system
+  namespace: {{ default "capi-system" .Values.global.namespace }}
