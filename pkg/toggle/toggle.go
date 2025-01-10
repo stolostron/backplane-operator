@@ -20,6 +20,7 @@ import (
 const (
 	AssistedServiceChartDir           = "pkg/templates/charts/toggle/assisted-service"
 	ClusterAPIChartDir                = "pkg/templates/charts/toggle/cluster-api"
+	ClusterAPIProviderAWSChartDir     = "pkg/templates/charts/toggle/cluster-api-provider-aws"
 	ClusterLifecycleChartDir          = "pkg/templates/charts/toggle/cluster-lifecycle"
 	ClusterManagerChartDir            = "pkg/templates/charts/toggle/cluster-manager"
 	ClusterProxyAddonDir              = "pkg/templates/charts/toggle/cluster-proxy-addon"

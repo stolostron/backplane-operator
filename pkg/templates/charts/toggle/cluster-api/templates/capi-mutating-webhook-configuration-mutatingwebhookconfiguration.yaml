@@ -15,7 +15,7 @@ webhooks:
     clientConfig:
       service:
         name: capi-webhook-service
-        namespace: capi-system
+        namespace: {{ default "capi-system" .Values.global.namespace }}
         path: /mutate-cluster-x-k8s-io-v1beta1-cluster
     failurePolicy: Fail
     matchPolicy: Equivalent

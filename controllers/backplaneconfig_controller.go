@@ -896,18 +896,19 @@ func (r *MultiClusterEngineReconciler) ensureNoInternalEngineComponent(ctx conte
 func (r *MultiClusterEngineReconciler) fetchChartOrCRDPath(component string, useCRDPath bool) string {
 
 	chartDirs := map[string]string{
-		backplanev1.AssistedService:           toggle.AssistedServiceChartDir,
-		backplanev1.ClusterAPIPreview:         toggle.ClusterAPIChartDir,
-		backplanev1.ClusterLifecycle:          toggle.ClusterLifecycleChartDir,
-		backplanev1.ClusterManager:            toggle.ClusterManagerChartDir,
-		backplanev1.ClusterProxyAddon:         toggle.ClusterProxyAddonDir,
-		backplanev1.ConsoleMCE:                toggle.ConsoleMCEChartsDir,
-		backplanev1.Discovery:                 toggle.DiscoveryChartDir,
-		backplanev1.Hive:                      toggle.HiveChartDir,
-		backplanev1.HyperShift:                toggle.HyperShiftChartDir,
-		backplanev1.ImageBasedInstallOperator: toggle.ImageBasedInstallOperatorChartDir,
-		backplanev1.ManagedServiceAccount:     toggle.ManagedServiceAccountChartDir,
-		backplanev1.ServerFoundation:          toggle.ServerFoundationChartDir,
+		backplanev1.AssistedService:              toggle.AssistedServiceChartDir,
+		backplanev1.ClusterAPIPreview:            toggle.ClusterAPIChartDir,
+		backplanev1.ClusterAPIProviderAWSPreview: toggle.ClusterAPIProviderAWSChartDir,
+		backplanev1.ClusterLifecycle:             toggle.ClusterLifecycleChartDir,
+		backplanev1.ClusterManager:               toggle.ClusterManagerChartDir,
+		backplanev1.ClusterProxyAddon:            toggle.ClusterProxyAddonDir,
+		backplanev1.ConsoleMCE:                   toggle.ConsoleMCEChartsDir,
+		backplanev1.Discovery:                    toggle.DiscoveryChartDir,
+		backplanev1.Hive:                         toggle.HiveChartDir,
+		backplanev1.HyperShift:                   toggle.HyperShiftChartDir,
+		backplanev1.ImageBasedInstallOperator:    toggle.ImageBasedInstallOperatorChartDir,
+		backplanev1.ManagedServiceAccount:        toggle.ManagedServiceAccountChartDir,
+		backplanev1.ServerFoundation:             toggle.ServerFoundationChartDir,
 	}
 
 	crdDirs := map[string]string{
@@ -1170,6 +1171,24 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 		}
 	}
 
+	if backplaneConfig.Enabled(backplanev1.ClusterAPIProviderAWSPreview) {
+		result, err = r.ensureClusterAPIProviderAWS(ctx, backplaneConfig)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.ClusterAPIProviderAWSPreview] = err
+		}
+	} else {
+		result, err = r.ensureNoClusterAPIProviderAWS(ctx, backplaneConfig)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.ClusterAPIProviderAWSPreview] = err
+		}
+	}
+
 	if backplaneConfig.Enabled(backplanev1.LocalCluster) {
 		result, err := r.ensureLocalCluster(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
@@ -1337,6 +1356,21 @@ func (r *MultiClusterEngineReconciler) applyTemplate(ctx context.Context,
 			return result, err
 		}
 	} else {
+		// Check if the namespace exists if the template specifies a namespace.
+		if template.GetNamespace() != backplaneConfig.Spec.TargetNamespace && template.GetNamespace() != "" {
+			ns := &corev1.Namespace{}
+			if err := r.Client.Get(ctx, types.NamespacedName{Name: template.GetNamespace()}, ns); err != nil {
+				if apierrors.IsNotFound(err) {
+					r.Log.Info("Namespace does not exist; skipping resource creation",
+						"Name", template.GetName(), "Kind", template.GetKind(), "Namespace", template.GetNamespace())
+
+					// Skip further processing if the namespace does not exist.
+					return ctrl.Result{}, nil
+				}
+				return ctrl.Result{}, err
+			}
+		}
+
 		// Apply the object data.
 		force := true
 		err := r.Client.Patch(ctx, template, client.Apply,
@@ -1457,6 +1491,7 @@ func (r *MultiClusterEngineReconciler) ensureNoAllInternalEngineComponents(ctx c
 	components := []string{
 		backplanev1.AssistedService,
 		backplanev1.ClusterAPIPreview,
+		backplanev1.ClusterAPIProviderAWSPreview,
 		backplanev1.ClusterLifecycle,
 		backplanev1.ClusterManager,
 		backplanev1.ClusterProxyAddon,

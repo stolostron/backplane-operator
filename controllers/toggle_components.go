@@ -8,6 +8,7 @@ import (
 
 	semver "github.com/Masterminds/semver"
 	configv1 "github.com/openshift/api/config/v1"
+
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 	"github.com/stolostron/backplane-operator/pkg/foundation"
 	"github.com/stolostron/backplane-operator/pkg/hive"
@@ -493,6 +494,81 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterAPI(ctx context.Context,
 	return ctrl.Result{}, nil
 }
 
+func (r *MultiClusterEngineReconciler) ensureClusterAPIProviderAWS(ctx context.Context, mce *backplanev1.MultiClusterEngine) (
+	ctrl.Result, error) {
+
+	namespacedName := types.NamespacedName{Name: "capa-controller-manager", Namespace: mce.Spec.TargetNamespace}
+	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
+	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
+
+	// Ensure that the InternalHubComponent CR instance is created for component in MCE.
+	if result, err := r.ensureInternalEngineComponent(ctx, mce, backplanev1.ClusterAPIProviderAWSPreview); err != nil {
+		return result, err
+	}
+
+	// Renders all templates from charts
+	chartPath := r.fetchChartOrCRDPath(backplanev1.ClusterAPIProviderAWSPreview, false)
+	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
+
+	if len(errs) > 0 {
+		for _, err := range errs {
+			log.Info(err.Error())
+		}
+		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+	}
+
+	// Apply deployment config overrides
+	if result, err := r.applyComponentDeploymentOverrides(mce, templates, backplanev1.ClusterAPIProviderAWSPreview); err != nil {
+		return result, err
+	}
+
+	// Applies all templates
+	for _, template := range templates {
+		applyReleaseVersionAnnotation(template)
+		result, err := r.applyTemplate(ctx, mce, template)
+		if err != nil {
+			return result, err
+		}
+	}
+
+	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterEngineReconciler) ensureNoClusterAPIProviderAWS(ctx context.Context,
+	mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+	namespacedName := types.NamespacedName{Name: "capa-controller-manager", Namespace: mce.Spec.TargetNamespace}
+
+	// Ensure that the InternalHubComponent CR instance is deleted for component in MCE.
+	if result, err := r.ensureNoInternalEngineComponent(ctx, mce,
+		backplanev1.ClusterAPIProviderAWSPreview); (result != ctrl.Result{}) || err != nil {
+		return result, err
+	}
+
+	// Renders all templates from charts
+	chartPath := r.fetchChartOrCRDPath(backplanev1.ClusterAPIProviderAWSPreview, false)
+	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
+
+	if len(errs) > 0 {
+		for _, err := range errs {
+			log.Info(err.Error())
+		}
+		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+	}
+
+	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
+	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
+
+	// Deletes all templates
+	for _, template := range templates {
+		result, err := r.deleteTemplate(ctx, mce, template)
+		if err != nil {
+			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
+			return result, err
+		}
+	}
+	return ctrl.Result{}, nil
+}
+
 func (r *MultiClusterEngineReconciler) ensureHive(ctx context.Context, mce *backplanev1.MultiClusterEngine) (
 	ctrl.Result, error) {
 
@@ -573,10 +649,11 @@ func (r *MultiClusterEngineReconciler) ensureNoHive(ctx context.Context, mce *ba
 	err := r.Client.Get(ctx, types.NamespacedName{Name: "hive"}, hiveConfig)
 	if err == nil { // If resource exists, delete
 		err := r.Client.Delete(ctx, hiveConfig)
-		if err != nil {
+		if err != nil && !apierrors.IsNotFound(err) {
 			return ctrl.Result{}, err
 		}
-	} else if err != nil && !apierrors.IsNotFound(err) {
+
+	} else if !apierrors.IsNotFound(err) {
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
 

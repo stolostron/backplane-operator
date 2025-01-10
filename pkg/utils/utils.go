@@ -62,6 +62,7 @@ var onComponents = []string{
 
 var offComponents = []string{
 	backplanev1.ClusterAPIPreview,
+	backplanev1.ClusterAPIProviderAWSPreview,
 	backplanev1.ImageBasedInstallOperator,
 }
 
