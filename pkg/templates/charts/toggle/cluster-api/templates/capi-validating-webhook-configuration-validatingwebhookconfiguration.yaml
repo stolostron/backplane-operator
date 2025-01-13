@@ -1,10 +1,8 @@
-
-# Source: cluster-api/templates/admissionregistration.k8s.io_v1_validatingwebhookconfiguration_capi-validating-webhook-configuration.yaml
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    service.beta.openshift.io/inject-cabundle: "true"
+    service.beta.openshift.io/inject-cabundle: 'true'
   labels:
     cluster.x-k8s.io/provider: cluster-api
   name: capi-validating-webhook-configuration
@@ -15,7 +13,7 @@ webhooks:
   clientConfig:
     service:
       name: capi-webhook-service
-      namespace: {{ default "capi-system" .Values.global.namespace }}
+      namespace: '{{ default "capi-system" .Values.global.namespace }}'
       path: /validate-cluster-x-k8s-io-v1beta1-cluster
   failurePolicy: Fail
   matchPolicy: Equivalent
@@ -38,7 +36,7 @@ webhooks:
   clientConfig:
     service:
       name: capi-webhook-service
-      namespace: {{ default "capi-system" .Values.global.namespace }}
+      namespace: '{{ default "capi-system" .Values.global.namespace }}'
       path: /validate-cluster-x-k8s-io-v1beta1-clusterclass
   failurePolicy: Fail
   matchPolicy: Equivalent
@@ -61,7 +59,7 @@ webhooks:
   clientConfig:
     service:
       name: capi-webhook-service
-      namespace: {{ default "capi-system" .Values.global.namespace }}
+      namespace: '{{ default "capi-system" .Values.global.namespace }}'
       path: /validate-cluster-x-k8s-io-v1beta1-machine
   failurePolicy: Fail
   matchPolicy: Equivalent
@@ -83,7 +81,7 @@ webhooks:
   clientConfig:
     service:
       name: capi-webhook-service
-      namespace: {{ default "capi-system" .Values.global.namespace }}
+      namespace: '{{ default "capi-system" .Values.global.namespace }}'
       path: /validate-cluster-x-k8s-io-v1beta1-machinedeployment
   failurePolicy: Fail
   matchPolicy: Equivalent
@@ -105,7 +103,7 @@ webhooks:
   clientConfig:
     service:
       name: capi-webhook-service
-      namespace: {{ default "capi-system" .Values.global.namespace }}
+      namespace: '{{ default "capi-system" .Values.global.namespace }}'
       path: /validate-cluster-x-k8s-io-v1beta1-machinehealthcheck
   failurePolicy: Fail
   matchPolicy: Equivalent
@@ -127,7 +125,7 @@ webhooks:
   clientConfig:
     service:
       name: capi-webhook-service
-      namespace: {{ default "capi-system" .Values.global.namespace }}
+      namespace: '{{ default "capi-system" .Values.global.namespace }}'
       path: /validate-cluster-x-k8s-io-v1beta1-machineset
   failurePolicy: Fail
   matchPolicy: Equivalent
@@ -149,7 +147,7 @@ webhooks:
   clientConfig:
     service:
       name: capi-webhook-service
-      namespace: {{ default "capi-system" .Values.global.namespace }}
+      namespace: '{{ default "capi-system" .Values.global.namespace }}'
       path: /validate-runtime-cluster-x-k8s-io-v1alpha1-extensionconfig
   failurePolicy: Fail
   matchPolicy: Equivalent
@@ -171,7 +169,7 @@ webhooks:
   clientConfig:
     service:
       name: capi-webhook-service
-      namespace: {{ default "capi-system" .Values.global.namespace }}
+      namespace: '{{ default "capi-system" .Values.global.namespace }}'
       path: /validate-cluster-x-k8s-io-v1beta1-machinepool
   failurePolicy: Fail
   matchPolicy: Equivalent
@@ -193,7 +191,7 @@ webhooks:
   clientConfig:
     service:
       name: capi-webhook-service
-      namespace: {{ default "capi-system" .Values.global.namespace }}
+      namespace: '{{ default "capi-system" .Values.global.namespace }}'
       path: /validate-addons-cluster-x-k8s-io-v1beta1-clusterresourceset
   failurePolicy: Fail
   matchPolicy: Equivalent
@@ -215,7 +213,7 @@ webhooks:
   clientConfig:
     service:
       name: capi-webhook-service
-      namespace: {{ default "capi-system" .Values.global.namespace }}
+      namespace: '{{ default "capi-system" .Values.global.namespace }}'
       path: /validate-addons-cluster-x-k8s-io-v1beta1-clusterresourcesetbinding
   failurePolicy: Fail
   matchPolicy: Equivalent
@@ -237,7 +235,7 @@ webhooks:
   clientConfig:
     service:
       name: capi-webhook-service
-      namespace: {{ default "capi-system" .Values.global.namespace }}
+      namespace: '{{ default "capi-system" .Values.global.namespace }}'
       path: /validate-ipam-cluster-x-k8s-io-v1beta1-ipaddress
   failurePolicy: Fail
   matchPolicy: Equivalent
@@ -260,7 +258,7 @@ webhooks:
   clientConfig:
     service:
       name: capi-webhook-service
-      namespace: {{ default "capi-system" .Values.global.namespace }}
+      namespace: '{{ default "capi-system" .Values.global.namespace }}'
       path: /validate-ipam-cluster-x-k8s-io-v1beta1-ipaddressclaim
   failurePolicy: Fail
   matchPolicy: Equivalent
