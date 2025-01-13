@@ -11,4 +11,4 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: capa-controller-manager
-  namespace: {{ default "capa-system" .Values.global.namespace }}
+  namespace: '{{ default "capa-system" .Values.global.namespace }}'

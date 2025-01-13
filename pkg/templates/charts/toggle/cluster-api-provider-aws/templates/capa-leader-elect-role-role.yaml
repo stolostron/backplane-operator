@@ -1,15 +1,13 @@
-
-# Source: cluster-api-provider-aws/templates/rbac.authorization.k8s.io_v1_role_capa-leader-elect-role.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   labels:
     cluster.x-k8s.io/provider: infrastructure-aws
   name: capa-leader-elect-role
-  namespace: {{ default "capa-system" .Values.global.namespace }}
+  namespace: '{{ default "capa-system" .Values.global.namespace }}'
 rules:
 - apiGroups:
-  - ""
+  - ''
   resources:
   - configmaps
   verbs:
@@ -21,7 +19,7 @@ rules:
   - patch
   - delete
 - apiGroups:
-  - ""
+  - ''
   resources:
   - configmaps/status
   verbs:
@@ -29,7 +27,7 @@ rules:
   - update
   - patch
 - apiGroups:
-  - ""
+  - ''
   resources:
   - events
   verbs:

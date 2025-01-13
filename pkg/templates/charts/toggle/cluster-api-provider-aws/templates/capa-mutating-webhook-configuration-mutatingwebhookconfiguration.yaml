@@ -1,10 +1,8 @@
-
-# Source: cluster-api-provider-aws/templates/admissionregistration.k8s.io_v1_mutatingwebhookconfiguration_capa-mutating-webhook-configuration.yaml
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    service.beta.openshift.io/inject-cabundle: "true"
+    service.beta.openshift.io/inject-cabundle: 'true'
   labels:
     cluster.x-k8s.io/provider: infrastructure-aws
   name: capa-mutating-webhook-configuration
@@ -15,7 +13,7 @@ webhooks:
   clientConfig:
     service:
       name: capa-webhook-service
-      namespace: {{ default "capa-system" .Values.global.namespace }}
+      namespace: '{{ default "capa-system" .Values.global.namespace }}'
       path: /mutate-infrastructure-cluster-x-k8s-io-v1beta2-awscluster
   failurePolicy: Fail
   matchPolicy: Equivalent
@@ -37,7 +35,7 @@ webhooks:
   clientConfig:
     service:
       name: capa-webhook-service
-      namespace: {{ default "capa-system" .Values.global.namespace }}
+      namespace: '{{ default "capa-system" .Values.global.namespace }}'
       path: /mutate-infrastructure-cluster-x-k8s-io-v1beta2-awsclustercontrolleridentity
   failurePolicy: Fail
   matchPolicy: Equivalent
@@ -59,7 +57,7 @@ webhooks:
   clientConfig:
     service:
       name: capa-webhook-service
-      namespace: {{ default "capa-system" .Values.global.namespace }}
+      namespace: '{{ default "capa-system" .Values.global.namespace }}'
       path: /mutate-infrastructure-cluster-x-k8s-io-v1beta2-awsclusterroleidentity
   failurePolicy: Fail
   matchPolicy: Equivalent
@@ -81,7 +79,7 @@ webhooks:
   clientConfig:
     service:
       name: capa-webhook-service
-      namespace: {{ default "capa-system" .Values.global.namespace }}
+      namespace: '{{ default "capa-system" .Values.global.namespace }}'
       path: /mutate-infrastructure-cluster-x-k8s-io-v1beta2-awsclusterstaticidentity
   failurePolicy: Fail
   matchPolicy: Equivalent
@@ -103,7 +101,7 @@ webhooks:
   clientConfig:
     service:
       name: capa-webhook-service
-      namespace: {{ default "capa-system" .Values.global.namespace }}
+      namespace: '{{ default "capa-system" .Values.global.namespace }}'
       path: /mutate-infrastructure-cluster-x-k8s-io-v1beta2-awsclustertemplate
   failurePolicy: Fail
   matchPolicy: Equivalent
@@ -125,7 +123,7 @@ webhooks:
   clientConfig:
     service:
       name: capa-webhook-service
-      namespace: {{ default "capa-system" .Values.global.namespace }}
+      namespace: '{{ default "capa-system" .Values.global.namespace }}'
       path: /mutate-infrastructure-cluster-x-k8s-io-v1beta2-awsmachine
   failurePolicy: Fail
   name: mutation.awsmachine.infrastructure.cluster.x-k8s.io
@@ -146,7 +144,7 @@ webhooks:
   clientConfig:
     service:
       name: capa-webhook-service
-      namespace: {{ default "capa-system" .Values.global.namespace }}
+      namespace: '{{ default "capa-system" .Values.global.namespace }}'
       path: /mutate-infrastructure-cluster-x-k8s-io-v1beta2-awsfargateprofile
   failurePolicy: Fail
   matchPolicy: Equivalent
@@ -168,7 +166,7 @@ webhooks:
   clientConfig:
     service:
       name: capa-webhook-service
-      namespace: {{ default "capa-system" .Values.global.namespace }}
+      namespace: '{{ default "capa-system" .Values.global.namespace }}'
       path: /mutate-infrastructure-cluster-x-k8s-io-v1beta2-awsmachinepool
   failurePolicy: Fail
   matchPolicy: Equivalent
@@ -190,7 +188,7 @@ webhooks:
   clientConfig:
     service:
       name: capa-webhook-service
-      namespace: {{ default "capa-system" .Values.global.namespace }}
+      namespace: '{{ default "capa-system" .Values.global.namespace }}'
       path: /mutate-infrastructure-cluster-x-k8s-io-v1beta2-awsmanagedmachinepool
   failurePolicy: Fail
   matchPolicy: Equivalent
@@ -212,7 +210,7 @@ webhooks:
   clientConfig:
     service:
       name: capa-webhook-service
-      namespace: {{ default "capa-system" .Values.global.namespace }}
+      namespace: '{{ default "capa-system" .Values.global.namespace }}'
       path: /mutate-infrastructure-cluster-x-k8s-io-v1beta2-rosamachinepool
   failurePolicy: Fail
   matchPolicy: Equivalent
@@ -234,7 +232,7 @@ webhooks:
   clientConfig:
     service:
       name: capa-webhook-service
-      namespace: {{ default "capa-system" .Values.global.namespace }}
+      namespace: '{{ default "capa-system" .Values.global.namespace }}'
       path: /mutate-bootstrap-cluster-x-k8s-io-v1beta2-eksconfig
   failurePolicy: Fail
   matchPolicy: Equivalent
@@ -256,7 +254,7 @@ webhooks:
   clientConfig:
     service:
       name: capa-webhook-service
-      namespace: {{ default "capa-system" .Values.global.namespace }}
+      namespace: '{{ default "capa-system" .Values.global.namespace }}'
       path: /mutate-bootstrap-cluster-x-k8s-io-v1beta2-eksconfigtemplate
   failurePolicy: Fail
   matchPolicy: Equivalent
@@ -278,7 +276,7 @@ webhooks:
   clientConfig:
     service:
       name: capa-webhook-service
-      namespace: {{ default "capa-system" .Values.global.namespace }}
+      namespace: '{{ default "capa-system" .Values.global.namespace }}'
       path: /mutate-controlplane-cluster-x-k8s-io-v1beta2-awsmanagedcontrolplane
   failurePolicy: Fail
   matchPolicy: Equivalent
@@ -300,7 +298,7 @@ webhooks:
   clientConfig:
     service:
       name: capa-webhook-service
-      namespace: {{ default "capa-system" .Values.global.namespace }}
+      namespace: '{{ default "capa-system" .Values.global.namespace }}'
       path: /mutate-controlplane-cluster-x-k8s-io-v1beta2-rosacontrolplane
   failurePolicy: Fail
   matchPolicy: Equivalent
