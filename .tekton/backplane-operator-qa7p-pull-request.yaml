@@ -129,9 +129,6 @@ spec:
       - description: ""
         name: CHAINS-GIT_COMMIT
         value: $(tasks.clone-repository.results.commit)
-      - description: ""
-        name: JAVA_COMMUNITY_DEPENDENCIES
-        value: $(tasks.build-container-amd64.results.JAVA_COMMUNITY_DEPENDENCIES)
     tasks:
       - name: init
         params:
@@ -462,31 +459,6 @@ spec:
             operator: in
             values:
               - "true"
-      - name: inspect-image
-        params:
-          - name: IMAGE_URL
-            value: $(tasks.build-container.results.IMAGE_URL)
-          - name: IMAGE_DIGEST
-            value: $(tasks.build-container.results.IMAGE_DIGEST)
-        runAfter:
-          - build-container
-        taskRef:
-          params:
-            - name: name
-              value: inspect-image
-            - name: bundle
-              value: quay.io/redhat-appstudio-tekton-catalog/task-inspect-image:0.2@sha256:85b78166948cb57ed69894856eed95c470964463f5a7261628d14de36213db6d
-            - name: kind
-              value: task
-          resolver: bundles
-        when:
-          - input: $(params.skip-checks)
-            operator: in
-            values:
-              - "false"
-        workspaces:
-          - name: source
-            workspace: workspace
       - name: deprecated-base-image-check
         params:
           - name: IMAGE_URL
