@@ -49,8 +49,6 @@ spec:
         - name: NO_PROXY
           value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
 {{- end }}
-        - name: GOMEMLIMIT
-          value: "3840MiB"
         image: '{{ .Values.global.imageOverrides.multicloud_manager }}'
         imagePullPolicy: '{{ .Values.global.pullPolicy }}'
         name: ocm-controller
