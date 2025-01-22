@@ -54,6 +54,7 @@ type HubConfig struct {
 	OCPVersion           string            `json:"ocpVersion" structs:"ocpVersion"`
 	ClusterIngressDomain string            `json:"clusterIngressDomain" structs:"clusterIngressDomain"`
 	HubType              string            `json:"hubType" structs:"hubType"`
+	EnableFlightctl      bool              `json:"enableFlightctl" structs:"enableFlightctl"`
 }
 
 type Toleration struct {
@@ -368,6 +369,14 @@ func injectValuesOverrides(values *Values, backplaneConfig *v1.MultiClusterEngin
 	values.HubConfig.ClusterIngressDomain = os.Getenv("ACM_CLUSTER_INGRESS_DOMAIN")
 
 	values.HubConfig.HubType = utils.GetHubType(backplaneConfig)
+
+	enableFlightctl := utils.GetFightEnabled(backplaneConfig)
+
+	if enableFlightctl == "true" {
+		values.HubConfig.EnableFlightctl = true
+	} else {
+		values.HubConfig.EnableFlightctl = false
+	}
 
 	if utils.ProxyEnvVarsAreSet() {
 		proxyVar := map[string]string{}

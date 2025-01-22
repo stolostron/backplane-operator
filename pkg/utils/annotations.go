@@ -26,6 +26,11 @@ var (
 	DeprecatedAnnotationIgnoreOCPVersion = "ignoreOCPVersion"
 
 	/*
+		AnnotationFlightEnabled is an annotation used in multiclusterhub to whether the component flight control is enabled or not
+	*/
+	AnnotationFlightEnabled = "installer.open-cluster-management.io/flight-control-enabled"
+
+	/*
 		AnnotationImageOverridesCM is an annotation used in multiclusterengine to specify a custom ConfigMap containing
 		image overrides.
 	*/
@@ -222,6 +227,15 @@ func HasAnnotation(instance *backplanev1.MultiClusterEngine, annotationKey strin
 
 	_, exists := a[annotationKey]
 	return exists
+}
+
+func GetFightEnabled(instance *backplanev1.MultiClusterEngine) string {
+	if HasAnnotation(instance, AnnotationFlightEnabled) {
+		return instance.GetAnnotations()[AnnotationFlightEnabled]
+	} else {
+		return "false"
+	}
+
 }
 
 /*
