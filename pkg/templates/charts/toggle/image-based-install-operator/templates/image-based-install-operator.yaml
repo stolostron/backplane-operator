@@ -61,6 +61,8 @@ spec:
           value: https
         - name: MAX_CONCURRENT_RECONCILES
           value: '1'
+        - name: TMPDIR
+          value: /data
         image: '{{ .Values.global.imageOverrides.image_based_install_operator }}'
         imagePullPolicy: '{{ .Values.global.pullPolicy }}'
         livenessProbe:
