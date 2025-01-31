@@ -91,9 +91,6 @@ spec:
           privileged: false
           readOnlyRootFilesystem: true
         resources:
-          limits:
-            memory: "2Gi"
-            cpu: "500m"
           requests:
             cpu: "3m"
             memory: "65Mi"
@@ -118,9 +115,6 @@ spec:
           privileged: false
           readOnlyRootFilesystem: true
         resources:
-          limits:
-            memory: "2Gi"
-            cpu: "500m"
           requests:
             cpu: "3m"
             memory: "65Mi"
