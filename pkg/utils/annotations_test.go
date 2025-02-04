@@ -87,20 +87,20 @@ func Test_AnnotationMatch(t *testing.T) {
 	}
 }
 
-func Test_getAnnotationFlightControl(t *testing.T) {
+func Test_getAnnotationEdgeManagement(t *testing.T) {
 	instance := &backplanev1.MultiClusterEngine{
-		ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{AnnotationFlightEnabled: "true"}},
+		ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{AnnotationEdgeManagementEnabled: "true"}},
 	}
-	result := GetFightEnabled(instance)
+	result := GetEdgeManagementEnabled(instance)
 	if result != "true" {
-		t.Errorf("Was expecting true for the flight control annotation. Did not receive")
+		t.Errorf("Was expecting true for the edge management annotation. Did not receive")
 	}
 	instance = &backplanev1.MultiClusterEngine{
 		ObjectMeta: metav1.ObjectMeta{},
 	}
-	result = GetFightEnabled(instance)
+	result = GetEdgeManagementEnabled(instance)
 	if result != "false" {
-		t.Errorf("Was expecting false for the flight control annotation. Did not receive")
+		t.Errorf("Was expecting false for the edge management annotation. Did not receive")
 	}
 }
 

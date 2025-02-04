@@ -26,9 +26,9 @@ var (
 	DeprecatedAnnotationIgnoreOCPVersion = "ignoreOCPVersion"
 
 	/*
-		AnnotationFlightEnabled is an annotation used in multiclusterhub to whether the component flight control is enabled or not
+		AnnotationEdgeManagementEnabled is an annotation used in multiclusterhub to whether the component edge management  is enabled or not
 	*/
-	AnnotationFlightEnabled = "installer.open-cluster-management.io/flight-control-enabled"
+	AnnotationEdgeManagementEnabled = "installer.open-cluster-management.io/edge-management-enabled"
 
 	/*
 		AnnotationImageOverridesCM is an annotation used in multiclusterengine to specify a custom ConfigMap containing
@@ -229,9 +229,9 @@ func HasAnnotation(instance *backplanev1.MultiClusterEngine, annotationKey strin
 	return exists
 }
 
-func GetFightEnabled(instance *backplanev1.MultiClusterEngine) string {
-	if HasAnnotation(instance, AnnotationFlightEnabled) {
-		return instance.GetAnnotations()[AnnotationFlightEnabled]
+func GetEdgeManagementEnabled(instance *backplanev1.MultiClusterEngine) string {
+	if HasAnnotation(instance, AnnotationEdgeManagementEnabled) {
+		return instance.GetAnnotations()[AnnotationEdgeManagementEnabled]
 	} else {
 		return "false"
 	}
