@@ -243,6 +243,7 @@ package main
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=placements/finalizers,verbs=update
 //+kubebuilder:rbac:groups=cluster.x-k8s.io,resources=clusterclasses,verbs=get;list;patch;update;watch
 //+kubebuilder:rbac:groups=cluster.x-k8s.io,resources=clusterclasses;clusterclasses/status,verbs=get;list;patch;update;watch
+//+kubebuilder:rbac:groups=cluster.x-k8s.io,resources=clusters,verbs=get;list
 //+kubebuilder:rbac:groups=cluster.x-k8s.io,resources=clusters,verbs=get;list;watch
 //+kubebuilder:rbac:groups=cluster.x-k8s.io,resources=clusters,verbs=get;list;watch
 //+kubebuilder:rbac:groups=cluster.x-k8s.io,resources=clusters;clusters/finalizers;clusters/status,verbs=get;list;patch;update;watch
