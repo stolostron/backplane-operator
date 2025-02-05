@@ -370,9 +370,9 @@ func injectValuesOverrides(values *Values, backplaneConfig *v1.MultiClusterEngin
 
 	values.HubConfig.HubType = utils.GetHubType(backplaneConfig)
 
-	enableFlightctl := utils.GetFightEnabled(backplaneConfig)
+	enableEdgeManagement := utils.GetEdgeManagementEnabled(backplaneConfig)
 
-	if enableFlightctl == "true" {
+	if enableEdgeManagement == "true" {
 		values.HubConfig.EnableFlightCtl = true
 	} else {
 		values.HubConfig.EnableFlightCtl = false
