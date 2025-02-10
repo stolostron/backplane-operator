@@ -26,9 +26,10 @@ var (
 	DeprecatedAnnotationIgnoreOCPVersion = "ignoreOCPVersion"
 
 	/*
-		AnnotationEdgeManagementEnabled is an annotation used in multiclusterhub to whether the component edge management  is enabled or not
+		AnnotationEdgeManagementEnabled is an annotation used in multiclusterhub to whether the component edge manager
+		is enabled or not.
 	*/
-	AnnotationEdgeManagementEnabled = "installer.open-cluster-management.io/edge-management-enabled"
+	AnnotationEdgeManagerEnabled = "installer.open-cluster-management.io/edge-manager-enabled"
 
 	/*
 		AnnotationImageOverridesCM is an annotation used in multiclusterengine to specify a custom ConfigMap containing
@@ -229,9 +230,9 @@ func HasAnnotation(instance *backplanev1.MultiClusterEngine, annotationKey strin
 	return exists
 }
 
-func GetEdgeManagementEnabled(instance *backplanev1.MultiClusterEngine) string {
-	if HasAnnotation(instance, AnnotationEdgeManagementEnabled) {
-		return instance.GetAnnotations()[AnnotationEdgeManagementEnabled]
+func GetEdgeManagerEnabled(instance *backplanev1.MultiClusterEngine) string {
+	if HasAnnotation(instance, AnnotationEdgeManagerEnabled) {
+		return instance.GetAnnotations()[AnnotationEdgeManagerEnabled]
 	} else {
 		return "false"
 	}
