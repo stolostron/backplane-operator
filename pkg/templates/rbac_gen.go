@@ -42,6 +42,7 @@ package main
 //+kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 //+kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 //+kubebuilder:rbac:groups="",resources=events,verbs=create;patch
+//+kubebuilder:rbac:groups="",resources=events,verbs=get;create;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=namespaces,verbs=create;get;list;watch
 //+kubebuilder:rbac:groups="",resources=namespaces,verbs=delete
 //+kubebuilder:rbac:groups="",resources=namespaces,verbs=get
@@ -76,6 +77,7 @@ package main
 //+kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups="",resources=serviceaccounts/token,verbs=create
+//+kubebuilder:rbac:groups="",resources=serviceaccounts/token,verbs=get;create
 //+kubebuilder:rbac:groups="",resources=serviceaccounts;serviceaccounts/finalizers;secrets;secrets/finalizers;services;services/finalizers;endpoints;events;configmaps;namespaces;persistentvolumeclaims,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=serviceaccounts;services,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",resources=services,verbs=create;delete;get;list;patch;update;watch
@@ -241,6 +243,8 @@ package main
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=placements/finalizers,verbs=update
 //+kubebuilder:rbac:groups=cluster.x-k8s.io,resources=clusterclasses,verbs=get;list;patch;update;watch
 //+kubebuilder:rbac:groups=cluster.x-k8s.io,resources=clusterclasses;clusterclasses/status,verbs=get;list;patch;update;watch
+//+kubebuilder:rbac:groups=cluster.x-k8s.io,resources=clusters,verbs=get;list
+//+kubebuilder:rbac:groups=cluster.x-k8s.io,resources=clusters,verbs=get;list;watch
 //+kubebuilder:rbac:groups=cluster.x-k8s.io,resources=clusters,verbs=get;list;watch
 //+kubebuilder:rbac:groups=cluster.x-k8s.io,resources=clusters;clusters/finalizers;clusters/status,verbs=get;list;patch;update;watch
 //+kubebuilder:rbac:groups=cluster.x-k8s.io,resources=clusters;clusters/status,verbs=get;list;patch;update;watch
@@ -297,6 +301,7 @@ package main
 //+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;create;update
 //+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;create;update
 //+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;create;update;patch
+//+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;create;update;patch;delete
 //+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;watch;create;update;patch;delete
@@ -400,6 +405,7 @@ package main
 //+kubebuilder:rbac:groups=multicluster.x-k8s.io,resources=clusterprofiles,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=multicluster.x-k8s.io,resources=clusterprofiles/status,verbs=update;patch
 //+kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=create;delete;get;list;patch;update;watch
+//+kubebuilder:rbac:groups=networking.k8s.io,resources=networkpolicies,verbs=create;get;update
 //+kubebuilder:rbac:groups=operator.open-cluster-management.io,resources=clustermanagers,verbs=get;list;watch;update;delete;patch
 //+kubebuilder:rbac:groups=operator.open-cluster-management.io,resources=clustermanagers/status,verbs=update;patch
 //+kubebuilder:rbac:groups=operator.open-cluster-management.io,resources=klusterlets,verbs=create;delete;deletecollection;get;list;patch;update;watch;escalate
@@ -425,6 +431,7 @@ package main
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles;rolebindings,verbs=get;list;watch;create;update;patch
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles;rolebindings;clusterroles;clusterrolebindings,verbs=get;list;watch;create;update;delete
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io;"",resources=roles;rolebindings;clusterroles;clusterrolebindings;namespaces,verbs=create;get
+//+kubebuilder:rbac:groups=register.open-cluster-management.io,resources=managedclusters/accept,verbs=update
 //+kubebuilder:rbac:groups=register.open-cluster-management.io,resources=managedclusters/accept,verbs=update
 //+kubebuilder:rbac:groups=register.open-cluster-management.io,resources=managedclusters/accept,verbs=update
 //+kubebuilder:rbac:groups=register.open-cluster-management.io,resources=managedclusters/accept,verbs=update
@@ -454,5 +461,6 @@ package main
 //+kubebuilder:rbac:groups=work.open-cluster-management.io,resources=manifestworks,verbs=get;list;watch;create;update;delete;deletecollection;patch;execute-as
 //+kubebuilder:rbac:groups=work.open-cluster-management.io,resources=manifestworks,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=work.open-cluster-management.io,resources=manifestworks,verbs=get;list;watch;update
+//+kubebuilder:rbac:groups=work.open-cluster-management.io,resources=manifestworks,verbs=patch
 //+kubebuilder:rbac:groups=work.open-cluster-management.io,resources=manifestworks/status;manifestworkreplicasets/status,verbs=update;patch
 //+kubebuilder:rbac:groups=work.open-cluster-management.io,resources=manifestworks;manifestworks/finalizers,verbs=create;delete;get;list;patch;update;watch

@@ -21,6 +21,15 @@ rules:
   - deletecollection
 - apiGroups:
   - ''
+  resourceNames:
+  - agent-registration-bootstrap
+  resources:
+  - serviceaccounts/token
+  verbs:
+  - get
+  - create
+- apiGroups:
+  - ''
   resources:
   - pods
   verbs:
@@ -417,3 +426,11 @@ rules:
   verbs:
   - update
   - patch
+- apiGroups:
+  - cluster.x-k8s.io
+  resources:
+  - clusters
+  verbs:
+  - get
+  - list
+  - watch

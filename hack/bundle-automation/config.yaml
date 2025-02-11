@@ -5,7 +5,7 @@
     hive: openshift_hive
   name: hive-operator
   repo_name: hive
-  sha: af54e2fbd99034c2ac5f04ba2e54f5e40e28c16d
+  sha: 5a34ea42e67854798475efdef091c14ab3d42330
 - branch: backplane-2.8
   github_ref: https://github.com/openshift/image-based-install-operator.git
   operators:

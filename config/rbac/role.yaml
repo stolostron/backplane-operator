@@ -182,6 +182,7 @@ rules:
   - events
   verbs:
   - create
+  - delete
   - get
   - list
   - patch
@@ -310,6 +311,7 @@ rules:
   - serviceaccounts/token
   verbs:
   - create
+  - get
 - apiGroups:
   - ""
   resources:
@@ -2730,6 +2732,14 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - networkpolicies
+  verbs:
+  - create
+  - get
+  - update
 - apiGroups:
   - operator.open-cluster-management.io
   resources:

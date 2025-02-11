@@ -24,6 +24,10 @@ import (
 
 const (
 	AssistedService                  = "assisted-service"
+	ClusterAPI                       = "cluster-api"
+	ClusterAPIPreview                = "cluster-api-preview"
+	ClusterAPIProviderAWS            = "cluster-api-provider-aws"
+	ClusterAPIProviderAWSPreview     = "cluster-api-provider-aws-preview"
 	ClusterLifecycle                 = "cluster-lifecycle"
 	ClusterManager                   = "cluster-manager"
 	ClusterProxyAddon                = "cluster-proxy-addon"
@@ -43,6 +47,10 @@ const (
 
 var allComponents = []string{
 	AssistedService,
+	ClusterAPI,
+	ClusterAPIPreview,
+	ClusterAPIProviderAWS,
+	ClusterAPIProviderAWSPreview,
 	ClusterLifecycle,
 	ClusterManager,
 	ClusterProxyAddon,
@@ -63,6 +71,8 @@ var allComponents = []string{
 // MCEComponents is a slice containing component names specific to the "MCE" category.
 var MCEComponents = []string{
 	AssistedService,
+	ClusterAPIPreview,
+	ClusterAPIProviderAWSPreview,
 	ClusterLifecycle,
 	ClusterManager,
 	ClusterProxyAddon,

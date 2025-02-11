@@ -44,7 +44,7 @@ spec:
       containers:
       - args:
         - --leader-elect
-        - --feature-gates=EKS=true,EKSEnableIAM=true,EKSAllowAddRoles=true,EKSFargate=false,MachinePool=true,EventBridgeInstanceState=false,AutoControllerIdentityCreator=false,BootstrapFormatIgnition=false,ExternalResourceGC=false,AlternativeGCStrategy=false,TagUnmanagedNetworkResources=false,ROSA=true
+        - --feature-gates=EKS=true,EKSEnableIAM=true,EKSAllowAddRoles=true,EKSFargate=true,MachinePool=true,EventBridgeInstanceState=false,AutoControllerIdentityCreator=true,BootstrapFormatIgnition=false,ExternalResourceGC=false,AlternativeGCStrategy=false,TagUnmanagedNetworkResources=true,ROSA=true
         - --v=0
         - --diagnostics-address=:8443
         - --insecure-diagnostics=false
@@ -65,6 +65,8 @@ spec:
 {{- end }}
         - name: AWS_SHARED_CREDENTIALS_FILE
           value: /home/.aws/credentials
+        - name: OCM_TOKEN
+          value: ''
         image: '{{ .Values.global.imageOverrides.ose_aws_cluster_api_controllers_rhel9 }}'
         imagePullPolicy: '{{ .Values.global.pullPolicy }}'
         livenessProbe:
@@ -95,9 +97,7 @@ spec:
             - ALL
           privileged: false
           readOnlyRootFilesystem: true
-          runAsGroup: 65532
           runAsNonRoot: true
-          runAsUser: 65532
         terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
         - mountPath: /tmp/k8s-webhook-server/serving-certs
@@ -117,7 +117,6 @@ spec:
 {{ toYaml . | indent 8 }}
 {{- end }}
       securityContext:
-        fsGroup: 1000
         runAsNonRoot: true
 {{- if .Values.global.deployOnOCP }}
 {{- if semverCompare ">=4.11.0" .Values.hubconfig.ocpVersion }}

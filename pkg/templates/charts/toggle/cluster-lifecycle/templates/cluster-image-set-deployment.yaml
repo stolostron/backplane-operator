@@ -103,9 +103,6 @@ spec:
           privileged: false
           readOnlyRootFilesystem: true
         resources:
-          limits:
-            cpu: "20m"
-            memory: "512Mi"
           requests:
             cpu: "3m"        # Runs < 2m most of the time
             memory: "25Mi"   # Runs between 25-28Mi

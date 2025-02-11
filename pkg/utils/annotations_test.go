@@ -87,6 +87,26 @@ func Test_AnnotationMatch(t *testing.T) {
 	}
 }
 
+func Test_getAnnotationEdgeManagement(t *testing.T) {
+	instance := &backplanev1.MultiClusterEngine{
+		ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{AnnotationEdgeManagerEnabled: "true"}},
+	}
+
+	result := GetEdgeManagerEnabled(instance)
+	if result != "true" {
+		t.Errorf("Was expecting true for the edge management annotation. Did not receive")
+	}
+
+	instance = &backplanev1.MultiClusterEngine{
+		ObjectMeta: metav1.ObjectMeta{},
+	}
+
+	result = GetEdgeManagerEnabled(instance)
+	if result != "false" {
+		t.Errorf("Was expecting false for the edge management annotation. Did not receive")
+	}
+}
+
 func Test_getAnnotation(t *testing.T) {
 	type args struct {
 		instance *backplanev1.MultiClusterEngine
