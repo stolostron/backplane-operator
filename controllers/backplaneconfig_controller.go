@@ -1316,29 +1316,117 @@ func (r *MultiClusterEngineReconciler) applyTemplate(ctx context.Context,
 			return result, err
 		}
 	} else {
-		// Apply the object data.
-		force := true
-		err := r.Client.Patch(ctx, template, client.Apply,
-			&client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
+		existing := template.DeepCopy()
+		if err := r.Client.Get(ctx, types.NamespacedName{Name: existing.GetName(),
+			Namespace: existing.GetNamespace()}, existing); err != nil {
+			// Template resource does not exist
+			if apierrors.IsNotFound(err) {
+				if err := r.Client.Create(ctx, template, &client.CreateOptions{}); err != nil {
+					return r.logAndSetCondition(err, "failed to create resource", template, backplaneConfig)
+				}
+				log.Info("Creating resource", "Kind", template.GetKind(), "Name", template.GetName())
+			} else {
+				return r.logAndSetCondition(err, "failed to get resource", existing, backplaneConfig)
+			}
+		} else {
+			desiredVersion := os.Getenv("OPERATOR_VERSION")
+			if desiredVersion == "" {
+				log.Info("Warning: OPERATOR_VERSION environment variable is not set")
+			}
 
-		if err != nil {
-			errMessage := fmt.Errorf(
-				"error applying object Name: %s Kind: %s Error: %w", template.GetName(), template.GetKind(), err)
+			if !r.ensureResourceVersionAlignment(existing, desiredVersion) {
+				// condition := NewHubCondition(
+				// 	backplanev1.MultiClusterEngineProgressing, metav1.ConditionTrue, backplanev1.MultiClusterEngineComponentFailure,
+				// 	fmt.Sprintf("Updating %s/%s to target version: %s.", template.GetKind(),
+				// 		template.GetName(), desiredVersion),
+				// )
+				// SetHubCondition(&m.Status, *condition)
 
-			condType := fmt.Sprintf("%v: %v (Kind:%v)", backplanev1.MultiClusterEngineComponentFailure,
-				template.GetName(), template.GetKind())
+				condType := fmt.Sprintf("%v: %v (Kind:%v)", backplanev1.MultiClusterEngineProgressing,
+					template.GetName(), template.GetKind())
 
-			r.StatusManager.AddCondition(
-				status.NewCondition(
-					backplanev1.MultiClusterEngineConditionType(condType), metav1.ConditionTrue,
-					status.ApplyFailedReason, errMessage.Error()),
-			)
+				r.StatusManager.AddCondition(
+					status.NewCondition(
+						backplanev1.MultiClusterEngineConditionType(condType), metav1.ConditionTrue,
+						status.ComponentsUpdatingReason, fmt.Sprintf("Updating %s/%s to target version: %s.", template.GetKind(),
+							template.GetName(), desiredVersion)),
+				)
+			}
 
-			return ctrl.Result{}, errMessage
+			/*
+				In ACM 2.13 we are applying a PersistentVolumeClaim (PVC) for Edge Management. When the PVC is created,
+				we cannot patch the resource if there is a new storageClass available. The user would need to delete the
+				pre-existing PVC and allow MCH to recreate a new version with the latest default storageClass version.
+			*/
+			// if existing.GetKind() == "PersistentVolumeClaim" {
+			// 	storageClassName, found, err := unstructured.NestedString(existing.Object, "spec", "storageClassName")
+			// 	if err != nil {
+			// 		r.Log.Error(err, "failed to retrieve storageClassName from PVC", "Name", existing.GetName())
+			// 		return ctrl.Result{}, err
+			// 	}
+
+			// 	if found && storageClassName != os.Getenv(helpers.DefaultStorageClassName) {
+			// 		r.Log.Info("Storage class mismatch default. To update, delete the existing PVC",
+			// 			"Name", existing.GetName())
+			// 		return ctrl.Result{}, nil
+			// 	}
+			// }
+
+			// Resource exists; use the original template for patching to avoid issues with managedFields
+			// Apply the object data.
+			force := true
+			if err := r.Client.Patch(ctx, template, client.Apply, &client.PatchOptions{
+				Force: &force, FieldManager: "multiclusterhub-operator"}); err != nil {
+				return r.logAndSetCondition(err, "failed to update resource", template, backplaneConfig)
+			}
 		}
 	}
 
 	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterEngineReconciler) ensureResourceVersionAlignment(template *unstructured.Unstructured,
+	desiredVersion string) bool {
+	if desiredVersion == "" {
+		return false
+	}
+
+	// Check the release version annotation on the existing resource
+	annotations := template.GetAnnotations()
+	currentVersion, ok := annotations[utils.AnnotationReleaseVersion]
+	if !ok {
+		log.Info(fmt.Sprintf("Annotation '%v' not found on resource", utils.AnnotationReleaseVersion),
+			"Kind", template.GetKind(), "Name", template.GetName())
+		return false
+	}
+
+	if currentVersion != desiredVersion {
+		log.Info("Resource version mismatch detected; attempting to update resource",
+			"Kind", template.GetName(), "Name", template.GetKind(),
+			"CurrentVersion", currentVersion, "DesiredVersion", desiredVersion)
+
+		return false
+	}
+
+	return true // Resource is aligned with the desired version
+}
+
+func (r *MultiClusterEngineReconciler) logAndSetCondition(err error, message string,
+	template *unstructured.Unstructured, m *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+
+	log.Error(err, message, "Kind", template.GetKind(), "Name", template.GetName())
+	wrappedError := pkgerrors.Wrapf(err, "%s Kind: %s Name: %s", message, template.GetName(), template.GetKind())
+
+	condType := fmt.Sprintf("%v: %v (Kind:%v)", backplanev1.MultiClusterEngineComponentFailure, template.GetName(),
+		template.GetKind())
+
+	r.StatusManager.AddCondition(
+		status.NewCondition(
+			backplanev1.MultiClusterEngineConditionType(condType), metav1.ConditionTrue,
+			status.ApplyFailedReason, wrappedError.Error()),
+	)
+
+	return ctrl.Result{}, wrappedError
 }
 
 // deleteTemplate return true if resource does not exist and returns an error if a GET or DELETE errors unexpectedly. A false response without error
@@ -1358,11 +1446,12 @@ func (r *MultiClusterEngineReconciler) deleteTemplate(ctx context.Context,
 		return ctrl.Result{}, err
 	}
 
-	log.Info("Finalizing template", "Kind", template.GetKind(), "Name", template.GetName())
 	err = r.Client.Delete(ctx, template)
 	if err != nil && !apierrors.IsNotFound(err) {
 		log.Error(err, "Failed to delete template")
 		return ctrl.Result{}, err
+	} else {
+		log.Info("Finalizing template... Deleting Resource", "Kind", template.GetKind(), "Name", template.GetName())
 	}
 
 	return ctrl.Result{}, nil
