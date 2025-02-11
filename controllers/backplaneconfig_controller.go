@@ -1370,8 +1370,8 @@ func (r *MultiClusterEngineReconciler) applyTemplate(ctx context.Context,
 				return ctrl.Result{}, err
 			}
 		}
-    
-    existing := template.DeepCopy()
+
+		existing := template.DeepCopy()
 		if err := r.Client.Get(ctx, types.NamespacedName{Name: existing.GetName(),
 			Namespace: existing.GetNamespace()}, existing); err != nil {
 			// Template resource does not exist
@@ -1388,18 +1388,6 @@ func (r *MultiClusterEngineReconciler) applyTemplate(ctx context.Context,
 			if desiredVersion == "" {
 				log.Info("Warning: OPERATOR_VERSION environment variable is not set")
 			}
-
-		// Apply the object data.
-		force := true
-		err := r.Client.Patch(ctx, template, client.Apply,
-			&client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
-
-		if err != nil {
-			errMessage := fmt.Errorf(
-				"error applying object Name: %s Kind: %s Error: %w", template.GetName(), template.GetKind(), err)
-
-			condType := fmt.Sprintf("%v: %v (Kind:%v)", backplanev1.MultiClusterEngineComponentFailure,
-				template.GetName(), template.GetKind())
 
 			if !r.ensureResourceVersionAlignment(existing, desiredVersion) {
 				// condition := NewHubCondition(
@@ -1420,35 +1408,15 @@ func (r *MultiClusterEngineReconciler) applyTemplate(ctx context.Context,
 				)
 			}
 
-			/*
-				In ACM 2.13 we are applying a PersistentVolumeClaim (PVC) for Edge Management. When the PVC is created,
-				we cannot patch the resource if there is a new storageClass available. The user would need to delete the
-				pre-existing PVC and allow MCH to recreate a new version with the latest default storageClass version.
-			*/
-			// if existing.GetKind() == "PersistentVolumeClaim" {
-			// 	storageClassName, found, err := unstructured.NestedString(existing.Object, "spec", "storageClassName")
-			// 	if err != nil {
-			// 		r.Log.Error(err, "failed to retrieve storageClassName from PVC", "Name", existing.GetName())
-			// 		return ctrl.Result{}, err
-			// 	}
-
-			// 	if found && storageClassName != os.Getenv(helpers.DefaultStorageClassName) {
-			// 		r.Log.Info("Storage class mismatch default. To update, delete the existing PVC",
-			// 			"Name", existing.GetName())
-			// 		return ctrl.Result{}, nil
-			// 	}
-			// }
-
 			// Resource exists; use the original template for patching to avoid issues with managedFields
 			// Apply the object data.
 			force := true
 			if err := r.Client.Patch(ctx, template, client.Apply, &client.PatchOptions{
-				Force: &force, FieldManager: "multiclusterhub-operator"}); err != nil {
+				Force: &force, FieldManager: "backplane-operator"}); err != nil {
 				return r.logAndSetCondition(err, "failed to update resource", template, backplaneConfig)
 			}
 		}
 	}
-
 	return ctrl.Result{}, nil
 }
 
