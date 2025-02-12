@@ -2191,3 +2191,113 @@ func Test_finalizeBackplaneConfig(t *testing.T) {
 		})
 	}
 }
+
+func Test_logAndSetCondition(t *testing.T) {
+	tests := []struct {
+		name     string
+		err      error
+		mce      *backplanev1.MultiClusterEngine
+		message  string
+		template *unstructured.Unstructured
+	}{
+		{
+			name: "should log and set condition of MCE",
+			err:  fmt.Errorf("Test error"),
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "multiclusterengine",
+					Namespace: "test-ns",
+				},
+			},
+			message: "This is a test error",
+			template: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "apps/v1",
+					"kind":       "Deployment",
+					"metadata": map[string]interface{}{
+						"name":      "test-deployment",
+						"namespace": "test-ns",
+					},
+					"spec": map[string]interface{}{},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			if _, err := recon.logAndSetCondition(tt.err, tt.message, tt.template, tt.mce); err == nil {
+				t.Errorf("logAndSetCondition() = %v, expected an error", err)
+			}
+		})
+	}
+}
+
+func Test_ensureResourceVersionAlignment(t *testing.T) {
+	tests := []struct {
+		name     string
+		mce      *backplanev1.MultiClusterEngine
+		template *unstructured.Unstructured
+		want     bool
+	}{
+		{
+			name: "should ensure resource version alignment is false",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "multiclusterengine",
+					Namespace: "test-ns",
+				},
+			},
+			template: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "apps/v1",
+					"kind":       "Deployment",
+					"metadata": map[string]interface{}{
+						"annotations": map[string]interface{}{
+							utils.AnnotationReleaseVersion: "2.7.0",
+						},
+						"name":      "test-deployment",
+						"namespace": "test-ns",
+					},
+					"spec": map[string]interface{}{},
+				},
+			},
+			want: false,
+		},
+		{
+			name: "should ensure resource version alignment is true",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "multiclusterhub",
+					Namespace: "test-ns",
+				},
+			},
+			template: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "apps/v1",
+					"kind":       "Deployment",
+					"metadata": map[string]interface{}{
+						"annotations": map[string]interface{}{
+							utils.AnnotationReleaseVersion: "2.8.0",
+						},
+						"name":      "test-deployment",
+						"namespace": "test-ns",
+					},
+					"spec": map[string]interface{}{},
+				},
+			},
+			want: true,
+		},
+	}
+
+	os.Setenv("OPERATOR_VERSION", "2.8.0")
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := recon.ensureResourceVersionAlignment(tt.template, os.Getenv("OPERATOR_VERSION"))
+			if got != tt.want {
+				t.Errorf("ensureResourceVersionAlignment() = %v, want: %v", got, tt.want)
+			}
+		})
+	}
+}

@@ -39,6 +39,8 @@ const (
 	UnsupportedConfigReason = "UnsupportedConfiguration"
 	// ComponentDisabledReason means the component has been specifically disabled by user in config
 	ComponentDisabledReason = "ComponentDisabled"
+	// ComponentUpdatingReason is added when the hub is actively updating a component resource
+	ComponentsUpdatingReason = "UpdatingComponentResource"
 )
 
 // NewCondition creates a new condition.
