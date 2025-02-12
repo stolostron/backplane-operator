@@ -1339,17 +1339,6 @@ func (r *MultiClusterEngineReconciler) applyComponentDeploymentOverrides(mce *ba
 func (r *MultiClusterEngineReconciler) applyTemplate(ctx context.Context,
 	backplaneConfig *backplanev1.MultiClusterEngine, template *unstructured.Unstructured) (ctrl.Result, error) {
 
-	// Set owner reference.
-	// Don't set owner reference on hypershift-addon ManagedClusterAddOn. See ACM-2289
-	if !(template.GetName() == "hypershift-addon" && template.GetKind() == "ManagedClusterAddOn") {
-		err := ctrl.SetControllerReference(backplaneConfig, template, r.Scheme)
-		if err != nil {
-			return ctrl.Result{},
-				fmt.Errorf("error setting controller reference on resource Name: %s Kind: %s Error: %w",
-					template.GetName(), template.GetKind(), err)
-		}
-	}
-
 	if template.GetKind() == "APIService" {
 		result, err := r.ensureUnstructuredResource(ctx, backplaneConfig, template)
 		if err != nil {
@@ -1375,7 +1364,19 @@ func (r *MultiClusterEngineReconciler) applyTemplate(ctx context.Context,
 		if err := r.Client.Get(ctx, types.NamespacedName{Name: existing.GetName(),
 			Namespace: existing.GetNamespace()}, existing); err != nil {
 			// Template resource does not exist
+
 			if apierrors.IsNotFound(err) {
+				// Set owner reference.
+				// Don't set owner reference on hypershift-addon ManagedClusterAddOn. See ACM-2289
+				if !(template.GetName() == "hypershift-addon" && template.GetKind() == "ManagedClusterAddOn") {
+					err := ctrl.SetControllerReference(backplaneConfig, template, r.Scheme)
+					if err != nil {
+						return ctrl.Result{},
+							fmt.Errorf("error setting controller reference on resource Name: %s Kind: %s Error: %w",
+								template.GetName(), template.GetKind(), err)
+					}
+				}
+
 				if err := r.Client.Create(ctx, template, &client.CreateOptions{}); err != nil {
 					return r.logAndSetCondition(err, "failed to create resource", template, backplaneConfig)
 				}
@@ -1390,21 +1391,11 @@ func (r *MultiClusterEngineReconciler) applyTemplate(ctx context.Context,
 			}
 
 			if !r.ensureResourceVersionAlignment(existing, desiredVersion) {
-				// condition := NewHubCondition(
-				// 	backplanev1.MultiClusterEngineProgressing, metav1.ConditionTrue, backplanev1.MultiClusterEngineComponentFailure,
-				// 	fmt.Sprintf("Updating %s/%s to target version: %s.", template.GetKind(),
-				// 		template.GetName(), desiredVersion),
-				// )
-				// SetHubCondition(&m.Status, *condition)
-
-				condType := fmt.Sprintf("%v: %v (Kind:%v)", backplanev1.MultiClusterEngineProgressing,
-					template.GetName(), template.GetKind())
-
 				r.StatusManager.AddCondition(
 					status.NewCondition(
-						backplanev1.MultiClusterEngineConditionType(condType), metav1.ConditionTrue,
-						status.ComponentsUpdatingReason, fmt.Sprintf("Updating %s/%s to target version: %s.", template.GetKind(),
-							template.GetName(), desiredVersion)),
+						backplanev1.MultiClusterEngineProgressing, metav1.ConditionTrue,
+						status.ComponentsUpdatingReason, fmt.Sprintf("Updating %s/%s to target version: %s.",
+							template.GetKind(), template.GetName(), desiredVersion)),
 				)
 			}
 
