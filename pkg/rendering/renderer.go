@@ -55,6 +55,7 @@ type HubConfig struct {
 	ClusterIngressDomain string            `json:"clusterIngressDomain" structs:"clusterIngressDomain"`
 	HubType              string            `json:"hubType" structs:"hubType"`
 	EnableFlightCtl      bool              `json:"enableFlightCtl" structs:"enableFlightCtl"`
+	FlightCtlServer      string            `json:"flightCtlServer" structs:"flightCtlServer"`
 }
 
 type Toleration struct {
@@ -374,6 +375,7 @@ func injectValuesOverrides(values *Values, backplaneConfig *v1.MultiClusterEngin
 
 	if enableEdgeManagement == "true" {
 		values.HubConfig.EnableFlightCtl = true
+		values.HubConfig.FlightCtlServer = utils.GetFlightCtlServer(backplaneConfig)
 	} else {
 		values.HubConfig.EnableFlightCtl = false
 	}

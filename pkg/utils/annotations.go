@@ -32,6 +32,11 @@ var (
 	AnnotationEdgeManagerEnabled = "installer.open-cluster-management.io/edge-manager-enabled"
 
 	/*
+		AnnotationFlightCtlServer is an annotation used in multiclusterengine to specify a custom flightctl server
+	*/
+	AnnotationFlightCtlServer = "installer.multicluster.openshift.io/flightctl-server"
+
+	/*
 		AnnotationImageOverridesCM is an annotation used in multiclusterengine to specify a custom ConfigMap containing
 		image overrides.
 	*/
@@ -236,7 +241,13 @@ func GetEdgeManagerEnabled(instance *backplanev1.MultiClusterEngine) string {
 	} else {
 		return "false"
 	}
+}
 
+func GetFlightCtlServer(instance *backplanev1.MultiClusterEngine) string {
+	if HasAnnotation(instance, AnnotationFlightCtlServer) {
+		return instance.GetAnnotations()[AnnotationFlightCtlServer]
+	}
+	return ""
 }
 
 /*

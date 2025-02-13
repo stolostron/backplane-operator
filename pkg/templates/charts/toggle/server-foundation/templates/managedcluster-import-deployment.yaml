@@ -90,6 +90,7 @@ spec:
           - "--cluster-ingress-domain={{ .Values.hubconfig.clusterIngressDomain }}"
           {{- if .Values.hubconfig.enableFlightCtl }}
           - "--enable-flightctl=true"
+          - "--flightctl-server={{ .Values.hubconfig.flightCtlServer }}"
           {{- end }}
         volumeMounts:
           - name: agent-registration-server-tls
