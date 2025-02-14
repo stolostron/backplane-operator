@@ -10,6 +10,7 @@
   github_ref: https://github.com/openshift/image-based-install-operator.git
   operators:
   - bundlePath: bundle/manifests/
+    ignore-webhook-definitions: false
     imageMappings:
       controller: image_based_install_operator
     name: image-based-install-operator
