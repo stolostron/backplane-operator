@@ -53,7 +53,7 @@ func (r *MultiClusterEngineReconciler) ensureConsoleMCE(ctx context.Context, mce
 	}
 
 	// Renders all templates from charts
-	chartPath := r.fetchChartOrCRDPath(backplanev1.ConsoleMCE, false)
+	chartPath := r.fetchChartOrCRDPath(backplanev1.ConsoleMCE)
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides,
 		r.CacheSpec.TemplateOverrides)
 
@@ -123,7 +123,7 @@ func (r *MultiClusterEngineReconciler) ensureNoConsoleMCE(ctx context.Context, m
 	}
 
 	// Renders all templates from charts
-	chartPath := r.fetchChartOrCRDPath(backplanev1.ConsoleMCE, false)
+	chartPath := r.fetchChartOrCRDPath(backplanev1.ConsoleMCE)
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
@@ -162,26 +162,8 @@ func (r *MultiClusterEngineReconciler) ensureManagedServiceAccount(ctx context.C
 		return result, err
 	}
 
-	// Render CRD templates
-	crdPath := r.fetchChartOrCRDPath(backplanev1.ManagedServiceAccount, true)
-	crds, errs := renderer.RenderCRDs(crdPath, mce)
-	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
-	}
-
-	// Apply all CRDs
-	for _, crd := range crds {
-		result, err := r.applyTemplate(ctx, mce, crd)
-		if err != nil {
-			return result, err
-		}
-	}
-
 	// Renders all templates from charts
-	chartPath := r.fetchChartOrCRDPath(backplanev1.ManagedServiceAccount, false)
+	chartPath := r.fetchChartOrCRDPath(backplanev1.ManagedServiceAccount)
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
@@ -231,7 +213,7 @@ func (r *MultiClusterEngineReconciler) ensureNoManagedServiceAccount(ctx context
 	}
 
 	// Renders all templates from charts
-	chartPath := r.fetchChartOrCRDPath(backplanev1.ManagedServiceAccount, false)
+	chartPath := r.fetchChartOrCRDPath(backplanev1.ManagedServiceAccount)
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 	if len(errs) > 0 {
 		for _, err := range errs {
@@ -252,25 +234,6 @@ func (r *MultiClusterEngineReconciler) ensureNoManagedServiceAccount(ctx context
 		result, err := r.deleteTemplate(ctx, mce, template)
 		if err != nil {
 			log.Error(err, "Failed to delete MSA template")
-			return result, err
-		}
-	}
-
-	// Render CRD templates
-	crdPath := r.fetchChartOrCRDPath(backplanev1.ManagedServiceAccount, true)
-	crds, errs := renderer.RenderCRDs(crdPath, mce)
-	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
-	}
-
-	// Delete all CRDs
-	for _, crd := range crds {
-		result, err := r.deleteTemplate(ctx, mce, crd)
-		if err != nil {
-			log.Error(err, "Failed to delete CRD")
 			return result, err
 		}
 	}
@@ -357,7 +320,7 @@ func (r *MultiClusterEngineReconciler) ensureDiscovery(ctx context.Context, mce 
 	}
 
 	// Renders all templates from charts
-	chartPath := r.fetchChartOrCRDPath(backplanev1.Discovery, false)
+	chartPath := r.fetchChartOrCRDPath(backplanev1.Discovery)
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
@@ -395,7 +358,7 @@ func (r *MultiClusterEngineReconciler) ensureNoDiscovery(ctx context.Context,
 	}
 
 	// Renders all templates from charts
-	chartPath := r.fetchChartOrCRDPath(backplanev1.Discovery, false)
+	chartPath := r.fetchChartOrCRDPath(backplanev1.Discovery)
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
@@ -432,7 +395,7 @@ func (r *MultiClusterEngineReconciler) ensureClusterAPI(ctx context.Context, mce
 	}
 
 	// Renders all templates from charts
-	chartPath := r.fetchChartOrCRDPath(backplanev1.ClusterAPIPreview, false)
+	chartPath := r.fetchChartOrCRDPath(backplanev1.ClusterAPIPreview)
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
@@ -470,7 +433,7 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterAPI(ctx context.Context,
 	}
 
 	// Renders all templates from charts
-	chartPath := r.fetchChartOrCRDPath(backplanev1.ClusterAPIPreview, false)
+	chartPath := r.fetchChartOrCRDPath(backplanev1.ClusterAPIPreview)
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
@@ -507,7 +470,7 @@ func (r *MultiClusterEngineReconciler) ensureClusterAPIProviderAWS(ctx context.C
 	}
 
 	// Renders all templates from charts
-	chartPath := r.fetchChartOrCRDPath(backplanev1.ClusterAPIProviderAWSPreview, false)
+	chartPath := r.fetchChartOrCRDPath(backplanev1.ClusterAPIProviderAWSPreview)
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
@@ -545,7 +508,7 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterAPIProviderAWS(ctx context
 	}
 
 	// Renders all templates from charts
-	chartPath := r.fetchChartOrCRDPath(backplanev1.ClusterAPIProviderAWSPreview, false)
+	chartPath := r.fetchChartOrCRDPath(backplanev1.ClusterAPIProviderAWSPreview)
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
@@ -582,7 +545,7 @@ func (r *MultiClusterEngineReconciler) ensureHive(ctx context.Context, mce *back
 	}
 
 	// Renders all templates from charts
-	chartPath := r.fetchChartOrCRDPath(backplanev1.Hive, false)
+	chartPath := r.fetchChartOrCRDPath(backplanev1.Hive)
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
@@ -631,7 +594,7 @@ func (r *MultiClusterEngineReconciler) ensureNoHive(ctx context.Context, mce *ba
 	}
 
 	// Renders all templates from charts
-	chartPath := r.fetchChartOrCRDPath(backplanev1.Hive, false)
+	chartPath := r.fetchChartOrCRDPath(backplanev1.Hive)
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
@@ -686,7 +649,7 @@ func (r *MultiClusterEngineReconciler) ensureAssistedService(ctx context.Context
 	}
 
 	// Renders all templates from charts
-	chartPath := r.fetchChartOrCRDPath(backplanev1.AssistedService, false)
+	chartPath := r.fetchChartOrCRDPath(backplanev1.AssistedService)
 	templates, errs := renderer.RenderChartWithNamespace(chartPath, mce,
 		r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides, targetNamespace)
 
@@ -730,7 +693,7 @@ func (r *MultiClusterEngineReconciler) ensureNoAssistedService(ctx context.Conte
 	}
 
 	// Renders all templates from charts
-	chartPath := r.fetchChartOrCRDPath(backplanev1.AssistedService, false)
+	chartPath := r.fetchChartOrCRDPath(backplanev1.AssistedService)
 	templates, errs := renderer.RenderChartWithNamespace(chartPath, mce, r.CacheSpec.ImageOverrides,
 		r.CacheSpec.TemplateOverrides, targetNamespace)
 
@@ -777,7 +740,7 @@ func (r *MultiClusterEngineReconciler) ensureServerFoundation(ctx context.Contex
 	}
 
 	// Renders all templates from charts
-	chartPath := r.fetchChartOrCRDPath(backplanev1.ServerFoundation, false)
+	chartPath := r.fetchChartOrCRDPath(backplanev1.ServerFoundation)
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
@@ -814,7 +777,7 @@ func (r *MultiClusterEngineReconciler) ensureNoServerFoundation(ctx context.Cont
 	}
 
 	// Renders all templates from charts
-	chartPath := r.fetchChartOrCRDPath(backplanev1.ServerFoundation, false)
+	chartPath := r.fetchChartOrCRDPath(backplanev1.ServerFoundation)
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
@@ -862,7 +825,7 @@ func (r *MultiClusterEngineReconciler) ensureImageBasedInstallOperator(ctx conte
 	}
 
 	// Renders all templates from charts
-	chartPath := r.fetchChartOrCRDPath(backplanev1.ImageBasedInstallOperator, false)
+	chartPath := r.fetchChartOrCRDPath(backplanev1.ImageBasedInstallOperator)
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
@@ -903,7 +866,7 @@ func (r *MultiClusterEngineReconciler) ensureNoImageBasedInstallOperator(ctx con
 	}
 
 	// Renders all templates from charts
-	chartPath := r.fetchChartOrCRDPath(backplanev1.ImageBasedInstallOperator, false)
+	chartPath := r.fetchChartOrCRDPath(backplanev1.ImageBasedInstallOperator)
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
@@ -954,7 +917,7 @@ func (r *MultiClusterEngineReconciler) ensureClusterLifecycle(ctx context.Contex
 	}
 
 	// Renders all templates from charts
-	chartPath := r.fetchChartOrCRDPath(backplanev1.ClusterLifecycle, false)
+	chartPath := r.fetchChartOrCRDPath(backplanev1.ClusterLifecycle)
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides,
 		r.CacheSpec.TemplateOverrides)
 
@@ -992,7 +955,7 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterLifecycle(ctx context.Cont
 	}
 
 	// Renders all templates from charts
-	chartPath := r.fetchChartOrCRDPath(backplanev1.ClusterLifecycle, false)
+	chartPath := r.fetchChartOrCRDPath(backplanev1.ClusterLifecycle)
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
@@ -1044,7 +1007,7 @@ func (r *MultiClusterEngineReconciler) ensureClusterManager(ctx context.Context,
 	}
 
 	// Renders all templates from charts
-	chartPath := r.fetchChartOrCRDPath(backplanev1.ClusterManager, false)
+	chartPath := r.fetchChartOrCRDPath(backplanev1.ClusterManager)
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
@@ -1093,7 +1056,7 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterManager(ctx context.Contex
 	}
 
 	// Renders all templates from charts
-	chartPath := r.fetchChartOrCRDPath(backplanev1.ClusterManager, false)
+	chartPath := r.fetchChartOrCRDPath(backplanev1.ClusterManager)
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
@@ -1163,7 +1126,7 @@ func (r *MultiClusterEngineReconciler) ensureHyperShift(ctx context.Context, mce
 	}
 
 	// Renders all templates from charts
-	chartPath := r.fetchChartOrCRDPath(backplanev1.HyperShift, false)
+	chartPath := r.fetchChartOrCRDPath(backplanev1.HyperShift)
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
@@ -1248,7 +1211,7 @@ func (r *MultiClusterEngineReconciler) ensureNoHyperShift(ctx context.Context,
 	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 
 	// Renders all templates from charts
-	chartPath := r.fetchChartOrCRDPath(backplanev1.HyperShift, false)
+	chartPath := r.fetchChartOrCRDPath(backplanev1.HyperShift)
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
@@ -1419,7 +1382,7 @@ func (r *MultiClusterEngineReconciler) ensureClusterProxyAddon(ctx context.Conte
 	}
 
 	// Renders all templates from charts
-	chartPath := r.fetchChartOrCRDPath(backplanev1.ClusterProxyAddon, false)
+	chartPath := r.fetchChartOrCRDPath(backplanev1.ClusterProxyAddon)
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
@@ -1472,7 +1435,7 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterProxyAddon(ctx context.Con
 	}
 
 	// Renders all templates from charts
-	chartPath := r.fetchChartOrCRDPath(backplanev1.ClusterProxyAddon, false)
+	chartPath := r.fetchChartOrCRDPath(backplanev1.ClusterProxyAddon)
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
