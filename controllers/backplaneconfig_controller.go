@@ -391,7 +391,6 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}
 
 	var crdsDir string
-
 	if val, ok := os.LookupEnv("UNIT_TEST"); ok && val == "true" {
 		crdsDir = "test/unit-test-crds"
 	} else {
@@ -401,7 +400,6 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 	crds, errs := renderer.RenderCRDs(crdsDir, backplaneConfig)
 	if len(errs) > 0 {
 		for _, err := range errs {
-
 			return result, err
 		}
 	}
@@ -793,6 +791,7 @@ func (r *MultiClusterEngineReconciler) DeployAlwaysSubcomponents(ctx context.Con
 
 	// Applies all templates
 	for _, template := range templates {
+		applyReleaseVersionAnnotation(template)
 		if template.GetKind() == "Deployment" {
 			r.StatusManager.AddComponent(status.DeploymentStatus{
 				NamespacedName: types.NamespacedName{Name: template.GetName(), Namespace: template.GetNamespace()},
@@ -893,8 +892,7 @@ func (r *MultiClusterEngineReconciler) ensureNoInternalEngineComponent(ctx conte
 	return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 }
 
-func (r *MultiClusterEngineReconciler) fetchChartOrCRDPath(component string, useCRDPath bool) string {
-
+func (r *MultiClusterEngineReconciler) fetchChartOrCRDPath(component string) string {
 	chartDirs := map[string]string{
 		backplanev1.AssistedService:              toggle.AssistedServiceChartDir,
 		backplanev1.ClusterAPIPreview:            toggle.ClusterAPIChartDir,
@@ -911,21 +909,6 @@ func (r *MultiClusterEngineReconciler) fetchChartOrCRDPath(component string, use
 		backplanev1.ServerFoundation:             toggle.ServerFoundationChartDir,
 	}
 
-	crdDirs := map[string]string{
-		backplanev1.ManagedServiceAccount: toggle.ManagedServiceAccountCRDPath,
-	}
-
-	// Return CRD path if `useCRDPath` is true and the component has a CRD path defined
-	if useCRDPath {
-		if dir, exists := crdDirs[component]; exists {
-			return dir
-		}
-
-		log.Info("CRD path not found for component: %v", "Component", component)
-		return "" // No CRD path defined for this component
-	}
-
-	// Return chart directory if `useCRDPath` is false or the component has no CRD path
 	if dir, exists := chartDirs[component]; exists {
 		return dir
 	}

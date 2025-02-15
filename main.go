@@ -25,11 +25,12 @@ import (
 	"crypto/tls"
 	"flag"
 	"fmt"
+	"os"
+	"time"
+
 	"github.com/stolostron/backplane-operator/controllers/mcewebhook"
 	"k8s.io/client-go/kubernetes"
 	"open-cluster-management.io/sdk-go/pkg/servingcert"
-	"os"
-	"time"
 
 	configv1 "github.com/openshift/api/config/v1"
 	operatorv1 "github.com/openshift/api/operator/v1"
@@ -44,6 +45,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clustermanager "open-cluster-management.io/api/operator/v1"
+
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"

@@ -32,7 +32,6 @@ const (
 	HyperShiftChartDir                = "pkg/templates/charts/toggle/hypershift"
 	ImageBasedInstallOperatorChartDir = "pkg/templates/charts/toggle/image-based-install-operator"
 	ManagedServiceAccountChartDir     = "pkg/templates/charts/toggle/managed-serviceaccount"
-	ManagedServiceAccountCRDPath      = "pkg/templates/managed-serviceaccount/crds"
 	ServerFoundationChartDir          = "pkg/templates/charts/toggle/server-foundation"
 )
 

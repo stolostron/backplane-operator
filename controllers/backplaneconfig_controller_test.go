@@ -354,12 +354,6 @@ var _ = Describe("BackplaneConfig controller", func() {
 				Expected:       nil,
 			},
 			{
-				Name:           "Managed-ServiceAccount CRD",
-				NamespacedName: types.NamespacedName{Name: "managedserviceaccounts.authentication.open-cluster-management.io"},
-				ResourceType:   &apixv1.CustomResourceDefinition{},
-				Expected:       nil,
-			},
-			{
 				Name:           "Managed-ServiceAccount ClusterManagementAddon",
 				NamespacedName: types.NamespacedName{Name: "managed-serviceaccount"},
 				ResourceType:   clusterManagementAddon,
