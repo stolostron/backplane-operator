@@ -3,6 +3,7 @@ kind: Service
 metadata:
   creationTimestamp: null
   name: discovery-operator
+  namespace: '{{ .Values.global.namespace }}'
 spec:
   ports:
   - name: metrics

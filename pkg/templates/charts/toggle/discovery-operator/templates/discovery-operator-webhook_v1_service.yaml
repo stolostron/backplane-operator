@@ -5,6 +5,7 @@ metadata:
     service.beta.openshift.io/serving-cert-secret-name: discovery-operator-webhook-service
   creationTimestamp: null
   name: discovery-operator-webhook-service
+  namespace: '{{ .Values.global.namespace }}'
 spec:
   ports:
   - port: 443

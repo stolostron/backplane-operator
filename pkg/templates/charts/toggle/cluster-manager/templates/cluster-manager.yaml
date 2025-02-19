@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: cluster-manager
+  namespace: '{{ .Values.global.namespace }}'
 spec:
   replicas: 3
   selector:

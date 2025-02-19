@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: image-based-install-operator
+  namespace: '{{ .Values.global.namespace }}'
 spec:
   replicas: 1
   selector:
@@ -172,4 +173,4 @@ spec:
           secretName: ibi-config-serving-certs
       - name: webhook-certs
         secret:
-          secretName: webhook-certs
+          secretName: ibi-webhook-serving-certs
