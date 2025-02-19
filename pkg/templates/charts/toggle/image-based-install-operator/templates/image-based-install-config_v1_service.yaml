@@ -5,6 +5,7 @@ metadata:
     service.beta.openshift.io/serving-cert-secret-name: ibi-config-serving-certs
   creationTimestamp: null
   name: image-based-install-config
+  namespace: '{{ .Values.global.namespace }}'
 spec:
   ports:
   - name: config-server
