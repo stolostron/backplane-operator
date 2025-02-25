@@ -157,7 +157,7 @@ var _ webhook.Validator = &MultiClusterEngine{}
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (r *MultiClusterEngine) ValidateCreate() (admission.Warnings, error) {
 	ctx := context.Background()
-	backplaneconfiglog.Info("validate create", "name", r.Name)
+	backplaneconfiglog.Info("validate create", "Kind", r.Kind, "Name", r.GetName())
 
 	if (r.Spec.AvailabilityConfig != HABasic) && (r.Spec.AvailabilityConfig != HAHigh) && (r.Spec.AvailabilityConfig != "") {
 		return nil, ErrInvalidAvailability
@@ -198,7 +198,7 @@ func (r *MultiClusterEngine) ValidateCreate() (admission.Warnings, error) {
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
 func (r *MultiClusterEngine) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
-	backplaneconfiglog.Info("validate update", "name", r.Name)
+	backplaneconfiglog.Info("validate update", "Kind", r.Kind, "Name", r.GetName())
 
 	oldMCE := old.(*MultiClusterEngine)
 	backplaneconfiglog.Info(oldMCE.Spec.TargetNamespace)
@@ -269,7 +269,7 @@ func (r *MultiClusterEngine) ValidateUpdate(old runtime.Object) (admission.Warni
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
 func (r *MultiClusterEngine) ValidateDelete() (admission.Warnings, error) {
 	// TODO(user): fill in your validation logic upon object deletion.
-	backplaneconfiglog.Info("validate delete", "name", r.Name)
+	backplaneconfiglog.Info("validate delete", "Kind", r.Kind, "Name", r.GetName())
 	ctx := context.Background()
 
 	cfg, err := config.GetConfig()

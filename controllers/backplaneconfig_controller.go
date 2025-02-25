@@ -1978,7 +1978,6 @@ Returns:
 */
 func (r *MultiClusterEngineReconciler) EnsureDeprecatedResourceCleanup(ctx context.Context, obj client.Object) (
 	ctrl.Result, error) {
-
 	/*
 	   Resources can be either namespace-scoped or cluster-scoped.
 	   To accommodate both cases, we first initialize `key` with only the resource name.
@@ -1991,32 +1990,43 @@ func (r *MultiClusterEngineReconciler) EnsureDeprecatedResourceCleanup(ctx conte
 		key.Namespace = obj.GetNamespace()
 	}
 
-	if err := r.Client.Get(ctx, key, obj); err != nil {
+	/*
+		Since we are disabling the cache for specific resources, some of the data in the object structure is dropped.
+		By converting the resource, we can get those fields back without needing to cache the resource kinds.
+	*/
+	resource := &unstructured.Unstructured{}
+	if err := r.Scheme.Convert(obj, resource, nil); err != nil {
+		log.Error(err, "failed to convert unstructured object")
+	}
+
+	// Fetch the deprecated resource
+	if err := r.Client.Get(ctx, key, resource); err != nil {
 		// Resource not found, no cleanup needed
 		if apierrors.IsNotFound(err) {
 			return ctrl.Result{}, nil
 		}
 
-		log.Error(err, "Failed to get resource", "Kind", obj.GetObjectKind().GroupVersionKind().Kind,
-			"Name", obj.GetName(), "Namespace", obj.GetNamespace())
+		log.Error(err, "Failed to get resource", "Kind", resource.GetKind(),
+			"Name", resource.GetName(), "Namespace", resource.GetNamespace())
 		return ctrl.Result{}, err
 	}
 
 	// Check if resource is already marked for deletion
 	if obj.GetDeletionTimestamp() != nil {
-		log.Info("Waiting for resource to be terminated", "Kind", obj.GetObjectKind().GroupVersionKind().Kind,
-			"Name", obj.GetName(), "Namespace", obj.GetNamespace(), "DeletionTimestamp", obj.GetDeletionTimestamp())
+		log.Info("Waiting for resource to be terminated", "Kind", resource.GetKind(),
+			"Name", resource.GetName(), "Namespace", resource.GetNamespace(),
+			"DeletionTimestamp", resource.GetDeletionTimestamp())
 
 		return ctrl.Result{RequeueAfter: utils.FastRefreshInterval}, nil
 	}
 
 	// Delete the resource
-	log.Info("Deleting resource", "Kind", obj.GetObjectKind().GroupVersionKind().Kind, "Name",
-		obj.GetName(), "Namespace", obj.GetNamespace())
+	log.Info("Deleting deprecated resource", "Kind", resource.GetKind(), "Name", resource.GetName(),
+		"Namespace", resource.GetNamespace())
 
-	if err := r.Client.Delete(ctx, obj); err != nil {
-		log.Error(err, "Failed to delete resource", "Kind", obj.GetObjectKind().GroupVersionKind().Kind,
-			"Name", obj.GetName(), "Namespace", obj.GetNamespace())
+	if err := r.Client.Delete(ctx, resource); err != nil {
+		log.Error(err, "Failed to delete resource", "Kind", resource.GetKind(),
+			"Name", resource.GetName(), "Namespace", resource.GetNamespace())
 		return ctrl.Result{}, err
 	}
 

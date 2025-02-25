@@ -362,9 +362,8 @@ func ensureCRD(ctx context.Context, c client.Client, crd *unstructured.Unstructu
 	err := c.Get(ctx, types.NamespacedName{Name: crd.GetName()}, existingCRD)
 	if err != nil && errors.IsNotFound(err) {
 		// CRD not found. Create and return
-		setupLog.Info(fmt.Sprintf("creating CRD '%s'", crd.GetName()))
-		err = c.Create(ctx, crd)
-		if err != nil {
+		setupLog.Info("Creating CRD", "Name", crd.GetName())
+		if err = c.Create(ctx, crd); err != nil {
 			return fmt.Errorf("error creating CRD '%s': %w", crd.GetName(), err)
 		}
 
@@ -374,13 +373,13 @@ func ensureCRD(ctx context.Context, c client.Client, crd *unstructured.Unstructu
 	} else {
 		// CRD already exists. Update and return
 		if utils.AnnotationPresent(utils.AnnotationMCEIgnore, existingCRD) {
-			setupLog.Info(fmt.Sprintf("CRD '%s' has ignore label. Skipping update.", crd.GetName()))
+			setupLog.Info("CRD has ignore label. Skipping update.", "Name", crd.GetName())
 			return nil
 		}
+
 		crd.SetResourceVersion(existingCRD.GetResourceVersion())
-		setupLog.Info(fmt.Sprintf("updating CRD '%s'", crd.GetName()))
-		err = c.Update(ctx, crd)
-		if err != nil {
+		setupLog.Info("Updating CRD", "Name", crd.GetName())
+		if err = c.Update(ctx, crd); err != nil {
 			return fmt.Errorf("error updating CRD '%s': %w", crd.GetName(), err)
 		}
 	}
