@@ -2190,34 +2190,6 @@ func ensureCRD(ctx context.Context, c client.Client, crd *unstructured.Unstructu
 	return nil
 }
 
-func (r *MultiClusterEngineReconciler) removeDeprecatedRBAC(ctx context.Context) (ctrl.Result, error) {
-	hyperShiftPreviewClusterRoleBinding := &rbacv1.ClusterRoleBinding{}
-	err := r.Client.Get(ctx, types.NamespacedName{Name: "open-cluster-management:hypershift-preview:hypershift-addon-manager"}, hyperShiftPreviewClusterRoleBinding)
-	if err == nil {
-		err = r.Client.Delete(ctx, hyperShiftPreviewClusterRoleBinding)
-		if err != nil {
-			return ctrl.Result{}, err
-		}
-	} else {
-		if !apierrors.IsNotFound(err) {
-			return ctrl.Result{}, err
-		}
-	}
-	hyperShiftPreviewClusterRole := &rbacv1.ClusterRole{}
-	err = r.Client.Get(ctx, types.NamespacedName{Name: "open-cluster-management:hypershift-preview:hypershift-addon-manager"}, hyperShiftPreviewClusterRole)
-	if err == nil {
-		err = r.Client.Delete(ctx, hyperShiftPreviewClusterRole)
-		if err != nil {
-			return ctrl.Result{}, err
-		}
-	} else {
-		if !apierrors.IsNotFound(err) {
-			return ctrl.Result{}, err
-		}
-	}
-	return ctrl.Result{}, nil
-}
-
 func (r *MultiClusterEngineReconciler) GetDeprecatedResources(m *backplanev1.MultiClusterEngine) []client.Object {
 	return []client.Object{
 		&corev1.Service{
