@@ -262,9 +262,33 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return ctrl.Result{Requeue: true}, err
 	}
 
-	result, err = r.removeDeprecatedRBAC(ctx)
-	if err != nil {
-		return result, err
+	/*----------------------------------------------------------------
+	// Deprecated Resource Cleanup
+	//
+	// This section handles the cleanup of deprecated or legacy resources
+	// that were created in previous versions of ACM, ensuring they are removed
+	// during an upgrade to prevent conflicts or redundancy.
+	//
+	// Version History:
+	// - ACM 2.12: Hypershift changed the chart name from "hypershift-preview" to "hypershift",
+	//   which impacted the removal of associated resources like ClusterRole and
+	//   ClusterRoleBinding. Therefore, we need to explicitly clean up the resources
+	//   associated with the "hypershift-preview" chart.
+	//
+	// - >= ACM 2.12.3, IBIO introduced a new service and validating webhook configuration
+	//   for their component. Therefore, we need to clean up resources associated with their older Service.
+	//
+	// Future Versions:
+	// - In future versions, ensure that each component has a unique service and webhook name to
+	//   avoid similar issues with overlapping resources.
+	//
+	// - Any additional deprecated resources or changes in the future should also be
+	//   addressed in this section to ensure a smooth upgrade process.
+	//----------------------------------------------------------------*/
+	for _, obj := range r.GetDeprecatedResources(backplaneConfig) {
+		if result, err := r.EnsureDeprecatedResourceCleanup(ctx, obj); (result != ctrl.Result{}) || err != nil {
+			return result, err
+		}
 	}
 
 	if !utils.ShouldIgnoreOCPVersion(backplaneConfig) && utils.DeployOnOCP() {
@@ -1939,6 +1963,76 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 	}
 }
 
+/*
+EnsureDeprecatedResourceCleanup ensures that a given Kubernetes resource is deleted if it exists.
+It first attempts to fetch the resource, logs if it is already being deleted, and then proceeds
+with deletion if necessary.
+
+Parameters:
+  - ctx: The context for managing request deadlines and cancellations.
+  - obj: The Kubernetes resource (client.Object) to check and delete.
+
+Returns:
+  - ctrl.Result: An empty result indicating no requeue is needed.
+  - error: Any error encountered while fetching or deleting the resource.
+*/
+func (r *MultiClusterEngineReconciler) EnsureDeprecatedResourceCleanup(ctx context.Context, obj client.Object) (
+	ctrl.Result, error) {
+	/*
+	   Resources can be either namespace-scoped or cluster-scoped.
+	   To accommodate both cases, we first initialize `key` with only the resource name.
+	   If the resource is namespace-scoped, we then set the namespace accordingly.
+	*/
+	key := types.NamespacedName{Name: obj.GetName()}
+
+	// Only set the namespace if the resource is namespace-scoped
+	if obj.GetNamespace() != "" {
+		key.Namespace = obj.GetNamespace()
+	}
+
+	/*
+		Since we are disabling the cache for specific resources, some of the data in the object structure is dropped.
+		By converting the resource, we can get those fields back without needing to cache the resource kinds.
+	*/
+	resource := &unstructured.Unstructured{}
+	if err := r.Scheme.Convert(obj, resource, nil); err != nil {
+		log.Error(err, "failed to convert unstructured object")
+	}
+
+	// Fetch the deprecated resource
+	if err := r.Client.Get(ctx, key, resource); err != nil {
+		// Resource not found, no cleanup needed
+		if apierrors.IsNotFound(err) {
+			return ctrl.Result{}, nil
+		}
+
+		log.Error(err, "Failed to get resource", "Kind", resource.GetKind(),
+			"Name", resource.GetName(), "Namespace", resource.GetNamespace())
+		return ctrl.Result{}, err
+	}
+
+	// Check if resource is already marked for deletion
+	if obj.GetDeletionTimestamp() != nil {
+		log.Info("Waiting for resource to be terminated", "Kind", resource.GetKind(),
+			"Name", resource.GetName(), "Namespace", resource.GetNamespace(),
+			"DeletionTimestamp", resource.GetDeletionTimestamp())
+
+		return ctrl.Result{RequeueAfter: utils.FastRefreshInterval}, nil
+	}
+
+	// Delete the resource
+	log.Info("Deleting deprecated resource", "Kind", resource.GetKind(), "Name", resource.GetName(),
+		"Namespace", resource.GetNamespace())
+
+	if err := r.Client.Delete(ctx, resource); err != nil {
+		log.Error(err, "Failed to delete resource", "Kind", resource.GetKind(),
+			"Name", resource.GetName(), "Namespace", resource.GetNamespace())
+		return ctrl.Result{}, err
+	}
+
+	return ctrl.Result{}, nil
+}
+
 func (r *MultiClusterEngineReconciler) validateNamespace(ctx context.Context, m *backplanev1.MultiClusterEngine) (
 	ctrl.Result, error) {
 
@@ -2096,30 +2190,21 @@ func ensureCRD(ctx context.Context, c client.Client, crd *unstructured.Unstructu
 	return nil
 }
 
-func (r *MultiClusterEngineReconciler) removeDeprecatedRBAC(ctx context.Context) (ctrl.Result, error) {
-	hyperShiftPreviewClusterRoleBinding := &rbacv1.ClusterRoleBinding{}
-	err := r.Client.Get(ctx, types.NamespacedName{Name: "open-cluster-management:hypershift-preview:hypershift-addon-manager"}, hyperShiftPreviewClusterRoleBinding)
-	if err == nil {
-		err = r.Client.Delete(ctx, hyperShiftPreviewClusterRoleBinding)
-		if err != nil {
-			return ctrl.Result{}, err
-		}
-	} else {
-		if !apierrors.IsNotFound(err) {
-			return ctrl.Result{}, err
-		}
+func (r *MultiClusterEngineReconciler) GetDeprecatedResources(m *backplanev1.MultiClusterEngine) []client.Object {
+	return []client.Object{
+		&corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "webhook-service",
+				Namespace: m.Spec.TargetNamespace,
+			},
+		},
+		&rbacv1.ClusterRoleBinding{
+			TypeMeta:   metav1.TypeMeta{Kind: "ClusterRoleBinding"},
+			ObjectMeta: metav1.ObjectMeta{Name: "open-cluster-management:hypershift-preview:hypershift-addon-manager"},
+		},
+		&rbacv1.ClusterRole{
+			TypeMeta:   metav1.TypeMeta{Kind: "ClusterRole"},
+			ObjectMeta: metav1.ObjectMeta{Name: "open-cluster-management:hypershift-preview:hypershift-addon-manager"},
+		},
 	}
-	hyperShiftPreviewClusterRole := &rbacv1.ClusterRole{}
-	err = r.Client.Get(ctx, types.NamespacedName{Name: "open-cluster-management:hypershift-preview:hypershift-addon-manager"}, hyperShiftPreviewClusterRole)
-	if err == nil {
-		err = r.Client.Delete(ctx, hyperShiftPreviewClusterRole)
-		if err != nil {
-			return ctrl.Result{}, err
-		}
-	} else {
-		if !apierrors.IsNotFound(err) {
-			return ctrl.Result{}, err
-		}
-	}
-	return ctrl.Result{}, nil
 }

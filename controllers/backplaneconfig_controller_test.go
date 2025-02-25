@@ -73,6 +73,7 @@ var (
 	mockClient = fake.NewClientBuilder().Build()
 	recon      = MultiClusterEngineReconciler{
 		Client:        mockClient,
+		Scheme:        scheme.Scheme,
 		StatusManager: &status.StatusTracker{Client: mockClient},
 	}
 )
@@ -2291,6 +2292,42 @@ func Test_ensureResourceVersionAlignment(t *testing.T) {
 			got := recon.ensureResourceVersionAlignment(tt.template, os.Getenv("OPERATOR_VERSION"))
 			if got != tt.want {
 				t.Errorf("ensureResourceVersionAlignment() = %v, want: %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_EnsureDeprecatedResourceCleanup(t *testing.T) {
+	tests := []struct {
+		name string
+		mce  *backplanev1.MultiClusterEngine
+		want error
+	}{
+		{
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "multiclusterengine",
+				},
+				Spec: backplanev1.MultiClusterEngineSpec{
+					TargetNamespace: "test-ns",
+				},
+			},
+			name: "should ensure deprecated resources are cleaned up",
+			want: nil,
+		},
+	}
+
+	registerScheme()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			for _, obj := range recon.GetDeprecatedResources(tt.mce) {
+				if err := recon.Client.Create(context.TODO(), obj); err != nil {
+					t.Errorf("Failed to create %v: %v", obj, err)
+				}
+
+				if _, err := recon.EnsureDeprecatedResourceCleanup(context.TODO(), obj); err != nil {
+					t.Errorf("EnsureDeprecatedResourceCleanup() = %v, want: %v", err, tt.want)
+				}
 			}
 		})
 	}
