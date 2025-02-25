@@ -1897,6 +1897,10 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 		updateNecessary = true
 	}
 
+	if utils.DeduplicateComponents(m) {
+		updateNecessary = true
+	}
+
 	if utils.DeployOnOCP() {
 		// Set and store cluster Ingress domain for use later
 		clusterIngressDomain, err := r.getClusterIngressDomain(ctx, m)
