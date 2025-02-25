@@ -285,9 +285,8 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 	// - Any additional deprecated resources or changes in the future should also be
 	//   addressed in this section to ensure a smooth upgrade process.
 	//----------------------------------------------------------------*/
-
 	for _, obj := range r.GetDeprecatedResources(backplaneConfig) {
-		if result, err := r.EnsureResourceCleanup(ctx, obj); (result != ctrl.Result{}) || err != nil {
+		if result, err := r.EnsureDeprecatedResourceCleanup(ctx, obj); (result != ctrl.Result{}) || err != nil {
 			return result, err
 		}
 	}
@@ -1965,7 +1964,7 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 }
 
 /*
-EnsureResourceCleanup ensures that a given Kubernetes resource is deleted if it exists.
+EnsureDeprecatedResourceCleanup ensures that a given Kubernetes resource is deleted if it exists.
 It first attempts to fetch the resource, logs if it is already being deleted, and then proceeds
 with deletion if necessary.
 
@@ -1977,7 +1976,7 @@ Returns:
   - ctrl.Result: An empty result indicating no requeue is needed.
   - error: Any error encountered while fetching or deleting the resource.
 */
-func (r *MultiClusterEngineReconciler) EnsureResourceCleanup(ctx context.Context, obj client.Object) (
+func (r *MultiClusterEngineReconciler) EnsureDeprecatedResourceCleanup(ctx context.Context, obj client.Object) (
 	ctrl.Result, error) {
 
 	/*
@@ -2218,14 +2217,12 @@ func (r *MultiClusterEngineReconciler) GetDeprecatedResources(m *backplanev1.Mul
 			},
 		},
 		&rbacv1.ClusterRoleBinding{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "open-cluster-management:hypershift-preview:hypershift-addon-manager",
-			},
+			TypeMeta:   metav1.TypeMeta{Kind: "ClusterRoleBinding"},
+			ObjectMeta: metav1.ObjectMeta{Name: "open-cluster-management:hypershift-preview:hypershift-addon-manager"},
 		},
 		&rbacv1.ClusterRole{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "open-cluster-management:hypershift-preview:hypershift-addon-manager",
-			},
+			TypeMeta:   metav1.TypeMeta{Kind: "ClusterRole"},
+			ObjectMeta: metav1.ObjectMeta{Name: "open-cluster-management:hypershift-preview:hypershift-addon-manager"},
 		},
 	}
 }
