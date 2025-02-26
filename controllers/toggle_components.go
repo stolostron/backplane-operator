@@ -570,16 +570,7 @@ func (r *MultiClusterEngineReconciler) ensureHive(ctx context.Context, mce *back
 	}
 
 	hiveTemplate := hive.HiveConfig(mce)
-	if err := ctrl.SetControllerReference(mce, hiveTemplate, r.Scheme); err != nil {
-		return ctrl.Result{}, errors.Wrapf(err, "Error setting controller reference on resource %s", hiveTemplate.GetName())
-	}
-
-	result, err := r.ensureUnstructuredResource(ctx, mce, hiveTemplate)
-	if err != nil {
-		return result, err
-	}
-
-	return ctrl.Result{}, nil
+	return r.ensureUnstructuredResource(ctx, mce, hiveTemplate)
 }
 
 func (r *MultiClusterEngineReconciler) ensureNoHive(ctx context.Context, mce *backplanev1.MultiClusterEngine) (
