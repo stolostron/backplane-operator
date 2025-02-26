@@ -1346,13 +1346,10 @@ func (r *MultiClusterEngineReconciler) applyComponentDeploymentOverrides(mce *ba
 func (r *MultiClusterEngineReconciler) ApplyControllerReference(backplaneConfig *backplanev1.MultiClusterEngine,
 	template *unstructured.Unstructured) error {
 	if err := ctrl.SetControllerReference(backplaneConfig, template, r.Scheme); err != nil {
-		log.Error(err, "error setting controller reference on resource", "Kind", template.GetKind(),
+		log.Error(err, "failed to set controller reference on resource", "Kind", template.GetKind(),
 			"Name", template.GetName())
 		return err
 	}
-
-	log.Info("Setting controller reference on resource", "Kind", template.GetKind(), "Name", template.GetName(),
-		"Owner", backplaneConfig.GetName())
 	return nil
 }
 
@@ -1360,10 +1357,6 @@ func (r *MultiClusterEngineReconciler) applyTemplate(ctx context.Context,
 	backplaneConfig *backplanev1.MultiClusterEngine, template *unstructured.Unstructured) (ctrl.Result, error) {
 
 	if template.GetKind() == "APIService" {
-		// Ensure the controller reference is applied to the resource before proceeding.
-		if err := r.ApplyControllerReference(backplaneConfig, template); err != nil {
-			return ctrl.Result{}, err
-		}
 		return r.ensureUnstructuredResource(ctx, backplaneConfig, template)
 
 	} else {
@@ -1850,6 +1843,11 @@ func (r *MultiClusterEngineReconciler) ensureUnstructuredResource(ctx context.Co
 		Namespace: u.GetNamespace(),
 	}, found)
 	if err != nil && apierrors.IsNotFound(err) {
+		// Ensure the controller reference is applied to the resource before proceeding.
+		if err := r.ApplyControllerReference(bpc, u); err != nil {
+			return ctrl.Result{}, err
+		}
+
 		// Resource doesn't exist so create it
 		err := r.Client.Create(ctx, u)
 		if err != nil {
