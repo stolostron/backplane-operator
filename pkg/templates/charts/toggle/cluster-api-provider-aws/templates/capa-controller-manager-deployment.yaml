@@ -67,6 +67,8 @@ spec:
           value: /home/.aws/credentials
         - name: OCM_TOKEN
           value: ''
+        - name: OCM_CONFIG
+          value: /tmp/ocm.json
         image: '{{ .Values.global.imageOverrides.ose_aws_cluster_api_controllers_rhel9 }}'
         imagePullPolicy: '{{ .Values.global.pullPolicy }}'
         livenessProbe:
