@@ -68,7 +68,7 @@ spec:
         - name: OCM_TOKEN
           value: ''
         - name: OCM_CONFIG
-          value: /tmp/ocm.json
+          value: /ocm/ocm.json
         image: '{{ .Values.global.imageOverrides.ose_aws_cluster_api_controllers_rhel9 }}'
         imagePullPolicy: '{{ .Values.global.pullPolicy }}'
         livenessProbe:
@@ -102,6 +102,8 @@ spec:
           runAsNonRoot: true
         terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
+        - mountPath: /ocm
+          name: ocm
         - mountPath: /tmp/k8s-webhook-server/serving-certs
           name: cert
           readOnly: true
@@ -139,6 +141,9 @@ spec:
         {{- end }}
 {{- end }}
       volumes:
+      - emptyDir:
+          sizeLimit: 1Mi
+        name: ocm
       - name: cert
         secret:
           defaultMode: 420
