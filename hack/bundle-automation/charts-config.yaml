@@ -1,6 +1,6 @@
 - repo_name: "managed-serviceaccount"
   github_ref: "https://github.com/stolostron/managed-serviceaccount.git"
-  branch: "backplane-2.8"
+  branch: "backplane-2.9"
   charts:
     - name: "managed-serviceaccount"
       chart-path: "charts/managed-serviceaccount"
@@ -19,7 +19,7 @@
 
 - repo_name: "cluster-api-installer"
   github_ref: "https://github.com/stolostron/cluster-api-installer.git"
-  branch: "backplane-2.8"
+  branch: "backplane-2.9"
   charts:
     - name: "cluster-api"
       chart-path: "charts/cluster-api"
@@ -35,10 +35,6 @@
         - "HUB_KUBECONFIG"
         - "INSTALL_NAMESPACE"
 
-- repo_name: "cluster-api-installer"
-  github_ref: "https://github.com/stolostron/cluster-api-installer.git"
-  branch: "backplane-2.8"
-  charts:
     - name: "cluster-api-provider-aws"
       chart-path: "charts/cluster-api-provider-aws"
       always-or-toggle: "toggle"
