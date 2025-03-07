@@ -26,7 +26,9 @@ spec:
     - name: image-expires-after
       value: 5d
     - name: dockerfile
-      value: Dockerfile.rhtap
+      value: build/Dockerfile.rhtap
+    - name: build-source-image
+      value: "true"
     - name: hermetic
       value: "true"
     - name: prefetch-input

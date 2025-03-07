@@ -23,7 +23,9 @@ spec:
     - name: output-image
       value: quay.io/redhat-user-workloads/crt-redhat-acm-tenant/backplane-operator:{{revision}}
     - name: dockerfile
-      value: Dockerfile.rhtap
+      value: build/Dockerfile.rhtap
+    - name: build-source-image
+      value: "true"
     - name: hermetic
       value: "true"
     - name: prefetch-input
