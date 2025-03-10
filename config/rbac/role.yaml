@@ -3001,6 +3001,14 @@ rules:
   - update
   - watch
 - apiGroups:
+  - rbac.open-cluster-management.io
+  resources:
+  - clusterpermissions
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - register.open-cluster-management.io
   resources:
   - managedclusters/accept
