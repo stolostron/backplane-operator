@@ -114,3 +114,6 @@ rules:
   - apiGroups: ["authentication.open-cluster-management.io"]
     resources: ["managedserviceaccounts"]
     verbs: ["get", "watch", "list", "create", "update"]
+  - apiGroups: ["rbac.open-cluster-management.io"]
+    resources: ["clusterpermissions"]
+    verbs: ["get", "watch", "list"]
