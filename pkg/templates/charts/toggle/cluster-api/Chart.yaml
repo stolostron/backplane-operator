@@ -1,5 +1,5 @@
 apiVersion: v2
-appVersion: '4.18'
+appVersion: '4.19'
 description: Cluster API
 name: cluster-api
 type: application
