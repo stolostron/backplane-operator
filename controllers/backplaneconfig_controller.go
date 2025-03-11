@@ -1902,6 +1902,13 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 		updateNecessary = true
 	}
 
+	if m.Enabled(backplanev1.ImageBasedInstallOperatorPreview) {
+		// if the preview was pruned, enable the non-preview version instead
+		m.Enable(backplanev1.ImageBasedInstallOperator)
+
+		// no need to disable -preview version, as it will get pruned below
+		updateNecessary = true
+	}
 	// image based install operator preview component upgraded in ACM 2.12.0
 	if m.Prune(backplanev1.ImageBasedInstallOperatorPreview) {
 		updateNecessary = true
