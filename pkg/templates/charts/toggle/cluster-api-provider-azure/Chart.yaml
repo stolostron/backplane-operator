@@ -1,0 +1,6 @@
+apiVersion: v2
+appVersion: '4.19'
+description: Cluster API provider for Azure
+name: cluster-api-provider-azure
+type: application
+version: '2.9'
