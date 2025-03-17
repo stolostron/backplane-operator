@@ -1199,7 +1199,7 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 	}
 
 	if backplaneConfig.Enabled(backplanev1.ClusterAPIProviderAzurePreview) {
-		result, err = r.ensureClusterAPIProviderAWS(ctx, backplaneConfig)
+		result, err = r.ensureClusterAPIProviderAzure(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
 			requeue = true
 		}
@@ -1207,7 +1207,7 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 			errs[backplanev1.ClusterAPIProviderAzurePreview] = err
 		}
 	} else {
-		result, err = r.ensureNoClusterAPIProviderAWS(ctx, backplaneConfig)
+		result, err = r.ensureNoClusterAPIProviderAzure(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
 			requeue = true
 		}
@@ -1217,7 +1217,7 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 	}
 
 	if backplaneConfig.Enabled(backplanev1.ClusterAPIProviderMetal3Preview) {
-		result, err = r.ensureClusterAPIProviderAWS(ctx, backplaneConfig)
+		result, err = r.ensureNoClusterAPIProviderMetal3(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
 			requeue = true
 		}
@@ -1225,7 +1225,7 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 			errs[backplanev1.ClusterAPIProviderMetal3Preview] = err
 		}
 	} else {
-		result, err = r.ensureNoClusterAPIProviderAWS(ctx, backplaneConfig)
+		result, err = r.ensureNoClusterAPIProviderMetal3(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
 			requeue = true
 		}
