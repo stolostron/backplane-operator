@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	expName       = LocalClusterName
+	expName       = DefaultLocalClusterName
 	expKind       = "ManagedCluster"
 	expAPIVersion = "cluster.open-cluster-management.io/v1"
 )

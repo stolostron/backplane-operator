@@ -1671,8 +1671,8 @@ func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Conte
 		},
 	)
 
-	if err = r.Client.Get(ctx, types.NamespacedName{Name: "local-cluster"}, localCluster); err == nil { // If resource exists, delete
-		log.Info("finalizing local-cluster custom resource")
+	if err = r.Client.Get(ctx, types.NamespacedName{Name: backplaneConfig.Spec.LocalClusterName}, localCluster); err == nil { // If resource exists, delete
+		log.Info(fmt.Sprintf("finalizing local-cluster %s custom resource", backplaneConfig.Spec.LocalClusterName))
 
 		if err := r.Client.Delete(ctx, localCluster); err != nil {
 			log.Error(err, "error deleting local-cluster ManagedCluster CR")
@@ -1696,7 +1696,7 @@ func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Conte
 		}
 
 		return ctrl.Result{}, fmt.Errorf(
-			"waiting for 'local-cluster' ManagedCluster to be terminated before proceeding with uninstallation")
+			"waiting for '%v' ManagedCluster to be terminated before proceeding with uninstallation", backplaneConfig.Spec.LocalClusterName)
 
 	} else if !apierrors.IsNotFound(err) { // Return error, if error is not not found error
 		log.Error(err, "error while looking for local-cluster ManagedCluster CR")

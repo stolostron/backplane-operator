@@ -10,11 +10,10 @@ spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
-    - description: MultiClusterEngine defines the configuration for an instance of
-        a multicluster engine, a central point providing the foundational components
-        for managing multiple Kubernetes-based clusters. The deployment of the multicluster
-        engine components is determined based on the configuration that is defined
-        in this resource.
+    - description: |-
+        MultiClusterEngine defines the configuration for an instance
+        of a multicluster engine, a central point providing the foundational components for managing multiple Kubernetes-based clusters. The deployment of the multicluster engine components is
+        determined based on the configuration that is defined in this resource.
       displayName: MultiCluster Engine
       kind: MultiClusterEngine
       name: multiclusterengines.multicluster.openshift.io
@@ -33,6 +32,12 @@ spec:
         path: imagePullSecret
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: The name of the local-cluster resource
+        displayName: Local Cluster Name
+        path: localClusterName
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes:text
         - urn:alm:descriptor:com.tectonic.ui:advanced
       - description: Developer Overrides
         displayName: Developer Overrides

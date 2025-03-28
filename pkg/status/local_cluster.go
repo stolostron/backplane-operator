@@ -60,7 +60,7 @@ func (s LocalClusterStatus) Status(c client.Client) bpv1.ComponentCondition {
 }
 
 func (s *LocalClusterStatus) getManagedCluster(c client.Client) (*unstructured.Unstructured, error) {
-	mc := utils.NewManagedCluster()
+	mc := utils.NewManagedCluster(s.NamespacedName.Name)
 	err := c.Get(context.Background(), s.NamespacedName, mc)
 	if apierrors.IsNotFound(err) || apimeta.IsNoMatchError(err) {
 		return nil, nil

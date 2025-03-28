@@ -14,20 +14,19 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    createdAt: "2024-09-19T18:57:53Z"
-    operators.operatorframework.io/builder: operator-sdk-v1.35.0
-    operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
+    createdAt: "2025-03-25T17:28:08Z"
+    operators.operatorframework.io/builder: operator-sdk-v1.39.2
+    operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
   name: multicluster-engine.v0.0.1
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
-    - description: MultiClusterEngine defines the configuration for an instance of
-        a multicluster engine, a central point providing the foundational components
-        for managing multiple Kubernetes-based clusters. The deployment of the multicluster
-        engine components is determined based on the configuration that is defined
-        in this resource.
+    - description: |-
+        MultiClusterEngine defines the configuration for an instance
+        of a multicluster engine, a central point providing the foundational components for managing multiple Kubernetes-based clusters. The deployment of the multicluster engine components is
+        determined based on the configuration that is defined in this resource.
       displayName: MultiCluster Engine
       kind: MultiClusterEngine
       name: multiclusterengines.multicluster.openshift.io
@@ -46,6 +45,12 @@ spec:
         path: imagePullSecret
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: The name of the local-cluster resource
+        displayName: Local Cluster Name
+        path: localClusterName
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes:text
         - urn:alm:descriptor:com.tectonic.ui:advanced
       - description: Developer Overrides
         displayName: Developer Overrides
@@ -257,7 +262,12 @@ spec:
           - events
           verbs:
           - create
+          - delete
+          - get
+          - list
           - patch
+          - update
+          - watch
         - apiGroups:
           - ""
           resources:
@@ -381,6 +391,7 @@ spec:
           - serviceaccounts/token
           verbs:
           - create
+          - get
         - apiGroups:
           - ""
           resources:
@@ -719,6 +730,27 @@ spec:
           resources:
           - managedclusteraddons/status
           verbs:
+          - patch
+          - update
+        - apiGroups:
+          - addons.cluster.x-k8s.io
+          resources:
+          - '*'
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - addons.cluster.x-k8s.io
+          resources:
+          - clusterresourcesets/finalizers
+          - clusterresourcesets/status
+          verbs:
+          - get
           - patch
           - update
         - apiGroups:
@@ -1223,6 +1255,51 @@ spec:
           - update
           - watch
         - apiGroups:
+          - bootstrap.cluster.x-k8s.io
+          resources:
+          - eksconfigs
+          verbs:
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - bootstrap.cluster.x-k8s.io
+          resources:
+          - eksconfigs/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - bootstrap.cluster.x-k8s.io
+          - controlplane.cluster.x-k8s.io
+          - infrastructure.cluster.x-k8s.io
+          resources:
+          - '*'
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - bootstrap.cluster.x-k8s.io
+          - infrastructure.cluster.x-k8s.io
+          resources:
+          - '*'
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
           - capi-provider.agent-install.openshift.io
           resources:
           - agentmachines
@@ -1555,6 +1632,222 @@ spec:
           verbs:
           - update
         - apiGroups:
+          - cluster.x-k8s.io
+          resources:
+          - clusterclasses
+          verbs:
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - cluster.x-k8s.io
+          resources:
+          - clusterclasses
+          - clusterclasses/status
+          verbs:
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - cluster.x-k8s.io
+          resources:
+          - clusters
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - cluster.x-k8s.io
+          resources:
+          - clusters
+          - clusters/finalizers
+          - clusters/status
+          verbs:
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - cluster.x-k8s.io
+          resources:
+          - clusters
+          - clusters/status
+          verbs:
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - cluster.x-k8s.io
+          resources:
+          - clusters
+          - machinepools
+          - machines
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - cluster.x-k8s.io
+          resources:
+          - machinedeployments
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - cluster.x-k8s.io
+          resources:
+          - machinedeployments
+          - machinedeployments/finalizers
+          verbs:
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - cluster.x-k8s.io
+          resources:
+          - machinedeployments
+          - machinedeployments/finalizers
+          - machinedeployments/status
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - cluster.x-k8s.io
+          resources:
+          - machinehealthchecks
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - cluster.x-k8s.io
+          resources:
+          - machinehealthchecks
+          - machinehealthchecks/finalizers
+          - machinehealthchecks/status
+          verbs:
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - cluster.x-k8s.io
+          resources:
+          - machinepools
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - cluster.x-k8s.io
+          resources:
+          - machinepools
+          - machinepools/finalizers
+          - machinepools/status
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - cluster.x-k8s.io
+          resources:
+          - machinepools
+          - machinepools/status
+          verbs:
+          - get
+          - list
+          - patch
+          - watch
+        - apiGroups:
+          - cluster.x-k8s.io
+          resources:
+          - machines
+          - machines/finalizers
+          - machines/status
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - cluster.x-k8s.io
+          resources:
+          - machines
+          - machines/status
+          verbs:
+          - delete
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - cluster.x-k8s.io
+          resources:
+          - machinesets
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - cluster.x-k8s.io
+          resources:
+          - machinesets
+          - machinesets/finalizers
+          verbs:
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - cluster.x-k8s.io
+          resources:
+          - machinesets
+          - machinesets/finalizers
+          - machinesets/status
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
           - clusterview.open-cluster-management.io
           resources:
           - managedclusters
@@ -1683,6 +1976,76 @@ spec:
           - patch
           - update
           - watch
+        - apiGroups:
+          - controlplane.cluster.x-k8s.io
+          resources:
+          - '*'
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - controlplane.cluster.x-k8s.io
+          resources:
+          - awsmanagedcontrolplanes
+          verbs:
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - controlplane.cluster.x-k8s.io
+          resources:
+          - awsmanagedcontrolplanes
+          - awsmanagedcontrolplanes/status
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - controlplane.cluster.x-k8s.io
+          resources:
+          - awsmanagedcontrolplanes/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - controlplane.cluster.x-k8s.io
+          resources:
+          - rosacontrolplanes
+          verbs:
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - controlplane.cluster.x-k8s.io
+          resources:
+          - rosacontrolplanes
+          - rosacontrolplanes/status
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - controlplane.cluster.x-k8s.io
+          resources:
+          - rosacontrolplanes/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - controlplane.cluster.x-k8s.io
+          resources:
+          - rosacontrolplanes/status
+          verbs:
+          - get
+          - patch
+          - update
         - apiGroups:
           - coordination.k8s.io
           resources:
@@ -1975,6 +2338,14 @@ spec:
           - hypershift.openshift.io
           resources:
           - hostedclusters
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - hypershift.openshift.io
+          resources:
+          - hostedclusters
           - nodepools
           verbs:
           - delete
@@ -2009,6 +2380,236 @@ spec:
           - update
           - watch
         - apiGroups:
+          - infrastructure.cluster.x-k8s.io
+          resources:
+          - awsclustercontrolleridentities
+          verbs:
+          - create
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - infrastructure.cluster.x-k8s.io
+          resources:
+          - awsclustercontrolleridentities
+          - awsclusterroleidentities
+          - awsclusterstaticidentities
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - infrastructure.cluster.x-k8s.io
+          resources:
+          - awsclusterroleidentities
+          - awsclusterstaticidentities
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - infrastructure.cluster.x-k8s.io
+          resources:
+          - awsclusters
+          verbs:
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - infrastructure.cluster.x-k8s.io
+          resources:
+          - awsclusters/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - infrastructure.cluster.x-k8s.io
+          resources:
+          - awsfargateprofiles
+          verbs:
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - infrastructure.cluster.x-k8s.io
+          resources:
+          - awsfargateprofiles/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - infrastructure.cluster.x-k8s.io
+          resources:
+          - awsmachinepools
+          verbs:
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - infrastructure.cluster.x-k8s.io
+          resources:
+          - awsmachinepools
+          - awsmachinepools/status
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - infrastructure.cluster.x-k8s.io
+          resources:
+          - awsmachinepools/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - infrastructure.cluster.x-k8s.io
+          resources:
+          - awsmachines
+          verbs:
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - infrastructure.cluster.x-k8s.io
+          resources:
+          - awsmachines
+          - awsmachines/status
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - infrastructure.cluster.x-k8s.io
+          resources:
+          - awsmachines/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - infrastructure.cluster.x-k8s.io
+          resources:
+          - awsmachinetemplates
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - infrastructure.cluster.x-k8s.io
+          resources:
+          - awsmanagedclusters
+          verbs:
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - infrastructure.cluster.x-k8s.io
+          resources:
+          - awsmanagedclusters
+          - awsmanagedclusters/status
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - infrastructure.cluster.x-k8s.io
+          resources:
+          - awsmanagedclusters/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - infrastructure.cluster.x-k8s.io
+          resources:
+          - awsmanagedmachinepools
+          verbs:
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - infrastructure.cluster.x-k8s.io
+          resources:
+          - awsmanagedmachinepools
+          - awsmanagedmachinepools/status
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - infrastructure.cluster.x-k8s.io
+          resources:
+          - awsmanagedmachinepools/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - infrastructure.cluster.x-k8s.io
+          resources:
+          - rosaclusters
+          verbs:
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - infrastructure.cluster.x-k8s.io
+          resources:
+          - rosaclusters/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - infrastructure.cluster.x-k8s.io
+          resources:
+          - rosamachinepools
+          verbs:
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - infrastructure.cluster.x-k8s.io
+          resources:
+          - rosamachinepools/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - infrastructure.cluster.x-k8s.io
+          resources:
+          - rosamachinepools/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
           - internal.open-cluster-management.io
           resources:
           - managedclusterinfos
@@ -2036,6 +2637,14 @@ spec:
           verbs:
           - patch
           - update
+        - apiGroups:
+          - ipam.cluster.x-k8s.io
+          resources:
+          - ipaddressclaims
+          verbs:
+          - get
+          - list
+          - watch
         - apiGroups:
           - metal3.io
           resources:
@@ -2173,6 +2782,25 @@ spec:
           - patch
           - update
         - apiGroups:
+          - multicluster.x-k8s.io
+          resources:
+          - clusterprofiles
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - multicluster.x-k8s.io
+          resources:
+          - clusterprofiles/status
+          verbs:
+          - patch
+          - update
+        - apiGroups:
           - networking.k8s.io
           resources:
           - ingresses
@@ -2184,6 +2812,14 @@ spec:
           - patch
           - update
           - watch
+        - apiGroups:
+          - networking.k8s.io
+          resources:
+          - networkpolicies
+          verbs:
+          - create
+          - get
+          - update
         - apiGroups:
           - operator.open-cluster-management.io
           resources:
@@ -2489,6 +3125,17 @@ spec:
           - update
           - watch
         - apiGroups:
+          - runtime.cluster.x-k8s.io
+          resources:
+          - extensionconfigs
+          - extensionconfigs/status
+          verbs:
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
           - scheduling.k8s.io
           resources:
           - priorityclasses
@@ -2497,6 +3144,13 @@ spec:
           - get
           - patch
           - update
+        - apiGroups:
+          - search.open-cluster-management.io
+          resources:
+          - searches
+          verbs:
+          - list
+          - watch
         - apiGroups:
           - storage.k8s.io
           resources:

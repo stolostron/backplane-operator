@@ -1492,18 +1492,18 @@ func (r *MultiClusterEngineReconciler) ensureLocalCluster(ctx context.Context, m
 		return ctrl.Result{}, nil
 	}
 
-	nsn := types.NamespacedName{Name: "local-cluster", Namespace: mce.Spec.TargetNamespace}
+	nsn := types.NamespacedName{Name: mce.Spec.LocalClusterName, Namespace: mce.Spec.TargetNamespace}
 	lcs := status.LocalClusterStatus{NamespacedName: nsn, Enabled: true}
 	r.StatusManager.RemoveComponent(lcs)
 	r.StatusManager.AddComponent(lcs)
 
 	log.Info("Check if ManagedCluster CR exists")
-	managedCluster := utils.NewManagedCluster()
-	err := r.Client.Get(ctx, types.NamespacedName{Name: utils.LocalClusterName}, managedCluster)
+	managedCluster := utils.NewManagedCluster(mce.Spec.LocalClusterName)
+	err := r.Client.Get(ctx, types.NamespacedName{Name: utils.DefaultLocalClusterName}, managedCluster)
 	if apierrors.IsNotFound(err) {
 		log.Info("ManagedCluster CR does not exist, need to create it")
-		log.Info(fmt.Sprintf("Check if local cluster namespace %q exists", utils.LocalClusterName))
-		localNS := utils.NewLocalNamespace()
+		log.Info(fmt.Sprintf("Check if local cluster namespace %q exists", utils.DefaultLocalClusterName))
+		localNS := utils.NewLocalNamespace(mce.Spec.LocalClusterName)
 		err := r.Client.Get(ctx, types.NamespacedName{Name: localNS.GetName()}, localNS)
 		if err == nil {
 			log.Info("Waiting on local cluster namespace to be removed before creating ManagedCluster CR",
@@ -1512,7 +1512,7 @@ func (r *MultiClusterEngineReconciler) ensureLocalCluster(ctx context.Context, m
 			return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 		} else if apierrors.IsNotFound(err) {
 			log.Info("Local cluster namespace does not exist. Creating ManagedCluster CR")
-			managedCluster = utils.NewManagedCluster()
+			managedCluster = utils.NewManagedCluster(mce.Spec.LocalClusterName)
 			err := r.Client.Create(ctx, managedCluster)
 			if err != nil {
 				if apierrors.IsInternalError(err) {
@@ -1520,7 +1520,7 @@ func (r *MultiClusterEngineReconciler) ensureLocalCluster(ctx context.Context, m
 					log.Info("ManagedCluster webhook not available, waiting for controller")
 					r.StatusManager.RemoveComponent(lcs)
 					r.StatusManager.AddComponent(status.StaticStatus{
-						NamespacedName: types.NamespacedName{Name: "local-cluster", Namespace: mce.Spec.TargetNamespace},
+						NamespacedName: types.NamespacedName{Name: mce.Spec.LocalClusterName, Namespace: mce.Spec.TargetNamespace},
 						Kind:           "local-cluster",
 						Condition: backplanev1.ComponentCondition{
 							Type:      "Available",
@@ -1550,7 +1550,7 @@ func (r *MultiClusterEngineReconciler) ensureLocalCluster(ctx context.Context, m
 		// managedCluster CRD does not yet exist. Replace status.
 		r.StatusManager.RemoveComponent(lcs)
 		r.StatusManager.AddComponent(status.StaticStatus{
-			NamespacedName: types.NamespacedName{Name: "local-cluster", Namespace: mce.Spec.TargetNamespace},
+			NamespacedName: types.NamespacedName{Name: mce.Spec.LocalClusterName, Namespace: mce.Spec.TargetNamespace},
 			Kind:           "local-cluster",
 			Condition: backplanev1.ComponentCondition{
 				Type:      "Available",
@@ -1633,15 +1633,15 @@ func (r *MultiClusterEngineReconciler) ensureNoLocalCluster(ctx context.Context,
 	r.StatusManager.AddComponent(lcs)
 
 	log.Info("Check if ManagedCluster CR exists")
-	managedCluster := utils.NewManagedCluster()
-	err := r.Client.Get(ctx, types.NamespacedName{Name: utils.LocalClusterName}, managedCluster)
+	managedCluster := utils.NewManagedCluster(mce.Spec.LocalClusterName)
+	err := r.Client.Get(ctx, types.NamespacedName{Name: utils.DefaultLocalClusterName}, managedCluster)
 	if apierrors.IsNotFound(err) || apimeta.IsNoMatchError(err) {
 		log.Info("ManagedCluster CR is not present")
 	} else if err != nil {
 		return ctrl.Result{}, err
 	} else {
 		log.Info("Deleting ManagedCluster CR")
-		managedCluster = utils.NewManagedCluster()
+		managedCluster = utils.NewManagedCluster(mce.Spec.LocalClusterName)
 		utils.AddBackplaneConfigLabels(managedCluster, mce.GetName())
 		err = r.Client.Delete(ctx, managedCluster)
 		if err != nil && !apierrors.IsNotFound(err) {
@@ -1663,7 +1663,7 @@ func (r *MultiClusterEngineReconciler) ensureNoLocalCluster(ctx context.Context,
 	}
 
 	log.Info("Check if managed cluster namespace exists")
-	ns := utils.NewLocalNamespace()
+	ns := utils.NewLocalNamespace(mce.Spec.LocalClusterName)
 	err = r.Client.Get(ctx, types.NamespacedName{Name: ns.GetName()}, ns)
 	if apierrors.IsNotFound(err) {
 		log.Info("Managed cluster namespace has been removed")
@@ -1675,7 +1675,7 @@ func (r *MultiClusterEngineReconciler) ensureNoLocalCluster(ctx context.Context,
 	log.Info("Managed cluster namespace still exists")
 
 	log.Info("Deleting managed cluster namespace")
-	ns = utils.NewLocalNamespace()
+	ns = utils.NewLocalNamespace(mce.Spec.LocalClusterName)
 	err = r.Client.Delete(ctx, ns)
 	if err != nil && !apierrors.IsNotFound(err) {
 		log.Error(err, "Error deleting managed cluster ns")

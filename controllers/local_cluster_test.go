@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	testname      = utils.LocalClusterName
+	testname      = utils.DefaultLocalClusterName
 	testnamespace = "testnamespace"
 )
 
