@@ -46,6 +46,21 @@ spec:
               filters:
                 description: Sets restrictions on what kind of clusters to discover
                 properties:
+                  clusterTypes:
+                    description: |-
+                      ClusterTypes is the list of cluster types to discover. These types represent the platform
+                      the cluster is running on, such as OpenShift Container Platform (OCP), Azure Red Hat OpenShift (ARO),
+                      or others.
+                    items:
+                      type: string
+                    type: array
+                  infrastructureProviders:
+                    description: |-
+                      InfrastructureProviders is the list of infrastructure providers to discover. This can be
+                      a list of cloud providers or platforms (e.g., AWS, Azure, GCP) where clusters might be running.
+                    items:
+                      type: string
+                    type: array
                   lastActive:
                     description: LastActive is the last active in days of clusters
                       to discover, determined by activity timestamp
@@ -58,6 +73,14 @@ spec:
                         Semver represents a partial semver string with the major and minor version
                         in the form "<Major>.<Minor>". For example: "4.5"
                       pattern: ^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)$
+                      type: string
+                    type: array
+                  regions:
+                    description: |-
+                      Regions is the list of regions where OpenShift clusters are located. This helps in filtering
+                      clusters based on geographic location or data center region, useful for compliance or latency
+                      requirements.
+                    items:
                       type: string
                     type: array
                 type: object

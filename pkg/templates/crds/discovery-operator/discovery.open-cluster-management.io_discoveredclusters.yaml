@@ -14,7 +14,23 @@ spec:
     singular: discoveredcluster
   scope: Namespaced
   versions:
-  - name: v1
+  - additionalPrinterColumns:
+    - description: Human-readable name assigned to the cluster
+      jsonPath: .spec.displayName
+      name: Display Name
+      type: string
+    - description: Cloud provider where the cluster is hosted (e.g., AWS, Azure, GCP)
+      jsonPath: .spec.cloudProvider
+      name: Cloud Provider
+      type: string
+    - description: Current state of the discovered cluster (e.g Active, Stale)
+      jsonPath: .spec.status
+      name: Status
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1
     schema:
       openAPIV3Schema:
         description: DiscoveredCluster is the Schema for the discoveredclusters API
@@ -40,24 +56,29 @@ spec:
             description: DiscoveredClusterSpec defines the desired state of DiscoveredCluster
             properties:
               activityTimestamp:
-                description: ActivityTimestamp ...
+                description: ActivityTimestamp records the last observed activity
+                  of the cluster.
                 format: date-time
                 type: string
               apiUrl:
-                description: APIURL ...
+                description: APIURL is the endpoint used to access the cluster's API
+                  server.
                 type: string
               cloudProvider:
-                description: CloudProvider ...
+                description: CloudProvider specifies the cloud provider where the
+                  cluster is hosted (e.g., AWS, Azure, GCP).
                 type: string
               console:
-                description: Console ...
+                description: Console provides the URL of the cluster's web-based console.
                 type: string
               creationTimestamp:
-                description: CreationTimestamp ...
+                description: CreationTimestamp marks when the cluster was initially
+                  discovered.
                 format: date-time
                 type: string
               credential:
-                description: Credential ...
+                description: Credential references the Kubernetes secret containing
+                  authentication details for the cluster.
                 properties:
                   apiVersion:
                     description: API version of the referent.
@@ -101,38 +122,49 @@ spec:
                 type: object
                 x-kubernetes-map-type: atomic
               displayName:
-                description: DisplayName ...
+                description: DisplayName is a human-readable name assigned to the
+                  cluster.
                 type: string
               importAsManagedCluster:
                 default: false
-                description: ImportAsManagedCluster ...
+                description: ImportAsManagedCluster determines whether the discovered
+                  cluster should be automatically imported as a managed cluster.
                 type: boolean
               isManagedCluster:
-                description: IsManagedCluster ...
+                description: IsManagedCluster indicates whether the cluster is currently
+                  managed.
                 type: boolean
               name:
-                description: Name ...
+                description: Name represents the unique identifier of the discovered
+                  cluster.
                 type: string
               ocpClusterId:
-                description: OCPClusterID ...
+                description: OCPClusterID contains the unique identifier assigned
+                  by OpenShift to the cluster.
                 type: string
               openshiftVersion:
-                description: OpenshiftVersion ...
+                description: OpenshiftVersion specifies the OpenShift version running
+                  on the cluster.
                 type: string
               owner:
-                description: Owner ...
+                description: Owner identifies the owner or organization responsible
+                  for the cluster.
                 type: string
               region:
-                description: Region ...
+                description: Region specifies the geographical region where the cluster
+                  is deployed.
                 type: string
               rhocmClusterId:
-                description: RHOCMClusterID ...
+                description: RHOCMClusterID contains the cluster ID from Red Hat OpenShift
+                  Cluster Manager.
                 type: string
               status:
-                description: Status ...
+                description: Status represents the current state of the discovered
+                  cluster (e.g Active, Stale).
                 type: string
               type:
-                description: Type ...
+                description: Type defines the type of cluster, such as OpenShift,
+                  Kubernetes, or a specific managed service type.
                 type: string
             required:
             - apiUrl
