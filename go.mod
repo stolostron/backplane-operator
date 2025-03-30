@@ -7,7 +7,7 @@ require (
 	github.com/onsi/ginkgo/v2 v2.9.5
 	github.com/onsi/gomega v1.27.7
 	github.com/openshift/api v0.0.0-20230228142948-d170fcdc0fa6
-	github.com/openshift/hive/apis v0.0.0-20230316155509-0de24b83a6d7
+	github.com/openshift/hive/apis bd97bef1d05e
 	github.com/operator-framework/api v0.17.4-0.20230223191600-0131a6301e42
 	github.com/operator-framework/operator-lib v0.11.1-0.20230306195046-28cadc6b6055
 	github.com/pkg/errors v0.9.1
