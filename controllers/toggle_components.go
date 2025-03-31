@@ -1524,7 +1524,7 @@ func (r *MultiClusterEngineReconciler) ensureLocalCluster(ctx context.Context, m
 						Kind:           "local-cluster",
 						Condition: backplanev1.ComponentCondition{
 							Type:      "Available",
-							Name:      "local-cluster",
+							Name:      mce.Spec.LocalClusterName,
 							Status:    metav1.ConditionFalse,
 							Reason:    status.WaitingForResourceReason,
 							Kind:      "local-cluster",
@@ -1554,7 +1554,7 @@ func (r *MultiClusterEngineReconciler) ensureLocalCluster(ctx context.Context, m
 			Kind:           "local-cluster",
 			Condition: backplanev1.ComponentCondition{
 				Type:      "Available",
-				Name:      "local-cluster",
+				Name:      mce.Spec.LocalClusterName,
 				Status:    metav1.ConditionFalse,
 				Reason:    status.WaitingForResourceReason,
 				Kind:      "local-cluster",
@@ -1568,11 +1568,11 @@ func (r *MultiClusterEngineReconciler) ensureLocalCluster(ctx context.Context, m
 		log.Info("ManagedCluster webhook not available, waiting for controller")
 		r.StatusManager.RemoveComponent(lcs)
 		r.StatusManager.AddComponent(status.StaticStatus{
-			NamespacedName: types.NamespacedName{Name: "local-cluster", Namespace: mce.Spec.TargetNamespace},
+			NamespacedName: types.NamespacedName{Name: mce.Spec.LocalClusterName, Namespace: mce.Spec.TargetNamespace},
 			Kind:           "local-cluster",
 			Condition: backplanev1.ComponentCondition{
 				Type:      "Available",
-				Name:      "local-cluster",
+				Name:      mce.Spec.LocalClusterName,
 				Status:    metav1.ConditionFalse,
 				Reason:    status.WaitingForResourceReason,
 				Kind:      "local-cluster",
@@ -1624,7 +1624,7 @@ func (r *MultiClusterEngineReconciler) ensureNoLocalCluster(ctx context.Context,
 		return ctrl.Result{}, nil
 	}
 
-	nsn := types.NamespacedName{Name: "local-cluster", Namespace: mce.Spec.TargetNamespace}
+	nsn := types.NamespacedName{Name: mce.Spec.LocalClusterName, Namespace: mce.Spec.TargetNamespace}
 	lcs := status.LocalClusterStatus{
 		NamespacedName: nsn,
 		Enabled:        false,
