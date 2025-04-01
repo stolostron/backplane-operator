@@ -139,7 +139,11 @@ func TestEnsureNoLocalCluster2(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	mce := &mcev1.MultiClusterEngine{}
+	mce := &mcev1.MultiClusterEngine{
+		Spec: mcev1.MultiClusterEngineSpec{
+			LocalClusterName: utils.DefaultLocalClusterName,
+		},
+	}
 
 	builder := fake.NewClientBuilder()
 	mc := newMC()
