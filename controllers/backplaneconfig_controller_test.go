@@ -2119,7 +2119,8 @@ func Test_finalizeBackplaneConfig(t *testing.T) {
 					Name: "mce",
 				},
 				Spec: backplanev1.MultiClusterEngineSpec{
-					TargetNamespace: "test-ns",
+					LocalClusterName: "local-cluster",
+					TargetNamespace:  "test-ns",
 				},
 			},
 			mceNS: &corev1.Namespace{

@@ -1275,7 +1275,7 @@ func (r *MultiClusterEngineReconciler) reconcileHypershiftLocalHosting(ctx conte
 				Message:   fmt.Sprintf("Waiting for namespace '%v'", mce.Spec.LocalClusterName),
 			},
 		})
-		log.Info("Can't apply hypershift-addon, waiting for %v namespace", mce.Spec.LocalClusterName)
+		log.Info(fmt.Sprintf("Can't apply hypershift-addon, waiting for %v namespace", mce.Spec.LocalClusterName))
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
 	r.StatusManager.AddComponent(status.ManagedClusterAddOnStatus{
