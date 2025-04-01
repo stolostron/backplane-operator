@@ -1258,10 +1258,10 @@ func (r *MultiClusterEngineReconciler) reconcileHypershiftLocalHosting(ctx conte
 		return r.removeHypershiftLocalHosting(ctx, mce)
 	}
 
-	localNS := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "local-cluster"}}
+	localNS := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: mce.Spec.LocalClusterName}}
 	err = r.Client.Get(context.TODO(), types.NamespacedName{Name: localNS.GetName()}, localNS)
 	if apierrors.IsNotFound(err) {
-		// wait for local-cluster namespace
+		// wait for local-cluster namespace (may be renamed)
 		r.StatusManager.AddComponent(status.StaticStatus{
 			NamespacedName: types.NamespacedName{Name: addon.GetName(), Namespace: addon.GetNamespace()},
 			Kind:           addon.GetKind(),
@@ -1272,10 +1272,10 @@ func (r *MultiClusterEngineReconciler) reconcileHypershiftLocalHosting(ctx conte
 				Reason:    status.WaitingForResourceReason,
 				Kind:      addon.GetKind(),
 				Available: false,
-				Message:   "Waiting for namespace 'local-cluster'",
+				Message:   fmt.Sprintf("Waiting for namespace '%v'", mce.Spec.LocalClusterName),
 			},
 		})
-		log.Info("Can't apply hypershift-addon, waiting for local-cluster namespace")
+		log.Info("Can't apply hypershift-addon, waiting for %v namespace", mce.Spec.LocalClusterName)
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
 	r.StatusManager.AddComponent(status.ManagedClusterAddOnStatus{
@@ -1506,12 +1506,12 @@ func (r *MultiClusterEngineReconciler) ensureLocalCluster(ctx context.Context, m
 		localNS := utils.NewLocalNamespace(mce.Spec.LocalClusterName)
 		err := r.Client.Get(ctx, types.NamespacedName{Name: localNS.GetName()}, localNS)
 		if err == nil {
-			log.Info("Waiting on local cluster namespace to be removed before creating ManagedCluster CR",
+			log.Info(fmt.Sprintf("Waiting on local cluster namespace '%v' to be removed before creating ManagedCluster CR", mce.Spec.LocalClusterName),
 				"Namespace", localNS.GetName())
 
 			return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 		} else if apierrors.IsNotFound(err) {
-			log.Info("Local cluster namespace does not exist. Creating ManagedCluster CR")
+			log.Info(fmt.Sprintf("Local cluster namespace '%v' does not exist. Creating ManagedCluster CR", mce.Spec.LocalClusterName))
 			managedCluster = utils.NewManagedCluster(mce.Spec.LocalClusterName)
 			err := r.Client.Create(ctx, managedCluster)
 			if err != nil {
@@ -1543,7 +1543,7 @@ func (r *MultiClusterEngineReconciler) ensureLocalCluster(ctx context.Context, m
 			}
 			log.Info("Created ManagedCluster CR")
 		} else {
-			log.Error(err, "Failed to get local cluster namespace")
+			log.Error(err, fmt.Sprintf("Failed to get local cluster namespace, %v", mce.Spec.LocalClusterName))
 			return ctrl.Result{}, err
 		}
 	} else if apimeta.IsNoMatchError(err) {

@@ -47,7 +47,8 @@ func Test_reconcileLocalHosting(t *testing.T) {
 			Name: BackplaneConfigName,
 		},
 		Spec: backplanev1.MultiClusterEngineSpec{
-			TargetNamespace: DestinationNamespace,
+			LocalClusterName: "local-cluster",
+			TargetNamespace:  DestinationNamespace,
 			Overrides: &backplanev1.Overrides{
 				Components: []backplanev1.ComponentConfig{
 					{
@@ -105,7 +106,7 @@ func Test_reconcileLocalHosting(t *testing.T) {
 			Kind:       "Namespace",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "local-cluster",
+			Name: mce.Spec.LocalClusterName,
 		},
 	}
 	err := cl.Create(ctx, localns)
@@ -113,7 +114,7 @@ func Test_reconcileLocalHosting(t *testing.T) {
 		t.Error("error creating namespace with fake client")
 	}
 	retrievedNS := &corev1.Namespace{}
-	err = cl.Get(ctx, types.NamespacedName{Name: "local-cluster"}, retrievedNS)
+	err = cl.Get(ctx, types.NamespacedName{Name: mce.Spec.LocalClusterName}, retrievedNS)
 	if err != nil {
 		t.Errorf("error getting ManagedClusterAddOn: %s", err.Error())
 	}
