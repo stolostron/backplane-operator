@@ -1675,7 +1675,7 @@ func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Conte
 		log.Info(fmt.Sprintf("finalizing %s ManagedCluster custom resource", backplaneConfig.Spec.LocalClusterName))
 
 		if err := r.Client.Delete(ctx, localCluster); err != nil {
-			log.Error(err, fmt.Sprintf("error deleting $v ManagedCluster CR", backplaneConfig.Spec.LocalClusterName))
+			log.Error(err, fmt.Sprintf("error deleting %v ManagedCluster CR", backplaneConfig.Spec.LocalClusterName))
 			return ctrl.Result{}, err
 		}
 
