@@ -6,13 +6,13 @@ import (
 )
 
 const (
-	expName       = LocalClusterName
+	expName       = DefaultLocalClusterName
 	expKind       = "ManagedCluster"
 	expAPIVersion = "cluster.open-cluster-management.io/v1"
 )
 
 func TestNewManagedCluster(t *testing.T) {
-	mc := NewManagedCluster()
+	mc := NewManagedCluster(DefaultLocalClusterName)
 
 	if name := mc.GetName(); name != expName {
 		t.Errorf("NewManagedCluster Name: expected %q, got %q", expName, name)
@@ -50,7 +50,7 @@ func TestNewManagedCluster(t *testing.T) {
 }
 
 func TestNewLocalNamespace(t *testing.T) {
-	ns := NewLocalNamespace()
+	ns := NewLocalNamespace(DefaultLocalClusterName)
 
 	if name := ns.GetName(); name != expName {
 		t.Errorf("NewLocalNamespace Name: expected %q, got %q", expName, name)

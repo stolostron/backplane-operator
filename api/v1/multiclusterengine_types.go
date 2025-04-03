@@ -82,6 +82,11 @@ type MultiClusterEngineSpec struct {
 	// Location where MCE resources will be placed
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Target Namespace",xDescriptors={"urn:alm:descriptor:io.kubernetes:text","urn:alm:descriptor:com.tectonic.ui:advanced"}
 	TargetNamespace string `json:"targetNamespace,omitempty"`
+
+	// The name of the local-cluster resource
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Local Cluster Name",xDescriptors={"urn:alm:descriptor:io.kubernetes:text","urn:alm:descriptor:com.tectonic.ui:advanced"}
+	//+kubebuilder:default="local-cluster"
+	LocalClusterName string `json:"localClusterName,omitempty"`
 }
 
 // ComponentConfig provides optional configuration items for individual components

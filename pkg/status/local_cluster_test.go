@@ -42,7 +42,7 @@ func newLCS() *LocalClusterStatus {
 }
 
 func newMC() *unstructured.Unstructured {
-	mc := utils.NewManagedCluster()
+	mc := utils.NewManagedCluster(testname)
 	mc.SetName(testname)
 	mc.SetNamespace(testnamespace)
 	return mc

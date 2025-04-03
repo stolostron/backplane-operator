@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	testname      = utils.LocalClusterName
+	testname      = utils.DefaultLocalClusterName
 	testnamespace = "testnamespace"
 )
 
@@ -58,7 +58,7 @@ func newMCER(c client.Client) *MultiClusterEngineReconciler {
 }
 
 func newMC() *unstructured.Unstructured {
-	mc := utils.NewManagedCluster()
+	mc := utils.NewManagedCluster(utils.DefaultLocalClusterName)
 	mc.SetName(testname)
 	mc.SetNamespace(testnamespace)
 	return mc
@@ -79,7 +79,11 @@ func TestEnsureLocalCluster(t *testing.T) {
 
 	r := newMCER(cl)
 	ctx := context.Background()
-	mce := &mcev1.MultiClusterEngine{}
+	mce := &mcev1.MultiClusterEngine{
+		Spec: mcev1.MultiClusterEngineSpec{
+			LocalClusterName: utils.DefaultLocalClusterName,
+		},
+	}
 
 	result, err := r.ensureLocalCluster(ctx, mce)
 
@@ -135,12 +139,16 @@ func TestEnsureNoLocalCluster2(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	mce := &mcev1.MultiClusterEngine{}
+	mce := &mcev1.MultiClusterEngine{
+		Spec: mcev1.MultiClusterEngineSpec{
+			LocalClusterName: utils.DefaultLocalClusterName,
+		},
+	}
 
 	builder := fake.NewClientBuilder()
 	mc := newMC()
 	mc.SetNamespace("")
-	ns := utils.NewLocalNamespace()
+	ns := utils.NewLocalNamespace(utils.DefaultLocalClusterName)
 	builder.WithObjects(mc, ns)
 	cl := localClient{
 		Client: builder.Build(),

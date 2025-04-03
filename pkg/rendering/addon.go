@@ -18,7 +18,7 @@ func RenderHypershiftAddon(mce *v1.MultiClusterEngine) (*unstructured.Unstructur
 			"kind":       "ManagedClusterAddOn",
 			"metadata": map[string]interface{}{
 				"name":      "hypershift-addon",
-				"namespace": "local-cluster",
+				"namespace": mce.Spec.LocalClusterName,
 			},
 			"spec": map[string]interface{}{
 				"installNamespace": "open-cluster-management-agent-addon",
