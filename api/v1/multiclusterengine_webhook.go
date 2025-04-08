@@ -40,6 +40,12 @@ const (
 	DefaultTargetNamespace = "multicluster-engine"
 )
 
+type BlockDeletionResource struct {
+	Name       string
+	GVK        schema.GroupVersionKind
+	Exceptions []string
+}
+
 // log is for logging in this package.
 var (
 	backplaneconfiglog = logf.Log.WithName("backplaneconfig-resource")
@@ -51,20 +57,7 @@ var (
 	ErrInvalidAvailability = errors.New("invalid AvailabilityConfig")
 	ErrInvalidInfraNS      = errors.New("invalid InfrastructureCustomNamespace")
 
-	blockDeletionResources = []struct {
-		Name       string
-		GVK        schema.GroupVersionKind
-		Exceptions []string
-	}{
-		{
-			Name: "ManagedCluster",
-			GVK: schema.GroupVersionKind{
-				Group:   "cluster.open-cluster-management.io",
-				Version: "v1",
-				Kind:    "ManagedClusterList",
-			},
-			Exceptions: []string{"local-cluster"},
-		},
+	blockDeletionResources = []BlockDeletionResource{
 		{
 			Name: "DiscoveryConfig",
 			GVK: schema.GroupVersionKind{
@@ -281,6 +274,16 @@ func (r *MultiClusterEngine) ValidateDelete() (admission.Warnings, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	blockDeletionResources = append(blockDeletionResources, BlockDeletionResource{
+		Name: "ManagedCluster",
+		GVK: schema.GroupVersionKind{
+			Group:   "cluster.open-cluster-management.io",
+			Version: "v1",
+			Kind:    "ManagedClusterList",
+		},
+		Exceptions: []string{r.Spec.LocalClusterName},
+	})
 
 	for _, resource := range blockDeletionResources {
 		list := &unstructured.UnstructuredList{}
