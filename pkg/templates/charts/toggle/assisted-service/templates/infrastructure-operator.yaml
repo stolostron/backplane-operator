@@ -101,6 +101,7 @@ spec:
             - ALL
           privileged: false
           readOnlyRootFilesystem: true
+          runAsNonRoot: true
       hostIPC: false
       hostNetwork: false
       hostPID: false
