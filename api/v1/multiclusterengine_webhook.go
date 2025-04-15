@@ -300,7 +300,7 @@ func (r *MultiClusterEngine) ValidateDelete() (admission.Warnings, error) {
 			return nil, fmt.Errorf("unable to list %s: %s", resource.Name, err)
 		}
 		for _, item := range list.Items {
-			if !contains(resource.NameExceptions, item.GetName()) && hasIntersection(resource.LabelExceptions, item.GetLabels()) {
+			if !contains(resource.NameExceptions, item.GetName()) && !hasIntersection(resource.LabelExceptions, item.GetLabels()) {
 				return nil, fmt.Errorf("cannot delete %s resource. Existing %s resources must first be deleted",
 					r.Name, resource.Name)
 			}
