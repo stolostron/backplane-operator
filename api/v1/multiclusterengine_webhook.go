@@ -300,9 +300,12 @@ func (r *MultiClusterEngine) ValidateDelete() (admission.Warnings, error) {
 			return nil, fmt.Errorf("unable to list %s: %s", resource.Name, err)
 		}
 		for _, item := range list.Items {
-			if !contains(resource.NameExceptions, item.GetName()) && !hasIntersection(resource.LabelExceptions, item.GetLabels()) {
+			if !contains(resource.NameExceptions, item.GetName()) {
 				return nil, fmt.Errorf("cannot delete %s resource. Existing %s resources must first be deleted",
 					r.Name, resource.Name)
+			}
+			if !hasIntersection(resource.LabelExceptions, item.GetLabels()) {
+				return nil, fmt.Errorf("cannot delete %s resource. Necessary labels %v are not present", r.Name, resource.LabelExceptions)
 			}
 		}
 	}
@@ -312,7 +315,7 @@ func (r *MultiClusterEngine) ValidateDelete() (admission.Warnings, error) {
 func hasIntersection(smallerMap map[string]string, largerMap map[string]string) bool {
 	// iterate through the keys of the smaller map to save time
 	for k, sVal := range smallerMap {
-		if lVal, _ := largerMap[k]; lVal == sVal {
+		if lVal := largerMap[k]; lVal == sVal {
 			return true // return true if A and B share any complete key-value pair
 		}
 	}
