@@ -41,9 +41,10 @@ const (
 )
 
 type BlockDeletionResource struct {
-	Name       string
-	GVK        schema.GroupVersionKind
-	Exceptions []string
+	Name            string
+	GVK             schema.GroupVersionKind
+	NameExceptions  []string
+	LabelExceptions map[string]string
 }
 
 // log is for logging in this package.
@@ -275,17 +276,20 @@ func (r *MultiClusterEngine) ValidateDelete() (admission.Warnings, error) {
 		return nil, err
 	}
 
-	blockDeletionResources = append(blockDeletionResources, BlockDeletionResource{
-		Name: "ManagedCluster",
-		GVK: schema.GroupVersionKind{
-			Group:   "cluster.open-cluster-management.io",
-			Version: "v1",
-			Kind:    "ManagedClusterList",
-		},
-		Exceptions: []string{r.Spec.LocalClusterName},
+	managedClusterGVK := schema.GroupVersionKind{
+		Group:   "cluster.open-cluster-management.io",
+		Version: "v1",
+		Kind:    "ManagedClusterList",
+	}
+
+	tmpBlockDeletionResources := append(blockDeletionResources, BlockDeletionResource{ // only adds the dynamic localClusterName to a temporary variable so duplicates aren't created
+		Name:            "ManagedCluster",
+		GVK:             managedClusterGVK,
+		NameExceptions:  []string{r.Spec.LocalClusterName},
+		LabelExceptions: map[string]string{"local-cluster": "true"},
 	})
 
-	for _, resource := range blockDeletionResources {
+	for _, resource := range tmpBlockDeletionResources {
 		list := &unstructured.UnstructuredList{}
 		list.SetGroupVersionKind(resource.GVK)
 		err := discovery.ServerSupportsVersion(c, list.GroupVersionKind().GroupVersion())
@@ -296,13 +300,23 @@ func (r *MultiClusterEngine) ValidateDelete() (admission.Warnings, error) {
 			return nil, fmt.Errorf("unable to list %s: %s", resource.Name, err)
 		}
 		for _, item := range list.Items {
-			if !contains(resource.Exceptions, item.GetName()) {
+			if !contains(resource.NameExceptions, item.GetName()) && hasIntersection(resource.LabelExceptions, item.GetLabels()) {
 				return nil, fmt.Errorf("cannot delete %s resource. Existing %s resources must first be deleted",
 					r.Name, resource.Name)
 			}
 		}
 	}
 	return nil, nil
+}
+
+func hasIntersection(smallerMap map[string]string, largerMap map[string]string) bool {
+	// iterate through the keys of the smaller map to save time
+	for k, sVal := range smallerMap {
+		if lVal, _ := largerMap[k]; lVal == sVal {
+			return true // return true if A and B share any complete key-value pair
+		}
+	}
+	return false
 }
 
 func contains(s []string, v string) bool {
