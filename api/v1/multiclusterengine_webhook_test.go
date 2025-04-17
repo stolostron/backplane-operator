@@ -130,6 +130,13 @@ var _ = Describe("Multiclusterengine webhook", func() {
 			})
 		})
 
+		It("Should succeed in deleting multiclusterengine", func() {
+			mce := &MultiClusterEngine{}
+
+			Expect(k8sClient.Get(ctx, types.NamespacedName{Name: multiClusterEngineName}, mce)).To(Succeed())
+			Expect(k8sClient.Delete(ctx, mce)).To(Succeed())
+		})
+
 	})
 
 })
