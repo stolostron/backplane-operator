@@ -19,7 +19,7 @@
 
 - repo_name: "cluster-api-installer"
   github_ref: "https://github.com/stolostron/cluster-api-installer.git"
-  branch: "backplane-2.9"
+  branch: "main"
   charts:
     - name: "cluster-api"
       chart-path: "charts/cluster-api"
@@ -34,6 +34,37 @@
         - "CLUSTER_NAME"
         - "HUB_KUBECONFIG"
         - "INSTALL_NAMESPACE"
+
+    - name: "cluster-api-provider-openshift-assisted"
+      chart-path: "charts/cluster-api-provider-openshift-assisted"
+      always-or-toggle: "toggle"
+      imageMappings:
+        cluster-api-controlplane-provider-openshift-assisted: "cluster_api_controlplane_provider_openshift_assisted"
+        cluster-api-bootstrap-provider-openshift-assisted: "cluster_api_bootstrap_provider_openshift_assisted"
+      inclusions:
+        - "pullSecretOverride"
+      skipRBACOverrides: true
+      updateChartVersion: true # the chart version will be retrieved from trimmed branch name, e.g. backplane-2.6 -> 2.6
+      escape-template-variables:
+        - "CLUSTER_NAME"
+        - "HUB_KUBECONFIG"
+        - "INSTALL_NAMESPACE"
+
+    - name: "cluster-api-provider-metal3"
+      chart-path: "charts/cluster-api-provider-metal3"
+      always-or-toggle: "toggle"
+      imageMappings:
+        ip-address-manager: "ip_address_manager"
+        ose-baremetal-cluster-api-controllers-rhel9: "ose_baremetal_cluster_api_controllers_rhel9"
+      inclusions:
+        - "pullSecretOverride"
+      skipRBACOverrides: true
+      updateChartVersion: true # the chart version will be retrieved from trimmed branch name, e.g. backplane-2.6 -> 2.6
+      escape-template-variables:
+        - "CLUSTER_NAME"
+        - "HUB_KUBECONFIG"
+        - "INSTALL_NAMESPACE"
+
 
     - name: "cluster-api-provider-aws"
       chart-path: "charts/cluster-api-provider-aws"

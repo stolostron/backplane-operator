@@ -1,0 +1,16 @@
+global:
+  deployOnOCP: true
+  hubSize: Small
+  imageOverrides:
+    ip_address_manager: ''
+    ose_baremetal_cluster_api_controllers_rhel9: ''
+  namespace: default
+  pullSecret: null
+  templateOverrides: {}
+hubconfig:
+  nodeSelector: null
+  ocpVersion: 4.12.0
+  proxyConfigs: {}
+  replicaCount: 1
+  tolerations: []
+org: open-cluster-management

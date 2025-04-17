@@ -1,0 +1,16 @@
+global:
+  deployOnOCP: true
+  hubSize: Small
+  imageOverrides:
+    cluster_api_bootstrap_provider_openshift_assisted: ''
+    cluster_api_controlplane_provider_openshift_assisted: ''
+  namespace: default
+  pullSecret: null
+  templateOverrides: {}
+hubconfig:
+  nodeSelector: null
+  ocpVersion: 4.12.0
+  proxyConfigs: {}
+  replicaCount: 1
+  tolerations: []
+org: open-cluster-management
