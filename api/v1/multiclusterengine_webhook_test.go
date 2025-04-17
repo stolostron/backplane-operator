@@ -8,6 +8,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -25,7 +26,8 @@ var _ = Describe("Multiclusterengine webhook", func() {
 						Name: multiClusterEngineName,
 					},
 					Spec: MultiClusterEngineSpec{
-						TargetNamespace: DefaultTargetNamespace,
+						LocalClusterName: "test-local-cluster",
+						TargetNamespace:  DefaultTargetNamespace,
 					},
 				}
 				Expect(k8sClient.Create(ctx, mce)).Should(Succeed())
@@ -130,6 +132,42 @@ var _ = Describe("Multiclusterengine webhook", func() {
 			})
 		})
 
+		It("Should succeed in deleting multiclusterengine", func() {
+			mce := &MultiClusterEngine{}
+			Expect(k8sClient.Get(ctx, types.NamespacedName{Name: multiClusterEngineName}, mce)).To(Succeed())
+
+			By("Creating the managedCluster", func() {
+				managedCluster := NewManagedCluster(mce.Spec.LocalClusterName)
+				Expect(k8sClient.Create(ctx, managedCluster)).To(Succeed())
+			})
+			By("Deleting the multiclusterengine", func() {
+				Expect(k8sClient.Delete(ctx, mce)).To(Succeed())
+			})
+		})
+
 	})
 
 })
+
+// re-defining the function here to avoid a import cycle
+func NewManagedCluster(name string) *unstructured.Unstructured {
+	managedCluster := &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"apiVersion": "cluster.open-cluster-management.io/v1",
+			"kind":       "ManagedCluster",
+			"metadata": map[string]interface{}{
+				"name": name,
+				"labels": map[string]interface{}{
+					"local-cluster":                 "true",
+					"cloud":                         "auto-detect",
+					"vendor":                        "auto-detect",
+					"velero.io/exclude-from-backup": "true",
+				},
+			},
+			"spec": map[string]interface{}{
+				"hubAcceptsClient": true,
+			},
+		},
+	}
+	return managedCluster
+}

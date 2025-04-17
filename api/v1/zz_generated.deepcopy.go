@@ -29,10 +29,17 @@ import (
 func (in *BlockDeletionResource) DeepCopyInto(out *BlockDeletionResource) {
 	*out = *in
 	out.GVK = in.GVK
-	if in.Exceptions != nil {
-		in, out := &in.Exceptions, &out.Exceptions
+	if in.NameExceptions != nil {
+		in, out := &in.NameExceptions, &out.NameExceptions
 		*out = make([]string, len(*in))
 		copy(*out, *in)
+	}
+	if in.LabelExceptions != nil {
+		in, out := &in.LabelExceptions, &out.LabelExceptions
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
 	}
 }
 
