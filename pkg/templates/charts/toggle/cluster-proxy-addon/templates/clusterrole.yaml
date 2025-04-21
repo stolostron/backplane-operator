@@ -165,3 +165,23 @@ rules:
       - "get"
       - "list"
       - "watch"
+  # Allow cluster-proxy-addon to do impersonation
+  # Needs to create a clusterrole for the addon-agent to create tokenreview to hub
+  # Although hub side doesn't need to create token view, it still requires the tokenreview create permission
+  - apiGroups:
+      - rbac.authorization.k8s.io
+    resources:
+      - clusterroles
+      - clusterrolebindings
+    verbs:
+      - create
+      - get
+      - list
+      - watch
+      - delete
+  - apiGroups:
+      - authentication.k8s.io
+    resources:
+      - tokenreviews
+    verbs:
+      - create
