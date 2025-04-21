@@ -40,3 +40,6 @@ test/function_tests/results/*
 test/mock-component-image/bin
 test/mock-component-image/scripts/_pycache_
 hack/bundle-automation/tmp/
+
+# Ignore partial workflow directory
+workflow/
