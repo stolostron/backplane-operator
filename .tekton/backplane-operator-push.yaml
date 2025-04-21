@@ -362,8 +362,6 @@ spec:
             value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
           - name: CACHI2_ARTIFACT
             value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
-          - name: IMAGE_DIGEST
-            value: $(tasks.build-image-index.results.IMAGE_DIGEST)
         runAfter:
           - build-image-index
         taskRef:
@@ -404,6 +402,8 @@ spec:
               - "false"
       - name: sast-coverity-check
         params:
+          - name: image-digest
+            value: $(tasks.build-image-index.results.IMAGE_DIGEST)
           - name: image-url
             value: $(tasks.build-container.results.IMAGE_URL)
           - name: IMAGE
@@ -429,8 +429,6 @@ spec:
             value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
           - name: CACHI2_ARTIFACT
             value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
-          - name: IMAGE_DIGEST
-            value: $(tasks.build-image-index.results.IMAGE_DIGEST)
         runAfter:
           - coverity-availability-check
         taskRef:
@@ -505,6 +503,8 @@ spec:
               - "false"
       - name: sast-unicode-check
         params:
+          - name: image-digest
+            value: $(tasks.build-image-index.results.IMAGE_DIGEST)
           - name: image-url
             value: $(tasks.build-image-index.results.IMAGE_URL)
           - name: SOURCE_ARTIFACT
