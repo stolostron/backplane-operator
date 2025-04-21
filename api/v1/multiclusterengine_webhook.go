@@ -303,7 +303,7 @@ func (r *MultiClusterEngine) ValidateDelete() (admission.Warnings, error) {
 			fmt.Printf("Error in validateDelete(): %v\n", err)
 			continue
 		}
-		fmt.Printf("Made it past the error block\n")
+		fmt.Printf("Made it past the error block with %v resource\n", resource)
 		if err := Client.List(ctx, list); err != nil {
 			return nil, fmt.Errorf("unable to list %s: %s", resource.Name, err)
 		}
@@ -317,6 +317,7 @@ func (r *MultiClusterEngine) ValidateDelete() (admission.Warnings, error) {
 			}
 		}
 	}
+	fmt.Printf("validateDelte() run without errors")
 	return nil, nil
 }
 
