@@ -300,7 +300,6 @@ func (r *MultiClusterEngine) ValidateDelete() (admission.Warnings, error) {
 		list.SetGroupVersionKind(resource.GVK)
 		err := discovery.ServerSupportsVersion(c, list.GroupVersionKind().GroupVersion())
 		if err != nil {
-			fmt.Printf("Error in validateDelete(): %v", err)
 			continue
 		}
 		if err := Client.List(ctx, list); err != nil {
