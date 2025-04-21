@@ -21,6 +21,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 
 	admissionregistration "k8s.io/api/admissionregistration/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,6 +29,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	cl "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -260,15 +262,19 @@ func (r *MultiClusterEngine) ValidateUpdate(old runtime.Object) (admission.Warni
 	return nil, nil
 }
 
+var cfg *rest.Config
+
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
 func (r *MultiClusterEngine) ValidateDelete() (admission.Warnings, error) {
 	// TODO(user): fill in your validation logic upon object deletion.
 	backplaneconfiglog.Info("validate delete", "Kind", r.Kind, "Name", r.GetName())
 	ctx := context.Background()
-
-	cfg, err := config.GetConfig()
-	if err != nil {
-		return nil, err
+	if val, ok := os.LookupEnv("ENV_TEST"); !ok || val == "false" {
+		var err error
+		cfg, err = config.GetConfig()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	c, err := discovery.NewDiscoveryClientForConfig(cfg)
@@ -294,6 +300,7 @@ func (r *MultiClusterEngine) ValidateDelete() (admission.Warnings, error) {
 		list.SetGroupVersionKind(resource.GVK)
 		err := discovery.ServerSupportsVersion(c, list.GroupVersionKind().GroupVersion())
 		if err != nil {
+			fmt.Printf("Error in validateDelete(): %v", err)
 			continue
 		}
 		if err := Client.List(ctx, list); err != nil {
