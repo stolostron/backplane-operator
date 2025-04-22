@@ -1,0 +1,14 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    cluster.x-k8s.io/provider: infrastructure-metal3
+  name: ipam-leader-election-role
+  namespace: '{{ default "capm3-system" .Values.global.namespace }}'
+rules:
+- apiGroups:
+  - ''
+  resources:
+  - events
+  verbs:
+  - create
