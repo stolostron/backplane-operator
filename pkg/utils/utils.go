@@ -209,8 +209,8 @@ func GetTestImages() []string {
 		"aws_encryption_provider", "cluster_api", "cluster_api_provider_agent", "cluster_api_provider_aws",
 		"cluster_api_provider_azure", "cluster_api_provider_kubevirt", "kube_rbac_proxy_mce", "cluster_proxy_addon",
 		"cluster_proxy", "cluster_image_set_controller", "image_based_install_operator", "ose_cluster_api_rhel9",
-		"ose_aws_cluster_api_controllers_rhel9", "cluster_api_bootstrap_provider_openshift_assisted", 
-		"cluster_api_controlplane_provider_openshift_assisted", "ip_address_manager", "ose_baremetal_cluster_api_controllers_rhel9",}
+		"ose_aws_cluster_api_controllers_rhel9", "cluster_api_bootstrap_provider_openshift_assisted",
+		"cluster_api_controlplane_provider_openshift_assisted", "ip_address_manager", "ose_baremetal_cluster_api_controllers_rhel9"}
 }
 
 func IsUnitTest() bool {
