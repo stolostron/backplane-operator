@@ -111,7 +111,7 @@ test-prep: manifests generate fmt vet envtest ## prepare to run tests.
 	echo "Ready to run tests"
 
 test: manifests generate fmt vet envtest ## Run tests.
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" DIRECTORY_OVERRIDE="../" UNIT_TEST=true ENV_TEST=true go test -v $(shell go list ./... | grep -E -v "test") -coverprofile cover.out
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" DIRECTORY_OVERRIDE="../" UNIT_TEST=true ENV_TEST=true go test $(shell go list ./... | grep -E -v "test") -coverprofile cover.out
 
 ##@ Build
 
