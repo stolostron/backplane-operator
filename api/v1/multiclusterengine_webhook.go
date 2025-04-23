@@ -21,6 +21,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 
 	admissionregistration "k8s.io/api/admissionregistration/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,6 +29,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	cl "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -41,9 +43,10 @@ const (
 )
 
 type BlockDeletionResource struct {
-	Name       string
-	GVK        schema.GroupVersionKind
-	Exceptions []string
+	Name            string
+	GVK             schema.GroupVersionKind
+	NameExceptions  []string
+	LabelExceptions map[string]string
 }
 
 // log is for logging in this package.
@@ -259,15 +262,19 @@ func (r *MultiClusterEngine) ValidateUpdate(old runtime.Object) (admission.Warni
 	return nil, nil
 }
 
+var cfg *rest.Config
+
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
 func (r *MultiClusterEngine) ValidateDelete() (admission.Warnings, error) {
 	// TODO(user): fill in your validation logic upon object deletion.
 	backplaneconfiglog.Info("validate delete", "Kind", r.Kind, "Name", r.GetName())
 	ctx := context.Background()
-
-	cfg, err := config.GetConfig()
-	if err != nil {
-		return nil, err
+	if val, ok := os.LookupEnv("ENV_TEST"); !ok || val == "false" {
+		var err error
+		cfg, err = config.GetConfig()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	c, err := discovery.NewDiscoveryClientForConfig(cfg)
@@ -275,17 +282,20 @@ func (r *MultiClusterEngine) ValidateDelete() (admission.Warnings, error) {
 		return nil, err
 	}
 
-	blockDeletionResources = append(blockDeletionResources, BlockDeletionResource{
-		Name: "ManagedCluster",
-		GVK: schema.GroupVersionKind{
-			Group:   "cluster.open-cluster-management.io",
-			Version: "v1",
-			Kind:    "ManagedClusterList",
-		},
-		Exceptions: []string{r.Spec.LocalClusterName},
+	managedClusterGVK := schema.GroupVersionKind{
+		Group:   "cluster.open-cluster-management.io",
+		Version: "v1",
+		Kind:    "ManagedClusterList",
+	}
+
+	tmpBlockDeletionResources := append(blockDeletionResources, BlockDeletionResource{ // only adds the dynamic localClusterName to a temporary variable so duplicates aren't created
+		Name:            "ManagedCluster",
+		GVK:             managedClusterGVK,
+		NameExceptions:  []string{r.Spec.LocalClusterName},
+		LabelExceptions: map[string]string{"local-cluster": "true"},
 	})
 
-	for _, resource := range blockDeletionResources {
+	for _, resource := range tmpBlockDeletionResources {
 		list := &unstructured.UnstructuredList{}
 		list.SetGroupVersionKind(resource.GVK)
 		err := discovery.ServerSupportsVersion(c, list.GroupVersionKind().GroupVersion())
@@ -296,13 +306,26 @@ func (r *MultiClusterEngine) ValidateDelete() (admission.Warnings, error) {
 			return nil, fmt.Errorf("unable to list %s: %s", resource.Name, err)
 		}
 		for _, item := range list.Items {
-			if !contains(resource.Exceptions, item.GetName()) {
+			if !contains(resource.NameExceptions, item.GetName()) {
 				return nil, fmt.Errorf("cannot delete %s resource. Existing %s resources must first be deleted",
 					r.Name, resource.Name)
+			}
+			if !hasIntersection(resource.LabelExceptions, item.GetLabels()) {
+				return nil, fmt.Errorf("cannot delete %s resource. Necessary labels %v are not present", r.Name, resource.LabelExceptions)
 			}
 		}
 	}
 	return nil, nil
+}
+
+func hasIntersection(smallerMap map[string]string, largerMap map[string]string) bool {
+	// iterate through the keys of the smaller map to save time
+	for k, sVal := range smallerMap {
+		if lVal := largerMap[k]; lVal == sVal {
+			return true // return true if A and B share any complete key-value pair
+		}
+	}
+	return false
 }
 
 func contains(s []string, v string) bool {
