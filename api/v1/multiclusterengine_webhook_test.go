@@ -130,16 +130,20 @@ var _ = Describe("Multiclusterengine webhook", func() {
 				}
 				Expect(k8sClient.Update(ctx, mce)).NotTo(BeNil(), "invalid components should not be permitted")
 			})
+
+			By("because of existing local-cluster resource", func() {
+				managedCluster := NewManagedCluster(mce.Spec.LocalClusterName)
+				Expect(k8sClient.Create(ctx, managedCluster)).To(Succeed())
+
+				mce.Spec.LocalClusterName = "updated-local-cluster"
+				Expect(k8sClient.Update(ctx, mce)).NotTo(BeNil(), "updating local-Cluster name while one exists should not be permitted")
+			})
 		})
 
 		It("Should succeed in deleting multiclusterengine", func() {
 			mce := &MultiClusterEngine{}
 			Expect(k8sClient.Get(ctx, types.NamespacedName{Name: multiClusterEngineName}, mce)).To(Succeed())
 
-			By("Creating the managedCluster", func() {
-				managedCluster := NewManagedCluster(mce.Spec.LocalClusterName)
-				Expect(k8sClient.Create(ctx, managedCluster)).To(Succeed())
-			})
 			By("Deleting the multiclusterengine", func() {
 				Expect(k8sClient.Delete(ctx, mce)).To(Succeed())
 			})
