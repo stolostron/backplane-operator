@@ -130,16 +130,37 @@ var _ = Describe("Multiclusterengine webhook", func() {
 				}
 				Expect(k8sClient.Update(ctx, mce)).NotTo(BeNil(), "invalid components should not be permitted")
 			})
+
+			By("removing invalid component", func() {
+				Expect(k8sClient.Get(ctx, types.NamespacedName{Name: multiClusterEngineName}, mce)).To(Succeed())
+				mce.Spec.Overrides = &Overrides{}
+				Expect(k8sClient.Update(ctx, mce)).To(Succeed())
+			})
+
+			By("because of existing local-cluster resource", func() {
+				managedCluster := NewManagedCluster(mce.Spec.LocalClusterName)
+				Expect(k8sClient.Create(ctx, managedCluster)).To(Succeed())
+
+				mce.Spec.LocalClusterName = "updated-local-cluster"
+				Expect(k8sClient.Update(ctx, mce)).NotTo(BeNil(), "updating local-Cluster name while one exists should not be permitted")
+			})
 		})
 
 		It("Should succeed in deleting multiclusterengine", func() {
 			mce := &MultiClusterEngine{}
 			Expect(k8sClient.Get(ctx, types.NamespacedName{Name: multiClusterEngineName}, mce)).To(Succeed())
 
-			By("Creating the managedCluster", func() {
-				managedCluster := NewManagedCluster(mce.Spec.LocalClusterName)
-				Expect(k8sClient.Create(ctx, managedCluster)).To(Succeed())
-			})
+			managedCluster := &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "cluster.open-cluster-management.io/v1",
+					"kind":       "ManagedCluster",
+					"metadata": map[string]interface{}{
+						"name": mce.Spec.LocalClusterName,
+					},
+				},
+			}
+			Expect(k8sClient.Get(ctx, types.NamespacedName{Name: mce.Spec.LocalClusterName}, managedCluster)).To(Succeed())
+
 			By("Deleting the multiclusterengine", func() {
 				Expect(k8sClient.Delete(ctx, mce)).To(Succeed())
 			})

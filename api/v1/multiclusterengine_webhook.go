@@ -259,6 +259,32 @@ func (r *MultiClusterEngine) ValidateUpdate(old runtime.Object) (admission.Warni
 		}
 	}
 
+	// Block changing localClusterName if ManagedCluster with label `local-cluster = true` exists
+	// if the Spec.LocalClusterName field has changed
+	if oldMCE.Spec.LocalClusterName != r.Spec.LocalClusterName {
+		ctx := context.Background()
+		managedClusterGVK := schema.GroupVersionKind{
+			Group:   "cluster.open-cluster-management.io",
+			Version: "v1",
+			Kind:    "ManagedClusterList",
+		}
+		mcName := oldMCE.Spec.LocalClusterName
+
+		// list ManagedClusters
+		list := &unstructured.UnstructuredList{}
+		list.SetGroupVersionKind(managedClusterGVK)
+		if err := Client.List(ctx, list); err != nil {
+			return nil, fmt.Errorf("unable to list ManagedCluster: %s", err)
+		}
+
+		// Error if any of the ManagedClusters is the `local-cluster`
+		for _, managedCluster := range list.Items {
+			if managedCluster.GetName() == mcName || managedCluster.GetLabels()["local-cluster"] == "true" {
+				return nil, fmt.Errorf("cannot update Spec.LocalClusterName while local-cluster is enabled")
+			}
+		}
+	}
+
 	return nil, nil
 }
 
