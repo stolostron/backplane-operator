@@ -454,7 +454,8 @@ spec:
       optional: true
     - name: netrc
       optional: true
-  taskRunTemplate: {}
+  taskRunTemplate:
+    serviceAccountName: build-pipeline-backplane-operator-mce-27
   workspaces:
   - name: workspace
     volumeClaimTemplate:
