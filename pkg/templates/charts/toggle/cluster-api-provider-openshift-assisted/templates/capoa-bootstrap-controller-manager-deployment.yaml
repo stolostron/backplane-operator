@@ -60,6 +60,10 @@ spec:
           value: default-ingress-cert
         - name: ASSISTED_CA_BUNDLE_NAMESPACE
           value: openshift-config-managed
+        - name: ASSISTED_CA_BUNDLE_RESOURCE
+          value: configmap
+        - name: ASSISTED_CA_BUNDLE_KEY
+          value: ca-bundle.crt
         image: '{{ .Values.global.imageOverrides.cluster_api_bootstrap_provider_openshift_assisted }}'
         imagePullPolicy: '{{ .Values.global.pullPolicy }}'
         livenessProbe:

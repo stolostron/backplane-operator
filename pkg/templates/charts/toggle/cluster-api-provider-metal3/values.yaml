@@ -2,7 +2,6 @@ global:
   deployOnOCP: true
   hubSize: Small
   imageOverrides:
-    ip_address_manager: ''
     ose_baremetal_cluster_api_controllers_rhel9: ''
   namespace: default
   pullSecret: null
