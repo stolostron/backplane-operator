@@ -275,17 +275,6 @@ func isCommunityMode() bool {
 	}
 }
 
-// isACMManaged returns true if operator is managed by ACM
-func isACMManaged(mce *backplanev1.MultiClusterEngine) bool {
-	managedByACMLabel := "multiclusterhubs.operator.open-cluster-management.io/managed-by"
-	if labels := mce.GetLabels(); labels != nil {
-		if labels[managedByACMLabel] == "true" {
-			return true
-		}
-	}
-	return false
-}
-
 // HubType defines the circumstances of how MCE is being run
 type HubType string
 
@@ -303,7 +292,7 @@ const (
 // GetHubType returns the HubType which defines the circumstances of how MCE is being run
 func GetHubType(mce *backplanev1.MultiClusterEngine) string {
 	isCommunity := isCommunityMode()
-	isManaged := isACMManaged(mce)
+	isManaged := backplanev1.IsACMManaged(mce)
 	if isCommunity {
 		if isManaged {
 			return string(HubTypeStolostron)

@@ -259,9 +259,14 @@ func (r *MultiClusterEngine) ValidateUpdate(old runtime.Object) (admission.Warni
 		}
 	}
 
-	// Block changing localClusterName if ManagedCluster with label `local-cluster = true` exists
 	// if the Spec.LocalClusterName field has changed
 	if oldMCE.Spec.LocalClusterName != r.Spec.LocalClusterName {
+		// block changing localClusterName if the label `managedBy` is set to `true`
+		if IsACMManaged(r) {
+			return nil, fmt.Errorf("cannot update Spec.LocalClusterName from MCE CR when managed by ACM")
+		}
+
+		// Block changing localClusterName if ManagedCluster with label `local-cluster = true` exists
 		ctx := context.Background()
 		managedClusterGVK := schema.GroupVersionKind{
 			Group:   "cluster.open-cluster-management.io",

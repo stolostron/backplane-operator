@@ -258,3 +258,14 @@ func GetLegacyServiceMonitorName(component string) (string, error) {
 		return val, nil
 	}
 }
+
+// IsACMManaged returns true if operator is managed by ACM
+func IsACMManaged(mce *MultiClusterEngine) bool {
+	managedByACMLabel := "multiclusterhubs.operator.open-cluster-management.io/managed-by"
+	if labels := mce.GetLabels(); labels != nil {
+		if labels[managedByACMLabel] == "true" {
+			return true
+		}
+	}
+	return false
+}
