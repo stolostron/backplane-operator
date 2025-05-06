@@ -1365,7 +1365,9 @@ func (r *MultiClusterEngineReconciler) ensureClusterProxyAddon(ctx context.Conte
 	namespacedName = types.NamespacedName{Name: "cluster-proxy-addon-user", Namespace: mce.Spec.TargetNamespace}
 	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
 	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
-	r.StatusManager.AddComponent(status.NewPresentStatus(types.NamespacedName{Name: "cluster-proxy"}, clusterManagementAddOnGVK))
+	namespacedName = types.NamespacedName{Name: "cluster-proxy", Namespace: mce.Spec.TargetNamespace}
+	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
+	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 
 	// Ensure that the InternalHubComponent CR instance is created for component in MCE.
 	if result, err := r.ensureInternalEngineComponent(ctx, mce, backplanev1.ClusterProxyAddon); err != nil {
@@ -1418,6 +1420,9 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterProxyAddon(ctx context.Con
 	namespacedName = types.NamespacedName{Name: "cluster-proxy-addon-user", Namespace: mce.Spec.TargetNamespace}
 	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
 	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
+	namespacedName = types.NamespacedName{Name: "cluster-proxy", Namespace: mce.Spec.TargetNamespace}
+	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
+	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 
 	// Ensure that the InternalHubComponent CR instance is deleted for component in MCE.
 	if result, err := r.ensureNoInternalEngineComponent(ctx, mce,
