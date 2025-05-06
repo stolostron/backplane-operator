@@ -87,6 +87,30 @@ var MCEComponents = []string{
 }
 
 /*
+PreviewComponents is a list of all MCE component names that represent preview (tech preview) features.
+These components are candidates for pruning when the stable version replaces them.
+*/
+var PreviewComponents = []string{
+	ClusterAPIPreview,
+	ClusterAPIProviderAWSPreview,
+	HyperShiftPreview,
+	ImageBasedInstallOperatorPreview,
+	ManagedServiceAccountPreview,
+}
+
+/*
+PreviewToStable maps each preview component to its corresponding stable replacement.
+This mapping is used to enable the stable component when the preview version is pruned.
+*/
+var PreviewToStable = map[string]string{
+	ClusterAPIPreview:                ClusterAPI,                // Upgraded in ACM 2.14 / MCE 2.9
+	ClusterAPIProviderAWSPreview:     ClusterAPIProviderAWS,     // Upgraded in ACM 2.14 / MCE 2.9
+	HyperShiftPreview:                HyperShift,                // Upgraded in ACM 2.8 / MCE 2.3
+	ImageBasedInstallOperatorPreview: ImageBasedInstallOperator, // Upgraded in ACM 2.12 / MCE 2.7
+	ManagedServiceAccountPreview:     ManagedServiceAccount,     // Upgraded in ACM 2.9 / MCE 2.4
+}
+
+/*
 LegacyConfigKind is a slice of strings that represents the legacy resource kinds
 supported by the Operator SDK and Prometheus. These kinds include "PrometheusRule", "Service",
 and "ServiceMonitor".

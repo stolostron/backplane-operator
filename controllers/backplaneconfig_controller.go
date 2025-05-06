@@ -1885,33 +1885,19 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 		updateNecessary = true
 	}
 
-	// hypershift preview component upgraded in ACM 2.8.0
-	if m.Prune(backplanev1.HyperShiftPreview) {
-		updateNecessary = true
-	}
+	// Automatically replace and prune preview components.
+	// If a preview component is enabled and a stable equivalent exists,
+	// enable the stable version. Then, regardless of status, prune the preview.
+	for _, preview := range backplanev1.PreviewComponents {
+		if m.Enabled(preview) {
+			if stable, exists := backplanev1.PreviewToStable[preview]; exists {
+				m.Enable(stable)
+			}
+		}
 
-	if m.Enabled(backplanev1.ManagedServiceAccountPreview) {
-		// if the preview was pruned, enable the non-preview version instead
-		m.Enable(backplanev1.ManagedServiceAccount)
-		// no need to disable -preview version, as it will get pruned below
-		updateNecessary = true
-	}
-
-	// managedserviceaccount preview component upgraded in ACM 2.9.0
-	if m.Prune(backplanev1.ManagedServiceAccountPreview) {
-		updateNecessary = true
-	}
-
-	if m.Enabled(backplanev1.ImageBasedInstallOperatorPreview) {
-		// if the preview was pruned, enable the non-preview version instead
-		m.Enable(backplanev1.ImageBasedInstallOperator)
-
-		// no need to disable -preview version, as it will get pruned below
-		updateNecessary = true
-	}
-	// image based install operator preview component upgraded in ACM 2.12.0
-	if m.Prune(backplanev1.ImageBasedInstallOperatorPreview) {
-		updateNecessary = true
+		if m.Prune(preview) {
+			updateNecessary = true
+		}
 	}
 
 	if utils.DeduplicateComponents(m) {
