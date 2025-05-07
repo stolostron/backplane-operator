@@ -918,19 +918,19 @@ func (r *MultiClusterEngineReconciler) ensureNoInternalEngineComponent(ctx conte
 
 func (r *MultiClusterEngineReconciler) fetchChartOrCRDPath(component string) string {
 	chartDirs := map[string]string{
-		backplanev1.AssistedService:              toggle.AssistedServiceChartDir,
-		backplanev1.ClusterAPIPreview:            toggle.ClusterAPIChartDir,
-		backplanev1.ClusterAPIProviderAWSPreview: toggle.ClusterAPIProviderAWSChartDir,
-		backplanev1.ClusterLifecycle:             toggle.ClusterLifecycleChartDir,
-		backplanev1.ClusterManager:               toggle.ClusterManagerChartDir,
-		backplanev1.ClusterProxyAddon:            toggle.ClusterProxyAddonDir,
-		backplanev1.ConsoleMCE:                   toggle.ConsoleMCEChartsDir,
-		backplanev1.Discovery:                    toggle.DiscoveryChartDir,
-		backplanev1.Hive:                         toggle.HiveChartDir,
-		backplanev1.HyperShift:                   toggle.HyperShiftChartDir,
-		backplanev1.ImageBasedInstallOperator:    toggle.ImageBasedInstallOperatorChartDir,
-		backplanev1.ManagedServiceAccount:        toggle.ManagedServiceAccountChartDir,
-		backplanev1.ServerFoundation:             toggle.ServerFoundationChartDir,
+		backplanev1.AssistedService:           toggle.AssistedServiceChartDir,
+		backplanev1.ClusterAPI:                toggle.ClusterAPIChartDir,
+		backplanev1.ClusterAPIProviderAWS:     toggle.ClusterAPIProviderAWSChartDir,
+		backplanev1.ClusterLifecycle:          toggle.ClusterLifecycleChartDir,
+		backplanev1.ClusterManager:            toggle.ClusterManagerChartDir,
+		backplanev1.ClusterProxyAddon:         toggle.ClusterProxyAddonDir,
+		backplanev1.ConsoleMCE:                toggle.ConsoleMCEChartsDir,
+		backplanev1.Discovery:                 toggle.DiscoveryChartDir,
+		backplanev1.Hive:                      toggle.HiveChartDir,
+		backplanev1.HyperShift:                toggle.HyperShiftChartDir,
+		backplanev1.ImageBasedInstallOperator: toggle.ImageBasedInstallOperatorChartDir,
+		backplanev1.ManagedServiceAccount:     toggle.ManagedServiceAccountChartDir,
+		backplanev1.ServerFoundation:          toggle.ServerFoundationChartDir,
 	}
 
 	if dir, exists := chartDirs[component]; exists {
@@ -1160,13 +1160,13 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 		}
 	}
 
-	if backplaneConfig.Enabled(backplanev1.ClusterAPIPreview) {
+	if backplaneConfig.Enabled(backplanev1.ClusterAPI) {
 		result, err = r.ensureClusterAPI(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
 			requeue = true
 		}
 		if err != nil {
-			errs[backplanev1.ClusterAPIPreview] = err
+			errs[backplanev1.ClusterAPI] = err
 		}
 	} else {
 		result, err = r.ensureNoClusterAPI(ctx, backplaneConfig)
@@ -1174,17 +1174,17 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 			requeue = true
 		}
 		if err != nil {
-			errs[backplanev1.ClusterAPIPreview] = err
+			errs[backplanev1.ClusterAPI] = err
 		}
 	}
 
-	if backplaneConfig.Enabled(backplanev1.ClusterAPIProviderAWSPreview) {
+	if backplaneConfig.Enabled(backplanev1.ClusterAPIProviderAWS) {
 		result, err = r.ensureClusterAPIProviderAWS(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
 			requeue = true
 		}
 		if err != nil {
-			errs[backplanev1.ClusterAPIProviderAWSPreview] = err
+			errs[backplanev1.ClusterAPIProviderAWS] = err
 		}
 	} else {
 		result, err = r.ensureNoClusterAPIProviderAWS(ctx, backplaneConfig)
@@ -1192,7 +1192,7 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 			requeue = true
 		}
 		if err != nil {
-			errs[backplanev1.ClusterAPIProviderAWSPreview] = err
+			errs[backplanev1.ClusterAPIProviderAWS] = err
 		}
 	}
 
@@ -1563,8 +1563,8 @@ func (r *MultiClusterEngineReconciler) ensureNoAllInternalEngineComponents(ctx c
 
 	components := []string{
 		backplanev1.AssistedService,
-		backplanev1.ClusterAPIPreview,
-		backplanev1.ClusterAPIProviderAWSPreview,
+		backplanev1.ClusterAPI,
+		backplanev1.ClusterAPIProviderAWS,
 		backplanev1.ClusterLifecycle,
 		backplanev1.ClusterManager,
 		backplanev1.ClusterProxyAddon,
@@ -1891,11 +1891,16 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 	for _, preview := range backplanev1.PreviewComponents {
 		if m.Enabled(preview) {
 			if stable, exists := backplanev1.PreviewToStable[preview]; exists {
+				log.Info("Stable component version enabled due to preview being enabled",
+					"preview", preview,
+					"stable", stable,
+				)
 				m.Enable(stable)
 			}
 		}
 
 		if m.Prune(preview) {
+			log.Info("Pruning preview component", "preview", preview)
 			updateNecessary = true
 		}
 	}
