@@ -6,6 +6,15 @@ metadata:
 rules:
 
 - apiGroups:
+  - rbac.open-cluster-management.io
+  resources:
+  - clusterpermissions
+  verbs:
+  - get
+  - list
+  - watch
+
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
