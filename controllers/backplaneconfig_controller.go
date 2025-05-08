@@ -1412,12 +1412,15 @@ func (r *MultiClusterEngineReconciler) applyTemplate(ctx context.Context,
 				)
 			}
 
-			// Resource exists; use the original template for patching to avoid issues with managedFields
-			// Apply the object data.
-			force := true
-			if err := r.Client.Patch(ctx, template, client.Apply, &client.PatchOptions{
-				Force: &force, FieldManager: "backplane-operator"}); err != nil {
-				return r.logAndSetCondition(err, "failed to update resource", template, backplaneConfig)
+			if !utils.IsTemplateAnnotationTrue(template, utils.AnnotationEditable) {
+
+				// Resource exists; use the original template for patching to avoid issues with managedFields
+				// Apply the object data.
+				force := true
+				if err := r.Client.Patch(ctx, template, client.Apply, &client.PatchOptions{
+					Force: &force, FieldManager: "backplane-operator"}); err != nil {
+					return r.logAndSetCondition(err, "failed to update resource", template, backplaneConfig)
+				}
 			}
 		}
 	}
