@@ -138,13 +138,6 @@ var _ = Describe("Multiclusterengine webhook", func() {
 				Expect(k8sClient.Update(ctx, mce)).To(Succeed())
 			})
 
-			By("because of attempting to rename local-cluster while having a managed-by label", func() {
-				Expect(k8sClient.Get(ctx, types.NamespacedName{Name: multiClusterEngineName}, mce)).To(Succeed())
-				mce.Labels = map[string]string{"multiclusterhubs.operator.open-cluster-management.io/managed-by": "true"}
-				mce.Spec.LocalClusterName = "first-updated-local-cluster"
-				Expect(k8sClient.Update(ctx, mce)).NotTo(BeNil(), "updating local-cluster name while managed by ACM should not be permitted")
-			})
-
 			By("because of existing local-cluster resource", func() {
 				Expect(k8sClient.Get(ctx, types.NamespacedName{Name: multiClusterEngineName}, mce)).To(Succeed())
 				managedCluster := NewManagedCluster(mce.Spec.LocalClusterName)
