@@ -918,19 +918,19 @@ func (r *MultiClusterEngineReconciler) ensureNoInternalEngineComponent(ctx conte
 
 func (r *MultiClusterEngineReconciler) fetchChartOrCRDPath(component string) string {
 	chartDirs := map[string]string{
-		backplanev1.AssistedService:              toggle.AssistedServiceChartDir,
-		backplanev1.ClusterAPIPreview:            toggle.ClusterAPIChartDir,
-		backplanev1.ClusterAPIProviderAWSPreview: toggle.ClusterAPIProviderAWSChartDir,
-		backplanev1.ClusterLifecycle:             toggle.ClusterLifecycleChartDir,
-		backplanev1.ClusterManager:               toggle.ClusterManagerChartDir,
-		backplanev1.ClusterProxyAddon:            toggle.ClusterProxyAddonDir,
-		backplanev1.ConsoleMCE:                   toggle.ConsoleMCEChartsDir,
-		backplanev1.Discovery:                    toggle.DiscoveryChartDir,
-		backplanev1.Hive:                         toggle.HiveChartDir,
-		backplanev1.HyperShift:                   toggle.HyperShiftChartDir,
-		backplanev1.ImageBasedInstallOperator:    toggle.ImageBasedInstallOperatorChartDir,
-		backplanev1.ManagedServiceAccount:        toggle.ManagedServiceAccountChartDir,
-		backplanev1.ServerFoundation:             toggle.ServerFoundationChartDir,
+		backplanev1.AssistedService:           toggle.AssistedServiceChartDir,
+		backplanev1.ClusterAPI:                toggle.ClusterAPIChartDir,
+		backplanev1.ClusterAPIProviderAWS:     toggle.ClusterAPIProviderAWSChartDir,
+		backplanev1.ClusterLifecycle:          toggle.ClusterLifecycleChartDir,
+		backplanev1.ClusterManager:            toggle.ClusterManagerChartDir,
+		backplanev1.ClusterProxyAddon:         toggle.ClusterProxyAddonDir,
+		backplanev1.ConsoleMCE:                toggle.ConsoleMCEChartsDir,
+		backplanev1.Discovery:                 toggle.DiscoveryChartDir,
+		backplanev1.Hive:                      toggle.HiveChartDir,
+		backplanev1.HyperShift:                toggle.HyperShiftChartDir,
+		backplanev1.ImageBasedInstallOperator: toggle.ImageBasedInstallOperatorChartDir,
+		backplanev1.ManagedServiceAccount:     toggle.ManagedServiceAccountChartDir,
+		backplanev1.ServerFoundation:          toggle.ServerFoundationChartDir,
 	}
 
 	if dir, exists := chartDirs[component]; exists {
@@ -1160,13 +1160,13 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 		}
 	}
 
-	if backplaneConfig.Enabled(backplanev1.ClusterAPIPreview) {
+	if backplaneConfig.Enabled(backplanev1.ClusterAPI) {
 		result, err = r.ensureClusterAPI(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
 			requeue = true
 		}
 		if err != nil {
-			errs[backplanev1.ClusterAPIPreview] = err
+			errs[backplanev1.ClusterAPI] = err
 		}
 	} else {
 		result, err = r.ensureNoClusterAPI(ctx, backplaneConfig)
@@ -1174,17 +1174,17 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 			requeue = true
 		}
 		if err != nil {
-			errs[backplanev1.ClusterAPIPreview] = err
+			errs[backplanev1.ClusterAPI] = err
 		}
 	}
 
-	if backplaneConfig.Enabled(backplanev1.ClusterAPIProviderAWSPreview) {
+	if backplaneConfig.Enabled(backplanev1.ClusterAPIProviderAWS) {
 		result, err = r.ensureClusterAPIProviderAWS(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
 			requeue = true
 		}
 		if err != nil {
-			errs[backplanev1.ClusterAPIProviderAWSPreview] = err
+			errs[backplanev1.ClusterAPIProviderAWS] = err
 		}
 	} else {
 		result, err = r.ensureNoClusterAPIProviderAWS(ctx, backplaneConfig)
@@ -1192,7 +1192,7 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 			requeue = true
 		}
 		if err != nil {
-			errs[backplanev1.ClusterAPIProviderAWSPreview] = err
+			errs[backplanev1.ClusterAPIProviderAWS] = err
 		}
 	}
 
@@ -1412,12 +1412,15 @@ func (r *MultiClusterEngineReconciler) applyTemplate(ctx context.Context,
 				)
 			}
 
-			// Resource exists; use the original template for patching to avoid issues with managedFields
-			// Apply the object data.
-			force := true
-			if err := r.Client.Patch(ctx, template, client.Apply, &client.PatchOptions{
-				Force: &force, FieldManager: "backplane-operator"}); err != nil {
-				return r.logAndSetCondition(err, "failed to update resource", template, backplaneConfig)
+			if !utils.IsTemplateAnnotationTrue(template, utils.AnnotationEditable) {
+
+				// Resource exists; use the original template for patching to avoid issues with managedFields
+				// Apply the object data.
+				force := true
+				if err := r.Client.Patch(ctx, template, client.Apply, &client.PatchOptions{
+					Force: &force, FieldManager: "backplane-operator"}); err != nil {
+					return r.logAndSetCondition(err, "failed to update resource", template, backplaneConfig)
+				}
 			}
 		}
 	}
@@ -1563,8 +1566,8 @@ func (r *MultiClusterEngineReconciler) ensureNoAllInternalEngineComponents(ctx c
 
 	components := []string{
 		backplanev1.AssistedService,
-		backplanev1.ClusterAPIPreview,
-		backplanev1.ClusterAPIProviderAWSPreview,
+		backplanev1.ClusterAPI,
+		backplanev1.ClusterAPIProviderAWS,
 		backplanev1.ClusterLifecycle,
 		backplanev1.ClusterManager,
 		backplanev1.ClusterProxyAddon,
@@ -1885,33 +1888,24 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 		updateNecessary = true
 	}
 
-	// hypershift preview component upgraded in ACM 2.8.0
-	if m.Prune(backplanev1.HyperShiftPreview) {
-		updateNecessary = true
-	}
+	// Automatically replace and prune preview components.
+	// If a preview component is enabled and a stable equivalent exists,
+	// enable the stable version. Then, regardless of status, prune the preview.
+	for _, preview := range backplanev1.PreviewComponents {
+		if m.Enabled(preview) {
+			if stable, exists := backplanev1.PreviewToStable[preview]; exists {
+				log.Info("Stable component version enabled due to preview being enabled",
+					"preview", preview,
+					"stable", stable,
+				)
+				m.Enable(stable)
+			}
+		}
 
-	if m.Enabled(backplanev1.ManagedServiceAccountPreview) {
-		// if the preview was pruned, enable the non-preview version instead
-		m.Enable(backplanev1.ManagedServiceAccount)
-		// no need to disable -preview version, as it will get pruned below
-		updateNecessary = true
-	}
-
-	// managedserviceaccount preview component upgraded in ACM 2.9.0
-	if m.Prune(backplanev1.ManagedServiceAccountPreview) {
-		updateNecessary = true
-	}
-
-	if m.Enabled(backplanev1.ImageBasedInstallOperatorPreview) {
-		// if the preview was pruned, enable the non-preview version instead
-		m.Enable(backplanev1.ImageBasedInstallOperator)
-
-		// no need to disable -preview version, as it will get pruned below
-		updateNecessary = true
-	}
-	// image based install operator preview component upgraded in ACM 2.12.0
-	if m.Prune(backplanev1.ImageBasedInstallOperatorPreview) {
-		updateNecessary = true
+		if m.Prune(preview) {
+			log.Info("Pruning preview component", "preview", preview)
+			updateNecessary = true
+		}
 	}
 
 	if utils.DeduplicateComponents(m) {

@@ -401,11 +401,11 @@ var _ = Describe("BackplaneConfig controller", func() {
 									Enabled: true,
 								},
 								{
-									Name:    backplanev1.ClusterAPIPreview,
+									Name:    backplanev1.ClusterAPI,
 									Enabled: true,
 								},
 								{
-									Name:    backplanev1.ClusterAPIProviderAWSPreview,
+									Name:    backplanev1.ClusterAPIProviderAWS,
 									Enabled: true,
 								},
 								{
@@ -580,11 +580,11 @@ var _ = Describe("BackplaneConfig controller", func() {
 									Enabled: false,
 								},
 								{
-									Name:    backplanev1.ClusterAPIProviderAWSPreview,
+									Name:    backplanev1.ClusterAPIProviderAWS,
 									Enabled: false,
 								},
 								{
-									Name:    backplanev1.ClusterAPIPreview,
+									Name:    backplanev1.ClusterAPI,
 									Enabled: false,
 								},
 								{
@@ -861,13 +861,13 @@ var _ = Describe("BackplaneConfig controller", func() {
 									Enabled: true,
 								},
 								{
-									Name:    backplanev1.ClusterAPIPreview,
+									Name:    backplanev1.ClusterAPI,
 									Enabled: true,
 								},
 								// EnvTest does not support namespace deletion; therefore, if we try to re-enable this component, the test will fail.
 								// https: //book.kubebuilder.io/reference/envtest
 								// {
-								// 	Name:    backplanev1.ClusterAPIProviderAWSPreview,
+								// 	Name:    backplanev1.ClusterAPIProviderAWS,
 								// 	Enabled: false,
 								// },
 								{
@@ -975,11 +975,11 @@ var _ = Describe("BackplaneConfig controller", func() {
 									Enabled: false,
 								},
 								{
-									Name:    backplanev1.ClusterAPIPreview,
+									Name:    backplanev1.ClusterAPI,
 									Enabled: false,
 								},
 								{
-									Name:    backplanev1.ClusterAPIProviderAWSPreview,
+									Name:    backplanev1.ClusterAPIProviderAWS,
 									Enabled: false,
 								},
 								{

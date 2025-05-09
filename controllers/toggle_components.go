@@ -390,12 +390,12 @@ func (r *MultiClusterEngineReconciler) ensureClusterAPI(ctx context.Context, mce
 	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
 
 	// Ensure that the InternalHubComponent CR instance is created for component in MCE.
-	if result, err := r.ensureInternalEngineComponent(ctx, mce, backplanev1.ClusterAPIPreview); err != nil {
+	if result, err := r.ensureInternalEngineComponent(ctx, mce, backplanev1.ClusterAPI); err != nil {
 		return result, err
 	}
 
 	// Renders all templates from charts
-	chartPath := r.fetchChartOrCRDPath(backplanev1.ClusterAPIPreview)
+	chartPath := r.fetchChartOrCRDPath(backplanev1.ClusterAPI)
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
@@ -406,7 +406,7 @@ func (r *MultiClusterEngineReconciler) ensureClusterAPI(ctx context.Context, mce
 	}
 
 	// Apply deployment config overrides
-	if result, err := r.applyComponentDeploymentOverrides(mce, templates, backplanev1.ClusterAPIPreview); err != nil {
+	if result, err := r.applyComponentDeploymentOverrides(mce, templates, backplanev1.ClusterAPI); err != nil {
 		return result, err
 	}
 
@@ -428,12 +428,12 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterAPI(ctx context.Context,
 
 	// Ensure that the InternalHubComponent CR instance is deleted for component in MCE.
 	if result, err := r.ensureNoInternalEngineComponent(ctx, mce,
-		backplanev1.ClusterAPIPreview); (result != ctrl.Result{}) || err != nil {
+		backplanev1.ClusterAPI); (result != ctrl.Result{}) || err != nil {
 		return result, err
 	}
 
 	// Renders all templates from charts
-	chartPath := r.fetchChartOrCRDPath(backplanev1.ClusterAPIPreview)
+	chartPath := r.fetchChartOrCRDPath(backplanev1.ClusterAPI)
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
@@ -465,12 +465,12 @@ func (r *MultiClusterEngineReconciler) ensureClusterAPIProviderAWS(ctx context.C
 	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
 
 	// Ensure that the InternalHubComponent CR instance is created for component in MCE.
-	if result, err := r.ensureInternalEngineComponent(ctx, mce, backplanev1.ClusterAPIProviderAWSPreview); err != nil {
+	if result, err := r.ensureInternalEngineComponent(ctx, mce, backplanev1.ClusterAPIProviderAWS); err != nil {
 		return result, err
 	}
 
 	// Renders all templates from charts
-	chartPath := r.fetchChartOrCRDPath(backplanev1.ClusterAPIProviderAWSPreview)
+	chartPath := r.fetchChartOrCRDPath(backplanev1.ClusterAPIProviderAWS)
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
@@ -481,7 +481,7 @@ func (r *MultiClusterEngineReconciler) ensureClusterAPIProviderAWS(ctx context.C
 	}
 
 	// Apply deployment config overrides
-	if result, err := r.applyComponentDeploymentOverrides(mce, templates, backplanev1.ClusterAPIProviderAWSPreview); err != nil {
+	if result, err := r.applyComponentDeploymentOverrides(mce, templates, backplanev1.ClusterAPIProviderAWS); err != nil {
 		return result, err
 	}
 
@@ -503,12 +503,12 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterAPIProviderAWS(ctx context
 
 	// Ensure that the InternalHubComponent CR instance is deleted for component in MCE.
 	if result, err := r.ensureNoInternalEngineComponent(ctx, mce,
-		backplanev1.ClusterAPIProviderAWSPreview); (result != ctrl.Result{}) || err != nil {
+		backplanev1.ClusterAPIProviderAWS); (result != ctrl.Result{}) || err != nil {
 		return result, err
 	}
 
 	// Renders all templates from charts
-	chartPath := r.fetchChartOrCRDPath(backplanev1.ClusterAPIProviderAWSPreview)
+	chartPath := r.fetchChartOrCRDPath(backplanev1.ClusterAPIProviderAWS)
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {

@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -43,6 +44,12 @@ var (
 	*/
 	AnnotationImageRepo           = "installer.multicluster.openshift.io/image-repository"
 	DeprecatedAnnotationImageRepo = "imageRepository"
+
+	/*
+		AnnotationEditable is an annotation used on specific resources deployed by the hub to mark them as able
+		to be ended by customer without being overridden.
+	*/
+	AnnotationEditable = "installer.multicluster.openshift.io/is-editable"
 
 	/*
 		AnnotationKubeconfig is an annotation used to specify the secret name residing in target containing the
@@ -215,6 +222,19 @@ or an empty string if not set.
 */
 func GetTemplateOverridesConfigmapName(instance *backplanev1.MultiClusterEngine) string {
 	return getAnnotation(instance, AnnotationTemplateOverridesCM)
+}
+
+/*
+IsAnnotationTrue checks if a specific annotation key in the given instance is set to "true".
+*/
+func IsTemplateAnnotationTrue(instance *unstructured.Unstructured, annotationKey string) bool {
+	a := instance.GetAnnotations()
+	if a == nil {
+		return false
+	}
+
+	value := strings.EqualFold(a[annotationKey], "true")
+	return value
 }
 
 /*

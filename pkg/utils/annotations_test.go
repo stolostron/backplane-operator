@@ -9,6 +9,7 @@ import (
 
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -105,6 +106,26 @@ func Test_getAnnotationEdgeManagement(t *testing.T) {
 	if result != "false" {
 		t.Errorf("Was expecting false for the edge management annotation. Did not receive")
 	}
+}
+
+func TestIsTemplateAnnotationTrue(t *testing.T) {
+	t.Run("Annotation true", func(t *testing.T) {
+		tst := &unstructured.Unstructured{}
+		want := false
+		if got := IsTemplateAnnotationTrue(tst, AnnotationEditable); got != want {
+			t.Errorf("IsTemplateAnnotationTrue() = %v, want %v", got, want)
+		}
+	})
+
+	t.Run("Annotation true", func(t *testing.T) {
+		tst := &unstructured.Unstructured{}
+		tst.SetAnnotations(map[string]string{AnnotationEditable: "true"})
+		want := true
+		if got := IsTemplateAnnotationTrue(tst, AnnotationEditable); got != want {
+			t.Errorf("IsTemplateAnnotationTrue() = %v, want %v", got, want)
+		}
+	})
+
 }
 
 func Test_getAnnotation(t *testing.T) {
