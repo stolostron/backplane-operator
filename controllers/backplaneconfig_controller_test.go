@@ -861,6 +861,10 @@ var _ = Describe("BackplaneConfig controller", func() {
 									Enabled: true,
 								},
 								{
+									Name:    backplanev1.ClusterAPIProviderMetalPreview,
+									Enabled: true,
+								},
+								{
 									Name:    backplanev1.ClusterAPI,
 									Enabled: true,
 								},
