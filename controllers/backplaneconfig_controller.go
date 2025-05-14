@@ -1587,6 +1587,7 @@ func (r *MultiClusterEngineReconciler) ensureNoAllInternalEngineComponents(ctx c
 		backplanev1.AssistedService,
 		backplanev1.ClusterAPI,
 		backplanev1.ClusterAPIProviderAWS,
+		backplanev1.ClusterAPIProviderMetalPreview,
 		backplanev1.ClusterLifecycle,
 		backplanev1.ClusterManager,
 		backplanev1.ClusterProxyAddon,
