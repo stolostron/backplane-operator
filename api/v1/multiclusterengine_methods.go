@@ -77,6 +77,7 @@ var MCEComponents = []string{
 	AssistedService,
 	ClusterAPI,
 	ClusterAPIProviderAWS,
+	ClusterAPIProviderMetalPreview,
 	ClusterLifecycle,
 	ClusterManager,
 	ClusterProxyAddon,
