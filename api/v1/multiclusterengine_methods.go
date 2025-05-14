@@ -98,7 +98,6 @@ These components are candidates for pruning when the stable version replaces the
 var PreviewComponents = []string{
 	ClusterAPIPreview,
 	ClusterAPIProviderAWSPreview,
-	ClusterAPIProviderMetalPreview,
 	HyperShiftPreview,
 	ImageBasedInstallOperatorPreview,
 	ManagedServiceAccountPreview,
