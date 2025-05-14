@@ -919,8 +919,8 @@ func (r *MultiClusterEngineReconciler) ensureNoInternalEngineComponent(ctx conte
 func (r *MultiClusterEngineReconciler) fetchChartOrCRDPath(component string) string {
 	chartDirs := map[string]string{
 		backplanev1.AssistedService:                toggle.AssistedServiceChartDir,
-		backplanev1.ClusterAPIPreview:              toggle.ClusterAPIChartDir,
-		backplanev1.ClusterAPIProviderAWSPreview:   toggle.ClusterAPIProviderAWSChartDir,
+		backplanev1.ClusterAPI:                     toggle.ClusterAPIChartDir,
+		backplanev1.ClusterAPIProviderAWS:          toggle.ClusterAPIProviderAWSChartDir,
 		backplanev1.ClusterAPIProviderMetalPreview: toggle.ClusterAPIProviderMetalChartDir,
 		backplanev1.ClusterLifecycle:               toggle.ClusterLifecycleChartDir,
 		backplanev1.ClusterManager:                 toggle.ClusterManagerChartDir,
