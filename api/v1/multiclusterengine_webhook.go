@@ -178,6 +178,10 @@ func (r *MultiClusterEngine) ValidateCreate() (admission.Warnings, error) {
 		targetNS = DefaultTargetNamespace
 	}
 
+	if err := validateLocalClusterNameLength(r.Spec.LocalClusterName); err != nil {
+		return nil, err
+	}
+
 	for _, mce := range mceList.Items {
 		mce := mce
 		if mce.Spec.TargetNamespace == targetNS || (targetNS == DefaultTargetNamespace && mce.Spec.TargetNamespace == "") {
@@ -190,6 +194,13 @@ func (r *MultiClusterEngine) ValidateCreate() (admission.Warnings, error) {
 		}
 	}
 	return nil, nil
+}
+
+func validateLocalClusterNameLength(name string) (err error) {
+	if len(name) >= 35 {
+		return fmt.Errorf("local-cluster name must be shorter than 35 characters")
+	}
+	return nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
@@ -261,6 +272,9 @@ func (r *MultiClusterEngine) ValidateUpdate(old runtime.Object) (admission.Warni
 
 	// if the Spec.LocalClusterName field has changed
 	if oldMCE.Spec.LocalClusterName != r.Spec.LocalClusterName {
+		if err := validateLocalClusterNameLength(r.Spec.LocalClusterName); err != nil {
+			return nil, err
+		}
 		// block changing localClusterName if the label `managedBy` is set to `true`
 		if IsACMManaged(r) {
 			logf.Log.Info("MCE is managed by ACM, local-cluster name will be set through MultiClusterHub CR")

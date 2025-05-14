@@ -4,9 +4,11 @@ package v1
 
 import (
 	"fmt"
+	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
@@ -145,6 +147,27 @@ var _ = Describe("Multiclusterengine webhook", func() {
 
 				mce.Spec.LocalClusterName = "updated-local-cluster"
 				Expect(k8sClient.Update(ctx, mce)).NotTo(BeNil(), "updating local-Cluster name while one exists should not be permitted")
+			})
+
+			By("because the local-cluster name must be less than 35 characters long", func() {
+				mce.Spec.LocalClusterName = strings.Repeat("t", 35)
+				expectedError := &k8serrors.StatusError{
+					ErrStatus: metav1.Status{
+						TypeMeta: metav1.TypeMeta{Kind: "", APIVersion: ""},
+						ListMeta: metav1.ListMeta{
+							SelfLink:           "",
+							ResourceVersion:    "",
+							Continue:           "",
+							RemainingItemCount: nil,
+						},
+						Status:  "Failure",
+						Message: "admission webhook \"multiclusterengines.multicluster.openshift.io\" denied the request: local-cluster name must be shorter than 35 characters",
+						Reason:  "Forbidden",
+						Details: nil,
+						Code:    403,
+					},
+				}
+				Expect(k8sClient.Update(ctx, mce)).To(Equal(expectedError), "local-cluster name must be less than 35 characters long")
 			})
 		})
 
