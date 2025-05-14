@@ -22,6 +22,7 @@ const (
 	ClusterAPIChartDir                = "pkg/templates/charts/toggle/cluster-api"
 	ClusterAPIProviderAWSChartDir     = "pkg/templates/charts/toggle/cluster-api-provider-aws"
 	ClusterAPIProviderMetalChartDir   = "pkg/templates/charts/toggle/cluster-api-provider-metal3"
+	ClusterAPIProviderOAChartDir      = "pkg/templates/charts/toggle/cluster-api-provider-openshift-assisted"
 	ClusterLifecycleChartDir          = "pkg/templates/charts/toggle/cluster-lifecycle"
 	ClusterManagerChartDir            = "pkg/templates/charts/toggle/cluster-manager"
 	ClusterProxyAddonDir              = "pkg/templates/charts/toggle/cluster-proxy-addon"

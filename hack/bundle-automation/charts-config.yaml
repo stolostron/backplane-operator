@@ -39,8 +39,8 @@
       chart-path: "charts/cluster-api-provider-openshift-assisted"
       always-or-toggle: "toggle"
       imageMappings:
-        cluster-api-controlplane-provider-openshift-assisted: "cluster_api_controlplane_provider_openshift_assisted"
-        cluster-api-bootstrap-provider-openshift-assisted: "cluster_api_bootstrap_provider_openshift_assisted"
+        cluster-api-controlplane-provider-openshift-assisted: "cluster_api_provider_openshift_assisted_control_plane"
+        cluster-api-bootstrap-provider-openshift-assisted: "cluster_api_provider_openshift_assisted_bootstrap"
       inclusions:
         - "pullSecretOverride"
       skipRBACOverrides: true

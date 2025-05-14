@@ -64,7 +64,7 @@ spec:
           value: configmap
         - name: ASSISTED_CA_BUNDLE_KEY
           value: ca-bundle.crt
-        image: '{{ .Values.global.imageOverrides.cluster_api_bootstrap_provider_openshift_assisted }}'
+        image: '{{ .Values.global.imageOverrides.cluster_api_provider_openshift_assisted_bootstrap }}'
         imagePullPolicy: '{{ .Values.global.pullPolicy }}'
         livenessProbe:
           httpGet:

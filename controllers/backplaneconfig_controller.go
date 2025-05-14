@@ -922,6 +922,7 @@ func (r *MultiClusterEngineReconciler) fetchChartOrCRDPath(component string) str
 		backplanev1.ClusterAPI:                     toggle.ClusterAPIChartDir,
 		backplanev1.ClusterAPIProviderAWS:          toggle.ClusterAPIProviderAWSChartDir,
 		backplanev1.ClusterAPIProviderMetalPreview: toggle.ClusterAPIProviderMetalChartDir,
+		backplanev1.ClusterAPIProviderOAPreview:    toggle.ClusterAPIProviderOAChartDir,
 		backplanev1.ClusterLifecycle:               toggle.ClusterLifecycleChartDir,
 		backplanev1.ClusterManager:                 toggle.ClusterManagerChartDir,
 		backplanev1.ClusterProxyAddon:              toggle.ClusterProxyAddonDir,
@@ -1212,6 +1213,24 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 		}
 		if err != nil {
 			errs[backplanev1.ClusterAPIProviderMetalPreview] = err
+		}
+	}
+
+	if backplaneConfig.Enabled(backplanev1.ClusterAPIProviderOAPreview) {
+		result, err = r.ensureClusterAPIProviderOA(ctx, backplaneConfig)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.ClusterAPIProviderOAPreview] = err
+		}
+	} else {
+		result, err = r.ensureNoClusterAPIProviderOA(ctx, backplaneConfig)
+		if result != (ctrl.Result{}) {
+			requeue = true
+		}
+		if err != nil {
+			errs[backplanev1.ClusterAPIProviderOAPreview] = err
 		}
 	}
 
@@ -1588,6 +1607,7 @@ func (r *MultiClusterEngineReconciler) ensureNoAllInternalEngineComponents(ctx c
 		backplanev1.ClusterAPI,
 		backplanev1.ClusterAPIProviderAWS,
 		backplanev1.ClusterAPIProviderMetalPreview,
+		backplanev1.ClusterAPIProviderOAPreview,
 		backplanev1.ClusterLifecycle,
 		backplanev1.ClusterManager,
 		backplanev1.ClusterProxyAddon,
