@@ -409,6 +409,10 @@ var _ = Describe("BackplaneConfig controller", func() {
 									Enabled: true,
 								},
 								{
+									Name:    backplanev1.ClusterAPIProviderMetalPreview,
+									Enabled: true,
+								},
+								{
 									Name:    backplanev1.ClusterLifecycle,
 									Enabled: true,
 								},
@@ -585,6 +589,10 @@ var _ = Describe("BackplaneConfig controller", func() {
 								},
 								{
 									Name:    backplanev1.ClusterAPI,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.ClusterAPIProviderMetalPreview,
 									Enabled: false,
 								},
 								{
@@ -861,6 +869,10 @@ var _ = Describe("BackplaneConfig controller", func() {
 									Enabled: true,
 								},
 								{
+									Name:    backplanev1.ClusterAPIProviderMetalPreview,
+									Enabled: true,
+								},
+								{
 									Name:    backplanev1.ClusterAPI,
 									Enabled: true,
 								},
@@ -980,6 +992,10 @@ var _ = Describe("BackplaneConfig controller", func() {
 								},
 								{
 									Name:    backplanev1.ClusterAPIProviderAWS,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.ClusterAPIProviderMetalPreview,
 									Enabled: false,
 								},
 								{

@@ -28,6 +28,8 @@ const (
 	ClusterAPIPreview                = "cluster-api-preview"
 	ClusterAPIProviderAWS            = "cluster-api-provider-aws"
 	ClusterAPIProviderAWSPreview     = "cluster-api-provider-aws-preview"
+	ClusterAPIProviderMetal          = "cluster-api-provider-metal3"
+	ClusterAPIProviderMetalPreview   = "cluster-api-provider-metal3-preview"
 	ClusterLifecycle                 = "cluster-lifecycle"
 	ClusterManager                   = "cluster-manager"
 	ClusterProxyAddon                = "cluster-proxy-addon"
@@ -51,6 +53,8 @@ var allComponents = []string{
 	ClusterAPIPreview,
 	ClusterAPIProviderAWS,
 	ClusterAPIProviderAWSPreview,
+	ClusterAPIProviderMetal,
+	ClusterAPIProviderMetalPreview,
 	ClusterLifecycle,
 	ClusterManager,
 	ClusterProxyAddon,
@@ -73,6 +77,7 @@ var MCEComponents = []string{
 	AssistedService,
 	ClusterAPI,
 	ClusterAPIProviderAWS,
+	ClusterAPIProviderMetalPreview,
 	ClusterLifecycle,
 	ClusterManager,
 	ClusterProxyAddon,
