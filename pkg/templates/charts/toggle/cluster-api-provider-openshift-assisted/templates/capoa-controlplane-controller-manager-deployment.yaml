@@ -52,7 +52,7 @@ spec:
         - name: NO_PROXY
           value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
 {{- end }}
-        image: '{{ .Values.global.imageOverrides.cluster_api_controlplane_provider_openshift_assisted }}'
+        image: '{{ .Values.global.imageOverrides.cluster_api_provider_openshift_assisted_control_plane }}'
         imagePullPolicy: '{{ .Values.global.pullPolicy }}'
         livenessProbe:
           httpGet:

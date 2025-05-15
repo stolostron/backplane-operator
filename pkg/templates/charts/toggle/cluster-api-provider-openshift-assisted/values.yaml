@@ -2,8 +2,8 @@ global:
   deployOnOCP: true
   hubSize: Small
   imageOverrides:
-    cluster_api_bootstrap_provider_openshift_assisted: ''
-    cluster_api_controlplane_provider_openshift_assisted: ''
+    cluster_api_provider_openshift_assisted_bootstrap: ''
+    cluster_api_provider_openshift_assisted_control_plane: ''
   namespace: default
   pullSecret: null
   templateOverrides: {}
