@@ -48,6 +48,7 @@ spec:
         - --v=0
         - --diagnostics-address=:8443
         - --insecure-diagnostics=false
+        - --disable-controllers=unmanaged
         command:
         - /bin/cluster-api-provider-aws-controller-manager
         env:
