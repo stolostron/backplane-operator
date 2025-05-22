@@ -1,11 +1,7 @@
 global:
   imageOverrides:
     hypershift_addon_operator: ""
-    apiserver_network_proxy: ""
-    aws_encryption_provider: ""
-    cluster_api: ""
     cluster_api_provider_agent: ""
-    cluster_api_provider_aws: ""
     hypershift_operator: ""
     cluster_api_provider_kubevirt: ""
     kube_rbac_proxy_mce: "registry.redhat.io/openshift4/ose-kube-rbac-proxy:v4.10"
