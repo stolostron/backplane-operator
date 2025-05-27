@@ -52,6 +52,7 @@ type HubConfig struct {
 	ReplicaCount         int               `json:"replicaCount" structs:"replicaCount"`
 	Tolerations          []Toleration      `json:"tolerations" structs:"tolerations"`
 	OCPVersion           string            `json:"ocpVersion" structs:"ocpVersion"`
+	MCHNamespace         string            `json:"mCHNamespace" structs:"mCHNamespace"`
 	ClusterIngressDomain string            `json:"clusterIngressDomain" structs:"clusterIngressDomain"`
 	HubType              string            `json:"hubType" structs:"hubType"`
 	EnableFlightCtl      bool              `json:"enableFlightCtl" structs:"enableFlightCtl"`
@@ -353,6 +354,8 @@ func injectValuesOverrides(values *Values, backplaneConfig *v1.MultiClusterEngin
 		}
 	}
 	values.HubConfig.ReplicaCount = utils.DefaultReplicaCount(backplaneConfig)
+
+	values.HubConfig.MCHNamespace = utils.GetMCHNamespace(backplaneConfig)
 
 	values.HubConfig.NodeSelector = backplaneConfig.Spec.NodeSelector
 

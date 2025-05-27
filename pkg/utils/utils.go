@@ -225,6 +225,14 @@ func IsUnitTest() bool {
 	return false
 }
 
+func GetMCHNamespace(m *backplanev1.MultiClusterEngine) string {
+	val, ok := m.Labels["installer.namespace"]
+	if ok {
+		return val
+	}
+	return ""
+}
+
 func DefaultTolerations() []corev1.Toleration {
 	return []corev1.Toleration{
 		{
