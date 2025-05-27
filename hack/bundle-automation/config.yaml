@@ -1,11 +1,12 @@
-- branch: mce-2.5
+components:
+- branch: master
   bundlePath: /tmp/hive-operator-manifests
   gen_command: ./hack/bundle-automation/gen-hive-bundle.sh
   imageMappings:
     hive: openshift_hive
   name: hive-operator
   repo_name: hive
-  sha: 34c9d298ee8537f2fb8661cfe445ac248c39d453
+  sha: c7057c250eb771b7e1e0236ea6dfb9ebcd280e63
 - branch: backplane-2.5
   github_ref: https://github.com/openshift/image-based-install-operator.git
   operators:
@@ -47,3 +48,4 @@
       discovery-operator: discovery_operator
     name: discovery-operator
   repo_name: discovery-operator
+mce-release-version: '2.5'
