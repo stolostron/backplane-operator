@@ -191,6 +191,13 @@ func GetImagePullPolicy(m *backplanev1.MultiClusterEngine) corev1.PullPolicy {
 	return m.Spec.Overrides.ImagePullPolicy
 }
 
+func IsUpgrading(m *backplanev1.MultiClusterEngine) bool {
+	if m.Status.DesiredVersion != m.Status.CurrentVersion {
+		return true
+	}
+	return false
+}
+
 func GetTestImages() []string {
 	return []string{
 		"REGISTRATION_OPERATOR", "OPENSHIFT_HIVE", "MULTICLOUD_MANAGER", "MANAGEDCLUSTER_IMPORT_CONTROLLER",
