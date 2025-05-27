@@ -2,7 +2,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.1
+    controller-gen.kubebuilder.io/version: v0.17.2
     service.beta.openshift.io/inject-cabundle: "true"
   labels:
     cluster.x-k8s.io/provider: cluster-api
@@ -246,6 +246,9 @@ spec:
                 minItems: 1
                 type: array
                 x-kubernetes-list-type: atomic
+                x-kubernetes-validations:
+                - message: entries in machines must be unique
+                  rule: self.all(x, self.exists_one(y, x == y))
               pods:
                 description: |-
                   pods defines to which Pods this MachineDrainRule should be applied.
@@ -391,6 +394,9 @@ spec:
                 minItems: 1
                 type: array
                 x-kubernetes-list-type: atomic
+                x-kubernetes-validations:
+                - message: entries in pods must be unique
+                  rule: self.all(x, self.exists_one(y, x == y))
             required:
             - drain
             type: object
