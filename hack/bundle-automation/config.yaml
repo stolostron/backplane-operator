@@ -1,3 +1,4 @@
+components:
 - branch: master
   bundlePath: /tmp/hive-operator-manifests
   gen_command: ./hack/bundle-automation/gen-hive-bundle.sh
@@ -47,3 +48,4 @@
       discovery-operator: discovery_operator
     name: discovery-operator
   repo_name: discovery-operator
+mce-release-version: '2.5'

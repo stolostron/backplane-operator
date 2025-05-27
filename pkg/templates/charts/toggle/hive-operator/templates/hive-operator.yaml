@@ -2,7 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: hive-operator
-  namespace: '{{ .Values.global.namespace }}'
 spec:
   replicas: 1
   revisionHistoryLimit: 4
@@ -107,11 +106,9 @@ spec:
 {{- end }}
       securityContext:
         runAsNonRoot: true
-{{- if .Values.global.deployOnOCP }}
 {{- if semverCompare ">=4.11.0" .Values.hubconfig.ocpVersion }}
         seccompProfile:
           type: RuntimeDefault
-{{- end }}
 {{- end }}
       serviceAccountName: hive-operator
       terminationGracePeriodSeconds: 10
