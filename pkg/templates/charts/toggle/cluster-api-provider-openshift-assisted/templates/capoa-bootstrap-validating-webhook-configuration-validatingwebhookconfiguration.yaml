@@ -1,0 +1,28 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+    service.beta.openshift.io/inject-cabundle: 'true'
+  name: capoa-bootstrap-validating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: capoa-bootstrap-webhook-service
+      namespace: '{{ default "capoa-bootstrap-system" .Values.global.namespace }}'
+      path: /validate-bootstrap-cluster-x-k8s-io-v1alpha1-openshiftassistedconfig
+  failurePolicy: Fail
+  name: validation.openshiftassistedconfig.bootstrap.cluster.x-k8s.io
+  rules:
+  - apiGroups:
+    - bootstrap.cluster.x-k8s.io
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    - DELETE
+    resources:
+    - openshiftassistedconfigs
+  sideEffects: None
