@@ -313,10 +313,6 @@ spec:
                     type: string
                 type: object
                 x-kubernetes-map-type: atomic
-              isoDownloadURL:
-                description: ISODownloadURL is the url for the live-iso to be downloaded
-                  from Assisted Installer
-                type: string
               observedGeneration:
                 description: ObservedGeneration is the latest generation observed
                   by the controller.

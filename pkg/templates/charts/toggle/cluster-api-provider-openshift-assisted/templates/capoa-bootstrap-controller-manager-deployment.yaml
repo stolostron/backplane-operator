@@ -94,6 +94,9 @@ spec:
           privileged: false
           readOnlyRootFilesystem: true
           runAsNonRoot: true
+        volumeMounts:
+        - mountPath: /tmp/k8s-webhook-server/serving-certs/
+          name: certs
       hostIPC: false
       hostNetwork: false
       hostPID: false
@@ -125,3 +128,7 @@ spec:
         {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
         {{- end }}
 {{- end }}
+      volumes:
+      - name: certs
+        secret:
+          secretName: capoa-bootstrap-webhook-cert-secret

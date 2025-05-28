@@ -9,4 +9,4 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: capoa-bootstrap-controller-manager
-  namespace: '{{ default "capoa-system" .Values.global.namespace }}'
+  namespace: '{{ default "capoa-bootstrap-system" .Values.global.namespace }}'
