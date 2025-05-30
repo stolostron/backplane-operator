@@ -17,6 +17,9 @@ metadata:
     createdAt: "2025-03-25T17:28:08Z"
     operators.operatorframework.io/builder: operator-sdk-v1.39.2
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
+    features.operators.openshift.io/cnf: "false"
+    features.operators.openshift.io/cni: "false"
+    features.operators.openshift.io/csi: "false"
   name: multicluster-engine.v0.0.1
   namespace: placeholder
 spec:
