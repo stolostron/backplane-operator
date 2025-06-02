@@ -1,6 +1,6 @@
 apiVersion: v2
-name: cluster-api-provider-openshift-assisted
+appVersion: '2.9'
 description: Cluster API Bootstrap and Controlplane providers for OpenShift Assisted Installer
+name: cluster-api-provider-openshift-assisted
 type: application
-version: "0.0.0-dev"
-appVersion: "0.0.0-dev"
+version: '2.9'

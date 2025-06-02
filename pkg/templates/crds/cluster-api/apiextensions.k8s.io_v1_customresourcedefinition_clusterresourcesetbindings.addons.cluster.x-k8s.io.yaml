@@ -2,7 +2,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.2
+    controller-gen.kubebuilder.io/version: v0.16.1
     service.beta.openshift.io/inject-cabundle: "true"
   labels:
     cluster.x-k8s.io/provider: cluster-api
@@ -56,7 +56,8 @@ spec:
           metadata:
             type: object
           spec:
-            description: spec is the desired state of ClusterResourceSetBinding.
+            description: ClusterResourceSetBindingSpec defines the desired state of
+              ClusterResourceSetBinding.
             properties:
               bindings:
                 description: bindings is a list of ClusterResourceSets and their resources.
@@ -150,7 +151,8 @@ spec:
           metadata:
             type: object
           spec:
-            description: spec is the desired state of ClusterResourceSetBinding.
+            description: ClusterResourceSetBindingSpec defines the desired state of
+              ClusterResourceSetBinding.
             properties:
               bindings:
                 description: bindings is a list of ClusterResourceSets and their resources.
@@ -241,7 +243,8 @@ spec:
           metadata:
             type: object
           spec:
-            description: spec is the desired state of ClusterResourceSetBinding.
+            description: ClusterResourceSetBindingSpec defines the desired state of
+              ClusterResourceSetBinding.
             properties:
               bindings:
                 description: bindings is a list of ClusterResourceSets and their resources.
@@ -252,8 +255,6 @@ spec:
                     clusterResourceSetName:
                       description: clusterResourceSetName is the name of the ClusterResourceSet
                         that is applied to the owner cluster of the binding.
-                      maxLength: 253
-                      minLength: 1
                       type: string
                     resources:
                       description: resources is a list of resources that the ClusterResourceSet
@@ -271,8 +272,6 @@ spec:
                             description: |-
                               hash is the hash of a resource's data. This can be used to decide if a resource is changed.
                               For "ApplyOnce" ClusterResourceSet.spec.strategy, this is no-op as that strategy does not act on change.
-                            maxLength: 256
-                            minLength: 1
                             type: string
                           kind:
                             description: 'kind of the resource. Supported kinds are:
@@ -289,7 +288,6 @@ spec:
                           name:
                             description: name of the resource that is in the same
                               namespace with ClusterResourceSet object.
-                            maxLength: 253
                             minLength: 1
                             type: string
                         required:
@@ -297,19 +295,15 @@ spec:
                         - kind
                         - name
                         type: object
-                      maxItems: 100
                       type: array
                   required:
                   - clusterResourceSetName
                   type: object
-                maxItems: 100
                 type: array
               clusterName:
                 description: |-
                   clusterName is the name of the Cluster this binding applies to.
                   Note: this field mandatory in v1beta2.
-                maxLength: 63
-                minLength: 1
                 type: string
             type: object
         type: object
