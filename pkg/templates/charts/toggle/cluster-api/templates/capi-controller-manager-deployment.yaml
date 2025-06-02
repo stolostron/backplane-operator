@@ -41,6 +41,7 @@ spec:
             weight: 35
       containers:
       - args:
+        - --watch-filter=multicluster-engine
         - --leader-elect
         - --diagnostics-address=:8443
         - --insecure-diagnostics=false

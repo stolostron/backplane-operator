@@ -26,6 +26,7 @@
       always-or-toggle: "toggle"
       imageMappings:
         ose-cluster-api-rhel9: ose_cluster_api_rhel9
+        cluster-api-webhook-config-mce-29: cluster_api_webhook_config_mce_29
       inclusions:
         - "pullSecretOverride"
       skipRBACOverrides: true
