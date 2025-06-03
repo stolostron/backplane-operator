@@ -192,7 +192,7 @@ func GetImagePullPolicy(m *backplanev1.MultiClusterEngine) corev1.PullPolicy {
 }
 
 func IsUpgrading(m *backplanev1.MultiClusterEngine) bool {
-	if m.Status.DesiredVersion != m.Status.CurrentVersion && m.Status.CurrentVersion != ""{
+	if m.Status.DesiredVersion != m.Status.CurrentVersion && m.Status.CurrentVersion != "" {
 		return true
 	}
 	return false
