@@ -19,7 +19,7 @@
 
 - repo_name: "cluster-api-installer"
   github_ref: "https://github.com/stolostron/cluster-api-installer.git"
-  branch: "main"
+  branch: "backplane-2.9"
   charts:
     - name: "cluster-api"
       chart-path: "charts/cluster-api"

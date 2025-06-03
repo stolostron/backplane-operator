@@ -60,50 +60,6 @@ webhooks:
     service:
       name: capi-webhook-service
       namespace: '{{ default "capi-system" .Values.global.namespace }}'
-      path: /validate-addons-cluster-x-k8s-io-v1beta1-clusterresourceset
-  failurePolicy: Fail
-  matchPolicy: Equivalent
-  name: validation.clusterresourceset.addons.cluster.x-k8s.io
-  rules:
-  - apiGroups:
-    - addons.cluster.x-k8s.io
-    apiVersions:
-    - v1beta1
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - clusterresourcesets
-  sideEffects: None
-- admissionReviewVersions:
-  - v1
-  - v1beta1
-  clientConfig:
-    service:
-      name: capi-webhook-service
-      namespace: '{{ default "capi-system" .Values.global.namespace }}'
-      path: /validate-addons-cluster-x-k8s-io-v1beta1-clusterresourcesetbinding
-  failurePolicy: Fail
-  matchPolicy: Equivalent
-  name: validation.clusterresourcesetbinding.addons.cluster.x-k8s.io
-  rules:
-  - apiGroups:
-    - addons.cluster.x-k8s.io
-    apiVersions:
-    - v1beta1
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - clusterresourcesetbindings
-  sideEffects: None
-- admissionReviewVersions:
-  - v1
-  - v1beta1
-  clientConfig:
-    service:
-      name: capi-webhook-service
-      namespace: '{{ default "capi-system" .Values.global.namespace }}'
       path: /validate-cluster-x-k8s-io-v1beta1-machine
   failurePolicy: Fail
   matchPolicy: Equivalent
@@ -250,6 +206,50 @@ webhooks:
     - UPDATE
     resources:
     - machinepools
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  - v1beta1
+  clientConfig:
+    service:
+      name: capi-webhook-service
+      namespace: '{{ default "capi-system" .Values.global.namespace }}'
+      path: /validate-addons-cluster-x-k8s-io-v1beta1-clusterresourceset
+  failurePolicy: Fail
+  matchPolicy: Equivalent
+  name: validation.clusterresourceset.addons.cluster.x-k8s.io
+  rules:
+  - apiGroups:
+    - addons.cluster.x-k8s.io
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - clusterresourcesets
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  - v1beta1
+  clientConfig:
+    service:
+      name: capi-webhook-service
+      namespace: '{{ default "capi-system" .Values.global.namespace }}'
+      path: /validate-addons-cluster-x-k8s-io-v1beta1-clusterresourcesetbinding
+  failurePolicy: Fail
+  matchPolicy: Equivalent
+  name: validation.clusterresourcesetbinding.addons.cluster.x-k8s.io
+  rules:
+  - apiGroups:
+    - addons.cluster.x-k8s.io
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - clusterresourcesetbindings
   sideEffects: None
 - admissionReviewVersions:
   - v1
