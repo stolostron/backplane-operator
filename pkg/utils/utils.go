@@ -216,7 +216,7 @@ func GetTestImages() []string {
 		"postgresql_12", "assisted_installer_agent", "assisted_installer_controller", "assisted_installer",
 		"console_mce", "hypershift_addon_operator", "hypershift_operator", "apiserver_network_proxy",
 		"aws_encryption_provider", "cluster_api", "cluster_api_provider_agent", "cluster_api_provider_aws",
-		"cluster_api_provider_azure", "cluster_api_provider_kubevirt", "cluster_api_webhook_config_mce_29", "kube_rbac_proxy_mce", "cluster_proxy_addon",
+		"cluster_api_provider_azure", "cluster_api_provider_kubevirt", "mce_capi_webhook_config", "kube_rbac_proxy_mce", "cluster_proxy_addon",
 		"cluster_proxy", "cluster_image_set_controller", "image_based_install_operator", "ose_cluster_api_rhel9",
 		"ose_aws_cluster_api_controllers_rhel9", "cluster_api_bootstrap_provider_openshift_assisted",
 		"cluster_api_provider_openshift_assisted_bootstrap", "cluster_api_provider_openshift_assisted_control_plane",
