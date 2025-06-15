@@ -1,6 +1,8 @@
 module github.com/stolostron/backplane-operator
 
-go 1.20
+go 1.23.0
+
+toolchain go1.23.9
 
 require (
 	github.com/Masterminds/semver v1.5.0
@@ -84,7 +86,7 @@ require (
 	golang.org/x/sys v0.28.0 // indirect
 	golang.org/x/term v0.27.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
-	golang.org/x/time v0.3.0 // indirect
+	golang.org/x/time v0.12.0 // indirect
 	golang.org/x/tools v0.21.1-0.20240508182429-e35e4ccd0d2d // indirect
 	gomodules.xyz/jsonpatch/v2 v2.3.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
