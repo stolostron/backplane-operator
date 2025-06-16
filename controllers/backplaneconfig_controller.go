@@ -1741,7 +1741,7 @@ func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Conte
 		return ctrl.Result{}, fmt.Errorf(
 			"waiting for '%v' ManagedCluster to be terminated before proceeding with uninstallation", backplaneConfig.Spec.LocalClusterName)
 
-	} else if !apierrors.IsNotFound(err) { // Return error, if error is not not found error
+	} else if !apierrors.IsNotFound(err) && !errors.Is(err, errors.New("no matches for kind \"ManagedCluster\" in version \"cluster.open-cluster-management.io/v1\"")) { // Return error, if error is not not found error
 		log.Error(err, fmt.Sprintf("error while looking for %v ManagedCluster CR", backplaneConfig.Spec.LocalClusterName))
 		return ctrl.Result{}, err
 	}
