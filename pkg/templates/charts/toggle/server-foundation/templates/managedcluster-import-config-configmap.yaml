@@ -8,7 +8,7 @@ kind: ConfigMap
 metadata:
   name: import-controller-config
   annotations:
-    installer.multicluster.openshift.io/is-editable: true
+    installer.multicluster.openshift.io/is-editable: "true"
   labels:
-    cluster.open-cluster-management.io/backup: true
+    cluster.open-cluster-management.io/backup: "true"
 {{- end }}
