@@ -1441,7 +1441,7 @@ func (r *MultiClusterEngineReconciler) ensureResourceVersionAlignment(template *
 
 	if currentVersion != desiredVersion {
 		log.Info("Resource version mismatch detected; attempting to update resource",
-			"Kind", template.GetName(), "Name", template.GetKind(),
+			"Kind", template.GetKind(), "Name", template.GetName(),
 			"CurrentVersion", currentVersion, "DesiredVersion", desiredVersion)
 
 		return false
