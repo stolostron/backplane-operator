@@ -58,6 +58,8 @@ spec:
                     default: 20
                     description: Maximum number of custom ClusterClaims allowed.
                     format: int32
+                    maximum: 100
+                    minimum: 0
                     type: integer
                 required:
                 - maxCustomClusterClaims
