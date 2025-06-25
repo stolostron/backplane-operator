@@ -11,17 +11,6 @@ metadata:
     cluster.x-k8s.io/v1beta1: v1beta1_v1beta2
   name: awsclustertemplates.infrastructure.cluster.x-k8s.io
 spec:
-  conversion:
-    strategy: Webhook
-    webhook:
-      clientConfig:
-        service:
-          name: capa-webhook-service
-          namespace: capa-system
-          path: /convert
-      conversionReviewVersions:
-      - v1
-      - v1beta1
   group: infrastructure.cluster.x-k8s.io
   names:
     categories:
