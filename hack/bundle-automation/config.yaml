@@ -5,7 +5,7 @@
     hive: openshift_hive
   name: hive-operator
   repo_name: hive
-  sha: e9ad0fa944ef9ef0e20a01677f4d017354ededc7
+  sha: 035354c3e88af92a21d14a1752cc5eab15be7ec9
 - branch: backplane-2.7
   github_ref: https://github.com/openshift/image-based-install-operator.git
   operators:
@@ -15,9 +15,9 @@
       controller: image_based_install_operator
     name: image-based-install-operator
     preserve_files:
-      - image-based-install-config_v1_route.yaml
+    - image-based-install-config_v1_route.yaml
     webhook_paths:
-      - config/webhook/manifests.yaml
+    - config/webhook/manifests.yaml
   repo_name: image-based-install-operator
 - branch: release-ocm-2.12
   github_ref: https://github.com/openshift/assisted-service.git
