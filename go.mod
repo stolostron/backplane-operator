@@ -14,7 +14,7 @@ require (
 	github.com/operator-framework/operator-lib v0.11.1-0.20230306195046-28cadc6b6055
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.63.0
-	go.uber.org/zap v1.24.0
+	go.uber.org/zap v1.27.0
 	helm.sh/helm/v3 v3.11.2
 	k8s.io/api v0.27.2
 	k8s.io/apiextensions-apiserver v0.27.2
