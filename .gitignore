@@ -9,6 +9,8 @@
 testbin/*
 .DS_STORE
 .vscode/*
+.venv/
+venv/
 
 bin/
 
