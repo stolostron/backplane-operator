@@ -1,6 +1,8 @@
 module github.com/stolostron/backplane-operator
 
-go 1.20
+go 1.21.0
+
+toolchain go1.24.4
 
 require (
 	github.com/Masterminds/semver v1.5.0
@@ -72,7 +74,7 @@ require (
 	github.com/prometheus/procfs v0.9.0 // indirect
 	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/shopspring/decimal v1.3.1 // indirect
-	github.com/spf13/cast v1.5.0 // indirect
+	github.com/spf13/cast v1.9.2 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
