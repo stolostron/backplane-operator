@@ -21,10 +21,10 @@ rules:
   - namespaces
   verbs:
   - get
-# Allow hub to monitor and update status of csr
+# Allow hub to monitor clusterdeployments, managedclusterinfos and managedclusters
 - apiGroups: ["hive.openshift.io"]
   resources: ["clusterdeployments"]
-  verbs: ["get"]
+  verbs: ["get","list","watch"]
 - apiGroups: ["internal.open-cluster-management.io"]
   resources: ["managedclusterinfos"]
   verbs: ["get","list","watch"]
