@@ -1,6 +1,8 @@
 module github.com/stolostron/backplane-operator
 
-go 1.20
+go 1.21
+
+toolchain go1.24.4
 
 require (
 	github.com/Masterminds/semver v1.5.0
@@ -28,7 +30,7 @@ require (
 require (
 	github.com/BurntSushi/toml v1.2.1 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
-	github.com/Masterminds/semver/v3 v3.2.0 // indirect
+	github.com/Masterminds/semver/v3 v3.4.0 // indirect
 	github.com/Masterminds/sprig/v3 v3.2.3 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
