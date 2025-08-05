@@ -2,7 +2,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.1
+    controller-gen.kubebuilder.io/version: v0.17.2
     service.beta.openshift.io/inject-cabundle: "true"
   labels:
     cluster.x-k8s.io/provider: cluster-api
@@ -61,7 +61,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: MachinePoolSpec defines the desired state of MachinePool.
+            description: spec is the desired state of MachinePool.
             properties:
               clusterName:
                 description: clusterName is the name of the Cluster this object belongs
@@ -76,7 +76,7 @@ spec:
                 type: array
               minReadySeconds:
                 description: |-
-                  Minimum number of seconds for which a newly created machine instances should
+                  minReadySeconds is the minimum number of seconds for which a newly created machine instances should
                   be ready.
                   Defaults to 0 (machine instance will be considered available as soon as it
                   is ready)
@@ -91,18 +91,18 @@ spec:
                 type: array
               replicas:
                 description: |-
-                  Number of desired machines. Defaults to 1.
+                  replicas is the number of desired machines. Defaults to 1.
                   This is a pointer to distinguish between explicit zero and not specified.
                 format: int32
                 type: integer
               strategy:
                 description: |-
-                  The deployment strategy to use to replace existing machine instances with
+                  strategy is the deployment strategy to use to replace existing machine instances with
                   new ones.
                 properties:
                   rollingUpdate:
                     description: |-
-                      Rolling update config params. Present only if
+                      rollingUpdate is the rolling update config params. Present only if
                       MachineDeploymentStrategyType = RollingUpdate.
                     properties:
                       maxSurge:
@@ -110,7 +110,7 @@ spec:
                         - type: integer
                         - type: string
                         description: |-
-                          The maximum number of machines that can be scheduled above the
+                          maxSurge is the maximum number of machines that can be scheduled above the
                           desired number of machines.
                           Value can be an absolute number (ex: 5) or a percentage of
                           desired machines (ex: 10%).
@@ -129,7 +129,7 @@ spec:
                         - type: integer
                         - type: string
                         description: |-
-                          The maximum number of machines that can be unavailable during the update.
+                          maxUnavailable is the maximum number of machines that can be unavailable during the update.
                           Value can be an absolute number (ex: 5) or a percentage of desired
                           machines (ex: 10%).
                           Absolute number is calculated from percentage by rounding down.
@@ -155,7 +155,7 @@ spec:
                 properties:
                   metadata:
                     description: |-
-                      Standard object's metadata.
+                      metadata is the standard object's metadata.
                       More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
                     properties:
                       annotations:
@@ -191,7 +191,7 @@ spec:
                         additionalProperties:
                           type: string
                         description: |-
-                          Map of string keys and values that can be used to organize and categorize
+                          labels is a map of string keys and values that can be used to organize and categorize
                           (scope and select) objects. May match selectors of replication controllers
                           and services.
                           More info: http://kubernetes.io/docs/user-guide/labels
@@ -222,7 +222,7 @@ spec:
                         type: string
                       ownerReferences:
                         description: |-
-                          List of objects depended by this object. If ALL objects in the list have
+                          ownerReferences is the list of objects depended by this object. If ALL objects in the list have
                           been deleted, this object will be garbage collected. If this object is managed by a controller,
                           then an entry in this list will point to this controller, with the controller field set to true.
                           There cannot be more than one managing controller.
@@ -278,7 +278,7 @@ spec:
                     type: object
                   spec:
                     description: |-
-                      Specification of the desired behavior of the machine.
+                      spec is the specification of the desired behavior of the machine.
                       More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
                     properties:
                       bootstrap:
@@ -436,11 +436,11 @@ spec:
             - template
             type: object
           status:
-            description: MachinePoolStatus defines the observed state of MachinePool.
+            description: status is the observed state of MachinePool.
             properties:
               availableReplicas:
-                description: The number of available replicas (ready for at least
-                  minReadySeconds) for this MachinePool.
+                description: availableReplicas is the number of available replicas
+                  (ready for at least minReadySeconds) for this MachinePool.
                 format: int32
                 type: integer
               bootstrapReady:
@@ -454,19 +454,19 @@ spec:
                   properties:
                     lastTransitionTime:
                       description: |-
-                        Last time the condition transitioned from one status to another.
+                        lastTransitionTime is the last time the condition transitioned from one status to another.
                         This should be when the underlying condition changed. If that is not known, then using the time when
                         the API field changed is acceptable.
                       format: date-time
                       type: string
                     message:
                       description: |-
-                        A human readable message indicating details about the transition.
+                        message is a human readable message indicating details about the transition.
                         This field may be empty.
                       type: string
                     reason:
                       description: |-
-                        The reason for the condition's last transition in CamelCase.
+                        reason is the reason for the condition's last transition in CamelCase.
                         The specific API may choose whether or not this field is considered a guaranteed API.
                         This field may not be empty.
                       type: string
@@ -563,9 +563,9 @@ spec:
                   E.g. Pending, Running, Terminating, Failed etc.
                 type: string
               readyReplicas:
-                description: The number of ready replicas for this MachinePool. A
-                  machine is considered ready when the node has been created and is
-                  "Ready".
+                description: readyReplicas is the number of ready replicas for this
+                  MachinePool. A machine is considered ready when the node has been
+                  created and is "Ready".
                 format: int32
                 type: integer
               replicas:
@@ -574,7 +574,7 @@ spec:
                 type: integer
               unavailableReplicas:
                 description: |-
-                  Total number of unavailable machine instances targeted by this machine pool.
+                  unavailableReplicas is the total number of unavailable machine instances targeted by this machine pool.
                   This is the total number of machine instances that are still required for
                   the machine pool to have 100% available capacity. They may either
                   be machine instances that are running but not yet available or machine instances
@@ -635,7 +635,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: MachinePoolSpec defines the desired state of MachinePool.
+            description: spec is the desired state of MachinePool.
             properties:
               clusterName:
                 description: clusterName is the name of the Cluster this object belongs
@@ -650,7 +650,7 @@ spec:
                 type: array
               minReadySeconds:
                 description: |-
-                  Minimum number of seconds for which a newly created machine instances should
+                  minReadySeconds is the minimum number of seconds for which a newly created machine instances should
                   be ready.
                   Defaults to 0 (machine instance will be considered available as soon as it
                   is ready)
@@ -665,7 +665,7 @@ spec:
                 type: array
               replicas:
                 description: |-
-                  Number of desired machines. Defaults to 1.
+                  replicas is the number of desired machines. Defaults to 1.
                   This is a pointer to distinguish between explicit zero and not specified.
                 format: int32
                 type: integer
@@ -674,7 +674,7 @@ spec:
                 properties:
                   metadata:
                     description: |-
-                      Standard object's metadata.
+                      metadata is the standard object's metadata.
                       More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
                     properties:
                       annotations:
@@ -690,7 +690,7 @@ spec:
                         additionalProperties:
                           type: string
                         description: |-
-                          Map of string keys and values that can be used to organize and categorize
+                          labels is a map of string keys and values that can be used to organize and categorize
                           (scope and select) objects. May match selectors of replication controllers
                           and services.
                           More info: http://kubernetes.io/docs/user-guide/labels
@@ -698,7 +698,7 @@ spec:
                     type: object
                   spec:
                     description: |-
-                      Specification of the desired behavior of the machine.
+                      spec is the specification of the desired behavior of the machine.
                       More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
                     properties:
                       bootstrap:
@@ -849,11 +849,11 @@ spec:
             - template
             type: object
           status:
-            description: MachinePoolStatus defines the observed state of MachinePool.
+            description: status is the observed state of MachinePool.
             properties:
               availableReplicas:
-                description: The number of available replicas (ready for at least
-                  minReadySeconds) for this MachinePool.
+                description: availableReplicas is the number of available replicas
+                  (ready for at least minReadySeconds) for this MachinePool.
                 format: int32
                 type: integer
               bootstrapReady:
@@ -867,19 +867,19 @@ spec:
                   properties:
                     lastTransitionTime:
                       description: |-
-                        Last time the condition transitioned from one status to another.
+                        lastTransitionTime is the last time the condition transitioned from one status to another.
                         This should be when the underlying condition changed. If that is not known, then using the time when
                         the API field changed is acceptable.
                       format: date-time
                       type: string
                     message:
                       description: |-
-                        A human readable message indicating details about the transition.
+                        message is a human readable message indicating details about the transition.
                         This field may be empty.
                       type: string
                     reason:
                       description: |-
-                        The reason for the condition's last transition in CamelCase.
+                        reason is the reason for the condition's last transition in CamelCase.
                         The specific API may choose whether or not this field is considered a guaranteed API.
                         This field may not be empty.
                       type: string
@@ -976,9 +976,9 @@ spec:
                   E.g. Pending, Running, Terminating, Failed etc.
                 type: string
               readyReplicas:
-                description: The number of ready replicas for this MachinePool. A
-                  machine is considered ready when the node has been created and is
-                  "Ready".
+                description: readyReplicas is the number of ready replicas for this
+                  MachinePool. A machine is considered ready when the node has been
+                  created and is "Ready".
                 format: int32
                 type: integer
               replicas:
@@ -987,7 +987,7 @@ spec:
                 type: integer
               unavailableReplicas:
                 description: |-
-                  Total number of unavailable machine instances targeted by this machine pool.
+                  unavailableReplicas is the total number of unavailable machine instances targeted by this machine pool.
                   This is the total number of machine instances that are still required for
                   the machine pool to have 100% available capacity. They may either
                   be machine instances that are running but not yet available or machine instances
@@ -1053,22 +1053,26 @@ spec:
           metadata:
             type: object
           spec:
-            description: MachinePoolSpec defines the desired state of MachinePool.
+            description: spec is the desired state of MachinePool.
             properties:
               clusterName:
                 description: clusterName is the name of the Cluster this object belongs
                   to.
+                maxLength: 63
                 minLength: 1
                 type: string
               failureDomains:
                 description: failureDomains is the list of failure domains this MachinePool
                   should be attached to.
                 items:
+                  maxLength: 256
+                  minLength: 1
                   type: string
+                maxItems: 100
                 type: array
               minReadySeconds:
                 description: |-
-                  Minimum number of seconds for which a newly created machine instances should
+                  minReadySeconds is the minimum number of seconds for which a newly created machine instances should
                   be ready.
                   Defaults to 0 (machine instance will be considered available as soon as it
                   is ready)
@@ -1079,11 +1083,14 @@ spec:
                   providerIDList are the identification IDs of machine instances provided by the provider.
                   This field must match the provider IDs as seen on the node objects corresponding to a machine pool's machine instances.
                 items:
+                  maxLength: 512
+                  minLength: 1
                   type: string
+                maxItems: 10000
                 type: array
               replicas:
                 description: |-
-                  Number of desired machines. Defaults to 1.
+                  replicas is the number of desired machines. Defaults to 1.
                   This is a pointer to distinguish between explicit zero and not specified.
                 format: int32
                 type: integer
@@ -1092,7 +1099,7 @@ spec:
                 properties:
                   metadata:
                     description: |-
-                      Standard object's metadata.
+                      metadata is the standard object's metadata.
                       More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
                     properties:
                       annotations:
@@ -1108,7 +1115,7 @@ spec:
                         additionalProperties:
                           type: string
                         description: |-
-                          Map of string keys and values that can be used to organize and categorize
+                          labels is a map of string keys and values that can be used to organize and categorize
                           (scope and select) objects. May match selectors of replication controllers
                           and services.
                           More info: http://kubernetes.io/docs/user-guide/labels
@@ -1116,7 +1123,7 @@ spec:
                     type: object
                   spec:
                     description: |-
-                      Specification of the desired behavior of the machine.
+                      spec is the specification of the desired behavior of the machine.
                       More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
                     properties:
                       bootstrap:
@@ -1175,17 +1182,22 @@ spec:
                             description: |-
                               dataSecretName is the name of the secret that stores the bootstrap data script.
                               If nil, the Machine should remain in the Pending state.
+                            maxLength: 253
+                            minLength: 0
                             type: string
                         type: object
                       clusterName:
                         description: clusterName is the name of the Cluster this object
                           belongs to.
+                        maxLength: 63
                         minLength: 1
                         type: string
                       failureDomain:
                         description: |-
                           failureDomain is the failure domain the machine will be created in.
                           Must match a key in the FailureDomains map stored on the cluster object.
+                        maxLength: 256
+                        minLength: 1
                         type: string
                       infrastructureRef:
                         description: |-
@@ -1261,6 +1273,8 @@ spec:
                           and then a comparison is done to find out unregistered machines and are marked for delete.
                           This field will be set by the actuators and consumed by higher level entities like autoscaler that will
                           be interfacing with cluster-api as generic provider.
+                        maxLength: 512
+                        minLength: 1
                         type: string
                       readinessGates:
                         description: |-
@@ -1284,12 +1298,23 @@ spec:
                           properties:
                             conditionType:
                               description: |-
-                                conditionType refers to a positive polarity condition (status true means good) with matching type in the Machine's condition list.
+                                conditionType refers to a condition with matching type in the Machine's condition list.
                                 If the conditions doesn't exist, it will be treated as unknown.
                                 Note: Both Cluster API conditions or conditions added by 3rd party controllers can be used as readiness gates.
                               maxLength: 316
                               minLength: 1
                               pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                              type: string
+                            polarity:
+                              description: |-
+                                polarity of the conditionType specified in this readinessGate.
+                                Valid values are Positive, Negative and omitted.
+                                When omitted, the default behaviour will be Positive.
+                                A positive polarity means that the condition should report a true status under normal conditions.
+                                A negative polarity means that the condition should report a false status under normal conditions.
+                              enum:
+                              - Positive
+                              - Negative
                               type: string
                           required:
                           - conditionType
@@ -1303,6 +1328,8 @@ spec:
                         description: |-
                           version defines the desired Kubernetes version.
                           This field is meant to be optionally used by bootstrap providers.
+                        maxLength: 256
+                        minLength: 1
                         type: string
                     required:
                     - bootstrap
@@ -1315,11 +1342,11 @@ spec:
             - template
             type: object
           status:
-            description: MachinePoolStatus defines the observed state of MachinePool.
+            description: status is the observed state of MachinePool.
             properties:
               availableReplicas:
-                description: The number of available replicas (ready for at least
-                  minReadySeconds) for this MachinePool.
+                description: availableReplicas is the number of available replicas
+                  (ready for at least minReadySeconds) for this MachinePool.
                 format: int32
                 type: integer
               bootstrapReady:
@@ -1333,27 +1360,32 @@ spec:
                   properties:
                     lastTransitionTime:
                       description: |-
-                        Last time the condition transitioned from one status to another.
+                        lastTransitionTime is the last time the condition transitioned from one status to another.
                         This should be when the underlying condition changed. If that is not known, then using the time when
                         the API field changed is acceptable.
                       format: date-time
                       type: string
                     message:
                       description: |-
-                        A human readable message indicating details about the transition.
+                        message is a human readable message indicating details about the transition.
                         This field may be empty.
+                      maxLength: 10240
+                      minLength: 1
                       type: string
                     reason:
                       description: |-
-                        The reason for the condition's last transition in CamelCase.
+                        reason is the reason for the condition's last transition in CamelCase.
                         The specific API may choose whether or not this field is considered a guaranteed API.
                         This field may be empty.
+                      maxLength: 256
+                      minLength: 1
                       type: string
                     severity:
                       description: |-
                         severity provides an explicit classification of Reason code, so the users or machines can immediately
                         understand the current situation and act accordingly.
                         The Severity field MUST be set only when Status=False.
+                      maxLength: 32
                       type: string
                     status:
                       description: status of the condition, one of True, False, Unknown.
@@ -1363,6 +1395,8 @@ spec:
                         type of condition in CamelCase or in foo.example.com/CamelCase.
                         Many .condition.type values are consistent across resources like Available, but because arbitrary conditions
                         can be useful (see .node.status.conditions), the ability to deconflict is important.
+                      maxLength: 256
+                      minLength: 1
                       type: string
                   required:
                   - lastTransitionTime
@@ -1376,6 +1410,8 @@ spec:
                   and will be set to a descriptive error message.
 
                   Deprecated: This field is deprecated and is going to be removed in the next apiVersion. Please see https://github.com/kubernetes-sigs/cluster-api/blob/main/docs/proposals/20240916-improve-status-in-CAPI-resources.md for more details.
+                maxLength: 10240
+                minLength: 1
                 type: string
               failureReason:
                 description: |-
@@ -1435,6 +1471,7 @@ spec:
                       type: string
                   type: object
                   x-kubernetes-map-type: atomic
+                maxItems: 10000
                 type: array
               observedGeneration:
                 description: observedGeneration is the latest generation observed
@@ -1442,14 +1479,23 @@ spec:
                 format: int64
                 type: integer
               phase:
-                description: |-
-                  phase represents the current phase of cluster actuation.
-                  E.g. Pending, Running, Terminating, Failed etc.
+                description: phase represents the current phase of cluster actuation.
+                enum:
+                - Pending
+                - Provisioning
+                - Provisioned
+                - Running
+                - ScalingUp
+                - ScalingDown
+                - Scaling
+                - Deleting
+                - Failed
+                - Unknown
                 type: string
               readyReplicas:
-                description: The number of ready replicas for this MachinePool. A
-                  machine is considered ready when the node has been created and is
-                  "Ready".
+                description: readyReplicas is the number of ready replicas for this
+                  MachinePool. A machine is considered ready when the node has been
+                  created and is "Ready".
                 format: int32
                 type: integer
               replicas:
@@ -1458,7 +1504,7 @@ spec:
                 type: integer
               unavailableReplicas:
                 description: |-
-                  Total number of unavailable machine instances targeted by this machine pool.
+                  unavailableReplicas is the total number of unavailable machine instances targeted by this machine pool.
                   This is the total number of machine instances that are still required for
                   the machine pool to have 100% available capacity. They may either
                   be machine instances that are running but not yet available or machine instances
