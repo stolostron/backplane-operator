@@ -102,7 +102,7 @@ func TestRender(t *testing.T) {
 	templates, errs := RenderCharts(chartsDir, testBackplane, testImages, templateOverrides)
 	if len(errs) > 0 {
 		for _, err := range errs {
-			t.Logf(err.Error())
+			t.Log(err.Error())
 		}
 		t.Fatalf("failed to retrieve templates")
 		if len(templates) == 0 {
@@ -115,7 +115,7 @@ func TestRender(t *testing.T) {
 			err := runtime.DefaultUnstructuredConverter.FromUnstructured(template.Object, deployment)
 			if err != nil {
 				fmt.Println("KV Pair: ", template)
-				t.Fatalf(err.Error())
+				t.Fatal(err.Error())
 			}
 
 			selectorEquality := reflect.DeepEqual(deployment.Spec.Template.Spec.NodeSelector, backplaneNodeSelector)
@@ -179,7 +179,7 @@ func TestRender(t *testing.T) {
 			err := runtime.DefaultUnstructuredConverter.FromUnstructured(template.Object, addonDep)
 			if err != nil {
 				fmt.Println("KV Pair: ", template)
-				t.Fatalf(err.Error())
+				t.Fatal(err.Error())
 			}
 			if nodePlacement := addonDep.Spec.NodePlacement.NodeSelector; !reflect.DeepEqual(nodePlacement, backplaneNodeSelector) {
 				t.Fatalf("NodeSelector did not propagate to the template %s: expected %#v, got %#v", addonDep.Name, backplaneNodeSelector, nodePlacement)
@@ -202,7 +202,7 @@ func TestRender(t *testing.T) {
 
 	if len(errs) > 0 {
 		for _, err := range errs {
-			t.Logf(err.Error())
+			t.Log(err.Error())
 		}
 		t.Fatalf("failed to retrieve templates")
 		if len(singleChartTemplates) == 0 {
@@ -214,7 +214,7 @@ func TestRender(t *testing.T) {
 			deployment := &appsv1.Deployment{}
 			err := runtime.DefaultUnstructuredConverter.FromUnstructured(template.Object, deployment)
 			if err != nil {
-				t.Fatalf(err.Error())
+				t.Fatal(err.Error())
 			}
 
 			selectorEquality := reflect.DeepEqual(deployment.Spec.Template.Spec.NodeSelector, backplaneNodeSelector)
@@ -352,7 +352,7 @@ func TestNonOCPRender(t *testing.T) {
 	templates, errs := RenderCharts(chartsDir, testBackplane, testImages, templateOverrides)
 	if len(errs) > 0 {
 		for _, err := range errs {
-			t.Logf(err.Error())
+			t.Log(err.Error())
 		}
 		t.Fatalf("failed to retrieve templates")
 		if len(templates) == 0 {
@@ -365,7 +365,7 @@ func TestNonOCPRender(t *testing.T) {
 			err := runtime.DefaultUnstructuredConverter.FromUnstructured(template.Object, deployment)
 			if err != nil {
 				fmt.Println("KV Pair: ", template)
-				t.Fatalf(err.Error())
+				t.Fatal(err.Error())
 			}
 
 			selectorEquality := reflect.DeepEqual(deployment.Spec.Template.Spec.NodeSelector, backplaneNodeSelector)
@@ -429,7 +429,7 @@ func TestNonOCPRender(t *testing.T) {
 			err := runtime.DefaultUnstructuredConverter.FromUnstructured(template.Object, addonDep)
 			if err != nil {
 				fmt.Println("KV Pair: ", template)
-				t.Fatalf(err.Error())
+				t.Fatal(err.Error())
 			}
 			if nodePlacement := addonDep.Spec.NodePlacement.NodeSelector; !reflect.DeepEqual(nodePlacement, backplaneNodeSelector) {
 				t.Fatalf("NodeSelector did not propagate to the template %s: expected %#v, got %#v", addonDep.Name, backplaneNodeSelector, nodePlacement)
@@ -452,7 +452,7 @@ func TestNonOCPRender(t *testing.T) {
 
 	if len(errs) > 0 {
 		for _, err := range errs {
-			t.Logf(err.Error())
+			t.Log(err.Error())
 		}
 		t.Fatalf("failed to retrieve templates")
 		if len(singleChartTemplates) == 0 {
@@ -464,7 +464,7 @@ func TestNonOCPRender(t *testing.T) {
 			deployment := &appsv1.Deployment{}
 			err := runtime.DefaultUnstructuredConverter.FromUnstructured(template.Object, deployment)
 			if err != nil {
-				t.Fatalf(err.Error())
+				t.Fatal(err.Error())
 			}
 
 			selectorEquality := reflect.DeepEqual(deployment.Spec.Template.Spec.NodeSelector, backplaneNodeSelector)

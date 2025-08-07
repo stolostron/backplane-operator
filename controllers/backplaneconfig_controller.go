@@ -1843,8 +1843,7 @@ func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Conte
 			r.StatusManager.AddCondition(terminatingCondition)
 		}
 
-		return ctrl.Result{}, fmt.Errorf(
-			fmt.Sprintf("waiting for '%v' namespace to be terminated before proceeding with uninstallation", backplaneConfig.Spec.LocalClusterName))
+		return ctrl.Result{}, fmt.Errorf("waiting for '%v' namespace to be terminated before proceeding with uninstallation", backplaneConfig.Spec.LocalClusterName)
 
 	} else if !apierrors.IsNotFound(err) {
 		return ctrl.Result{}, err
