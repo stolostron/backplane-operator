@@ -1,0 +1,44 @@
+# Copyright Contributors to the Open Cluster Management project
+
+FROM registry.access.redhat.com/ubi9/ubi-minimal:latest as cloner
+
+RUN microdnf install -y git findutils
+COPY hack/scripts hack/scripts
+
+# Build the backplane-operator binary
+FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_1.21 AS builder
+
+WORKDIR /workspace
+# Copy the Go Modules manifests
+COPY go.mod go.mod
+COPY go.sum go.sum
+
+# Copy the go source
+COPY main.go main.go
+COPY api/ api/
+COPY controllers/ controllers/
+COPY pkg/ pkg/
+
+# Build
+RUN CGO_ENABLED=1 go build -mod=readonly -o backplane-operator main.go
+
+FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
+
+LABEL org.label-schema.vendor="Red Hat" \
+      org.label-schema.name="backplane-operator" \
+      org.label-schema.description="Installer operator for Red Hat multicluster engine for Kubernetes" \
+      name="multicluster-engine/backplane-rhel9-operator" \
+      summary="MultiClusterEngine installer for Red Hat multicluster engine for Kubernetes" \
+      description="Installer operator for Red Hat multicluster engine for Kubernetes" \
+      io.k8s.display-name="MultiClusterEngine operator" \
+      io.k8s.description="Installer operator for Red Hat multicluster engine for Kubernetes" \
+      com.redhat.component="multicluster-engine-operator-container" \
+      io.openshift.tags="data,images"
+
+WORKDIR /app
+COPY --from=builder /workspace/backplane-operator .
+COPY --from=builder /workspace/pkg/templates pkg/templates
+
+USER 65532:65532
+
+ENTRYPOINT ["/app/backplane-operator"]
