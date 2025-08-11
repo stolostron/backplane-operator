@@ -49,6 +49,7 @@ rules:
   - external-hub-kubeconfig
   - work-driver-config
   - open-cluster-management-image-pull-credentials
+  - grpc-server-serving-cert
   resources:
   - secrets
   verbs:
@@ -297,6 +298,7 @@ rules:
   - get
   - list
   - watch
+  - create
   - update
   - patch
 - apiGroups:
@@ -434,3 +436,9 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - cluster.open-cluster-management.io
+  resources:
+  - managedclustersets/join
+  verbs:
+  - create
