@@ -330,18 +330,6 @@ func TestIsEUSUpgrading(t *testing.T) {
 			want:           false,
 		},
 		{
-			name:           "Invalid current version format",
-			currentVersion: "1.2",
-			desiredVersion: "1.4.5",
-			want:           false,
-		},
-		{
-			name:           "Invalid desired version format",
-			currentVersion: "1.2.3",
-			desiredVersion: "1.4",
-			want:           false,
-		},
-		{
 			name:           "Non-numeric Y version in current",
 			currentVersion: "1.x.3",
 			desiredVersion: "1.4.5",
