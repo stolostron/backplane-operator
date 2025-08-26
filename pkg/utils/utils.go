@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"path"
 	"path/filepath"
+	"strconv"
+	"strings"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -196,6 +198,31 @@ func IsUpgrading(m *backplanev1.MultiClusterEngine) bool {
 		return true
 	}
 	return false
+}
+
+func IsEUSUpgrading(m *backplanev1.MultiClusterEngine) bool {
+	if m.Status.CurrentVersion == "" {
+		return false
+	}
+
+	currentParts := strings.Split(m.Status.CurrentVersion, ".")
+	desiredParts := strings.Split(m.Status.DesiredVersion, ".")
+
+	if len(currentParts) < 2 || len(desiredParts) < 2 {
+		return false
+	}
+
+	currentY, err := strconv.Atoi(currentParts[1])
+	if err != nil {
+		return false
+	}
+
+	desiredY, err := strconv.Atoi(desiredParts[1])
+	if err != nil {
+		return false
+	}
+
+	return desiredY-currentY == 2
 }
 
 func GetTestImages() []string {

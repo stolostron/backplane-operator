@@ -285,3 +285,93 @@ func Test_DefaultReplicaCount(t *testing.T) {
 		})
 	}
 }
+
+func TestIsEUSUpgrading(t *testing.T) {
+	tests := []struct {
+		name           string
+		currentVersion string
+		desiredVersion string
+		want           bool
+	}{
+		{
+			name:           "EUS upgrade - Y values differ by 2",
+			currentVersion: "1.2.3",
+			desiredVersion: "1.4.5",
+			want:           true,
+		},
+		{
+			name:           "Non-EUS upgrade - Y values differ by 1",
+			currentVersion: "1.2.3",
+			desiredVersion: "1.3.4",
+			want:           false,
+		},
+		{
+			name:           "Non-EUS upgrade - Y values differ by 3",
+			currentVersion: "1.2.3",
+			desiredVersion: "1.5.4",
+			want:           false,
+		},
+		{
+			name:           "Same version",
+			currentVersion: "1.2.3",
+			desiredVersion: "1.2.3",
+			want:           false,
+		},
+		{
+			name:           "Downgrade - Y values differ by -2",
+			currentVersion: "1.4.3",
+			desiredVersion: "1.2.5",
+			want:           false,
+		},
+		{
+			name:           "Current version is blank",
+			currentVersion: "",
+			desiredVersion: "1.4.5",
+			want:           false,
+		},
+		{
+			name:           "Invalid current version format",
+			currentVersion: "1.2",
+			desiredVersion: "1.4.5",
+			want:           false,
+		},
+		{
+			name:           "Invalid desired version format",
+			currentVersion: "1.2.3",
+			desiredVersion: "1.4",
+			want:           false,
+		},
+		{
+			name:           "Non-numeric Y version in current",
+			currentVersion: "1.x.3",
+			desiredVersion: "1.4.5",
+			want:           false,
+		},
+		{
+			name:           "Non-numeric Y version in desired",
+			currentVersion: "1.2.3",
+			desiredVersion: "1.y.5",
+			want:           false,
+		},
+		{
+			name:           "Different X versions",
+			currentVersion: "1.2.3",
+			desiredVersion: "2.4.5",
+			want:           true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mce := &backplanev1.MultiClusterEngine{
+				Status: backplanev1.MultiClusterEngineStatus{
+					CurrentVersion: tt.currentVersion,
+					DesiredVersion: tt.desiredVersion,
+				},
+			}
+			if got := IsEUSUpgrading(mce); got != tt.want {
+				t.Errorf("IsEUSUpgrading() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
