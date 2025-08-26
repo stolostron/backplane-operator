@@ -37,6 +37,7 @@ type Values struct {
 type Global struct {
 	ImageOverrides      map[string]string `json:"imageOverrides" structs:"imageOverrides"`
 	Upgrading           bool              `json:"upgrading" structs:"upgrading"`
+	EusUpgrading        bool              `json:"eusUpgrading" structs:"eusUpgrading"`
 	TemplateOverrides   map[string]string `json:"templateOverrides" structs:"templateOverrides"`
 	PullPolicy          string            `json:"pullPolicy" structs:"pullPolicy"`
 	PullSecret          string            `json:"pullSecret" structs:"pullSecret"`
@@ -325,6 +326,8 @@ func injectValuesOverrides(values *Values, backplaneConfig *v1.MultiClusterEngin
 	values.Global.ImageOverrides = images
 
 	values.Global.Upgrading = utils.IsUpgrading(backplaneConfig)
+
+	values.Global.EusUpgrading = utils.IsEUSUpgrading(backplaneConfig)
 
 	values.Global.TemplateOverrides = templates
 
