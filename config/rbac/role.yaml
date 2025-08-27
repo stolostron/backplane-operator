@@ -1655,12 +1655,6 @@ rules:
 - apiGroups:
   - cluster.x-k8s.io
   resources:
-  - clusters/status
-  verbs:
-  - get
-- apiGroups:
-  - cluster.x-k8s.io
-  resources:
   - kubeadmcontrolplanes
   - machinedeployments
   - machines
@@ -2475,30 +2469,6 @@ rules:
   - ipaddresses/status
   verbs:
   - get
-- apiGroups:
-  - ipam.metal3.io
-  resources:
-  - ipaddresses
-  - ipclaims
-  - ippools
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ipam.metal3.io
-  resources:
-  - ipaddresses/status
-  - ipclaims/status
-  - ippools/status
-  verbs:
-  - get
-  - patch
-  - update
 - apiGroups:
   - ipam.metal3.io
   resources:
