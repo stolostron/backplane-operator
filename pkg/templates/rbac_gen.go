@@ -39,8 +39,6 @@ package main
 //+kubebuilder:rbac:groups="",resources=events,verbs=create
 //+kubebuilder:rbac:groups="",resources=events,verbs=create
 //+kubebuilder:rbac:groups="",resources=events,verbs=create
-//+kubebuilder:rbac:groups="",resources=events,verbs=create
-//+kubebuilder:rbac:groups="",resources=events,verbs=create;get;list;patch;update;watch
 //+kubebuilder:rbac:groups="",resources=events,verbs=create;get;list;patch;update;watch
 //+kubebuilder:rbac:groups="",resources=events,verbs=create;get;list;patch;update;watch
 //+kubebuilder:rbac:groups="",resources=events,verbs=create;patch
@@ -74,7 +72,6 @@ package main
 //+kubebuilder:rbac:groups="",resources=pods;services;endpoints,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",resources=pods;services;endpoints,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=create
-//+kubebuilder:rbac:groups="",resources=secrets,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=create;delete;get;list;patch;update;watch
@@ -197,11 +194,9 @@ package main
 //+kubebuilder:rbac:groups=authentication.k8s.io,resources=tokenreviews,verbs=create
 //+kubebuilder:rbac:groups=authentication.k8s.io,resources=tokenreviews,verbs=create
 //+kubebuilder:rbac:groups=authentication.k8s.io,resources=tokenreviews,verbs=create
-//+kubebuilder:rbac:groups=authentication.k8s.io,resources=tokenreviews,verbs=create
 //+kubebuilder:rbac:groups=authentication.open-cluster-management.io,resources=managedserviceaccounts,verbs=get;list;watch;update;patch;delete
 //+kubebuilder:rbac:groups=authentication.open-cluster-management.io,resources=managedserviceaccounts,verbs=get;watch;list;create;update
 //+kubebuilder:rbac:groups=authentication.open-cluster-management.io,resources=managedserviceaccounts/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=authorization.k8s.io,resources=subjectaccessreviews,verbs=create
 //+kubebuilder:rbac:groups=authorization.k8s.io,resources=subjectaccessreviews,verbs=create
 //+kubebuilder:rbac:groups=authorization.k8s.io,resources=subjectaccessreviews,verbs=create
 //+kubebuilder:rbac:groups=authorization.k8s.io,resources=subjectaccessreviews,verbs=create
@@ -270,8 +265,6 @@ package main
 //+kubebuilder:rbac:groups=cluster.x-k8s.io,resources=clusterclasses;clusterclasses/status;clusters;clusters/finalizers;clusters/status;machinedrainrules;machinehealthchecks/finalizers;machinehealthchecks/status,verbs=get;list;patch;update;watch
 //+kubebuilder:rbac:groups=cluster.x-k8s.io,resources=clusters,verbs=get;list;watch
 //+kubebuilder:rbac:groups=cluster.x-k8s.io,resources=clusters,verbs=get;list;watch
-//+kubebuilder:rbac:groups=cluster.x-k8s.io,resources=clusters,verbs=get;list;watch
-//+kubebuilder:rbac:groups=cluster.x-k8s.io,resources=clusters/status,verbs=get
 //+kubebuilder:rbac:groups=cluster.x-k8s.io,resources=clusters;clusters/status;machinedeployments;machines/status,verbs=get;list;watch
 //+kubebuilder:rbac:groups=cluster.x-k8s.io,resources=clusters;clusters/status;machines;machines/status,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=cluster.x-k8s.io,resources=clusters;clusters/status;machinesets,verbs=get;list;watch
@@ -402,8 +395,6 @@ package main
 //+kubebuilder:rbac:groups=ipam.cluster.x-k8s.io,resources=ipaddressclaims;ipaddresses,verbs=get;list;patch;update;watch
 //+kubebuilder:rbac:groups=ipam.cluster.x-k8s.io;ipam.metal3.io,resources=ipaddresses,verbs=get;list;watch
 //+kubebuilder:rbac:groups=ipam.cluster.x-k8s.io;ipam.metal3.io,resources=ipaddresses/status,verbs=get
-//+kubebuilder:rbac:groups=ipam.metal3.io,resources=ipaddresses/status;ipclaims/status;ippools/status,verbs=get;patch;update
-//+kubebuilder:rbac:groups=ipam.metal3.io,resources=ipaddresses;ipclaims;ippools,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=ipam.metal3.io,resources=ipclaims,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=ipam.metal3.io,resources=ipclaims/status,verbs=get;watch
 //+kubebuilder:rbac:groups=metal3.io,resources=baremetalhosts,verbs=create;delete;get;list;patch;update;watch

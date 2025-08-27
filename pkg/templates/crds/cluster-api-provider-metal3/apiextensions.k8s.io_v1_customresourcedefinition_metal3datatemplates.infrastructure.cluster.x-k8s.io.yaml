@@ -443,6 +443,12 @@ spec:
                               description: MTU is the MTU of the interface
                               maximum: 9000
                               type: integer
+                            parameters:
+                              additionalProperties:
+                                x-kubernetes-preserve-unknown-fields: true
+                              description: params blob passed without any validation/modifications
+                                into cloud-init config
+                              type: object
                           required:
                           - bondMode
                           - id
@@ -1004,7 +1010,9 @@ spec:
                 description: |-
                   TemplateReference refers to the Template the Metal3MachineTemplate refers to.
                   It can be matched against the key or it may also point to the name of the template
-                  Metal3Data refers to
+                  Metal3Data refers to.
+
+                  Deprecated: This field is deprecated and will be removed in a future release.
                 type: string
             required:
             - clusterName

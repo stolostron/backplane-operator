@@ -44,7 +44,7 @@ spec:
       containers:
       - args:
         - --leader-elect
-        - --feature-gates=EKS=true,EKSEnableIAM=true,EKSAllowAddRoles=true,EKSFargate=true,MachinePool=true,EventBridgeInstanceState=false,AutoControllerIdentityCreator=true,BootstrapFormatIgnition=false,ExternalResourceGC=false,AlternativeGCStrategy=false,TagUnmanagedNetworkResources=true,ROSA=true
+        - --feature-gates=EKS=true,EKSEnableIAM=true,EKSAllowAddRoles=true,EKSFargate=true,MachinePool=true,MachinePoolMachines=true,EventBridgeInstanceState=false,AutoControllerIdentityCreator=true,BootstrapFormatIgnition=false,ExternalResourceGC=true,AlternativeGCStrategy=false,TagUnmanagedNetworkResources=true,ROSA=true
         - --v=0
         - --diagnostics-address=:8443
         - --insecure-diagnostics=false
