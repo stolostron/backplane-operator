@@ -19,7 +19,7 @@
     webhook_paths:
     - config/webhook/manifests.yaml
   repo_name: image-based-install-operator
-- branch: release-ocm-2.14
+- branch: release-ocm-2.15
   github_ref: https://github.com/openshift/assisted-service.git
   operators:
   - bundlePath: deploy/olm-catalog/manifests/
