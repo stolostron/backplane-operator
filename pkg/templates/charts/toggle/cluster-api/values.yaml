@@ -2,7 +2,7 @@ global:
   deployOnOCP: true
   hubSize: Small
   imageOverrides:
-    cluster_api_webhook_config_mce_29: ''
+    mce_capi_webhook_config_rhel9: ''
     ose_cluster_api_rhel9: ''
   namespace: default
   pullSecret: null
