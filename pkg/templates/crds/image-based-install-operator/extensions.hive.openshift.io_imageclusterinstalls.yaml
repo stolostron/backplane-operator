@@ -284,7 +284,27 @@ spec:
                   MachineNetwork is the subnet provided by user for the ocp cluster.
                   This will be used to create the node network and choose ip address for the node.
                   Equivalent to install-config.yaml's machineNetwork.
+                  Deprecated: Use MachineNetworks instead.
                 type: string
+              machineNetworks:
+                description: |-
+                  MachineNetworks is the list of IP address pools for machines.
+                  This enables dual-stack support by allowing multiple networks.
+                  If both MachineNetwork and MachineNetworks are specified, MachineNetwork should match
+                  the first element of MachineNetworks.
+                  Use instead of MachineNetwork.
+                items:
+                  description: MachineNetworkEntry is a single IP address block for
+                    node IP blocks.
+                  properties:
+                    cidr:
+                      description: CIDR is the IP block address pool for machines
+                        within the cluster.
+                      type: string
+                  required:
+                  - cidr
+                  type: object
+                type: array
               nodeIP:
                 description: |-
                   NodeIP is the desired IP for the host
