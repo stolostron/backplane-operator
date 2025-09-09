@@ -113,6 +113,10 @@ spec:
           value: /certs/tls.crt
         - name: PORT
           value: '8000'
+        - name: TMPDIR
+          value: /data
+        - name: XDG_CACHE_HOME
+          value: /data/.cache
         image: '{{ .Values.global.imageOverrides.image_based_install_operator }}'
         imagePullPolicy: '{{ .Values.global.pullPolicy }}'
         name: server
@@ -136,6 +140,8 @@ spec:
           name: data
         - mountPath: /certs
           name: certs
+        - mountPath: /tmp
+          name: tmp
       hostIPC: false
       hostNetwork: false
       hostPID: false
@@ -170,6 +176,8 @@ spec:
       volumes:
       - emptyDir: {}
         name: data
+      - emptyDir: {}
+        name: tmp
       - name: certs
         secret:
           secretName: ibi-config-serving-certs
