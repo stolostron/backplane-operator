@@ -8,6 +8,7 @@ global:
   deployOnOCP: ""
   servingCertCABundle: ""
   upgrading: false
+  eusUpgrading: false
 hubconfig:
   nodeSelector: {}
   proxyConfigs: {}
