@@ -33,6 +33,7 @@ LABEL org.label-schema.vendor="Red Hat" \
       io.k8s.display-name="MultiClusterEngine operator" \
       io.k8s.description="Installer operator for Red Hat multicluster engine for Kubernetes" \
       com.redhat.component="multicluster-engine-operator-container" \
+      com.redhat.component.cpe="cpe:/a:redhat:multicluster_engine:2.9::el9" \
       io.openshift.tags="data,images"
 
 WORKDIR /app
