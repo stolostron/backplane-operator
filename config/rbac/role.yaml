@@ -2942,6 +2942,15 @@ rules:
   - list
   - watch
 - apiGroups:
+  - rbac.open-cluster-management.io
+  resources:
+  - clusterpermissions
+  - multiclusterroleassignments
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - register.open-cluster-management.io
   resources:
   - managedclusters/accept
