@@ -249,7 +249,10 @@ func (r *MultiClusterEngine) ValidateUpdate(old runtime.Object) (admission.Warni
 		}
 	}
 
-	// Prevent enabling both HyperShift and ClusterAPI components simultaneously
+	// Ensure HyperShift and ClusterAPI components cannot be enabled at the same time.
+	// Required as of MCE 2.10 (see: issues.redhat.com/browse/ACM-21392).
+	// In earlier versions, it was possible to enable both, leading to conflicts due to shared CRDs.
+	// This caused MCE to overwrite CRDs based on the desired state defined in each component’s templates.
 	hypershiftEnabled := r.Enabled(HyperShift) || r.Enabled(HypershiftLocalHosting)
 	clusterAPIEnabled := r.Enabled(ClusterAPI) || r.Enabled(ClusterAPIProviderAWS)
 
@@ -258,12 +261,16 @@ func (r *MultiClusterEngine) ValidateUpdate(old runtime.Object) (admission.Warni
 		oldClusterAPIEnabled := oldMCE.Enabled(ClusterAPI) || oldMCE.Enabled(ClusterAPIProviderAWS)
 
 		if oldHypershiftEnabled && !oldClusterAPIEnabled {
-			return nil, fmt.Errorf("cannot enable ClusterAPI components (%s, %s) while HyperShift components (%s, %s) are enabled - disable HyperShift first",
-				ClusterAPI, ClusterAPIProviderAWS, HyperShift, HypershiftLocalHosting)
+			return nil, fmt.Errorf(
+				"Cannot enable ClusterAPI components (%q, %q) while HyperShift components (%q, %q) are already enabled. Please disable HyperShift components first.",
+				ClusterAPI, ClusterAPIProviderAWS, HyperShift, HypershiftLocalHosting,
+			)
 
 		} else if !oldHypershiftEnabled && oldClusterAPIEnabled {
-			return nil, fmt.Errorf("cannot enable HyperShift components (%s, %s) while ClusterAPI components (%s, %s) are enabled - disable ClusterAPI first",
-				HyperShift, HypershiftLocalHosting, ClusterAPI, ClusterAPIProviderAWS)
+			return nil, fmt.Errorf(
+				"Cannot enable HyperShift components (%q, %q) while ClusterAPI components (%q, %q) are already enabled. Please disable ClusterAPI components first.",
+				HyperShift, HypershiftLocalHosting, ClusterAPI, ClusterAPIProviderAWS,
+			)
 		}
 	}
 
