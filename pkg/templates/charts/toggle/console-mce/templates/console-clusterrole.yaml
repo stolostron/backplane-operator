@@ -9,6 +9,7 @@ rules:
   - rbac.open-cluster-management.io
   resources:
   - clusterpermissions
+  - multiclusterroleassignments
   verbs:
   - get
   - list
