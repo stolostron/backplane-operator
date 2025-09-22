@@ -42,3 +42,4 @@ COPY --from=builder /workspace/pkg/templates pkg/templates
 USER 65532:65532
 
 ENTRYPOINT ["/app/backplane-operator"]
+LABEL url="https://github.com/stolostron/backplane-operator"
