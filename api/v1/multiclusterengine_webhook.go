@@ -168,9 +168,18 @@ func (r *MultiClusterEngine) ValidateCreate() (admission.Warnings, error) {
 		}
 	}
 
+	// Prevent enabling both HyperShift and ClusterAPI components simultaneously
+	hypershiftEnabled := r.Enabled(HyperShift) || r.Enabled(HypershiftLocalHosting)
+	clusterAPIEnabled := r.Enabled(ClusterAPI) || r.Enabled(ClusterAPIProviderAWS)
+
+	if hypershiftEnabled && clusterAPIEnabled {
+		return nil, fmt.Errorf("cannot enable both HyperShift (%s, %s) and ClusterAPI (%s, %s) components simultaneously - they are mutually exclusive",
+			HyperShift, HypershiftLocalHosting, ClusterAPI, ClusterAPIProviderAWS)
+	}
+
 	mceList := &MultiClusterEngineList{}
 	if err := Client.List(ctx, mceList); err != nil {
-		return nil, fmt.Errorf("unable to list BackplaneConfigs: %s", err)
+		return nil, fmt.Errorf("unable to list MultiClusterEngines: %s", err)
 	}
 
 	targetNS := r.Spec.TargetNamespace
@@ -183,11 +192,11 @@ func (r *MultiClusterEngine) ValidateCreate() (admission.Warnings, error) {
 	}
 
 	for _, mce := range mceList.Items {
-		mce := mce
 		if mce.Spec.TargetNamespace == targetNS || (targetNS == DefaultTargetNamespace && mce.Spec.TargetNamespace == "") {
 			return nil, fmt.Errorf("%w: MultiClusterEngine with targetNamespace already exists: '%s'",
 				ErrInvalidNamespace, mce.Name)
 		}
+
 		if !IsInHostedMode(r) && !IsInHostedMode(&mce) {
 			return nil, fmt.Errorf("%w: MultiClusterEngine in Standalone mode already exists: `%s`. "+
 				"Only one resource may exist in Standalone mode.", ErrInvalidDeployMode, mce.Name)
@@ -237,6 +246,24 @@ func (r *MultiClusterEngine) ValidateUpdate(old runtime.Object) (admission.Warni
 			if !validComponent(c) {
 				return nil, fmt.Errorf("%w: %s is not a known component", ErrInvalidComponent, c.Name)
 			}
+		}
+	}
+
+	// Prevent enabling both HyperShift and ClusterAPI components simultaneously
+	hypershiftEnabled := r.Enabled(HyperShift) || r.Enabled(HypershiftLocalHosting)
+	clusterAPIEnabled := r.Enabled(ClusterAPI) || r.Enabled(ClusterAPIProviderAWS)
+
+	if hypershiftEnabled && clusterAPIEnabled {
+		oldHypershiftEnabled := oldMCE.Enabled(HyperShift) || oldMCE.Enabled(HypershiftLocalHosting)
+		oldClusterAPIEnabled := oldMCE.Enabled(ClusterAPI) || oldMCE.Enabled(ClusterAPIProviderAWS)
+
+		if oldHypershiftEnabled && !oldClusterAPIEnabled {
+			return nil, fmt.Errorf("cannot enable ClusterAPI components (%s, %s) while HyperShift components (%s, %s) are enabled - disable HyperShift first",
+				ClusterAPI, ClusterAPIProviderAWS, HyperShift, HypershiftLocalHosting)
+
+		} else if !oldHypershiftEnabled && oldClusterAPIEnabled {
+			return nil, fmt.Errorf("cannot enable HyperShift components (%s, %s) while ClusterAPI components (%s, %s) are enabled - disable ClusterAPI first",
+				HyperShift, HypershiftLocalHosting, ClusterAPI, ClusterAPIProviderAWS)
 		}
 	}
 
