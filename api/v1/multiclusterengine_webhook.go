@@ -168,9 +168,18 @@ func (r *MultiClusterEngine) ValidateCreate() (admission.Warnings, error) {
 		}
 	}
 
+	// Prevent enabling both HyperShift and ClusterAPI components simultaneously
+	hypershiftEnabled := r.Enabled(HyperShift) || r.Enabled(HypershiftLocalHosting)
+	clusterAPIEnabled := r.Enabled(ClusterAPI) || r.Enabled(ClusterAPIProviderAWS)
+
+	if hypershiftEnabled && clusterAPIEnabled {
+		return nil, fmt.Errorf("cannot enable both HyperShift (%s, %s) and ClusterAPI (%s, %s) components simultaneously - they are mutually exclusive",
+			HyperShift, HypershiftLocalHosting, ClusterAPI, ClusterAPIProviderAWS)
+	}
+
 	mceList := &MultiClusterEngineList{}
 	if err := Client.List(ctx, mceList); err != nil {
-		return nil, fmt.Errorf("unable to list BackplaneConfigs: %s", err)
+		return nil, fmt.Errorf("unable to list MultiClusterEngines: %s", err)
 	}
 
 	targetNS := r.Spec.TargetNamespace
@@ -183,11 +192,11 @@ func (r *MultiClusterEngine) ValidateCreate() (admission.Warnings, error) {
 	}
 
 	for _, mce := range mceList.Items {
-		mce := mce
 		if mce.Spec.TargetNamespace == targetNS || (targetNS == DefaultTargetNamespace && mce.Spec.TargetNamespace == "") {
 			return nil, fmt.Errorf("%w: MultiClusterEngine with targetNamespace already exists: '%s'",
 				ErrInvalidNamespace, mce.Name)
 		}
+
 		if !IsInHostedMode(r) && !IsInHostedMode(&mce) {
 			return nil, fmt.Errorf("%w: MultiClusterEngine in Standalone mode already exists: `%s`. "+
 				"Only one resource may exist in Standalone mode.", ErrInvalidDeployMode, mce.Name)
@@ -237,6 +246,31 @@ func (r *MultiClusterEngine) ValidateUpdate(old runtime.Object) (admission.Warni
 			if !validComponent(c) {
 				return nil, fmt.Errorf("%w: %s is not a known component", ErrInvalidComponent, c.Name)
 			}
+		}
+	}
+
+	// Ensure HyperShift and ClusterAPI components cannot be enabled at the same time.
+	// Required as of MCE 2.10 (see: issues.redhat.com/browse/ACM-21392).
+	// In earlier versions, it was possible to enable both, leading to conflicts due to shared CRDs.
+	// This caused MCE to overwrite CRDs based on the desired state defined in each component’s templates.
+	hypershiftEnabled := r.Enabled(HyperShift) || r.Enabled(HypershiftLocalHosting)
+	clusterAPIEnabled := r.Enabled(ClusterAPI) || r.Enabled(ClusterAPIProviderAWS)
+
+	if hypershiftEnabled && clusterAPIEnabled {
+		oldHypershiftEnabled := oldMCE.Enabled(HyperShift) || oldMCE.Enabled(HypershiftLocalHosting)
+		oldClusterAPIEnabled := oldMCE.Enabled(ClusterAPI) || oldMCE.Enabled(ClusterAPIProviderAWS)
+
+		if oldHypershiftEnabled && !oldClusterAPIEnabled {
+			return nil, fmt.Errorf(
+				"Cannot enable ClusterAPI components (%q, %q) while HyperShift components (%q, %q) are already enabled. Please disable HyperShift components first.",
+				ClusterAPI, ClusterAPIProviderAWS, HyperShift, HypershiftLocalHosting,
+			)
+
+		} else if !oldHypershiftEnabled && oldClusterAPIEnabled {
+			return nil, fmt.Errorf(
+				"Cannot enable HyperShift components (%q, %q) while ClusterAPI components (%q, %q) are already enabled. Please disable ClusterAPI components first.",
+				HyperShift, HypershiftLocalHosting, ClusterAPI, ClusterAPIProviderAWS,
+			)
 		}
 	}
 
