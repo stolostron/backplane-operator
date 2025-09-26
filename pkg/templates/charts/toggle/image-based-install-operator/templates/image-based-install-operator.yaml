@@ -39,7 +39,7 @@ spec:
       - args:
         - --leader-elect
         command:
-        - /manager
+        - /usr/local/bin/manager
         env:
 {{- if .Values.hubconfig.proxyConfigs }}
         - name: HTTP_PROXY
@@ -95,7 +95,7 @@ spec:
         - mountPath: /webhook-certs
           name: webhook-certs
       - command:
-        - /server
+        - /usr/local/bin/server
         env:
 {{- if .Values.hubconfig.proxyConfigs }}
         - name: HTTP_PROXY
