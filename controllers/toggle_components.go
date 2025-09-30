@@ -1748,36 +1748,8 @@ func (r *MultiClusterEngineReconciler) ensureLocalCluster(ctx context.Context, m
 
 	log.Info("Setting annotations on ManagedCluster CR")
 	annotations := managedCluster.GetAnnotations()
-	if annotations == nil {
-		annotations = make(map[string]string)
-	}
 
-	if len(mce.Spec.NodeSelector) > 0 {
-		log.Info("Adding NodeSelector annotation")
-		nodeSelector, err := json.Marshal(mce.Spec.NodeSelector)
-		if err != nil {
-			log.Error(err, "Failed to json marshal MCE NodeSelector")
-			return ctrl.Result{}, err
-		}
-		annotations[utils.AnnotationNodeSelector] = string(nodeSelector)
-	} else {
-		log.Info("Removing NodeSelector annotation")
-		delete(annotations, utils.AnnotationNodeSelector)
-	}
-
-	if len(mce.Spec.Tolerations) > 0 {
-		log.Info("Adding Tolerations annotation")
-		tolerations, err := json.Marshal(mce.Spec.Tolerations)
-		if err != nil {
-			log.Error(err, "Failed to json marshal MCE Tolerations")
-			return ctrl.Result{}, err
-		}
-		annotations[utils.AnnotationTolerations] = string(tolerations)
-	} else {
-		log.Info("Removing Tolerations annotation")
-		delete(annotations, utils.AnnotationTolerations)
-	}
-
+	annotateManagedCluster(mce, &annotations)
 	managedCluster.SetAnnotations(annotations)
 	applyReleaseVersionAnnotation(managedCluster)
 
@@ -1788,6 +1760,39 @@ func (r *MultiClusterEngineReconciler) ensureLocalCluster(ctx context.Context, m
 		return ctrl.Result{}, err
 	}
 	return ctrl.Result{}, err
+}
+
+func annotateManagedCluster(mce *backplanev1.MultiClusterEngine, annotations *map[string]string) error {
+	if *annotations == nil {
+		*annotations = make(map[string]string)
+	}
+
+	if len(mce.Spec.NodeSelector) > 0 {
+		log.Info("Adding NodeSelector annotation")
+		nodeSelector, err := json.Marshal(mce.Spec.NodeSelector)
+		if err != nil {
+			log.Error(err, "Failed to json marshal MCE NodeSelector")
+			return err
+		}
+		(*annotations)[utils.AnnotationNodeSelector] = string(nodeSelector)
+	} else {
+		log.Info("Removing NodeSelector annotation")
+		delete(*annotations, utils.AnnotationNodeSelector)
+	}
+
+	if len(mce.Spec.Tolerations) > 0 {
+		log.Info("Adding Tolerations annotation")
+		tolerations, err := json.Marshal(mce.Spec.Tolerations)
+		if err != nil {
+			log.Error(err, "Failed to json marshal MCE Tolerations")
+			return err
+		}
+		(*annotations)[utils.AnnotationTolerations] = string(tolerations)
+	} else {
+		log.Info("Removing Tolerations annotation")
+		delete(*annotations, utils.AnnotationTolerations)
+	}
+	return nil
 }
 
 func (r *MultiClusterEngineReconciler) ensureNoLocalCluster(ctx context.Context, mce *backplanev1.MultiClusterEngine) (
