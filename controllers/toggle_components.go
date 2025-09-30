@@ -1764,6 +1764,20 @@ func (r *MultiClusterEngineReconciler) ensureLocalCluster(ctx context.Context, m
 		log.Info("Removing NodeSelector annotation")
 		delete(annotations, utils.AnnotationNodeSelector)
 	}
+
+	if len(mce.Spec.Tolerations) > 0 {
+		log.Info("Adding Tolerations annotation")
+		tolerations, err := json.Marshal(mce.Spec.Tolerations)
+		if err != nil {
+			log.Error(err, "Failed to json marshal MCE Tolerations")
+			return ctrl.Result{}, err
+		}
+		annotations[utils.AnnotationTolerations] = string(tolerations)
+	} else {
+		log.Info("Removing Tolerations annotation")
+		delete(annotations, utils.AnnotationTolerations)
+	}
+
 	managedCluster.SetAnnotations(annotations)
 	applyReleaseVersionAnnotation(managedCluster)
 
