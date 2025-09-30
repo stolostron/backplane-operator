@@ -1749,7 +1749,11 @@ func (r *MultiClusterEngineReconciler) ensureLocalCluster(ctx context.Context, m
 	log.Info("Setting annotations on ManagedCluster CR")
 	annotations := managedCluster.GetAnnotations()
 
-	annotateManagedCluster(mce, &annotations)
+	err = annotateManagedCluster(mce, &annotations)
+	if err != nil {
+		log.Error(err, "Failed to Annotate ManagedCluster")
+		return ctrl.Result{}, err
+	}
 	managedCluster.SetAnnotations(annotations)
 	applyReleaseVersionAnnotation(managedCluster)
 
