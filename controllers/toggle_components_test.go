@@ -176,11 +176,11 @@ func Test_clusterManagementAddOnNotFoundStatus(t *testing.T) {
 
 func Test_annotateManagedCluster(t *testing.T) {
 	tests := []struct {
-		name             string
-		mce              *backplanev1.MultiClusterEngine
-		initialAnnotations map[string]string
+		name                string
+		mce                 *backplanev1.MultiClusterEngine
+		initialAnnotations  map[string]string
 		expectedAnnotations map[string]string
-		expectError      bool
+		expectError         bool
 	}{
 		{
 			name: "Add NodeSelector and Tolerations annotations",
@@ -201,8 +201,8 @@ func Test_annotateManagedCluster(t *testing.T) {
 			},
 			initialAnnotations: nil,
 			expectedAnnotations: map[string]string{
-				"open-cluster-management/nodeSelector":  "{\"node-role.kubernetes.io/worker\":\"\"}",
-				"open-cluster-management/tolerations":   "[{\"key\":\"dedicated\",\"operator\":\"Equal\",\"value\":\"infra\",\"effect\":\"NoSchedule\"}]",
+				"open-cluster-management/nodeSelector": "{\"node-role.kubernetes.io/worker\":\"\"}",
+				"open-cluster-management/tolerations":  "[{\"key\":\"dedicated\",\"operator\":\"Equal\",\"value\":\"infra\",\"effect\":\"NoSchedule\"}]",
 			},
 			expectError: false,
 		},
@@ -217,7 +217,7 @@ func Test_annotateManagedCluster(t *testing.T) {
 			initialAnnotations: map[string]string{
 				"open-cluster-management/nodeSelector": "{\"node-role.kubernetes.io/worker\":\"\"}",
 				"open-cluster-management/tolerations":  "[{\"key\":\"dedicated\",\"operator\":\"Equal\",\"value\":\"infra\",\"effect\":\"NoSchedule\"}]",
-				"other-annotation": "keep-this",
+				"other-annotation":                     "keep-this",
 			},
 			expectedAnnotations: map[string]string{
 				"other-annotation": "keep-this",
@@ -243,12 +243,12 @@ func Test_annotateManagedCluster(t *testing.T) {
 			initialAnnotations: map[string]string{
 				"open-cluster-management/nodeSelector": "{\"old-selector\":\"old-value\"}",
 				"open-cluster-management/tolerations":  "[{\"key\":\"old-key\",\"operator\":\"Equal\",\"value\":\"old-value\",\"effect\":\"NoSchedule\"}]",
-				"preserve-annotation": "preserved",
+				"preserve-annotation":                  "preserved",
 			},
 			expectedAnnotations: map[string]string{
-				"open-cluster-management/nodeSelector":  "{\"updated-node-selector\":\"new-value\"}",
-				"open-cluster-management/tolerations":   "[{\"key\":\"new-key\",\"operator\":\"Exists\",\"effect\":\"PreferNoSchedule\"}]",
-				"preserve-annotation": "preserved",
+				"open-cluster-management/nodeSelector": "{\"updated-node-selector\":\"new-value\"}",
+				"open-cluster-management/tolerations":  "[{\"key\":\"new-key\",\"operator\":\"Exists\",\"effect\":\"PreferNoSchedule\"}]",
+				"preserve-annotation":                  "preserved",
 			},
 			expectError: false,
 		},
@@ -306,7 +306,7 @@ func Test_annotateManagedCluster(t *testing.T) {
 				"existing": "annotation",
 			},
 			expectedAnnotations: map[string]string{
-				"existing": "annotation",
+				"existing":                            "annotation",
 				"open-cluster-management/tolerations": "[{\"key\":\"node.kubernetes.io/not-ready\",\"operator\":\"Exists\",\"effect\":\"NoExecute\",\"tolerationSeconds\":300}]",
 			},
 			expectError: false,
@@ -365,7 +365,7 @@ func Test_annotateManagedCluster(t *testing.T) {
 			initialAnnotations: map[string]string{
 				"open-cluster-management/nodeSelector": "{\"old\":\"selector\"}",
 				"open-cluster-management/tolerations":  "[{\"key\":\"old\",\"operator\":\"Equal\",\"value\":\"toleration\",\"effect\":\"NoSchedule\"}]",
-				"preserve": "me",
+				"preserve":                             "me",
 			},
 			expectedAnnotations: map[string]string{
 				"preserve": "me",
