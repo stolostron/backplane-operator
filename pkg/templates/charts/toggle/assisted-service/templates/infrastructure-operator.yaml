@@ -52,8 +52,6 @@ spec:
 {{- end }}
         - name: SERVICE_IMAGE
           value: '{{ .Values.global.imageOverrides.assisted_service_9 }}'
-        - name: SERVICE_EL8_IMAGE
-          value: '{{ .Values.global.imageOverrides.assisted_service_8 }}'
         - name: IMAGE_SERVICE_IMAGE
           value: '{{ .Values.global.imageOverrides.assisted_image_service }}'
         - name: DATABASE_IMAGE
