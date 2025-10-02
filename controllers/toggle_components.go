@@ -72,6 +72,7 @@ func (r *MultiClusterEngineReconciler) ensureConsoleMCE(ctx context.Context, mce
 	// Applies all templates
 	for _, template := range templates {
 		applyReleaseVersionAnnotation(template)
+		applyComponentLabel(template, backplanev1.ConsoleMCE)
 		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
 			return result, err
@@ -182,6 +183,7 @@ func (r *MultiClusterEngineReconciler) ensureManagedServiceAccount(ctx context.C
 	missingCRDErrorOccured := false
 	for _, template := range templates {
 		applyReleaseVersionAnnotation(template)
+		applyComponentLabel(template, backplanev1.ManagedServiceAccount)
 		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
 			if apimeta.IsNoMatchError(errors.Unwrap(err)) || apierrors.IsNotFound(err) {
@@ -338,6 +340,7 @@ func (r *MultiClusterEngineReconciler) ensureDiscovery(ctx context.Context, mce 
 	// Applies all templates
 	for _, template := range templates {
 		applyReleaseVersionAnnotation(template)
+		applyComponentLabel(template, backplanev1.Discovery)
 		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
 			return result, err
@@ -413,6 +416,7 @@ func (r *MultiClusterEngineReconciler) ensureClusterAPI(ctx context.Context, mce
 	// Applies all templates
 	for _, template := range templates {
 		applyReleaseVersionAnnotation(template)
+		applyComponentLabel(template, backplanev1.ClusterAPI)
 		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
 			return result, err
@@ -454,6 +458,24 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterAPI(ctx context.Context,
 			return result, err
 		}
 	}
+
+	// Delete CRDs for this component
+	crdDir := "pkg/templates/crds/cluster-api"
+	crds, crdErrs := renderer.RenderCRDs(crdDir, mce)
+	if len(crdErrs) > 0 {
+		for _, err := range crdErrs {
+			log.Info(err.Error())
+		}
+	}
+
+	for _, crd := range crds {
+		result, err := r.deleteCRD(ctx, mce, crd)
+		if err != nil {
+			log.Error(err, fmt.Sprintf("Failed to delete CRD: %s", crd.GetName()))
+			return result, err
+		}
+	}
+
 	return ctrl.Result{}, nil
 }
 
@@ -488,6 +510,7 @@ func (r *MultiClusterEngineReconciler) ensureClusterAPIProviderAWS(ctx context.C
 	// Applies all templates
 	for _, template := range templates {
 		applyReleaseVersionAnnotation(template)
+		applyComponentLabel(template, backplanev1.ClusterAPIProviderAWS)
 		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
 			return result, err
@@ -529,6 +552,24 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterAPIProviderAWS(ctx context
 			return result, err
 		}
 	}
+
+	// Delete CRDs for this component
+	crdDir := "pkg/templates/crds/cluster-api-provider-aws"
+	crds, crdErrs := renderer.RenderCRDs(crdDir, mce)
+	if len(crdErrs) > 0 {
+		for _, err := range crdErrs {
+			log.Info(err.Error())
+		}
+	}
+
+	for _, crd := range crds {
+		result, err := r.deleteCRD(ctx, mce, crd)
+		if err != nil {
+			log.Error(err, fmt.Sprintf("Failed to delete CRD: %s", crd.GetName()))
+			return result, err
+		}
+	}
+
 	return ctrl.Result{}, nil
 }
 
@@ -563,6 +604,7 @@ func (r *MultiClusterEngineReconciler) ensureClusterAPIProviderMetal(ctx context
 	// Applies all templates
 	for _, template := range templates {
 		applyReleaseVersionAnnotation(template)
+		applyComponentLabel(template, backplanev1.ClusterAPIProviderMetalPreview)
 		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
 			return result, err
@@ -641,6 +683,7 @@ func (r *MultiClusterEngineReconciler) ensureClusterAPIProviderOA(ctx context.Co
 	// Applies all templates
 	for _, template := range templates {
 		applyReleaseVersionAnnotation(template)
+		applyComponentLabel(template, backplanev1.ClusterAPIProviderOAPreview)
 		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
 			return result, err
@@ -718,6 +761,7 @@ func (r *MultiClusterEngineReconciler) ensureHive(ctx context.Context, mce *back
 	// Applies all templates
 	for _, template := range templates {
 		applyReleaseVersionAnnotation(template)
+		applyComponentLabel(template, backplanev1.Hive)
 		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
 			return result, err
@@ -814,6 +858,7 @@ func (r *MultiClusterEngineReconciler) ensureAssistedService(ctx context.Context
 	// Applies all templates
 	for _, template := range templates {
 		applyReleaseVersionAnnotation(template)
+		applyComponentLabel(template, backplanev1.AssistedService)
 		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
 			return result, err
@@ -904,6 +949,7 @@ func (r *MultiClusterEngineReconciler) ensureServerFoundation(ctx context.Contex
 	// Applies all templates
 	for _, template := range templates {
 		applyReleaseVersionAnnotation(template)
+		applyComponentLabel(template, backplanev1.ServerFoundation)
 		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
 			return result, err
@@ -990,6 +1036,7 @@ func (r *MultiClusterEngineReconciler) ensureImageBasedInstallOperator(ctx conte
 	// Applies all templates
 	for _, template := range templates {
 		applyReleaseVersionAnnotation(template)
+		applyComponentLabel(template, backplanev1.ImageBasedInstallOperator)
 		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
 			return result, err
@@ -1082,6 +1129,7 @@ func (r *MultiClusterEngineReconciler) ensureClusterLifecycle(ctx context.Contex
 	// Applies all templates
 	for _, template := range templates {
 		applyReleaseVersionAnnotation(template)
+		applyComponentLabel(template, backplanev1.ClusterLifecycle)
 		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
 			return result, err
@@ -1171,6 +1219,7 @@ func (r *MultiClusterEngineReconciler) ensureClusterManager(ctx context.Context,
 	// Applies all templates
 	for _, template := range templates {
 		applyReleaseVersionAnnotation(template)
+		applyComponentLabel(template, backplanev1.ClusterManager)
 		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
 			return result, err
@@ -1291,6 +1340,7 @@ func (r *MultiClusterEngineReconciler) ensureHyperShift(ctx context.Context, mce
 	missingCRDErrorOccured := false
 	for _, template := range templates {
 		applyReleaseVersionAnnotation(template)
+		applyComponentLabel(template, backplanev1.HyperShift)
 		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
 			if apimeta.IsNoMatchError(errors.Unwrap(err)) || apierrors.IsNotFound(err) {
@@ -1375,6 +1425,26 @@ func (r *MultiClusterEngineReconciler) ensureNoHyperShift(ctx context.Context,
 			return result, err
 		}
 	}
+
+	// Delete CRDs for this component (if any exist in the future)
+	// Currently HyperShift doesn't have its own CRD directory, but this ensures
+	// enforcement logic is consistent across all components
+	crdDir := "pkg/templates/crds/hypershift"
+	crds, crdErrs := renderer.RenderCRDs(crdDir, mce)
+	if len(crdErrs) > 0 {
+		for _, err := range crdErrs {
+			log.Info(err.Error())
+		}
+	}
+
+	for _, crd := range crds {
+		result, err := r.deleteCRD(ctx, mce, crd)
+		if err != nil {
+			log.Error(err, fmt.Sprintf("Failed to delete CRD: %s", crd.GetName()))
+			return result, err
+		}
+	}
+
 	return ctrl.Result{}, nil
 }
 
@@ -1549,6 +1619,7 @@ func (r *MultiClusterEngineReconciler) ensureClusterProxyAddon(ctx context.Conte
 	missingCRDErrorOccured := false
 	for _, template := range templates {
 		applyReleaseVersionAnnotation(template)
+		applyComponentLabel(template, backplanev1.ClusterProxyAddon)
 		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
 			if apimeta.IsNoMatchError(errors.Unwrap(err)) || apierrors.IsNotFound(errors.Unwrap(err)) {
@@ -1882,4 +1953,10 @@ func applyReleaseVersionAnnotation(template *unstructured.Unstructured) {
 	}
 	annotations[utils.AnnotationReleaseVersion] = version.Version
 	template.SetAnnotations(annotations)
+}
+
+// applyComponentLabel applies the component label to the resource template to indicate
+// which component the resource belongs to (e.g., "hypershift", "cluster-api")
+func applyComponentLabel(template *unstructured.Unstructured, componentName string) {
+	utils.SetComponentLabel(template, componentName)
 }

@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"strconv"
+	"strings"
 
 	loader "helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/chartutil"
@@ -154,6 +155,26 @@ func (val *Values) ToValues() (chartutil.Values, error) {
 	return vals, nil
 }
 
+// getCRDDirectoryToComponentMap returns a mapping of CRD directory names to component names
+func getCRDDirectoryToComponentMap() map[string]string {
+	return map[string]string{
+		"assisted-service":                          v1.AssistedService,
+		"cluster-api":                               v1.ClusterAPI,
+		"cluster-api-provider-aws":                  v1.ClusterAPIProviderAWS,
+		"cluster-api-provider-metal3":               v1.ClusterAPIProviderMetal,
+		"cluster-api-provider-openshift-assisted":   v1.ClusterAPIProviderOA,
+		"cluster-lifecycle":                         v1.ClusterLifecycle,
+		"cluster-manager":                           v1.ClusterManager,
+		"cluster-proxy-addon":                       v1.ClusterProxyAddon,
+		"discovery-operator":                        v1.Discovery,
+		"hive-operator":                             v1.Hive,
+		"image-based-install-operator":              v1.ImageBasedInstallOperator,
+		"managed-serviceaccount":                    v1.ManagedServiceAccount,
+		"foundation":                                v1.ServerFoundation,
+		// Note: internal CRDs don't map to a specific component
+	}
+}
+
 func RenderCRDs(crdDir string, backplaneConfig *v1.MultiClusterEngine) ([]*unstructured.Unstructured, []error) {
 	var crds []*unstructured.Unstructured
 	errs := []error{}
@@ -162,8 +183,11 @@ func RenderCRDs(crdDir string, backplaneConfig *v1.MultiClusterEngine) ([]*unstr
 		crdDir = path.Join(val, crdDir)
 	}
 
+	// Get mapping of directory names to component names
+	dirToComponentMap := getCRDDirectoryToComponentMap()
+
 	// Read CRD files
-	err := filepath.Walk(crdDir, func(path string, info os.FileInfo, err error) error {
+	err := filepath.Walk(crdDir, func(filePath string, info os.FileInfo, err error) error {
 		if err != nil {
 			fmt.Println(err.Error())
 			return err
@@ -174,7 +198,7 @@ func RenderCRDs(crdDir string, backplaneConfig *v1.MultiClusterEngine) ([]*unstr
 			return nil
 		}
 
-		bytesFile, e := os.ReadFile(path)
+		bytesFile, e := os.ReadFile(filePath)
 		if e != nil {
 			errs = append(errs, fmt.Errorf("%s - error reading file: %v", info.Name(), err.Error()))
 		}
@@ -189,6 +213,20 @@ func RenderCRDs(crdDir string, backplaneConfig *v1.MultiClusterEngine) ([]*unstr
 				crd.Object["spec"].(map[string]interface{})["conversion"].(map[string]interface{})["webhook"].(map[string]interface{})["clientConfig"].(map[string]interface{})["service"].(map[string]interface{})["namespace"] = backplaneConfig.Spec.TargetNamespace
 			}
 		}
+
+		// Extract component name from directory path and apply label
+		// Path structure: .../crds/<component-dir>/<crd-file>.yaml
+		relPath, err := filepath.Rel(crdDir, filePath)
+		if err == nil {
+			pathParts := strings.Split(relPath, string(filepath.Separator))
+			if len(pathParts) >= 2 {
+				dirName := pathParts[0]
+				if componentName, ok := dirToComponentMap[dirName]; ok {
+					utils.SetComponentLabel(crd, componentName)
+				}
+			}
+		}
+
 		crds = append(crds, crd)
 		return nil
 	})

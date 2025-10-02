@@ -82,6 +82,21 @@ var (
 		used by other components. MCE can use this standalone or inherit it from MCH
 	*/
 	AnnotationHubSize = "installer.multicluster.openshift.io/hub-size"
+
+	/*
+		AnnotationEnforceComponentState is an annotation used on the MultiClusterEngine CR to control
+		whether the operator actively manages component resources. When set to "true" (default), the
+		operator will create, update, and delete resources based on component state (enabled/disabled).
+		When set to "false", the operator is hands-off and will not reconcile resources.
+	*/
+	AnnotationEnforceComponentState = "installer.multicluster.openshift.io/enforce-component-state"
+
+	/*
+		LabelComponentName is a label applied to all resources deployed by this operator to indicate
+		which component the resource belongs to (e.g., "hypershift", "cluster-api"). This label is
+		used for selective deletion when a component is disabled and for tracking resource ownership.
+	*/
+	LabelComponentName = "installer.multicluster.openshift.io/component"
 )
 
 /*
@@ -276,4 +291,47 @@ ShouldIgnoreOCPVersion checks if the instance is annotated to skip the minimum O
 func ShouldIgnoreOCPVersion(instance *backplanev1.MultiClusterEngine) bool {
 	return HasAnnotation(instance, AnnotationIgnoreOCPVersion) ||
 		HasAnnotation(instance, DeprecatedAnnotationIgnoreOCPVersion)
+}
+
+/*
+ShouldEnforceComponentState checks if the MultiClusterEngine instance is configured to enforce
+component state. Returns true if the annotation is absent or set to "true" (default behavior).
+Returns false only if explicitly set to "false".
+*/
+func ShouldEnforceComponentState(instance *backplanev1.MultiClusterEngine) bool {
+	a := instance.GetAnnotations()
+	if a == nil {
+		return true // Default: enforce component state
+	}
+
+	value, exists := a[AnnotationEnforceComponentState]
+	if !exists {
+		return true // Default: enforce component state
+	}
+
+	// Only return false if explicitly set to "false"
+	return !strings.EqualFold(value, "false")
+}
+
+/*
+GetComponentLabel returns the component label value from a resource, or an empty string if not set.
+*/
+func GetComponentLabel(obj *unstructured.Unstructured) string {
+	labels := obj.GetLabels()
+	if labels == nil {
+		return ""
+	}
+	return labels[LabelComponentName]
+}
+
+/*
+SetComponentLabel sets the component label on a resource to indicate which component it belongs to.
+*/
+func SetComponentLabel(obj *unstructured.Unstructured, component string) {
+	labels := obj.GetLabels()
+	if labels == nil {
+		labels = make(map[string]string)
+	}
+	labels[LabelComponentName] = component
+	obj.SetLabels(labels)
 }
