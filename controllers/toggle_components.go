@@ -1426,25 +1426,6 @@ func (r *MultiClusterEngineReconciler) ensureNoHyperShift(ctx context.Context,
 		}
 	}
 
-	// Delete CRDs for this component (if any exist in the future)
-	// Currently HyperShift doesn't have its own CRD directory, but this ensures
-	// enforcement logic is consistent across all components
-	crdDir := "pkg/templates/crds/hypershift"
-	crds, crdErrs := renderer.RenderCRDs(crdDir, mce)
-	if len(crdErrs) > 0 {
-		for _, err := range crdErrs {
-			log.Info(err.Error())
-		}
-	}
-
-	for _, crd := range crds {
-		result, err := r.deleteCRD(ctx, mce, crd)
-		if err != nil {
-			log.Error(err, fmt.Sprintf("Failed to delete CRD: %s", crd.GetName()))
-			return result, err
-		}
-	}
-
 	return ctrl.Result{}, nil
 }
 

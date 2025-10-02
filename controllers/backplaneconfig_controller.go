@@ -441,10 +441,7 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		// Check if CRD belongs to a disabled HyperShift or CAPI component
 		// These components can be managed by other operators, so we skip CRD creation when disabled
 		componentLabel := utils.GetComponentLabel(crd)
-		if componentLabel == backplanev1.HyperShift ||
-			componentLabel == backplanev1.ClusterAPI ||
-			componentLabel == backplanev1.ClusterAPIProviderAWS {
-
+		if componentLabel == backplanev1.ClusterAPI || componentLabel == backplanev1.ClusterAPIProviderAWS {
 			if !backplaneConfig.Enabled(componentLabel) {
 				r.Log.Info("Skipping CRD for disabled component", "CRD", crd.GetName(), "Component", componentLabel)
 				continue
@@ -457,6 +454,7 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 				e := utils.EnsureCRD(ctx, r.Client, crd, r.Log)
 				return e
 			})
+
 			if retryErr != nil {
 				r.Log.Error(retryErr, "Failed to apply CRD")
 				return result, retryErr
