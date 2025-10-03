@@ -72,7 +72,6 @@ func (r *MultiClusterEngineReconciler) ensureConsoleMCE(ctx context.Context, mce
 	// Applies all templates
 	for _, template := range templates {
 		applyReleaseVersionAnnotation(template)
-		applyComponentLabel(template, backplanev1.ConsoleMCE)
 		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
 			return result, err
@@ -117,6 +116,11 @@ func (r *MultiClusterEngineReconciler) ensureNoConsoleMCE(ctx context.Context, m
 		return ctrl.Result{}, nil
 	}
 	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
+
+	// Only remove resources if component is not in the unmanaged components list
+	if utils.IsComponentUnmanaged(mce, backplanev1.ConsoleMCE) {
+		return ctrl.Result{}, nil
+	}
 
 	result, err := r.removePluginFromConsoleResource(ctx)
 	if err != nil {
@@ -183,7 +187,6 @@ func (r *MultiClusterEngineReconciler) ensureManagedServiceAccount(ctx context.C
 	missingCRDErrorOccured := false
 	for _, template := range templates {
 		applyReleaseVersionAnnotation(template)
-		applyComponentLabel(template, backplanev1.ManagedServiceAccount)
 		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
 			if apimeta.IsNoMatchError(errors.Unwrap(err)) || apierrors.IsNotFound(err) {
@@ -214,6 +217,14 @@ func (r *MultiClusterEngineReconciler) ensureNoManagedServiceAccount(ctx context
 		return result, err
 	}
 
+	r.StatusManager.AddComponent(toggle.DisabledStatus(types.NamespacedName{Name: "managedservice",
+		Namespace: mce.Spec.TargetNamespace}, []*unstructured.Unstructured{}))
+
+	// Only remove resources if component is not in the unmanaged components list
+	if utils.IsComponentUnmanaged(mce, backplanev1.ManagedServiceAccount) {
+		return ctrl.Result{}, nil
+	}
+
 	// Renders all templates from charts
 	chartPath := r.fetchChartOrCRDPath(backplanev1.ManagedServiceAccount)
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
@@ -223,9 +234,6 @@ func (r *MultiClusterEngineReconciler) ensureNoManagedServiceAccount(ctx context
 		}
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
-
-	r.StatusManager.AddComponent(toggle.DisabledStatus(types.NamespacedName{Name: "managedservice",
-		Namespace: mce.Spec.TargetNamespace}, []*unstructured.Unstructured{}))
 
 	// Deletes all templates
 	for _, template := range templates {
@@ -340,7 +348,6 @@ func (r *MultiClusterEngineReconciler) ensureDiscovery(ctx context.Context, mce 
 	// Applies all templates
 	for _, template := range templates {
 		applyReleaseVersionAnnotation(template)
-		applyComponentLabel(template, backplanev1.Discovery)
 		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
 			return result, err
@@ -360,6 +367,14 @@ func (r *MultiClusterEngineReconciler) ensureNoDiscovery(ctx context.Context,
 		return result, err
 	}
 
+	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
+	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
+
+	// Only remove resources if component is not in the unmanaged components list
+	if utils.IsComponentUnmanaged(mce, backplanev1.Discovery) {
+		return ctrl.Result{}, nil
+	}
+
 	// Renders all templates from charts
 	chartPath := r.fetchChartOrCRDPath(backplanev1.Discovery)
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
@@ -370,9 +385,6 @@ func (r *MultiClusterEngineReconciler) ensureNoDiscovery(ctx context.Context,
 		}
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
-
-	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
-	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 
 	// Deletes all templates
 	for _, template := range templates {
@@ -416,7 +428,6 @@ func (r *MultiClusterEngineReconciler) ensureClusterAPI(ctx context.Context, mce
 	// Applies all templates
 	for _, template := range templates {
 		applyReleaseVersionAnnotation(template)
-		applyComponentLabel(template, backplanev1.ClusterAPI)
 		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
 			return result, err
@@ -436,6 +447,14 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterAPI(ctx context.Context,
 		return result, err
 	}
 
+	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
+	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
+
+	// Only remove resources if component is not in the unmanaged components list
+	if utils.IsComponentUnmanaged(mce, backplanev1.ClusterAPI) {
+		return ctrl.Result{}, nil
+	}
+
 	// Renders all templates from charts
 	chartPath := r.fetchChartOrCRDPath(backplanev1.ClusterAPI)
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
@@ -447,9 +466,6 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterAPI(ctx context.Context,
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
 
-	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
-	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
-
 	// Deletes all templates
 	for _, template := range templates {
 		result, err := r.deleteTemplate(ctx, mce, template)
@@ -459,20 +475,24 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterAPI(ctx context.Context,
 		}
 	}
 
-	// Delete CRDs for this component
-	crdDir := "pkg/templates/crds/cluster-api"
-	crds, crdErrs := renderer.RenderCRDs(crdDir, mce)
-	if len(crdErrs) > 0 {
-		for _, err := range crdErrs {
-			log.Info(err.Error())
+	// Delete CRDs for this component only if it's in ExternallyManageableCRDComponents
+	if utils.Contains(backplanev1.ExternallyManageableCRDComponents, backplanev1.ClusterAPI) {
+		crdDir := "pkg/templates/crds/cluster-api"
+		log.Info("Attempting to delete ClusterAPI CRDs", "crdDir", crdDir)
+		crds, crdErrs := renderer.RenderCRDs(crdDir, mce, false)
+		if len(crdErrs) > 0 {
+			for _, err := range crdErrs {
+				log.Info(err.Error())
+			}
 		}
-	}
 
-	for _, crd := range crds {
-		result, err := r.deleteCRD(ctx, mce, crd)
-		if err != nil {
-			log.Error(err, fmt.Sprintf("Failed to delete CRD: %s", crd.GetName()))
-			return result, err
+		log.Info("Rendered CRDs for deletion", "count", len(crds))
+		for _, crd := range crds {
+			result, err := r.deleteCRD(ctx, mce, crd)
+			if err != nil {
+				log.Error(err, fmt.Sprintf("Failed to delete CRD: %s", crd.GetName()))
+				return result, err
+			}
 		}
 	}
 
@@ -510,7 +530,6 @@ func (r *MultiClusterEngineReconciler) ensureClusterAPIProviderAWS(ctx context.C
 	// Applies all templates
 	for _, template := range templates {
 		applyReleaseVersionAnnotation(template)
-		applyComponentLabel(template, backplanev1.ClusterAPIProviderAWS)
 		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
 			return result, err
@@ -530,6 +549,14 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterAPIProviderAWS(ctx context
 		return result, err
 	}
 
+	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
+	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
+
+	// Only remove resources if component is not in the unmanaged components list
+	if utils.IsComponentUnmanaged(mce, backplanev1.ClusterAPIProviderAWS) {
+		return ctrl.Result{}, nil
+	}
+
 	// Renders all templates from charts
 	chartPath := r.fetchChartOrCRDPath(backplanev1.ClusterAPIProviderAWS)
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
@@ -541,9 +568,6 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterAPIProviderAWS(ctx context
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
 
-	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
-	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
-
 	// Deletes all templates
 	for _, template := range templates {
 		result, err := r.deleteTemplate(ctx, mce, template)
@@ -553,20 +577,24 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterAPIProviderAWS(ctx context
 		}
 	}
 
-	// Delete CRDs for this component
-	crdDir := "pkg/templates/crds/cluster-api-provider-aws"
-	crds, crdErrs := renderer.RenderCRDs(crdDir, mce)
-	if len(crdErrs) > 0 {
-		for _, err := range crdErrs {
-			log.Info(err.Error())
+	// Delete CRDs for this component only if it's in ExternallyManageableCRDComponents
+	if utils.Contains(backplanev1.ExternallyManageableCRDComponents, backplanev1.ClusterAPIProviderAWS) {
+		crdDir := "pkg/templates/crds/cluster-api-provider-aws"
+		log.Info("Attempting to delete ClusterAPIProviderAWS CRDs", "crdDir", crdDir)
+		crds, crdErrs := renderer.RenderCRDs(crdDir, mce, false)
+		if len(crdErrs) > 0 {
+			for _, err := range crdErrs {
+				log.Info(err.Error())
+			}
 		}
-	}
 
-	for _, crd := range crds {
-		result, err := r.deleteCRD(ctx, mce, crd)
-		if err != nil {
-			log.Error(err, fmt.Sprintf("Failed to delete CRD: %s", crd.GetName()))
-			return result, err
+		log.Info("Rendered CRDs for deletion", "count", len(crds))
+		for _, crd := range crds {
+			result, err := r.deleteCRD(ctx, mce, crd)
+			if err != nil {
+				log.Error(err, fmt.Sprintf("Failed to delete CRD: %s", crd.GetName()))
+				return result, err
+			}
 		}
 	}
 
@@ -604,7 +632,6 @@ func (r *MultiClusterEngineReconciler) ensureClusterAPIProviderMetal(ctx context
 	// Applies all templates
 	for _, template := range templates {
 		applyReleaseVersionAnnotation(template)
-		applyComponentLabel(template, backplanev1.ClusterAPIProviderMetalPreview)
 		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
 			return result, err
@@ -624,6 +651,14 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterAPIProviderMetal(ctx conte
 		return result, err
 	}
 
+	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
+	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
+
+	// Only remove resources if component is not in the unmanaged components list
+	if utils.IsComponentUnmanaged(mce, backplanev1.ClusterAPIProviderMetalPreview) {
+		return ctrl.Result{}, nil
+	}
+
 	// Renders all templates from charts
 	chartPath := r.fetchChartOrCRDPath(backplanev1.ClusterAPIProviderMetalPreview)
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
@@ -634,9 +669,6 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterAPIProviderMetal(ctx conte
 		}
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
-
-	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
-	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 
 	// Deletes all templates
 	for _, template := range templates {
@@ -683,7 +715,6 @@ func (r *MultiClusterEngineReconciler) ensureClusterAPIProviderOA(ctx context.Co
 	// Applies all templates
 	for _, template := range templates {
 		applyReleaseVersionAnnotation(template)
-		applyComponentLabel(template, backplanev1.ClusterAPIProviderOAPreview)
 		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
 			return result, err
@@ -706,6 +737,11 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterAPIProviderOA(ctx context.
 	if result, err := r.ensureNoInternalEngineComponent(ctx, mce,
 		backplanev1.ClusterAPIProviderOAPreview); (result != ctrl.Result{}) || err != nil {
 		return result, err
+	}
+
+	// Only remove resources if component is not in the unmanaged components list
+	if utils.IsComponentUnmanaged(mce, backplanev1.ClusterAPIProviderOAPreview) {
+		return ctrl.Result{}, nil
 	}
 
 	// Renders all templates from charts
@@ -761,7 +797,6 @@ func (r *MultiClusterEngineReconciler) ensureHive(ctx context.Context, mce *back
 	// Applies all templates
 	for _, template := range templates {
 		applyReleaseVersionAnnotation(template)
-		applyComponentLabel(template, backplanev1.Hive)
 		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
 			return result, err
@@ -783,6 +818,14 @@ func (r *MultiClusterEngineReconciler) ensureNoHive(ctx context.Context, mce *ba
 		return result, err
 	}
 
+	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
+	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
+
+	// Only remove resources if component is not in the unmanaged components list
+	if utils.IsComponentUnmanaged(mce, backplanev1.Hive) {
+		return ctrl.Result{}, nil
+	}
+
 	// Renders all templates from charts
 	chartPath := r.fetchChartOrCRDPath(backplanev1.Hive)
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
@@ -793,9 +836,6 @@ func (r *MultiClusterEngineReconciler) ensureNoHive(ctx context.Context, mce *ba
 		}
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
-
-	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
-	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 
 	// Delete hivconfig
 	hiveConfig := hive.HiveConfig(mce)
@@ -858,7 +898,6 @@ func (r *MultiClusterEngineReconciler) ensureAssistedService(ctx context.Context
 	// Applies all templates
 	for _, template := range templates {
 		applyReleaseVersionAnnotation(template)
-		applyComponentLabel(template, backplanev1.AssistedService)
 		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
 			return result, err
@@ -883,6 +922,14 @@ func (r *MultiClusterEngineReconciler) ensureNoAssistedService(ctx context.Conte
 		return result, err
 	}
 
+	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
+	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
+
+	// Only remove resources if component is not in the unmanaged components list
+	if utils.IsComponentUnmanaged(mce, backplanev1.AssistedService) {
+		return ctrl.Result{}, nil
+	}
+
 	// Renders all templates from charts
 	chartPath := r.fetchChartOrCRDPath(backplanev1.AssistedService)
 	templates, errs := renderer.RenderChartWithNamespace(chartPath, mce, r.CacheSpec.ImageOverrides,
@@ -894,9 +941,6 @@ func (r *MultiClusterEngineReconciler) ensureNoAssistedService(ctx context.Conte
 		}
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
-
-	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
-	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 
 	// Deletes all templates
 	for _, template := range templates {
@@ -949,7 +993,6 @@ func (r *MultiClusterEngineReconciler) ensureServerFoundation(ctx context.Contex
 	// Applies all templates
 	for _, template := range templates {
 		applyReleaseVersionAnnotation(template)
-		applyComponentLabel(template, backplanev1.ServerFoundation)
 		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
 			return result, err
@@ -968,17 +1011,6 @@ func (r *MultiClusterEngineReconciler) ensureNoServerFoundation(ctx context.Cont
 		return result, err
 	}
 
-	// Renders all templates from charts
-	chartPath := r.fetchChartOrCRDPath(backplanev1.ServerFoundation)
-	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
-
-	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
-	}
-
 	namespacedName := types.NamespacedName{Name: "ocm-controller", Namespace: mce.Spec.TargetNamespace}
 	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
 	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
@@ -992,6 +1024,22 @@ func (r *MultiClusterEngineReconciler) ensureNoServerFoundation(ctx context.Cont
 	namespacedName = types.NamespacedName{Name: "ocm-webhook", Namespace: mce.Spec.TargetNamespace}
 	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
 	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
+
+	// Only remove resources if component is not in the unmanaged components list
+	if utils.IsComponentUnmanaged(mce, backplanev1.ServerFoundation) {
+		return ctrl.Result{}, nil
+	}
+
+	// Renders all templates from charts
+	chartPath := r.fetchChartOrCRDPath(backplanev1.ServerFoundation)
+	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
+
+	if len(errs) > 0 {
+		for _, err := range errs {
+			log.Info(err.Error())
+		}
+		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+	}
 
 	// Deletes all templates
 	for _, template := range templates {
@@ -1036,7 +1084,6 @@ func (r *MultiClusterEngineReconciler) ensureImageBasedInstallOperator(ctx conte
 	// Applies all templates
 	for _, template := range templates {
 		applyReleaseVersionAnnotation(template)
-		applyComponentLabel(template, backplanev1.ImageBasedInstallOperator)
 		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
 			return result, err
@@ -1058,6 +1105,14 @@ func (r *MultiClusterEngineReconciler) ensureNoImageBasedInstallOperator(ctx con
 		return result, err
 	}
 
+	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
+	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
+
+	// Only remove resources if component is not in the unmanaged components list
+	if utils.IsComponentUnmanaged(mce, backplanev1.ImageBasedInstallOperator) {
+		return ctrl.Result{}, nil
+	}
+
 	// Renders all templates from charts
 	chartPath := r.fetchChartOrCRDPath(backplanev1.ImageBasedInstallOperator)
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
@@ -1068,9 +1123,6 @@ func (r *MultiClusterEngineReconciler) ensureNoImageBasedInstallOperator(ctx con
 		}
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
-
-	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
-	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 
 	// Deletes all templates
 	for _, template := range templates {
@@ -1129,7 +1181,6 @@ func (r *MultiClusterEngineReconciler) ensureClusterLifecycle(ctx context.Contex
 	// Applies all templates
 	for _, template := range templates {
 		applyReleaseVersionAnnotation(template)
-		applyComponentLabel(template, backplanev1.ClusterLifecycle)
 		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
 			return result, err
@@ -1148,17 +1199,6 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterLifecycle(ctx context.Cont
 		return result, err
 	}
 
-	// Renders all templates from charts
-	chartPath := r.fetchChartOrCRDPath(backplanev1.ClusterLifecycle)
-	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
-
-	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
-	}
-
 	if utils.DeployOnOCP() {
 		namespacedName := types.NamespacedName{Name: "cluster-curator-controller", Namespace: mce.Spec.TargetNamespace}
 		r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
@@ -1172,6 +1212,22 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterLifecycle(ctx context.Cont
 		namespacedName = types.NamespacedName{Name: "cluster-image-set-controller", Namespace: mce.Spec.TargetNamespace}
 		r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
 		r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
+	}
+
+	// Only remove resources if component is not in the unmanaged components list
+	if utils.IsComponentUnmanaged(mce, backplanev1.ClusterLifecycle) {
+		return ctrl.Result{}, nil
+	}
+
+	// Renders all templates from charts
+	chartPath := r.fetchChartOrCRDPath(backplanev1.ClusterLifecycle)
+	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
+
+	if len(errs) > 0 {
+		for _, err := range errs {
+			log.Info(err.Error())
+		}
+		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
 
 	// Deletes all templates
@@ -1219,7 +1275,6 @@ func (r *MultiClusterEngineReconciler) ensureClusterManager(ctx context.Context,
 	// Applies all templates
 	for _, template := range templates {
 		applyReleaseVersionAnnotation(template)
-		applyComponentLabel(template, backplanev1.ClusterManager)
 		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
 			return result, err
@@ -1250,6 +1305,17 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterManager(ctx context.Contex
 		return result, err
 	}
 
+	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
+	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
+	r.StatusManager.RemoveComponent(status.ClusterManagerStatus{
+		NamespacedName: types.NamespacedName{Name: "cluster-manager"},
+	})
+
+	// Only remove resources if component is not in the unmanaged components list
+	if utils.IsComponentUnmanaged(mce, backplanev1.ClusterManager) {
+		return ctrl.Result{}, nil
+	}
+
 	// Renders all templates from charts
 	chartPath := r.fetchChartOrCRDPath(backplanev1.ClusterManager)
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
@@ -1260,12 +1326,6 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterManager(ctx context.Contex
 		}
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
-
-	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
-	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
-	r.StatusManager.RemoveComponent(status.ClusterManagerStatus{
-		NamespacedName: types.NamespacedName{Name: "cluster-manager"},
-	})
 
 	// Delete clustermanager
 	clusterManager := &unstructured.Unstructured{}
@@ -1340,7 +1400,6 @@ func (r *MultiClusterEngineReconciler) ensureHyperShift(ctx context.Context, mce
 	missingCRDErrorOccured := false
 	for _, template := range templates {
 		applyReleaseVersionAnnotation(template)
-		applyComponentLabel(template, backplanev1.HyperShift)
 		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
 			if apimeta.IsNoMatchError(errors.Unwrap(err)) || apierrors.IsNotFound(err) {
@@ -1405,6 +1464,11 @@ func (r *MultiClusterEngineReconciler) ensureNoHyperShift(ctx context.Context,
 	}
 
 	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
+
+	// Only remove resources if component is not in the unmanaged components list
+	if utils.IsComponentUnmanaged(mce, backplanev1.HyperShift) {
+		return ctrl.Result{}, nil
+	}
 
 	// Renders all templates from charts
 	chartPath := r.fetchChartOrCRDPath(backplanev1.HyperShift)
@@ -1600,7 +1664,6 @@ func (r *MultiClusterEngineReconciler) ensureClusterProxyAddon(ctx context.Conte
 	missingCRDErrorOccured := false
 	for _, template := range templates {
 		applyReleaseVersionAnnotation(template)
-		applyComponentLabel(template, backplanev1.ClusterProxyAddon)
 		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
 			if apimeta.IsNoMatchError(errors.Unwrap(err)) || apierrors.IsNotFound(errors.Unwrap(err)) {
@@ -1635,6 +1698,11 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterProxyAddon(ctx context.Con
 	if result, err := r.ensureNoInternalEngineComponent(ctx, mce,
 		backplanev1.ClusterProxyAddon); (result != ctrl.Result{}) || err != nil {
 		return result, err
+	}
+
+	// Only remove resources if component is not in the unmanaged components list
+	if utils.IsComponentUnmanaged(mce, backplanev1.ClusterProxyAddon) {
+		return ctrl.Result{}, nil
 	}
 
 	// Renders all templates from charts
@@ -1934,10 +2002,4 @@ func applyReleaseVersionAnnotation(template *unstructured.Unstructured) {
 	}
 	annotations[utils.AnnotationReleaseVersion] = version.Version
 	template.SetAnnotations(annotations)
-}
-
-// applyComponentLabel applies the component label to the resource template to indicate
-// which component the resource belongs to (e.g., "hypershift", "cluster-api")
-func applyComponentLabel(template *unstructured.Unstructured, componentName string) {
-	utils.SetComponentLabel(template, componentName)
 }

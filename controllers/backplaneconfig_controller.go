@@ -159,6 +159,9 @@ var (
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
+
+// var logger = logf.Log.WithName()
+
 func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (retRes ctrl.Result, retErr error) {
 	r.Log = log
 	r.Log.Info("Reconciling MultiClusterEngine")
@@ -427,29 +430,20 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		crdsDir = "pkg/templates/crds"
 	}
 
-	crds, errs := renderer.RenderCRDs(crdsDir, backplaneConfig)
+	crds, errs := renderer.RenderCRDs(crdsDir, backplaneConfig, true)
 	if len(errs) > 0 {
 		for _, err := range errs {
 			return result, err
 		}
 	}
 
-	// udpate CRDs with retrygo
+	// update CRDs with retry for those with conversion webhooks
 	for i := range crds {
 		crd := crds[i]
 
-		// Check if CRD belongs to a disabled HyperShift or CAPI component
-		// These components can be managed by other operators, so we skip CRD creation when disabled
-		componentLabel := utils.GetComponentLabel(crd)
-		if componentLabel == backplanev1.ClusterAPI || componentLabel == backplanev1.ClusterAPIProviderAWS {
-			if !backplaneConfig.Enabled(componentLabel) {
-				r.Log.Info("Skipping CRD for disabled component", "CRD", crd.GetName(), "Component", componentLabel)
-				continue
-			}
-		}
-
 		_, conversion, _ := unstructured.NestedMap(crd.Object, "spec", "conversion", "webhook", "clientConfig", "service")
 		if conversion {
+			// Use retry logic for CRDs with conversion webhooks
 			retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 				e := utils.EnsureCRD(ctx, r.Client, crd, r.Log)
 				return e
@@ -458,6 +452,12 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 			if retryErr != nil {
 				r.Log.Error(retryErr, "Failed to apply CRD")
 				return result, retryErr
+			}
+		} else {
+			// Ensure CRDs without conversion webhooks
+			if err := utils.EnsureCRD(ctx, r.Client, crd, r.Log); err != nil {
+				r.Log.Error(err, "Failed to apply CRD")
+				return result, err
 			}
 		}
 	}
@@ -1527,13 +1527,12 @@ func (r *MultiClusterEngineReconciler) logAndSetCondition(err error, message str
 	return ctrl.Result{}, wrappedError
 }
 
-// deleteCRD deletes a CRD from the cluster, respecting the enforcement annotation for HyperShift and CAPI components.
-// When enforcement is disabled, only deletes CRDs that have our component label (indicating we created them).
-// CRDs without our label (manually created or managed by other operators) are left intact.
+// deleteCRD deletes a CRD from the cluster.
+// If the component is in the unmanaged-components annotation, the CRD will not be deleted
+// as we assume the customer is managing their own version of the component.
 func (r *MultiClusterEngineReconciler) deleteCRD(ctx context.Context,
 	backplaneConfig *backplanev1.MultiClusterEngine, crd *unstructured.Unstructured) (ctrl.Result, error) {
 
-	// Step 1: Does this CRD exist?
 	err := r.Client.Get(ctx, types.NamespacedName{Name: crd.GetName()}, crd)
 	if err != nil && (apierrors.IsNotFound(err) || apimeta.IsNoMatchError(err)) {
 		return ctrl.Result{}, nil
@@ -1544,39 +1543,14 @@ func (r *MultiClusterEngineReconciler) deleteCRD(ctx context.Context,
 		return ctrl.Result{}, err
 	}
 
-	// Step 2: Does it have our component label?
-	componentLabel := utils.GetComponentLabel(crd)
-
-	// If enforcement is disabled for HyperShift or CAPI components
-	if !utils.ShouldEnforceComponentState(backplaneConfig) {
-		// Only apply enforcement check for HyperShift and CAPI components
-		if componentLabel == backplanev1.HyperShift ||
-			componentLabel == backplanev1.ClusterAPI ||
-			componentLabel == backplanev1.ClusterAPIProviderAWS {
-
-			// Step 3 & 4: Check if CRD has our label
-			if componentLabel == "" {
-				// No component label - not created by us, leave it alone
-				log.Info("Skipping deletion of CRD without component label - not managed by this operator",
-					"CRD", crd.GetName())
-				return ctrl.Result{}, nil
-			}
-
-			// Has our component label - we created it, proceed with deletion
-			log.Info("Deleting operator-created CRD (enforcement disabled)",
-				"CRD", crd.GetName(),
-				"Component", componentLabel)
-		}
-	}
-
-	// Enforcement is enabled OR CRD has our label - proceed with deletion
+	// Proceed with deletion
 	err = r.Client.Delete(ctx, crd)
 	if err != nil && !apierrors.IsNotFound(err) {
 		log.Error(err, "Failed to delete CRD", "Name", crd.GetName())
 		return ctrl.Result{}, err
 	}
 
-	log.Info("Deleting CRD", "Name", crd.GetName(), "Component", componentLabel)
+	log.Info("Deleting CRD", "Name", crd.GetName())
 	return ctrl.Result{}, nil
 }
 
@@ -1585,45 +1559,14 @@ func (r *MultiClusterEngineReconciler) deleteCRD(ctx context.Context,
 func (r *MultiClusterEngineReconciler) deleteTemplate(ctx context.Context,
 	backplaneConfig *backplanev1.MultiClusterEngine, template *unstructured.Unstructured) (ctrl.Result, error) {
 
-	// before := template.DeepCopy()
 	err := r.Client.Get(ctx, types.NamespacedName{Name: template.GetName(), Namespace: template.GetNamespace()}, template)
 	if err != nil && (apierrors.IsNotFound(err) || apimeta.IsNoMatchError(err)) {
 		return ctrl.Result{}, nil
 	}
 
-	// set status progressing condition
 	if err != nil {
 		log.Error(err, "Odd error delete template")
 		return ctrl.Result{}, err
-	}
-
-	// If enforcement is disabled for HyperShift or CAPI components, only delete resources with our component label
-	// This prevents deletion of CRDs/resources created by other operators (e.g., HyperShift Operator, CAPI Operator)
-	//
-	// Context (MCE 2.10): HyperShift and CAPI components can be managed by multiple operators in the cluster.
-	// When these components are disabled in MCE, we should only delete resources that were created by this
-	// operator (indicated by the component label). Resources without the label or created by other operators
-	// should be left intact to avoid breaking those operators' functionality.
-	componentLabel := utils.GetComponentLabel(template)
-	if !utils.ShouldEnforceComponentState(backplaneConfig) {
-		// Only apply enforcement check for HyperShift and CAPI components
-		if componentLabel == backplanev1.HyperShift ||
-			componentLabel == backplanev1.ClusterAPI ||
-			componentLabel == backplanev1.ClusterAPIProviderAWS {
-
-			// Resource belongs to HyperShift/CAPI and has our component label - proceed with deletion
-			log.Info("Deleting operator-managed resource with enforcement disabled",
-				"Kind", template.GetKind(),
-				"Name", template.GetName(),
-				"Component", componentLabel)
-
-		} else if componentLabel == "" {
-			// Resource has no component label - likely managed by another operator, skip deletion
-			log.Info("Skipping deletion of resource without component label - may be managed by another operator",
-				"Kind", template.GetKind(),
-				"Name", template.GetName())
-			return ctrl.Result{}, nil
-		}
 	}
 
 	err = r.Client.Delete(ctx, template)

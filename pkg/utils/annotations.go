@@ -4,6 +4,7 @@
 package utils
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -84,19 +85,13 @@ var (
 	AnnotationHubSize = "installer.multicluster.openshift.io/hub-size"
 
 	/*
-		AnnotationEnforceComponentState is an annotation used on the MultiClusterEngine CR to control
-		whether the operator actively manages component resources. When set to "true" (default), the
-		operator will create, update, and delete resources based on component state (enabled/disabled).
-		When set to "false", the operator is hands-off and will not reconcile resources.
+		AnnotationUnmanagedComponents is an annotation used on the MultiClusterEngine CR to specify
+		components that should not be managed by the operator. This is typically used when customers
+		bring their own version of a component (e.g., CAPI, HyperShift) and want to prevent the
+		operator from creating, updating, or deleting resources for those components.
+		The value should be a JSON array of component names (e.g., '["hypershift", "cluster-api"]').
 	*/
-	AnnotationEnforceComponentState = "installer.multicluster.openshift.io/enforce-component-state"
-
-	/*
-		LabelComponentName is a label applied to all resources deployed by this operator to indicate
-		which component the resource belongs to (e.g., "hypershift", "cluster-api"). This label is
-		used for selective deletion when a component is disabled and for tracking resource ownership.
-	*/
-	LabelComponentName = "installer.multicluster.openshift.io/component"
+	AnnotationUnmanagedComponents = "installer.multicluster.openshift.io/unmanaged-components"
 )
 
 /*
@@ -304,7 +299,7 @@ func ShouldEnforceComponentState(instance *backplanev1.MultiClusterEngine) bool 
 		return true // Default: enforce component state
 	}
 
-	value, exists := a[AnnotationEnforceComponentState]
+	value, exists := a[AnnotationUnmanagedComponents]
 	if !exists {
 		return true // Default: enforce component state
 	}
@@ -314,24 +309,41 @@ func ShouldEnforceComponentState(instance *backplanev1.MultiClusterEngine) bool 
 }
 
 /*
-GetComponentLabel returns the component label value from a resource, or an empty string if not set.
+GetUnmanagedComponents parses the unmanaged-components annotation value and returns the list of
+component names. The annotation value is expected to be a JSON array of strings.
+Returns an empty slice if the annotation is not set or cannot be parsed.
 */
-func GetComponentLabel(obj *unstructured.Unstructured) string {
-	labels := obj.GetLabels()
-	if labels == nil {
-		return ""
+func GetUnmanagedComponents(instance *backplanev1.MultiClusterEngine) []string {
+	a := instance.GetAnnotations()
+	if a == nil {
+		return []string{}
 	}
-	return labels[LabelComponentName]
+
+	value, exists := a[AnnotationUnmanagedComponents]
+	if !exists || value == "" {
+		return []string{}
+	}
+
+	// Try to parse as JSON array
+	var components []string
+	if err := json.Unmarshal([]byte(value), &components); err != nil {
+		// If it's not a JSON array, return empty slice
+		return []string{}
+	}
+
+	return components
 }
 
 /*
-SetComponentLabel sets the component label on a resource to indicate which component it belongs to.
+IsComponentUnmanaged checks if a specific component name is in the list of unmanaged components
+from the unmanaged-components annotation.
 */
-func SetComponentLabel(obj *unstructured.Unstructured, component string) {
-	labels := obj.GetLabels()
-	if labels == nil {
-		labels = make(map[string]string)
+func IsComponentUnmanaged(instance *backplanev1.MultiClusterEngine, componentName string) bool {
+	unmanagedComponents := GetUnmanagedComponents(instance)
+	for _, c := range unmanagedComponents {
+		if c == componentName {
+			return true
+		}
 	}
-	labels[LabelComponentName] = component
-	obj.SetLabels(labels)
+	return false
 }

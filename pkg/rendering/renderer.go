@@ -158,24 +158,24 @@ func (val *Values) ToValues() (chartutil.Values, error) {
 // getCRDDirectoryToComponentMap returns a mapping of CRD directory names to component names
 func getCRDDirectoryToComponentMap() map[string]string {
 	return map[string]string{
-		"assisted-service":                          v1.AssistedService,
-		"cluster-api":                               v1.ClusterAPI,
-		"cluster-api-provider-aws":                  v1.ClusterAPIProviderAWS,
-		"cluster-api-provider-metal3":               v1.ClusterAPIProviderMetal,
-		"cluster-api-provider-openshift-assisted":   v1.ClusterAPIProviderOA,
-		"cluster-lifecycle":                         v1.ClusterLifecycle,
-		"cluster-manager":                           v1.ClusterManager,
-		"cluster-proxy-addon":                       v1.ClusterProxyAddon,
-		"discovery-operator":                        v1.Discovery,
-		"hive-operator":                             v1.Hive,
-		"image-based-install-operator":              v1.ImageBasedInstallOperator,
-		"managed-serviceaccount":                    v1.ManagedServiceAccount,
-		"foundation":                                v1.ServerFoundation,
+		"assisted-service":                        v1.AssistedService,
+		"cluster-api":                             v1.ClusterAPI,
+		"cluster-api-provider-aws":                v1.ClusterAPIProviderAWS,
+		"cluster-api-provider-metal3":             v1.ClusterAPIProviderMetal,
+		"cluster-api-provider-openshift-assisted": v1.ClusterAPIProviderOA,
+		"cluster-lifecycle":                       v1.ClusterLifecycle,
+		"cluster-manager":                         v1.ClusterManager,
+		"cluster-proxy-addon":                     v1.ClusterProxyAddon,
+		"discovery-operator":                      v1.Discovery,
+		"hive-operator":                           v1.Hive,
+		"image-based-install-operator":            v1.ImageBasedInstallOperator,
+		"managed-serviceaccount":                  v1.ManagedServiceAccount,
+		"foundation":                              v1.ServerFoundation,
 		// Note: internal CRDs don't map to a specific component
 	}
 }
 
-func RenderCRDs(crdDir string, backplaneConfig *v1.MultiClusterEngine) ([]*unstructured.Unstructured, []error) {
+func RenderCRDs(crdDir string, backplaneConfig *v1.MultiClusterEngine, skipDisabled bool) ([]*unstructured.Unstructured, []error) {
 	var crds []*unstructured.Unstructured
 	errs := []error{}
 
@@ -183,7 +183,7 @@ func RenderCRDs(crdDir string, backplaneConfig *v1.MultiClusterEngine) ([]*unstr
 		crdDir = path.Join(val, crdDir)
 	}
 
-	// Get mapping of directory names to component names
+	// Get mapping of directory names to component names for filtering
 	dirToComponentMap := getCRDDirectoryToComponentMap()
 
 	// Read CRD files
@@ -194,7 +194,32 @@ func RenderCRDs(crdDir string, backplaneConfig *v1.MultiClusterEngine) ([]*unstr
 		}
 
 		crd := &unstructured.Unstructured{}
-		if info == nil || info.IsDir() {
+		if info == nil {
+			return nil
+		}
+
+		// Check if this is a directory that should be skipped
+		if info.IsDir() {
+			// Get the directory name relative to crdDir
+			relPath, err := filepath.Rel(crdDir, filePath)
+			if err == nil && backplaneConfig != nil && relPath != "." {
+				// Check if this is a top-level component directory
+				pathParts := strings.Split(relPath, string(filepath.Separator))
+				if len(pathParts) == 1 {
+					dirName := pathParts[0]
+					if componentName, ok := dirToComponentMap[dirName]; ok {
+						// Skip CRDs if component is externally manageable AND (unmanaged OR disabled)
+						if utils.Contains(v1.ExternallyManageableCRDComponents, componentName) {
+							if utils.IsComponentUnmanaged(backplaneConfig, componentName) {
+								return filepath.SkipDir
+							}
+							if skipDisabled && !backplaneConfig.Enabled(componentName) {
+								return filepath.SkipDir
+							}
+						}
+					}
+				}
+			}
 			return nil
 		}
 
@@ -211,19 +236,6 @@ func RenderCRDs(crdDir string, backplaneConfig *v1.MultiClusterEngine) ([]*unstr
 			_, conversion, _ := unstructured.NestedMap(crd.Object, "spec", "conversion", "webhook", "clientConfig", "service")
 			if conversion {
 				crd.Object["spec"].(map[string]interface{})["conversion"].(map[string]interface{})["webhook"].(map[string]interface{})["clientConfig"].(map[string]interface{})["service"].(map[string]interface{})["namespace"] = backplaneConfig.Spec.TargetNamespace
-			}
-		}
-
-		// Extract component name from directory path and apply label
-		// Path structure: .../crds/<component-dir>/<crd-file>.yaml
-		relPath, err := filepath.Rel(crdDir, filePath)
-		if err == nil {
-			pathParts := strings.Split(relPath, string(filepath.Separator))
-			if len(pathParts) >= 2 {
-				dirName := pathParts[0]
-				if componentName, ok := dirToComponentMap[dirName]; ok {
-					utils.SetComponentLabel(crd, componentName)
-				}
 			}
 		}
 

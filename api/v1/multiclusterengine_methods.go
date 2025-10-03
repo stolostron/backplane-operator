@@ -96,6 +96,19 @@ var MCEComponents = []string{
 }
 
 /*
+ExternallyManageableCRDComponents contains components whose CRDs can be externally managed.
+When a component in this list is disabled, CRDs are deleted only if the component is NOT
+in the unmanaged-components annotation. This allows customers to bring their own version
+of these operators (e.g., CAPI, HyperShift) and prevents the backplane operator from
+deleting externally managed CRDs.
+*/
+var ExternallyManageableCRDComponents = []string{
+	ClusterAPI,
+	ClusterAPIProviderAWS,
+	HyperShift,
+}
+
+/*
 PreviewComponents is a list of all MCE component names that represent preview (tech preview) features.
 These components are candidates for pruning when the stable version replaces them.
 */
