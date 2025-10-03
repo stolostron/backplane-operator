@@ -227,6 +227,14 @@ rules:
   resources:
   - namespaces
   - pods
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  - pods
   - pods/portforward
   - secrets
   verbs:
