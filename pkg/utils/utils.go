@@ -19,6 +19,7 @@ import (
 
 	"os"
 
+	"github.com/go-logr/logr"
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -453,6 +454,42 @@ func DumpServingCertSecret() error {
 				return fmt.Errorf("unable to write file %q: %w", filename, err)
 			}
 		}
+	}
+
+	return nil
+}
+
+// EnsureCRD ensures that a CRD exists in the cluster, creating or updating it as necessary.
+// It respects the multiclusterengine.openshift.io/ignore annotation to skip updates.
+func EnsureCRD(ctx context.Context, c client.Client, crd *unstructured.Unstructured, log logr.Logger) error {
+	existingCRD := &unstructured.Unstructured{}
+	existingCRD.SetGroupVersionKind(crd.GroupVersionKind())
+
+	if err := c.Get(ctx, types.NamespacedName{Name: crd.GetName()}, existingCRD); err != nil {
+		if errors.IsNotFound(err) {
+			// CRD not found. Create it
+			log.Info("Creating CRD", "Name", crd.GetName())
+			if err := c.Create(ctx, crd); err != nil {
+				log.Error(err, "error creating CRD", "Name", crd.GetName())
+				return err
+			}
+			return nil
+		}
+
+		log.Error(err, "error getting CRD", "Name", crd.GetName())
+		return err
+	}
+
+	// CRD already exists. Check if we should update it
+	if AnnotationPresent(AnnotationMCEIgnore, existingCRD) {
+		log.Info("CRD has ignore annotation. Skipping update.", "Name", crd.GetName())
+		return nil
+	}
+
+	log.Info("Updating CRD", "Name", crd.GetName())
+	crd.SetResourceVersion(existingCRD.GetResourceVersion())
+	if err := c.Update(ctx, crd); err != nil {
+		return fmt.Errorf("error updating CRD '%s': %w", crd.GetName(), err)
 	}
 
 	return nil

@@ -4,6 +4,7 @@
 package utils
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -82,6 +83,15 @@ var (
 		used by other components. MCE can use this standalone or inherit it from MCH
 	*/
 	AnnotationHubSize = "installer.multicluster.openshift.io/hub-size"
+
+	/*
+		AnnotationUnmanagedComponents is an annotation used on the MultiClusterEngine CR to specify
+		components that should not be managed by the operator. This is typically used when customers
+		bring their own version of a component (e.g., CAPI, HyperShift) and want to prevent the
+		operator from creating, updating, or deleting resources for those components.
+		The value should be a JSON array of component names (e.g., '["hypershift", "cluster-api"]').
+	*/
+	AnnotationUnmanagedComponents = "installer.multicluster.openshift.io/unmanaged-components"
 )
 
 /*
@@ -276,4 +286,64 @@ ShouldIgnoreOCPVersion checks if the instance is annotated to skip the minimum O
 func ShouldIgnoreOCPVersion(instance *backplanev1.MultiClusterEngine) bool {
 	return HasAnnotation(instance, AnnotationIgnoreOCPVersion) ||
 		HasAnnotation(instance, DeprecatedAnnotationIgnoreOCPVersion)
+}
+
+/*
+ShouldEnforceComponentState checks if the MultiClusterEngine instance is configured to enforce
+component state. Returns true if the annotation is absent or set to "true" (default behavior).
+Returns false only if explicitly set to "false".
+*/
+func ShouldEnforceComponentState(instance *backplanev1.MultiClusterEngine) bool {
+	a := instance.GetAnnotations()
+	if a == nil {
+		return true // Default: enforce component state
+	}
+
+	value, exists := a[AnnotationUnmanagedComponents]
+	if !exists {
+		return true // Default: enforce component state
+	}
+
+	// Only return false if explicitly set to "false"
+	return !strings.EqualFold(value, "false")
+}
+
+/*
+GetUnmanagedComponents parses the unmanaged-components annotation value and returns the list of
+component names. The annotation value is expected to be a JSON array of strings.
+Returns an empty slice if the annotation is not set or cannot be parsed.
+*/
+func GetUnmanagedComponents(instance *backplanev1.MultiClusterEngine) []string {
+	a := instance.GetAnnotations()
+	if a == nil {
+		return []string{}
+	}
+
+	value, exists := a[AnnotationUnmanagedComponents]
+	if !exists || value == "" {
+		return []string{}
+	}
+
+	// Try to parse as JSON array
+	var components []string
+	if err := json.Unmarshal([]byte(value), &components); err != nil {
+		// If it's not a JSON array, return empty slice
+		return []string{}
+	}
+
+	return components
+}
+
+/*
+IsComponentUnmanaged checks if a specific component name is in the list of unmanaged components
+from the unmanaged-components annotation.
+*/
+func IsComponentUnmanaged(instance *backplanev1.MultiClusterEngine, componentName string) bool {
+	unmanagedComponents := GetUnmanagedComponents(instance)
+	for _, c := range unmanagedComponents {
+		if c == componentName {
+			return true
+		}
+	}
+	return false
 }

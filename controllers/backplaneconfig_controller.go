@@ -159,6 +159,9 @@ var (
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
+
+// var logger = logf.Log.WithName()
+
 func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (retRes ctrl.Result, retErr error) {
 	r.Log = log
 	r.Log.Info("Reconciling MultiClusterEngine")
@@ -250,6 +253,12 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		if err := r.Client.Update(ctx, backplaneConfig); err != nil {
 			return ctrl.Result{}, err
 		}
+	}
+
+	// Log enforcement state once per reconcile
+	if !utils.ShouldEnforceComponentState(backplaneConfig) {
+		r.Log.Info("Component state enforcement disabled - resources must be maintained manually by cluster administrator",
+			"MultiClusterEngine", req.NamespacedName)
 	}
 
 	var result ctrl.Result
@@ -421,25 +430,34 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		crdsDir = "pkg/templates/crds"
 	}
 
-	crds, errs := renderer.RenderCRDs(crdsDir, backplaneConfig)
+	crds, errs := renderer.RenderCRDs(crdsDir, backplaneConfig, true)
 	if len(errs) > 0 {
 		for _, err := range errs {
 			return result, err
 		}
 	}
 
-	// udpate CRDs with retrygo
+	// update CRDs with retry for those with conversion webhooks
 	for i := range crds {
-		_, conversion, _ := unstructured.NestedMap(crds[i].Object, "spec", "conversion", "webhook", "clientConfig", "service")
+		crd := crds[i]
+
+		_, conversion, _ := unstructured.NestedMap(crd.Object, "spec", "conversion", "webhook", "clientConfig", "service")
 		if conversion {
+			// Use retry logic for CRDs with conversion webhooks
 			retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-				crd := crds[i]
-				e := ensureCRD(context.TODO(), r.Client, crd)
+				e := utils.EnsureCRD(ctx, r.Client, crd, r.Log)
 				return e
 			})
+
 			if retryErr != nil {
 				r.Log.Error(retryErr, "Failed to apply CRD")
 				return result, retryErr
+			}
+		} else {
+			// Ensure CRDs without conversion webhooks
+			if err := utils.EnsureCRD(ctx, r.Client, crd, r.Log); err != nil {
+				r.Log.Error(err, "Failed to apply CRD")
+				return result, err
 			}
 		}
 	}
@@ -1509,18 +1527,43 @@ func (r *MultiClusterEngineReconciler) logAndSetCondition(err error, message str
 	return ctrl.Result{}, wrappedError
 }
 
+// deleteCRD deletes a CRD from the cluster.
+// If the component is in the unmanaged-components annotation, the CRD will not be deleted
+// as we assume the customer is managing their own version of the component.
+func (r *MultiClusterEngineReconciler) deleteCRD(ctx context.Context,
+	backplaneConfig *backplanev1.MultiClusterEngine, crd *unstructured.Unstructured) (ctrl.Result, error) {
+
+	err := r.Client.Get(ctx, types.NamespacedName{Name: crd.GetName()}, crd)
+	if err != nil && (apierrors.IsNotFound(err) || apimeta.IsNoMatchError(err)) {
+		return ctrl.Result{}, nil
+	}
+
+	if err != nil {
+		log.Error(err, "Error getting CRD for deletion")
+		return ctrl.Result{}, err
+	}
+
+	// Proceed with deletion
+	err = r.Client.Delete(ctx, crd)
+	if err != nil && !apierrors.IsNotFound(err) {
+		log.Error(err, "Failed to delete CRD", "Name", crd.GetName())
+		return ctrl.Result{}, err
+	}
+
+	log.Info("Deleting CRD", "Name", crd.GetName())
+	return ctrl.Result{}, nil
+}
+
 // deleteTemplate return true if resource does not exist and returns an error if a GET or DELETE errors unexpectedly. A false response without error
 // means the resource is in the process of deleting.
 func (r *MultiClusterEngineReconciler) deleteTemplate(ctx context.Context,
 	backplaneConfig *backplanev1.MultiClusterEngine, template *unstructured.Unstructured) (ctrl.Result, error) {
 
-	// before := template.DeepCopy()
 	err := r.Client.Get(ctx, types.NamespacedName{Name: template.GetName(), Namespace: template.GetNamespace()}, template)
 	if err != nil && (apierrors.IsNotFound(err) || apimeta.IsNoMatchError(err)) {
 		return ctrl.Result{}, nil
 	}
 
-	// set status progressing condition
 	if err != nil {
 		log.Error(err, "Odd error delete template")
 		return ctrl.Result{}, err
@@ -2093,14 +2136,14 @@ func (r *MultiClusterEngineReconciler) validateNamespace(ctx context.Context, m 
 		},
 	}
 	checkNs := &corev1.Namespace{}
-	err := r.Client.Get(context.TODO(), types.NamespacedName{Name: m.Spec.TargetNamespace}, checkNs)
+	err := r.Client.Get(ctx, types.NamespacedName{Name: m.Spec.TargetNamespace}, checkNs)
 	if err != nil && apierrors.IsNotFound(err) {
 		if err := ctrl.SetControllerReference(m, newNs, r.Scheme); err != nil {
 			return ctrl.Result{}, pkgerrors.Wrapf(err, "Error setting controller reference on resource %s",
 				m.Spec.TargetNamespace)
 		}
 
-		err = r.Client.Create(context.TODO(), newNs)
+		err = r.Client.Create(ctx, newNs)
 		if err != nil {
 			log.Error(err, "Could not create namespace")
 			return ctrl.Result{}, err
@@ -2213,32 +2256,6 @@ func (r *MultiClusterEngineReconciler) CheckDeprecatedFieldUsage(m *backplanev1.
 			r.DeprecatedFields[f.name] = true
 		}
 	}
-}
-
-func ensureCRD(ctx context.Context, c client.Client, crd *unstructured.Unstructured) error {
-	existingCRD := &unstructured.Unstructured{}
-	existingCRD.SetGroupVersionKind(crd.GroupVersionKind())
-	err := c.Get(ctx, types.NamespacedName{Name: crd.GetName()}, existingCRD)
-	if err != nil && apierrors.IsNotFound(err) {
-		// CRD not found. Create and return
-		err = c.Create(ctx, crd)
-		if err != nil {
-			return fmt.Errorf("error creating CRD '%s': %w", crd.GetName(), err)
-		}
-	} else if err != nil {
-		return fmt.Errorf("error getting CRD '%s': %w", crd.GetName(), err)
-	} else if err == nil {
-		// CRD already exists. Update and return
-		if utils.AnnotationPresent(utils.AnnotationMCEIgnore, existingCRD) {
-			return nil
-		}
-		crd.SetResourceVersion(existingCRD.GetResourceVersion())
-		err = c.Update(ctx, crd)
-		if err != nil {
-			return fmt.Errorf("error updating CRD '%s': %w", crd.GetName(), err)
-		}
-	}
-	return nil
 }
 
 func (r *MultiClusterEngineReconciler) GetDeprecatedResources(m *backplanev1.MultiClusterEngine) []client.Object {

@@ -336,3 +336,198 @@ func TestAnnotationPresent(t *testing.T) {
 		})
 	}
 }
+
+func TestGetUnmanagedComponents(t *testing.T) {
+	tests := []struct {
+		name     string
+		instance *backplanev1.MultiClusterEngine
+		want     []string
+	}{
+		{
+			name: "Valid JSON array with multiple components",
+			instance: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						AnnotationUnmanagedComponents: `["hypershift", "cluster-api", "hive"]`,
+					},
+				},
+			},
+			want: []string{"hypershift", "cluster-api", "hive"},
+		},
+		{
+			name: "Valid JSON array with single component",
+			instance: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						AnnotationUnmanagedComponents: `["hypershift"]`,
+					},
+				},
+			},
+			want: []string{"hypershift"},
+		},
+		{
+			name: "Empty JSON array",
+			instance: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						AnnotationUnmanagedComponents: `[]`,
+					},
+				},
+			},
+			want: []string{},
+		},
+		{
+			name: "No annotation present",
+			instance: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{},
+				},
+			},
+			want: []string{},
+		},
+		{
+			name:     "No annotations at all",
+			instance: &backplanev1.MultiClusterEngine{},
+			want:     []string{},
+		},
+		{
+			name: "Invalid JSON",
+			instance: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						AnnotationUnmanagedComponents: `invalid-json`,
+					},
+				},
+			},
+			want: []string{},
+		},
+		{
+			name: "Empty string annotation",
+			instance: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						AnnotationUnmanagedComponents: ``,
+					},
+				},
+			},
+			want: []string{},
+		},
+		{
+			name: "JSON object instead of array",
+			instance: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						AnnotationUnmanagedComponents: `{"component": "hypershift"}`,
+					},
+				},
+			},
+			want: []string{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := GetUnmanagedComponents(tt.instance)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GetUnmanagedComponents() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestIsComponentUnmanaged(t *testing.T) {
+	tests := []struct {
+		name          string
+		instance      *backplanev1.MultiClusterEngine
+		componentName string
+		want          bool
+	}{
+		{
+			name: "Component is in unmanaged list",
+			instance: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						AnnotationUnmanagedComponents: `["hypershift", "cluster-api"]`,
+					},
+				},
+			},
+			componentName: "hypershift",
+			want:          true,
+		},
+		{
+			name: "Component is not in unmanaged list",
+			instance: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						AnnotationUnmanagedComponents: `["hypershift", "cluster-api"]`,
+					},
+				},
+			},
+			componentName: "hive",
+			want:          false,
+		},
+		{
+			name: "Empty unmanaged list",
+			instance: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						AnnotationUnmanagedComponents: `[]`,
+					},
+				},
+			},
+			componentName: "hypershift",
+			want:          false,
+		},
+		{
+			name:          "No annotation present",
+			instance:      &backplanev1.MultiClusterEngine{},
+			componentName: "hypershift",
+			want:          false,
+		},
+		{
+			name: "Case sensitive component name",
+			instance: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						AnnotationUnmanagedComponents: `["hypershift"]`,
+					},
+				},
+			},
+			componentName: "HyperShift",
+			want:          false,
+		},
+		{
+			name: "Single component in list matches",
+			instance: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						AnnotationUnmanagedComponents: `["cluster-api"]`,
+					},
+				},
+			},
+			componentName: "cluster-api",
+			want:          true,
+		},
+		{
+			name: "Component in middle of list",
+			instance: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						AnnotationUnmanagedComponents: `["hypershift", "cluster-api", "hive"]`,
+					},
+				},
+			},
+			componentName: "cluster-api",
+			want:          true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := IsComponentUnmanaged(tt.instance, tt.componentName)
+			if got != tt.want {
+				t.Errorf("IsComponentUnmanaged() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
