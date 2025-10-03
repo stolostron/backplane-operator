@@ -13,6 +13,7 @@ const (
 
 	// AnnotationNodeSelector key name of nodeSelector annotation synced from mch
 	AnnotationNodeSelector = "open-cluster-management/nodeSelector"
+	AnnotationTolerations  = "open-cluster-management/tolerations"
 )
 
 func NewManagedCluster(name string) *unstructured.Unstructured {
