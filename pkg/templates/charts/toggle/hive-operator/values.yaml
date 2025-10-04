@@ -1,6 +1,5 @@
 global:
   deployOnOCP: true
-  hubSize: Small
   imageOverrides:
     openshift_hive: ''
   namespace: default

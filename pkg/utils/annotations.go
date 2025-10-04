@@ -76,12 +76,6 @@ var (
 		containing resource template overrides.
 	*/
 	AnnotationTemplateOverridesCM = "installer.multicluster.openshift.io/template-override-configmap"
-
-	/*
-		AnnotationHubSize is an annotation used in multiclusterhub to specify a hub size that can be
-		used by other components. MCE can use this standalone or inherit it from MCH
-	*/
-	AnnotationHubSize = "installer.multicluster.openshift.io/hub-size"
 )
 
 /*
@@ -90,17 +84,6 @@ It returns true if the instance is paused, otherwise false.
 */
 func IsPaused(instance *backplanev1.MultiClusterEngine) bool {
 	return IsAnnotationTrue(instance, AnnotationMCEPause) || IsAnnotationTrue(instance, DeprecatedAnnotationMCEPause)
-}
-
-/*
-GetHubSize gets the current hubsize, returning "Small" as default if the annotation is not found.
-*/
-func GetHubSize(instance *backplanev1.MultiClusterEngine) backplanev1.HubSize {
-	hubsize := getAnnotation(instance, AnnotationHubSize)
-	if hubsize != "" {
-		return backplanev1.HubSize(hubsize)
-	}
-	return backplanev1.Small
 }
 
 /*

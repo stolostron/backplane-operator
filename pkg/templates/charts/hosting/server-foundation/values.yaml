@@ -3,7 +3,6 @@ global:
     multicloud_manager: quay.io/test/test:test
   pullSecret: ""
   namespace: default
-  hubSize: Small
 hubconfig:
   nodeSelector: {}
   proxyConfigs: {}

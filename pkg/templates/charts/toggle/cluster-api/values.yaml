@@ -1,6 +1,5 @@
 global:
   deployOnOCP: true
-  hubSize: Small
   imageOverrides:
     mce_capi_webhook_config_rhel9: ''
     ose_cluster_api_rhel9: ''

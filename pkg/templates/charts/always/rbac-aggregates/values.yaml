@@ -1,7 +1,6 @@
 global:
   imageOverrides: []
   pullSecret: null
-  hubSize: Small
 hubconfig:
   nodeSelector: null
   proxyConfigs: {}

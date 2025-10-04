@@ -16,7 +16,6 @@ global:
   pullPolicy: Always
   namespace: default
   pullSecret: null
-  hubSize: Small
 hubconfig:
   nodeSelector: null
   proxyConfigs: {}

@@ -6,7 +6,6 @@ global:
     cluster_proxy_addon: ""
     cluster_proxy: ""
   templateOverrides: {}
-  hubSize: Small
 hubconfig:
   nodeSelector: null
   replicaCount: 1

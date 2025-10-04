@@ -3,7 +3,6 @@
 
 global:
   deployOnOCP: true
-  hubSize: Small
   imageOverrides: {}
   namespace: default
   pullSecret: null
