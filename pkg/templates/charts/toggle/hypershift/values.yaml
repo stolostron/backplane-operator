@@ -9,7 +9,6 @@ global:
   templateOverrides: {}
   namespace: default
   pullSecret: null
-  hubSize: Small
   deployOnOCP: ""
 hubconfig:
   nodeSelector: null

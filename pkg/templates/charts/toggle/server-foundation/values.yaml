@@ -4,7 +4,6 @@ global:
   templateOverrides: {}
   pullSecret: ""
   namespace: default
-  hubSize: Small
   deployOnOCP: ""
   servingCertCABundle: ""
   upgrading: false

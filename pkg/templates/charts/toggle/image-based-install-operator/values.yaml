@@ -1,6 +1,5 @@
 global:
   deployOnOCP: true
-  hubSize: Small
   imageOverrides:
     image_based_install_operator: ''
   namespace: default
