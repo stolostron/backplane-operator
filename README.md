@@ -1,12 +1,10 @@
-
-
 # Backplane Operator
 
 Operator for managing installation of Backplane components
 
 ## Prerequisites
 
-- Go v1.23.4+
+- Go v1.23.12+
 - kubectl 1.19+
 - Operator-sdk v1.17.0+
 - Docker or Podman
