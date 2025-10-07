@@ -4,7 +4,7 @@ metadata:
   name: {{ .Values.org }}:{{ .Chart.Name }}:hypershift-addon-manager
 rules:
 - apiGroups: [""]
-  resources: ["pods"]
+  resources: ["pods", "namespaces"]
   verbs: ["get", "list"]
 - apiGroups: [""]
   resources: ["secrets", "configmaps", "events", "services"]
@@ -46,7 +46,7 @@ rules:
   verbs: ["get", "create"]
 - apiGroups: ["addon.open-cluster-management.io"]
   resources: ["addondeploymentconfigs"]
-  verbs: ["get", "list", "watch"]
+  verbs: ["create", "delete","get", "list", "watch", "update", "patch"]
 - apiGroups: ["operators.coreos.com"]
   resources: ["clusterserviceversions"]
   verbs: ["get", "list"]
@@ -65,3 +65,6 @@ rules:
 - apiGroups: [ "discovery.open-cluster-management.io" ]
   resources: [ "discoveredclusters" ]
   verbs: ["get", "list", "watch", "create", "update", "delete", "deletecollection", "patch"]
+- apiGroups: ["config.open-cluster-management.io"]
+  resources: ["klusterletconfigs"]
+  verbs: ["get", "list", "watch", "create", "update", "delete", "patch"]

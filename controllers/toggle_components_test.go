@@ -173,3 +173,250 @@ func Test_clusterManagementAddOnNotFoundStatus(t *testing.T) {
 		})
 	}
 }
+
+func Test_annotateManagedCluster(t *testing.T) {
+	tests := []struct {
+		name                string
+		mce                 *backplanev1.MultiClusterEngine
+		initialAnnotations  map[string]string
+		expectedAnnotations map[string]string
+		expectError         bool
+	}{
+		{
+			name: "Add NodeSelector and Tolerations annotations",
+			mce: &backplanev1.MultiClusterEngine{
+				Spec: backplanev1.MultiClusterEngineSpec{
+					NodeSelector: map[string]string{
+						"node-role.kubernetes.io/worker": "",
+					},
+					Tolerations: []corev1.Toleration{
+						{
+							Key:      "dedicated",
+							Operator: corev1.TolerationOpEqual,
+							Value:    "infra",
+							Effect:   corev1.TaintEffectNoSchedule,
+						},
+					},
+				},
+			},
+			initialAnnotations: nil,
+			expectedAnnotations: map[string]string{
+				"open-cluster-management/nodeSelector": "{\"node-role.kubernetes.io/worker\":\"\"}",
+				"open-cluster-management/tolerations":  "[{\"key\":\"dedicated\",\"operator\":\"Equal\",\"value\":\"infra\",\"effect\":\"NoSchedule\"}]",
+			},
+			expectError: false,
+		},
+		{
+			name: "Remove NodeSelector and Tolerations annotations when empty",
+			mce: &backplanev1.MultiClusterEngine{
+				Spec: backplanev1.MultiClusterEngineSpec{
+					NodeSelector: nil,
+					Tolerations:  nil,
+				},
+			},
+			initialAnnotations: map[string]string{
+				"open-cluster-management/nodeSelector": "{\"node-role.kubernetes.io/worker\":\"\"}",
+				"open-cluster-management/tolerations":  "[{\"key\":\"dedicated\",\"operator\":\"Equal\",\"value\":\"infra\",\"effect\":\"NoSchedule\"}]",
+				"other-annotation":                     "keep-this",
+			},
+			expectedAnnotations: map[string]string{
+				"other-annotation": "keep-this",
+			},
+			expectError: false,
+		},
+		{
+			name: "Update existing annotations",
+			mce: &backplanev1.MultiClusterEngine{
+				Spec: backplanev1.MultiClusterEngineSpec{
+					NodeSelector: map[string]string{
+						"updated-node-selector": "new-value",
+					},
+					Tolerations: []corev1.Toleration{
+						{
+							Key:      "new-key",
+							Operator: corev1.TolerationOpExists,
+							Effect:   corev1.TaintEffectPreferNoSchedule,
+						},
+					},
+				},
+			},
+			initialAnnotations: map[string]string{
+				"open-cluster-management/nodeSelector": "{\"old-selector\":\"old-value\"}",
+				"open-cluster-management/tolerations":  "[{\"key\":\"old-key\",\"operator\":\"Equal\",\"value\":\"old-value\",\"effect\":\"NoSchedule\"}]",
+				"preserve-annotation":                  "preserved",
+			},
+			expectedAnnotations: map[string]string{
+				"open-cluster-management/nodeSelector": "{\"updated-node-selector\":\"new-value\"}",
+				"open-cluster-management/tolerations":  "[{\"key\":\"new-key\",\"operator\":\"Exists\",\"effect\":\"PreferNoSchedule\"}]",
+				"preserve-annotation":                  "preserved",
+			},
+			expectError: false,
+		},
+		{
+			name: "Handle nil annotations map",
+			mce: &backplanev1.MultiClusterEngine{
+				Spec: backplanev1.MultiClusterEngineSpec{
+					NodeSelector: map[string]string{
+						"test": "value",
+					},
+				},
+			},
+			initialAnnotations: nil,
+			expectedAnnotations: map[string]string{
+				"open-cluster-management/nodeSelector": "{\"test\":\"value\"}",
+			},
+			expectError: false,
+		},
+		{
+			name: "Add only NodeSelector annotation",
+			mce: &backplanev1.MultiClusterEngine{
+				Spec: backplanev1.MultiClusterEngineSpec{
+					NodeSelector: map[string]string{
+						"kubernetes.io/arch": "amd64",
+						"kubernetes.io/os":   "linux",
+					},
+					Tolerations: nil,
+				},
+			},
+			initialAnnotations: map[string]string{},
+			expectedAnnotations: map[string]string{
+				"open-cluster-management/nodeSelector": "{\"kubernetes.io/arch\":\"amd64\",\"kubernetes.io/os\":\"linux\"}",
+			},
+			expectError: false,
+		},
+		{
+			name: "Add only Tolerations annotation",
+			mce: &backplanev1.MultiClusterEngine{
+				Spec: backplanev1.MultiClusterEngineSpec{
+					NodeSelector: nil,
+					Tolerations: []corev1.Toleration{
+						{
+							Key:      "node.kubernetes.io/not-ready",
+							Operator: corev1.TolerationOpExists,
+							Effect:   corev1.TaintEffectNoExecute,
+							TolerationSeconds: func() *int64 {
+								seconds := int64(300)
+								return &seconds
+							}(),
+						},
+					},
+				},
+			},
+			initialAnnotations: map[string]string{
+				"existing": "annotation",
+			},
+			expectedAnnotations: map[string]string{
+				"existing":                            "annotation",
+				"open-cluster-management/tolerations": "[{\"key\":\"node.kubernetes.io/not-ready\",\"operator\":\"Exists\",\"effect\":\"NoExecute\",\"tolerationSeconds\":300}]",
+			},
+			expectError: false,
+		},
+		{
+			name: "Remove only NodeSelector, keep Tolerations",
+			mce: &backplanev1.MultiClusterEngine{
+				Spec: backplanev1.MultiClusterEngineSpec{
+					NodeSelector: nil,
+					Tolerations: []corev1.Toleration{
+						{
+							Key:      "keep-me",
+							Operator: corev1.TolerationOpEqual,
+							Value:    "yes",
+							Effect:   corev1.TaintEffectNoSchedule,
+						},
+					},
+				},
+			},
+			initialAnnotations: map[string]string{
+				"open-cluster-management/nodeSelector": "{\"remove\":\"me\"}",
+				"open-cluster-management/tolerations":  "[{\"key\":\"old\",\"operator\":\"Equal\",\"value\":\"value\",\"effect\":\"NoSchedule\"}]",
+			},
+			expectedAnnotations: map[string]string{
+				"open-cluster-management/tolerations": "[{\"key\":\"keep-me\",\"operator\":\"Equal\",\"value\":\"yes\",\"effect\":\"NoSchedule\"}]",
+			},
+			expectError: false,
+		},
+		{
+			name: "Remove only Tolerations, keep NodeSelector",
+			mce: &backplanev1.MultiClusterEngine{
+				Spec: backplanev1.MultiClusterEngineSpec{
+					NodeSelector: map[string]string{
+						"keep-me": "yes",
+					},
+					Tolerations: nil,
+				},
+			},
+			initialAnnotations: map[string]string{
+				"open-cluster-management/nodeSelector": "{\"remove\":\"me\"}",
+				"open-cluster-management/tolerations":  "[{\"key\":\"remove\",\"operator\":\"Equal\",\"value\":\"me\",\"effect\":\"NoSchedule\"}]",
+			},
+			expectedAnnotations: map[string]string{
+				"open-cluster-management/nodeSelector": "{\"keep-me\":\"yes\"}",
+			},
+			expectError: false,
+		},
+		{
+			name: "Empty NodeSelector and Tolerations (both zero length)",
+			mce: &backplanev1.MultiClusterEngine{
+				Spec: backplanev1.MultiClusterEngineSpec{
+					NodeSelector: map[string]string{},
+					Tolerations:  []corev1.Toleration{},
+				},
+			},
+			initialAnnotations: map[string]string{
+				"open-cluster-management/nodeSelector": "{\"old\":\"selector\"}",
+				"open-cluster-management/tolerations":  "[{\"key\":\"old\",\"operator\":\"Equal\",\"value\":\"toleration\",\"effect\":\"NoSchedule\"}]",
+				"preserve":                             "me",
+			},
+			expectedAnnotations: map[string]string{
+				"preserve": "me",
+			},
+			expectError: false,
+		},
+		{
+			name: "Complex Tolerations with all fields",
+			mce: &backplanev1.MultiClusterEngine{
+				Spec: backplanev1.MultiClusterEngineSpec{
+					Tolerations: []corev1.Toleration{
+						{
+							Key:               "special-node",
+							Operator:          corev1.TolerationOpEqual,
+							Value:             "dedicated-workload",
+							Effect:            corev1.TaintEffectNoSchedule,
+							TolerationSeconds: nil,
+						},
+						{
+							Key:      "node.kubernetes.io/disk-pressure",
+							Operator: corev1.TolerationOpExists,
+							Effect:   corev1.TaintEffectNoExecute,
+							TolerationSeconds: func() *int64 {
+								seconds := int64(600)
+								return &seconds
+							}(),
+						},
+					},
+				},
+			},
+			initialAnnotations: map[string]string{},
+			expectedAnnotations: map[string]string{
+				"open-cluster-management/tolerations": "[{\"key\":\"special-node\",\"operator\":\"Equal\",\"value\":\"dedicated-workload\",\"effect\":\"NoSchedule\"},{\"key\":\"node.kubernetes.io/disk-pressure\",\"operator\":\"Exists\",\"effect\":\"NoExecute\",\"tolerationSeconds\":600}]",
+			},
+			expectError: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			annotations := tt.initialAnnotations
+			err := annotateManagedCluster(tt.mce, &annotations)
+
+			if (err != nil) != tt.expectError {
+				t.Errorf("annotateManagedCluster() error = %v, expectError %v", err, tt.expectError)
+				return
+			}
+
+			if !reflect.DeepEqual(annotations, tt.expectedAnnotations) {
+				t.Errorf("annotateManagedCluster() annotations = %v, expected %v", annotations, tt.expectedAnnotations)
+			}
+		})
+	}
+}

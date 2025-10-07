@@ -1,6 +1,5 @@
 global:
   deployOnOCP: true
-  hubSize: Small
   imageOverrides:
     ose_aws_cluster_api_controllers_rhel9: ''
   namespace: default

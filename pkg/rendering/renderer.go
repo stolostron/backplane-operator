@@ -44,7 +44,6 @@ type Global struct {
 	PullSecret          string            `json:"pullSecret" structs:"pullSecret"`
 	Namespace           string            `json:"namespace" structs:"namespace"`
 	ConfigSecret        string            `json:"configSecret" structs:"configSecret"`
-	HubSize             v1.HubSize        `json:"hubSize" structs:"hubSize" yaml:"hubSize"`
 	DeployOnOCP         bool              `json:"deployOnOCP" structs:"deployOnOCP"`
 	ServingCertCABundle string            `json:"servingCertCABundle" structs:"servingCertCABundle"`
 }
@@ -384,12 +383,6 @@ func injectValuesOverrides(values *Values, backplaneConfig *v1.MultiClusterEngin
 	values.Global.PullPolicy = string(utils.GetImagePullPolicy(backplaneConfig))
 
 	values.Global.Namespace = backplaneConfig.Spec.TargetNamespace
-
-	// TODO: remove this after backplaneConfig.Spec.HubSize is back
-	values.Global.HubSize = utils.GetHubSize(backplaneConfig)
-
-	// TODO: put this back later
-	// values.Global.HubSize = backplaneConfig.Spec.HubSize
 
 	values.Global.PullSecret = backplaneConfig.Spec.ImagePullSecret
 

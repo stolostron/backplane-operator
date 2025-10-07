@@ -230,7 +230,7 @@ func GetTestImages() []string {
 	return []string{
 		"REGISTRATION_OPERATOR", "OPENSHIFT_HIVE", "MULTICLOUD_MANAGER", "MANAGEDCLUSTER_IMPORT_CONTROLLER",
 		"REGISTRATION", "WORK", "DISCOVERY_OPERATOR", "CLUSTER_CURATOR_CONTROLLER", "CLUSTERLIFECYCLE_STATE_METRICS",
-		"CLUSTERCLAIMS_CONTROLLER", "PROVIDER_CREDENTIAL_CONTROLLER", "MANAGED_SERVICEACCOUNT", "ASSISTED_SERVICE_8",
+		"CLUSTERCLAIMS_CONTROLLER", "PROVIDER_CREDENTIAL_CONTROLLER", "MANAGED_SERVICEACCOUNT",
 		"ASSISTED_SERVICE_9", "ASSISTED_IMAGE_SERVICE", "POSTGRESQL_12", "ASSISTED_INSTALLER_AGENT",
 		"ASSISTED_INSTALLER_CONTROLLER", "ASSISTED_INSTALLER", "CONSOLE_MCE", "HYPERSHIFT_ADDON_OPERATOR",
 		"HYPERSHIFT_OPERATOR", "APISERVER_NETWORK_PROXY", "AWS_ENCRYPTION_PROVIDER", "CLUSTER_API",
@@ -240,7 +240,7 @@ func GetTestImages() []string {
 		"OSE_AWS_CLUSTER_API_CONTROLLERS_RHEL9", "MCE_CAPI_WEBHOOK_CONFIG_RHEL9",
 		"registration_operator", "openshift_hive", "multicloud_manager", "managedcluster_import_controller",
 		"registration", "work", "discovery_operator", "cluster_curator_controller", "clusterlifecycle_state_metrics",
-		"clusterclaims_controller", "provider_credential_controller", "managed_serviceaccount", "assisted_service_8",
+		"clusterclaims_controller", "provider_credential_controller", "managed_serviceaccount",
 		"assisted_service_9", "assisted_image_service", "postgresql_12", "assisted_installer_agent",
 		"assisted_installer_controller", "assisted_installer", "console_mce", "hypershift_addon_operator",
 		"hypershift_operator", "apiserver_network_proxy", "aws_encryption_provider", "cluster_api",
