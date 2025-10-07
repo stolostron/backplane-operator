@@ -454,6 +454,12 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterAPI(ctx context.Context,
 			return result, err
 		}
 	}
+
+	// Delete CRDs for this component
+	if err := r.ensureDisabledComponentCRDsRemoved(ctx, mce, backplanev1.ClusterAPI); err != nil {
+		return ctrl.Result{}, err
+	}
+
 	return ctrl.Result{}, nil
 }
 
@@ -529,6 +535,12 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterAPIProviderAWS(ctx context
 			return result, err
 		}
 	}
+
+	// Delete CRDs for this component
+	if err := r.ensureDisabledComponentCRDsRemoved(ctx, mce, backplanev1.ClusterAPIProviderAWS); err != nil {
+		return ctrl.Result{}, err
+	}
+
 	return ctrl.Result{}, nil
 }
 

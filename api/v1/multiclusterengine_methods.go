@@ -49,7 +49,8 @@ const (
 	ServerFoundation                 = "server-foundation"
 )
 
-var allComponents = []string{
+// AllComponents is a slice containing all valid component names
+var AllComponents = []string{
 	AssistedService,
 	ClusterAPI,
 	ClusterAPIPreview,
@@ -117,6 +118,32 @@ var PreviewToStable = map[string]string{
 	HyperShiftPreview:                HyperShift,                // Upgraded in ACM 2.8 / MCE 2.3
 	ImageBasedInstallOperatorPreview: ImageBasedInstallOperator, // Upgraded in ACM 2.12 / MCE 2.7
 	ManagedServiceAccountPreview:     ManagedServiceAccount,     // Upgraded in ACM 2.9 / MCE 2.4
+}
+
+/*
+ComponentToCRDDirectory maps component names to their corresponding CRD directory names.
+This mapping is used to skip CRD rendering for externally managed components.
+*/
+var ComponentToCRDDirectory = map[string]string{
+	AssistedService:                  "assisted-service",
+	ClusterAPI:                       "cluster-api",
+	ClusterAPIPreview:                "cluster-api",
+	ClusterAPIProviderAWS:            "cluster-api-provider-aws",
+	ClusterAPIProviderAWSPreview:     "cluster-api-provider-aws",
+	ClusterAPIProviderMetal:          "cluster-api-provider-metal3",
+	ClusterAPIProviderMetalPreview:   "cluster-api-provider-metal3",
+	ClusterAPIProviderOA:             "cluster-api-provider-openshift-assisted",
+	ClusterAPIProviderOAPreview:      "cluster-api-provider-openshift-assisted",
+	ClusterLifecycle:                 "cluster-lifecycle",
+	ClusterManager:                   "cluster-manager",
+	ClusterProxyAddon:                "cluster-proxy-addon",
+	Discovery:                        "discovery-operator",
+	Hive:                             "hive-operator",
+	ImageBasedInstallOperator:        "image-based-install-operator",
+	ImageBasedInstallOperatorPreview: "image-based-install-operator",
+	ManagedServiceAccount:            "managed-serviceaccount",
+	ManagedServiceAccountPreview:     "managed-serviceaccount",
+	ServerFoundation:                 "foundation",
 }
 
 /*
@@ -243,7 +270,7 @@ validComponent checks if a ComponentConfig is valid by comparing its name to a l
 Returns true if the component is valid, otherwise false.
 */
 func validComponent(c ComponentConfig) bool {
-	for _, name := range allComponents {
+	for _, name := range AllComponents {
 		if c.Name == name {
 			return true
 		}

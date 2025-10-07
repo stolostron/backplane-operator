@@ -539,7 +539,7 @@ func TestRenderCoreCRDs(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var backplaneConfig *backplane.MultiClusterEngine
-			got, errs := RenderCRDs(tt.crdDir, backplaneConfig)
+			got, errs := RenderCRDs(tt.crdDir, backplaneConfig, []string{})
 			if errs != nil && len(errs) > 1 {
 				t.Errorf("RenderCRDs() got = %v, want %v", errs, nil)
 			}
@@ -580,7 +580,7 @@ func TestRenderCRDs(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, errs := RenderCRDs(tt.crdDir, testBackplane)
+			got, errs := RenderCRDs(tt.crdDir, testBackplane, []string{})
 			if errs != nil && len(errs) > 1 {
 				t.Errorf("RenderCRDs() got = %v, want %v", errs, nil)
 			}

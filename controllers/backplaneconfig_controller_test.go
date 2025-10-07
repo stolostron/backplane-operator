@@ -2365,3 +2365,264 @@ func Test_EnsureDeprecatedResourceCleanup(t *testing.T) {
 		})
 	}
 }
+
+func Test_isComponentExternallyManaged(t *testing.T) {
+	tests := []struct {
+		name          string
+		mce           *backplanev1.MultiClusterEngine
+		componentName string
+		want          bool
+	}{
+		{
+			name: "component is externally managed",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-mce",
+					Annotations: map[string]string{
+						utils.AnnotationExternallyManaged: `["hypershift","cluster-api"]`,
+					},
+				},
+			},
+			componentName: backplanev1.HyperShift,
+			want:          true,
+		},
+		{
+			name: "component is not externally managed",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-mce",
+					Annotations: map[string]string{
+						utils.AnnotationExternallyManaged: `["hypershift"]`,
+					},
+				},
+			},
+			componentName: backplanev1.ClusterAPI,
+			want:          false,
+		},
+		{
+			name: "no annotation present",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-mce",
+				},
+			},
+			componentName: backplanev1.HyperShift,
+			want:          false,
+		},
+		{
+			name: "empty annotation",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-mce",
+					Annotations: map[string]string{
+						utils.AnnotationExternallyManaged: "",
+					},
+				},
+			},
+			componentName: backplanev1.HyperShift,
+			want:          false,
+		},
+		{
+			name: "invalid json annotation",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-mce",
+					Annotations: map[string]string{
+						utils.AnnotationExternallyManaged: "not-json",
+					},
+				},
+			},
+			componentName: backplanev1.HyperShift,
+			want:          false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := recon.isComponentExternallyManaged(tt.mce, tt.componentName)
+			if got != tt.want {
+				t.Errorf("isComponentExternallyManaged() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_getExternallyManagedCRDDirectories(t *testing.T) {
+	tests := []struct {
+		name string
+		mce  *backplanev1.MultiClusterEngine
+		want []string
+	}{
+		{
+			name: "multiple externally managed components",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-mce",
+					Annotations: map[string]string{
+						utils.AnnotationExternallyManaged: `["hypershift","cluster-api","hive"]`,
+					},
+				},
+			},
+			want: []string{"hypershift", "cluster-api", "hive-operator"},
+		},
+		{
+			name: "single externally managed component",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-mce",
+					Annotations: map[string]string{
+						utils.AnnotationExternallyManaged: `["cluster-api"]`,
+					},
+				},
+			},
+			want: []string{"cluster-api"},
+		},
+		{
+			name: "no externally managed components",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-mce",
+				},
+			},
+			want: []string{},
+		},
+		{
+			name: "component with no CRD directory mapping",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-mce",
+					Annotations: map[string]string{
+						utils.AnnotationExternallyManaged: `["local-cluster"]`,
+					},
+				},
+			},
+			want: []string{},
+		},
+		{
+			name: "duplicate CRD directories (preview and stable)",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-mce",
+					Annotations: map[string]string{
+						utils.AnnotationExternallyManaged: `["cluster-api","cluster-api-preview"]`,
+					},
+				},
+			},
+			want: []string{"cluster-api"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := recon.getExternallyManagedCRDDirectories(tt.mce)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("getExternallyManagedCRDDirectories() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_ensureDisabledComponentCRDsRemoved(t *testing.T) {
+	tests := []struct {
+		name          string
+		componentName string
+		setupCRD      bool
+		wantErr       bool
+	}{
+		{
+			name:          "delete existing CRD",
+			componentName: backplanev1.ClusterAPI,
+			setupCRD:      true,
+			wantErr:       false,
+		},
+		{
+			name:          "CRD does not exist",
+			componentName: backplanev1.ClusterAPI,
+			setupCRD:      false,
+			wantErr:       false,
+		},
+		{
+			name:          "component with no CRD directory",
+			componentName: backplanev1.LocalCluster,
+			setupCRD:      false,
+			wantErr:       false,
+		},
+	}
+
+	// Set UNIT_TEST environment variable
+	os.Setenv("UNIT_TEST", "true")
+	defer os.Unsetenv("UNIT_TEST")
+
+	registerScheme()
+	apixv1.AddToScheme(scheme.Scheme)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Create a fresh fake client for each test
+			mockClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).Build()
+			r := &MultiClusterEngineReconciler{
+				Client:        mockClient,
+				Scheme:        scheme.Scheme,
+				StatusManager: &status.StatusTracker{Client: mockClient},
+			}
+
+			mce := &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-mce",
+				},
+				Spec: backplanev1.MultiClusterEngineSpec{
+					TargetNamespace: "test-ns",
+				},
+			}
+
+			// Setup: Create a CRD if needed
+			if tt.setupCRD {
+				crd := &apixv1.CustomResourceDefinition{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "clusters.cluster.x-k8s.io",
+					},
+					Spec: apixv1.CustomResourceDefinitionSpec{
+						Group: "cluster.x-k8s.io",
+						Names: apixv1.CustomResourceDefinitionNames{
+							Kind:   "Cluster",
+							Plural: "clusters",
+						},
+						Scope: apixv1.ClusterScoped,
+						Versions: []apixv1.CustomResourceDefinitionVersion{
+							{
+								Name:    "v1beta1",
+								Served:  true,
+								Storage: true,
+								Schema: &apixv1.CustomResourceValidation{
+									OpenAPIV3Schema: &apixv1.JSONSchemaProps{
+										Type: "object",
+									},
+								},
+							},
+						},
+					},
+				}
+				if err := r.Client.Create(context.TODO(), crd); err != nil {
+					t.Fatalf("Failed to create test CRD: %v", err)
+				}
+			}
+
+			// Execute
+			err := r.ensureDisabledComponentCRDsRemoved(context.TODO(), mce, tt.componentName)
+
+			// Verify
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ensureDisabledComponentCRDsRemoved() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			// If we created a CRD, verify it was deleted
+			if tt.setupCRD && !tt.wantErr {
+				crd := &apixv1.CustomResourceDefinition{}
+				err := r.Client.Get(context.TODO(), types.NamespacedName{Name: "clusters.cluster.x-k8s.io"}, crd)
+				if !errors.IsNotFound(err) {
+					t.Errorf("Expected CRD to be deleted, but it still exists or got unexpected error: %v", err)
+				}
+			}
+		})
+	}
+}

@@ -221,6 +221,11 @@ const (
 		or deleted.
 	*/
 	MultiClusterEngineFailure MultiClusterEngineConditionType = "Failure"
+	/*
+		ComponentsExternallyManaged indicates that one or more components are being managed
+		externally and MCE will not reconcile them.
+	*/
+	MultiClusterEngineComponentsExternallyManaged MultiClusterEngineConditionType = "ComponentsExternallyManaged"
 )
 
 type MultiClusterEngineCondition struct {
