@@ -2,7 +2,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.3
+    controller-gen.kubebuilder.io/version: v0.19.0
     service.beta.openshift.io/inject-cabundle: "true"
   labels:
     cluster.x-k8s.io/provider: infrastructure-aws
@@ -697,6 +697,31 @@ spec:
                     - ssm-parameter-store
                     type: string
                 type: object
+              cpuOptions:
+                description: |-
+                  CPUOptions defines CPU-related settings for the instance, including the confidential computing policy.
+                  When omitted, this means no opinion and the AWS platform is left to choose a reasonable default.
+                minProperties: 1
+                properties:
+                  confidentialCompute:
+                    description: |-
+                      ConfidentialCompute specifies whether confidential computing should be enabled for the instance,
+                      and, if so, which confidential computing technology to use.
+                      Valid values are: Disabled, AMDEncryptedVirtualizationNestedPaging
+                      When set to Disabled, confidential computing will be disabled for the instance.
+                      When set to AMDEncryptedVirtualizationNestedPaging, AMD SEV-SNP will be used as the confidential computing technology for the instance.
+                      In this case, ensure the following conditions are met:
+                      1) The selected instance type supports AMD SEV-SNP.
+                      2) The selected AWS region supports AMD SEV-SNP.
+                      3) The selected AMI supports AMD SEV-SNP.
+                      More details can be checked at https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/sev-snp.html
+                      When omitted, this means no opinion and the AWS platform is left to choose a reasonable default,
+                      which is subject to change without notice. The current default is Disabled.
+                    enum:
+                    - Disabled
+                    - AMDEncryptedVirtualizationNestedPaging
+                    type: string
+                type: object
               elasticIpPool:
                 description: ElasticIPPool is the configuration to allocate Public
                   IPv4 address (Elastic IP/EIP) from user-defined pool.
@@ -827,9 +852,10 @@ spec:
                         type: array
                     type: object
                   version:
-                    default: "2.3"
-                    description: Version defines which version of Ignition will be
-                      used to generate bootstrap data.
+                    description: |-
+                      Version defines which version of Ignition will be used to generate bootstrap data.
+                      Defaults to `2.3` if storageType is set to `ClusterObjectStore`.
+                      It will be ignored if storageType is set to `UnencryptedUserData`, as the userdata defines its own version.
                     enum:
                     - "2.3"
                     - "3.0"
