@@ -54,12 +54,12 @@ var (
 	backplaneconfiglog = logf.Log.WithName("backplaneconfig-resource")
 	Client             cl.Client
 
-	ErrInvalidComponent         = errors.New("invalid component config")
-	ErrInvalidNamespace         = errors.New("invalid TargetNamespace")
-	ErrInvalidDeployMode        = errors.New("invalid DeploymentMode")
-	ErrInvalidAvailability      = errors.New("invalid AvailabilityConfig")
-	ErrInvalidInfraNS           = errors.New("invalid InfrastructureCustomNamespace")
-	ErrComponentExclusivity     = errors.New("component exclusivity violation")
+	ErrInvalidComponent     = errors.New("invalid component config")
+	ErrInvalidNamespace     = errors.New("invalid TargetNamespace")
+	ErrInvalidDeployMode    = errors.New("invalid DeploymentMode")
+	ErrInvalidAvailability  = errors.New("invalid AvailabilityConfig")
+	ErrInvalidInfraNS       = errors.New("invalid InfrastructureCustomNamespace")
+	ErrComponentExclusivity = errors.New("component exclusivity violation")
 
 	blockDeletionResources = []BlockDeletionResource{
 		{
