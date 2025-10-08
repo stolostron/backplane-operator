@@ -1,7 +1,7 @@
 global:
   deployOnOCP: true
   imageOverrides:
-    ose_aws_cluster_api_controllers_rhel9: ''
+    cluster_api_provider_aws_rhel9: ''
   namespace: default
   pullSecret: null
   templateOverrides: {}
