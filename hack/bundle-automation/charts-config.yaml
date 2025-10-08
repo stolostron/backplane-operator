@@ -36,6 +36,20 @@
         - "HUB_KUBECONFIG"
         - "INSTALL_NAMESPACE"
 
+    - name: "cluster-api-provider-aws"
+      chart-path: "charts/cluster-api-provider-aws"
+      always-or-toggle: "toggle"
+      imageMappings:
+        cluster-api-provider-aws-rhel9: cluster_api_provider_aws_rhel9
+      inclusions:
+        - "pullSecretOverride"
+      skipRBACOverrides: true
+      updateChartVersion: true # the chart version will be retrieved from trimmed branch name, e.g. backplane-2.6 -> 2.6
+      escape-template-variables:
+        - "CLUSTER_NAME"
+        - "HUB_KUBECONFIG"
+        - "INSTALL_NAMESPACE"
+
     - name: "cluster-api-provider-openshift-assisted"
       chart-path: "charts/cluster-api-provider-openshift-assisted"
       always-or-toggle: "toggle"
@@ -66,17 +80,3 @@
         - "HUB_KUBECONFIG"
         - "INSTALL_NAMESPACE"
 
-
-    - name: "cluster-api-provider-aws"
-      chart-path: "charts/cluster-api-provider-aws"
-      always-or-toggle: "toggle"
-      imageMappings:
-        ose-aws-cluster-api-controllers-rhel9: ose_aws_cluster_api_controllers_rhel9
-      inclusions:
-        - "pullSecretOverride"
-      skipRBACOverrides: true
-      updateChartVersion: true # the chart version will be retrieved from trimmed branch name, e.g. backplane-2.6 -> 2.6
-      escape-template-variables:
-        - "CLUSTER_NAME"
-        - "HUB_KUBECONFIG"
-        - "INSTALL_NAMESPACE"

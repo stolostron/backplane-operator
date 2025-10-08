@@ -236,7 +236,7 @@ func GetTestImages() []string {
 		"CLUSTER_API_PROVIDER_AGENT", "CLUSTER_API_PROVIDER_AWS", "CLUSTER_API_PROVIDER_AZURE",
 		"CLUSTER_API_PROVIDER_KUBEVIRT", "KUBE_RBAC_PROXY_MCE", "CLUSTER_PROXY_ADDON", "CLUSTER_PROXY",
 		"CLUSTER_IMAGE_SET_CONTROLLER", "IMAGE_BASED_INSTALL_OPERATOR", "OSE_CLUSTER_API_RHEL9",
-		"OSE_AWS_CLUSTER_API_CONTROLLERS_RHEL9", "MCE_CAPI_WEBHOOK_CONFIG_RHEL9",
+		"OSE_AWS_CLUSTER_API_CONTROLLERS_RHEL9", "MCE_CAPI_WEBHOOK_CONFIG_RHEL9", "CLUSTER_API_PROVIDER_AWS_RHEL9",
 		"registration_operator", "openshift_hive", "multicloud_manager", "managedcluster_import_controller",
 		"registration", "work", "discovery_operator", "cluster_curator_controller", "clusterlifecycle_state_metrics",
 		"clusterclaims_controller", "provider_credential_controller", "managed_serviceaccount",
@@ -248,7 +248,8 @@ func GetTestImages() []string {
 		"cluster_proxy", "cluster_image_set_controller", "image_based_install_operator", "ose_cluster_api_rhel9",
 		"ose_aws_cluster_api_controllers_rhel9", "cluster_api_bootstrap_provider_openshift_assisted",
 		"cluster_api_provider_openshift_assisted_bootstrap", "cluster_api_provider_openshift_assisted_control_plane",
-		"cluster_api_controlplane_provider_openshift_assisted", "ip_address_manager", "ose_baremetal_cluster_api_controllers_rhel9"}
+		"cluster_api_controlplane_provider_openshift_assisted", "ip_address_manager",
+		"ose_baremetal_cluster_api_controllers_rhel9", "cluster_api_provider_aws_rhel9"}
 }
 
 func IsUnitTest() bool {
