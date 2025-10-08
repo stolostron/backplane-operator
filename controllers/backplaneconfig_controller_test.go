@@ -2463,7 +2463,7 @@ func Test_getExternallyManagedCRDDirectories(t *testing.T) {
 					},
 				},
 			},
-			want: []string{"hypershift", "cluster-api", "hive-operator"},
+			want: []string{"cluster-api", "hive-operator"},
 		},
 		{
 			name: "single externally managed component",
