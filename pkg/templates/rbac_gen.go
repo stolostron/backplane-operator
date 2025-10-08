@@ -464,6 +464,7 @@ package main
 //+kubebuilder:rbac:groups=storage.k8s.io,resources=volumeattachments,verbs=list;watch
 //+kubebuilder:rbac:groups=submarineraddon.open-cluster-management.io,resources=submarinerconfigs,verbs=list;watch
 //+kubebuilder:rbac:groups=tower.ansible.com;batch;"",resources=ansiblejobs;jobs;secrets;serviceaccounts,verbs=create
+//+kubebuilder:rbac:groups=user.openshift.io,resources=users;groups,verbs=get;list;watch
 //+kubebuilder:rbac:groups=velero.io,resources=backups,verbs=create
 //+kubebuilder:rbac:groups=view.open-cluster-management.io,resources=managedclusterviews,verbs=create
 //+kubebuilder:rbac:groups=view.open-cluster-management.io,resources=managedclusterviews,verbs=get;create;update;delete
