@@ -76,6 +76,13 @@ var (
 		containing resource template overrides.
 	*/
 	AnnotationTemplateOverridesCM = "installer.multicluster.openshift.io/template-override-configmap"
+
+	/*
+		AnnotationExternallyManaged is an annotation used in multiclusterengine to specify which components
+		are managed externally and should not be reconciled by the operator.
+		Expected format: JSON array ["component1","component2","component3"]
+	*/
+	AnnotationExternallyManaged = "installer.openshift.io/externally-managed"
 )
 
 /*

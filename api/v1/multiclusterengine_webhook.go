@@ -54,11 +54,12 @@ var (
 	backplaneconfiglog = logf.Log.WithName("backplaneconfig-resource")
 	Client             cl.Client
 
-	ErrInvalidComponent    = errors.New("invalid component config")
-	ErrInvalidNamespace    = errors.New("invalid TargetNamespace")
-	ErrInvalidDeployMode   = errors.New("invalid DeploymentMode")
-	ErrInvalidAvailability = errors.New("invalid AvailabilityConfig")
-	ErrInvalidInfraNS      = errors.New("invalid InfrastructureCustomNamespace")
+	ErrInvalidComponent     = errors.New("invalid component config")
+	ErrInvalidNamespace     = errors.New("invalid TargetNamespace")
+	ErrInvalidDeployMode    = errors.New("invalid DeploymentMode")
+	ErrInvalidAvailability  = errors.New("invalid AvailabilityConfig")
+	ErrInvalidInfraNS       = errors.New("invalid InfrastructureCustomNamespace")
+	ErrComponentExclusivity = errors.New("component exclusivity violation")
 
 	blockDeletionResources = []BlockDeletionResource{
 		{
@@ -168,6 +169,11 @@ func (r *MultiClusterEngine) ValidateCreate() (admission.Warnings, error) {
 		}
 	}
 
+	// Validate component exclusivity (HyperShift vs Cluster API)
+	if err := r.validateComponentExclusivity(); err != nil {
+		return nil, err
+	}
+
 	mceList := &MultiClusterEngineList{}
 	if err := Client.List(ctx, mceList); err != nil {
 		return nil, fmt.Errorf("unable to list BackplaneConfigs: %s", err)
@@ -238,6 +244,11 @@ func (r *MultiClusterEngine) ValidateUpdate(old runtime.Object) (admission.Warni
 				return nil, fmt.Errorf("%w: %s is not a known component", ErrInvalidComponent, c.Name)
 			}
 		}
+	}
+
+	// Validate component exclusivity (HyperShift vs Cluster API)
+	if err := r.validateComponentExclusivity(); err != nil {
+		return nil, err
 	}
 
 	// Block disable if relevant resources present
@@ -380,4 +391,53 @@ func contains(s []string, v string) bool {
 		}
 	}
 	return false
+}
+
+// validateComponentExclusivity ensures HyperShift and Cluster API components are mutually exclusive
+// Note: If additional exclusivity rules are needed in the future, consider refactoring to a
+// rules-based approach to handle multiple independent exclusivity constraints.
+func (r *MultiClusterEngine) validateComponentExclusivity() error {
+	// Define HyperShift component set
+	hypershiftComponents := []string{
+		HyperShift,
+		HyperShiftPreview,
+		HypershiftLocalHosting,
+	}
+
+	// Define Cluster API component set
+	clusterAPIComponents := []string{
+		ClusterAPI,
+		ClusterAPIPreview,
+		ClusterAPIProviderAWS,
+		ClusterAPIProviderAWSPreview,
+	}
+
+	hypershiftEnabled := false
+	clusterAPIEnabled := false
+
+	// Check if any HyperShift component is enabled
+	for _, comp := range hypershiftComponents {
+		if r.Enabled(comp) {
+			hypershiftEnabled = true
+			break
+		}
+	}
+
+	// Check if any Cluster API component is enabled
+	for _, comp := range clusterAPIComponents {
+		if r.Enabled(comp) {
+			clusterAPIEnabled = true
+			break
+		}
+	}
+
+	// Reject if both are enabled
+	if hypershiftEnabled && clusterAPIEnabled {
+		return fmt.Errorf("%w: HyperShift components (hypershift, hypershift-preview, hypershift-local-hosting) "+
+			"and Cluster API components (cluster-api, cluster-api-preview, cluster-api-provider-aws, cluster-api-provider-aws-preview) "+
+			"cannot be enabled simultaneously. Please enable only one set of components",
+			ErrComponentExclusivity)
+	}
+
+	return nil
 }
