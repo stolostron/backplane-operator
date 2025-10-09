@@ -462,6 +462,7 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 			e := ensureCRD(context.TODO(), r.Client, crd)
 			return e
 		})
+
 		if retryErr != nil {
 			r.Log.Error(retryErr, "Failed to apply CRD", "CRD", crds[i].GetName())
 			return result, retryErr
@@ -1497,11 +1498,21 @@ not reconciling.
 func (r *MultiClusterEngineReconciler) checkExternallyManagedComponents(mce *backplanev1.MultiClusterEngine) {
 	annotations := mce.GetAnnotations()
 	if annotations == nil {
+		// No annotations, ensure condition is removed
+		r.StatusManager.Conditions = status.FilterOutConditionWithSubString(
+			r.StatusManager.Conditions,
+			backplanev1.MultiClusterEngineComponentsExternallyManaged,
+		)
 		return
 	}
 
 	managedComponents, ok := annotations[utils.AnnotationExternallyManaged]
 	if !ok || managedComponents == "" {
+		// Annotation not present or empty, ensure condition is removed
+		r.StatusManager.Conditions = status.FilterOutConditionWithSubString(
+			r.StatusManager.Conditions,
+			backplanev1.MultiClusterEngineComponentsExternallyManaged,
+		)
 		return
 	}
 
@@ -1509,10 +1520,20 @@ func (r *MultiClusterEngineReconciler) checkExternallyManagedComponents(mce *bac
 	var components []string
 	if err := json.Unmarshal([]byte(managedComponents), &components); err != nil {
 		log.Error(err, "Failed to parse externally managed components annotation")
+		// On parse error, remove the condition to avoid showing stale data
+		r.StatusManager.Conditions = status.FilterOutConditionWithSubString(
+			r.StatusManager.Conditions,
+			backplanev1.MultiClusterEngineComponentsExternallyManaged,
+		)
 		return
 	}
 
 	if len(components) == 0 {
+		// Empty component list, ensure condition is removed
+		r.StatusManager.Conditions = status.FilterOutConditionWithSubString(
+			r.StatusManager.Conditions,
+			backplanev1.MultiClusterEngineComponentsExternallyManaged,
+		)
 		return
 	}
 
@@ -1534,8 +1555,13 @@ func (r *MultiClusterEngineReconciler) checkExternallyManagedComponents(mce *bac
 			"invalid", invalidComponents, "valid", validComponents)
 	}
 
-	// If no valid components after filtering, return
+	// If no valid components after filtering, remove the condition if it exists
 	if len(validComponents) == 0 {
+		// Remove the ComponentsExternallyManaged condition since no components are externally managed
+		r.StatusManager.Conditions = status.FilterOutConditionWithSubString(
+			r.StatusManager.Conditions,
+			backplanev1.MultiClusterEngineComponentsExternallyManaged,
+		)
 		return
 	}
 
