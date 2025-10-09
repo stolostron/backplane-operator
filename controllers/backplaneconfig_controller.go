@@ -430,6 +430,24 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 	// Build list of CRD directories to skip for externally managed components
 	skipCRDDirs := r.getExternallyManagedCRDDirectories(backplaneConfig)
 
+	// Also skip CRDs for disabled components that should have their CRDs removed
+	disabledCRDDirs := r.getDisabledComponentCRDDirectories(backplaneConfig)
+
+	// Merge and deduplicate the skip lists
+	dirMap := make(map[string]bool)
+	for _, dir := range skipCRDDirs {
+		dirMap[dir] = true
+	}
+	for _, dir := range disabledCRDDirs {
+		dirMap[dir] = true
+	}
+
+	// Convert map back to slice
+	skipCRDDirs = []string{}
+	for dir := range dirMap {
+		skipCRDDirs = append(skipCRDDirs, dir)
+	}
+
 	crds, errs := renderer.RenderCRDs(crdsDir, backplaneConfig, skipCRDDirs)
 	if len(errs) > 0 {
 		for _, err := range errs {
@@ -1430,6 +1448,35 @@ func (r *MultiClusterEngineReconciler) getExternallyManagedCRDDirectories(mce *b
 			if !dirMap[crdDir] {
 				skipDirs = append(skipDirs, crdDir)
 				dirMap[crdDir] = true
+			}
+		}
+	}
+
+	return skipDirs
+}
+
+/*
+getDisabledComponentCRDDirectories returns a list of CRD directory names to skip
+for components that are disabled and should have their CRDs removed.
+*/
+func (r *MultiClusterEngineReconciler) getDisabledComponentCRDDirectories(mce *backplanev1.MultiClusterEngine) []string {
+	// List of components that should have their CRDs removed when disabled
+	componentsWithRemovableCRDs := []string{
+		backplanev1.ClusterAPI,
+		backplanev1.ClusterAPIProviderAWS,
+	}
+
+	skipDirs := []string{}
+	dirMap := make(map[string]bool) // Track unique directories
+
+	for _, comp := range componentsWithRemovableCRDs {
+		if !mce.Enabled(comp) {
+			if crdDir, exists := backplanev1.ComponentToCRDDirectory[comp]; exists {
+				// Only add if not already in the list
+				if !dirMap[crdDir] {
+					skipDirs = append(skipDirs, crdDir)
+					dirMap[crdDir] = true
+				}
 			}
 		}
 	}
