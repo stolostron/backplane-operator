@@ -3129,6 +3129,15 @@ spec:
                 - list
                 - watch
             - apiGroups:
+                - user.openshift.io
+              resources:
+                - groups
+                - users
+              verbs:
+                - get
+                - list
+                - watch
+            - apiGroups:
                 - velero.io
               resources:
                 - backups
