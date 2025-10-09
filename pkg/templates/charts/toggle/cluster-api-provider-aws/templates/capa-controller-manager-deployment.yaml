@@ -70,7 +70,7 @@ spec:
           value: ''
         - name: OCM_CONFIG
           value: /ocm/ocm.json
-        image: '{{ .Values.global.imageOverrides.ose_aws_cluster_api_controllers_rhel9 }}'
+        image: '{{ .Values.global.imageOverrides.cluster_api_provider_aws_rhel9 }}'
         imagePullPolicy: '{{ .Values.global.pullPolicy }}'
         livenessProbe:
           failureThreshold: 3

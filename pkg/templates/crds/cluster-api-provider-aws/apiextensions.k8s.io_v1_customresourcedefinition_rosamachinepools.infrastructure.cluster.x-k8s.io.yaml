@@ -2,7 +2,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.3
+    controller-gen.kubebuilder.io/version: v0.19.0
   labels:
     cluster.x-k8s.io/provider: infrastructure-aws
     cluster.x-k8s.io/v1alpha3: v1alpha3
@@ -91,6 +91,11 @@ spec:
                 description: |-
                   AvailabilityZone is an optinal field specifying the availability zone where instances of this machine pool should run
                   For Multi-AZ clusters, you can create a machine pool in a Single-AZ of your choice.
+                type: string
+              capacityReservationID:
+                description: |-
+                  CapacityReservationID specifies the ID of an AWS On-Demand Capacity Reservation and Capacity Blocks for ML.
+                  The CapacityReservationID must be pre-created in advance, before creating a NodePool.
                 type: string
               instanceType:
                 description: InstanceType specifies the AWS instance type
