@@ -175,9 +175,18 @@ func RenderCRDs(crdDir string, backplaneConfig *v1.MultiClusterEngine, skipDirs 
 
 		// Check if this file is in a directory that should be skipped
 		for _, skipDir := range skipDirs {
-			skipPath := filepath.Join(crdDir, skipDir)
-			if len(filePath) >= len(skipPath) && filePath[:len(skipPath)] == skipPath {
-				// Skip this file as it belongs to an externally managed component
+			// Get the relative path from crdDir to the file
+			relPath, err := filepath.Rel(crdDir, filePath)
+			if err != nil {
+				continue
+			}
+
+			// Get the immediate parent directory of the file
+			fileDir := filepath.Dir(relPath)
+
+			// Check if the file's directory matches the skip directory
+			if fileDir == skipDir {
+				// Skip this file as it belongs to a component that should be skipped
 				return nil
 			}
 		}
