@@ -3,7 +3,7 @@ name: RBAC validation
 on:
   pull_request:
     branches:
-      - main
+      - backplane-2.7
 
 defaults:
   run:
