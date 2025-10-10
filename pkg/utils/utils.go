@@ -71,8 +71,12 @@ var offComponents = []string{
 }
 
 var nonOCPComponents = []string{
+	backplanev1.AssistedService,
 	backplanev1.ClusterLifecycle,
 	backplanev1.ClusterManager,
+	backplanev1.ClusterAPI,
+	backplanev1.ClusterAPIProviderOAPreview,
+	backplanev1.ClusterAPIProviderMetalPreview,
 	backplanev1.HyperShift,
 	backplanev1.HypershiftLocalHosting,
 	backplanev1.LocalCluster,

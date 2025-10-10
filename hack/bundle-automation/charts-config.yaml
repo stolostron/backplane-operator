@@ -23,6 +23,7 @@
   charts:
     - name: "cluster-api"
       chart-path: "charts/cluster-api"
+      k8s-chart-path: "charts/cluster-api-k8s"
       always-or-toggle: "toggle"
       imageMappings:
         ose-cluster-api-rhel9: ose_cluster_api_rhel9
@@ -52,6 +53,7 @@
 
     - name: "cluster-api-provider-openshift-assisted"
       chart-path: "charts/cluster-api-provider-openshift-assisted"
+      k8s-chart-path: "charts/cluster-api-provider-openshift-assisted-k8s"
       always-or-toggle: "toggle"
       imageMappings:
         cluster-api-controlplane-provider-openshift-assisted: "cluster_api_provider_openshift_assisted_control_plane"
@@ -67,6 +69,7 @@
 
     - name: "cluster-api-provider-metal3"
       chart-path: "charts/cluster-api-provider-metal3"
+      k8s-chart-path: "charts/cluster-api-provider-metal3-k8s"
       always-or-toggle: "toggle"
       imageMappings:
         ip-address-manager: "ip_address_manager"

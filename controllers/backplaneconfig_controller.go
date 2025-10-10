@@ -23,6 +23,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path"
 	"strings"
 	"time"
 
@@ -89,6 +90,8 @@ const (
 	defaultTrustBundleName = "trusted-ca-bundle"
 
 	controlPlane = "backplane-operator"
+
+	k8sChartSuffix = "-k8s"
 )
 
 var (
@@ -936,12 +939,34 @@ func (r *MultiClusterEngineReconciler) fetchChartOrCRDPath(component string) str
 	}
 
 	if dir, exists := chartDirs[component]; exists {
+		// If running on non-OpenShift, check for k8s-specific chart variant
+		if !utils.DeployOnOCP() {
+			k8sChartDir := dir + k8sChartSuffix
+			if r.chartDirExists(k8sChartDir) {
+				log.V(2).Info("Using k8s-specific chart for component", "Component", component, "ChartDir", k8sChartDir)
+				return k8sChartDir
+			}
+			log.V(2).Info("No k8s-specific chart found, using default", "Component", component, "ChartDir", dir)
+		}
 		return dir
 	}
 
 	// Log and return a default path for chart directory not found
 	log.Info("Chart directory not found for component detected", "Component", component)
 	return fmt.Sprintf("/chart/toggle/%v", component)
+}
+
+// chartDirExists checks if a chart directory exists on the filesystem
+func (r *MultiClusterEngineReconciler) chartDirExists(chartPath string) bool {
+	// Handle DIRECTORY_OVERRIDE environment variable like the renderer does
+	if val, ok := os.LookupEnv("DIRECTORY_OVERRIDE"); ok {
+		chartPath = path.Join(val, chartPath)
+	}
+
+	if _, err := os.Stat(chartPath); err == nil {
+		return true
+	}
+	return false
 }
 
 func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Context,
