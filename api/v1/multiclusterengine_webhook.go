@@ -138,21 +138,21 @@ func (r *MultiClusterEngine) SetupWebhookWithManager(mgr ctrl.Manager) error {
 }
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-var _ webhook.Defaulter = &MultiClusterEngine{}
+var _ webhook.CustomDefaulter = &MultiClusterEngine{}
 
-// Default implements webhook.Defaulter so a webhook will be registered for the type
-func (r *MultiClusterEngine) Default() {
+// Default implements webhook.CustomDefaulter so a webhook will be registered for the type
+func (r *MultiClusterEngine) Default(ctx context.Context, obj runtime.Object) error {
 	backplaneconfiglog.Info("default", "name", r.Name)
 	if r.Spec.TargetNamespace == "" {
 		r.Spec.TargetNamespace = DefaultTargetNamespace
 	}
+	return nil
 }
 
-var _ webhook.Validator = &MultiClusterEngine{}
+var _ webhook.CustomValidator = &MultiClusterEngine{}
 
-// ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *MultiClusterEngine) ValidateCreate() (admission.Warnings, error) {
-	ctx := context.Background()
+// ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type
+func (r *MultiClusterEngine) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	backplaneconfiglog.Info("validate create", "Kind", r.Kind, "Name", r.GetName())
 
 	if (r.Spec.AvailabilityConfig != HABasic) && (r.Spec.AvailabilityConfig != HAHigh) && (r.Spec.AvailabilityConfig != "") {
@@ -203,11 +203,11 @@ func validateLocalClusterNameLength(name string) (err error) {
 	return nil
 }
 
-// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *MultiClusterEngine) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
+// ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type
+func (r *MultiClusterEngine) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
 	backplaneconfiglog.Info("validate update", "Kind", r.Kind, "Name", r.GetName())
 
-	oldMCE := old.(*MultiClusterEngine)
+	oldMCE := oldObj.(*MultiClusterEngine)
 	backplaneconfiglog.Info(oldMCE.Spec.TargetNamespace)
 	if (r.Spec.TargetNamespace != oldMCE.Spec.TargetNamespace) && (oldMCE.Spec.TargetNamespace != "") {
 		return nil, fmt.Errorf("%w: changes cannot be made to target namespace", ErrInvalidNamespace)
@@ -261,7 +261,7 @@ func (r *MultiClusterEngine) ValidateUpdate(old runtime.Object) (admission.Warni
 		list.SetGroupVersionKind(gvk)
 		err = discovery.ServerSupportsVersion(c, gvk.GroupVersion())
 		if err == nil {
-			if err := Client.List(context.TODO(), list); err != nil {
+			if err := Client.List(ctx, list); err != nil {
 				return nil, fmt.Errorf("unable to list %s: %s", "DiscoveryConfig", err)
 			}
 			if len(list.Items) != 0 {
@@ -281,7 +281,6 @@ func (r *MultiClusterEngine) ValidateUpdate(old runtime.Object) (admission.Warni
 		}
 
 		// Block changing localClusterName if ManagedCluster with label `local-cluster = true` exists
-		ctx := context.Background()
 		managedClusterGVK := schema.GroupVersionKind{
 			Group:   "cluster.open-cluster-management.io",
 			Version: "v1",
@@ -309,11 +308,10 @@ func (r *MultiClusterEngine) ValidateUpdate(old runtime.Object) (admission.Warni
 
 var cfg *rest.Config
 
-// ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *MultiClusterEngine) ValidateDelete() (admission.Warnings, error) {
+// ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type
+func (r *MultiClusterEngine) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	// TODO(user): fill in your validation logic upon object deletion.
 	backplaneconfiglog.Info("validate delete", "Kind", r.Kind, "Name", r.GetName())
-	ctx := context.Background()
 	if val, ok := os.LookupEnv("ENV_TEST"); !ok || val == "false" {
 		var err error
 		cfg, err = config.GetConfig()

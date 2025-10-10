@@ -63,10 +63,10 @@ func (sm *StatusTracker) ReportStatus(mce bpv1.MultiClusterEngine) bpv1.MultiClu
 
 	// Infer available condition from component health
 	if allComponentsReady(components) {
-		sm.AddCondition(NewCondition(bpv1.MultiClusterEngineAvailable, metav1.ConditionTrue, ComponentsAvailableReason, ""))
+		sm.AddCondition(NewCondition(bpv1.MultiClusterEngineAvailable, metav1.ConditionTrue, ComponentsAvailableReason, "All components available"))
 
 	} else {
-		sm.AddCondition(NewCondition(bpv1.MultiClusterEngineAvailable, metav1.ConditionFalse, ComponentsUnavailableReason, ""))
+		sm.AddCondition(NewCondition(bpv1.MultiClusterEngineAvailable, metav1.ConditionFalse, ComponentsUnavailableReason, "Not all components available"))
 	}
 
 	conditions := sm.reportConditions()

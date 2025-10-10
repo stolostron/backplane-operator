@@ -63,7 +63,7 @@ func mapDeployment(ds *appsv1.Deployment) bpv1.ComponentCondition {
 	}
 	if successfulDeploy(ds) {
 		ret.Available = true
-		ret.Message = ""
+		ret.Message = "Deployment is available"
 	}
 
 	// Because our definition of success is different than the deployment's it is possible we indicate failure
