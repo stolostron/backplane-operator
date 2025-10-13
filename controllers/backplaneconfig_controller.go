@@ -1429,9 +1429,14 @@ func (r *MultiClusterEngineReconciler) applyTemplate(ctx context.Context,
 				}
 
 				if err := r.Client.Create(ctx, template, &client.CreateOptions{}); err != nil {
-					return r.logAndSetCondition(err, "failed to create resource", template, backplaneConfig)
+					if !apierrors.IsAlreadyExists(err) {
+						return r.logAndSetCondition(err, "failed to create resource", template, backplaneConfig)
+					}
+					// If already exists, that's fine - another reconcile may have created it
+					log.V(1).Info("Resource already exists", "Kind", template.GetKind(), "Name", template.GetName())
+				} else {
+					log.Info("Creating resource", "Kind", template.GetKind(), "Name", template.GetName())
 				}
-				log.Info("Creating resource", "Kind", template.GetKind(), "Name", template.GetName())
 			} else {
 				return r.logAndSetCondition(err, "failed to get resource", existing, backplaneConfig)
 			}
