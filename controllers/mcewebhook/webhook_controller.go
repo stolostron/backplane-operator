@@ -84,7 +84,7 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).Named(ControllerName).
 		Watches(&admissionregistration.ValidatingWebhookConfiguration{},
 			&handler.Funcs{
-				CreateFunc: func(ctx context.Context, e event.CreateEvent, q workqueue.RateLimitingInterface) {
+				CreateFunc: func(ctx context.Context, e event.TypedCreateEvent[client.Object], q workqueue.TypedRateLimitingInterface[reconcile.Request]) {
 					switch e.Object.GetName() {
 					case MCEValidatingWebhookName:
 						q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
@@ -92,7 +92,7 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 						}})
 					}
 				},
-				UpdateFunc: func(ctx context.Context, e event.UpdateEvent, q workqueue.RateLimitingInterface) {
+				UpdateFunc: func(ctx context.Context, e event.TypedUpdateEvent[client.Object], q workqueue.TypedRateLimitingInterface[reconcile.Request]) {
 					switch e.ObjectNew.GetName() {
 					case MCEValidatingWebhookName:
 						q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
@@ -100,7 +100,7 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 						}})
 					}
 				},
-				DeleteFunc: func(ctx context.Context, e event.DeleteEvent, q workqueue.RateLimitingInterface) {
+				DeleteFunc: func(ctx context.Context, e event.TypedDeleteEvent[client.Object], q workqueue.TypedRateLimitingInterface[reconcile.Request]) {
 					switch e.Object.GetName() {
 					case MCEValidatingWebhookName:
 						q.Add(reconcile.Request{NamespacedName: types.NamespacedName{

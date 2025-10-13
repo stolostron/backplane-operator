@@ -39,6 +39,7 @@ func Test_mapDeployment(t *testing.T) {
 				Type:      "Available",
 				Status:    metav1.ConditionTrue,
 				Reason:    "Available",
+				Message:   "Deployment is available",
 				Available: true,
 			},
 		},
