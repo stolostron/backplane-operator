@@ -32,6 +32,7 @@ import (
 	"github.com/go-logr/logr"
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 	"github.com/stolostron/backplane-operator/pkg/foundation"
+	"github.com/stolostron/backplane-operator/pkg/messages"
 	"github.com/stolostron/backplane-operator/pkg/overrides"
 	renderer "github.com/stolostron/backplane-operator/pkg/rendering"
 	"github.com/stolostron/backplane-operator/pkg/status"
@@ -871,7 +872,7 @@ func (r *MultiClusterEngineReconciler) ensureInternalEngineComponent(
 
 	// Check if component is externally managed - skip reconciliation if so
 	if r.isComponentExternallyManaged(backplaneConfig, component) {
-		log.Info("Skipping component reconciliation - externally managed", "component", component)
+		log.Info(messages.SkippingExternallyManaged, "component", component)
 		return ctrl.Result{}, nil
 	}
 
@@ -1003,7 +1004,7 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 			}
 		}
 	} else {
-		log.Info("Skipping component reconciliation - externally managed", "component", backplanev1.ManagedServiceAccount)
+		log.Info(messages.SkippingExternallyManaged, "component", backplanev1.ManagedServiceAccount)
 	}
 
 	if !r.isComponentExternallyManaged(backplaneConfig, backplanev1.ImageBasedInstallOperator) {
@@ -1025,7 +1026,7 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 			}
 		}
 	} else {
-		log.Info("Skipping component reconciliation - externally managed", "component", backplanev1.ImageBasedInstallOperator)
+		log.Info(messages.SkippingExternallyManaged, "component", backplanev1.ImageBasedInstallOperator)
 	}
 
 	if !r.isComponentExternallyManaged(backplaneConfig, backplanev1.HyperShift) {
@@ -1047,7 +1048,7 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 			}
 		}
 	} else {
-		log.Info("Skipping component reconciliation - externally managed", "component", backplanev1.HyperShift)
+		log.Info(messages.SkippingExternallyManaged, "component", backplanev1.HyperShift)
 	}
 
 	result, err := r.reconcileHypershiftLocalHosting(ctx, backplaneConfig)
@@ -1083,7 +1084,7 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 				}
 			}
 		} else {
-			log.Info("Skipping component reconciliation - externally managed", "component", backplanev1.ConsoleMCE)
+			log.Info(messages.SkippingExternallyManaged, "component", backplanev1.ConsoleMCE)
 		}
 	}
 
@@ -1106,7 +1107,7 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 			}
 		}
 	} else {
-		log.Info("Skipping component reconciliation - externally managed", "component", backplanev1.Discovery)
+		log.Info(messages.SkippingExternallyManaged, "component", backplanev1.Discovery)
 	}
 
 	if !r.isComponentExternallyManaged(backplaneConfig, backplanev1.Hive) {
@@ -1128,7 +1129,7 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 			}
 		}
 	} else {
-		log.Info("Skipping component reconciliation - externally managed", "component", backplanev1.Hive)
+		log.Info(messages.SkippingExternallyManaged, "component", backplanev1.Hive)
 	}
 
 	if !r.isComponentExternallyManaged(backplaneConfig, backplanev1.AssistedService) {
@@ -1150,7 +1151,7 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 			}
 		}
 	} else {
-		log.Info("Skipping component reconciliation - externally managed", "component", backplanev1.AssistedService)
+		log.Info(messages.SkippingExternallyManaged, "component", backplanev1.AssistedService)
 	}
 
 	if !r.isComponentExternallyManaged(backplaneConfig, backplanev1.ClusterLifecycle) {
@@ -1172,7 +1173,7 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 			}
 		}
 	} else {
-		log.Info("Skipping component reconciliation - externally managed", "component", backplanev1.ClusterLifecycle)
+		log.Info(messages.SkippingExternallyManaged, "component", backplanev1.ClusterLifecycle)
 	}
 
 	if !r.isComponentExternallyManaged(backplaneConfig, backplanev1.ClusterManager) {
@@ -1194,7 +1195,7 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 			}
 		}
 	} else {
-		log.Info("Skipping component reconciliation - externally managed", "component", backplanev1.ClusterManager)
+		log.Info(messages.SkippingExternallyManaged, "component", backplanev1.ClusterManager)
 	}
 
 	if !r.isComponentExternallyManaged(backplaneConfig, backplanev1.ServerFoundation) {
@@ -1216,7 +1217,7 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 			}
 		}
 	} else {
-		log.Info("Skipping component reconciliation - externally managed", "component", backplanev1.ServerFoundation)
+		log.Info(messages.SkippingExternallyManaged, "component", backplanev1.ServerFoundation)
 	}
 
 	if !r.isComponentExternallyManaged(backplaneConfig, backplanev1.ClusterProxyAddon) {
@@ -1238,7 +1239,7 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 			}
 		}
 	} else {
-		log.Info("Skipping component reconciliation - externally managed", "component", backplanev1.ClusterProxyAddon)
+		log.Info(messages.SkippingExternallyManaged, "component", backplanev1.ClusterProxyAddon)
 	}
 
 	if !r.isComponentExternallyManaged(backplaneConfig, backplanev1.ClusterAPI) {
@@ -1260,7 +1261,7 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 			}
 		}
 	} else {
-		log.Info("Skipping component reconciliation - externally managed", "component", backplanev1.ClusterAPI)
+		log.Info(messages.SkippingExternallyManaged, "component", backplanev1.ClusterAPI)
 	}
 
 	if !r.isComponentExternallyManaged(backplaneConfig, backplanev1.ClusterAPIProviderAWS) {
@@ -1282,7 +1283,7 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 			}
 		}
 	} else {
-		log.Info("Skipping component reconciliation - externally managed", "component", backplanev1.ClusterAPIProviderAWS)
+		log.Info(messages.SkippingExternallyManaged, "component", backplanev1.ClusterAPIProviderAWS)
 	}
 
 	if !r.isComponentExternallyManaged(backplaneConfig, backplanev1.ClusterAPIProviderMetalPreview) {
@@ -1304,7 +1305,8 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 			}
 		}
 	} else {
-		log.Info("Skipping component reconciliation - externally managed", "component", backplanev1.ClusterAPIProviderMetalPreview)
+		log.Info(messages.SkippingExternallyManaged, "component",
+			backplanev1.ClusterAPIProviderMetalPreview)
 	}
 
 	if !r.isComponentExternallyManaged(backplaneConfig, backplanev1.ClusterAPIProviderOAPreview) {
@@ -1326,7 +1328,8 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 			}
 		}
 	} else {
-		log.Info("Skipping component reconciliation - externally managed", "component", backplanev1.ClusterAPIProviderOAPreview)
+		log.Info(messages.SkippingExternallyManaged, "component",
+			backplanev1.ClusterAPIProviderOAPreview)
 	}
 
 	if backplaneConfig.Enabled(backplanev1.LocalCluster) {
@@ -1396,7 +1399,8 @@ func (r *MultiClusterEngineReconciler) getDeploymentConfig(deployments []backpla
 isComponentExternallyManaged checks if a component is marked as externally managed
 in the MultiClusterEngine annotations.
 */
-func (r *MultiClusterEngineReconciler) isComponentExternallyManaged(mce *backplanev1.MultiClusterEngine, componentName string) bool {
+func (r *MultiClusterEngineReconciler) isComponentExternallyManaged(mce *backplanev1.MultiClusterEngine,
+	componentName string) bool {
 	annotations := mce.GetAnnotations()
 	if annotations == nil {
 		return false
@@ -1575,7 +1579,7 @@ func (r *MultiClusterEngineReconciler) checkExternallyManagedComponents(mce *bac
 	// Create a user-friendly message (only valid components)
 	componentList := strings.Join(validComponents, ", ")
 	message := fmt.Sprintf("The following components are externally managed and will not be reconciled by MCE: %s. "+
-		"To allow MCE to manage these components again, remove them from the '%s' annotation.",
+		"To allow MCE to manage these components again, remove them from the \"%s\" annotation.",
 		componentList, utils.AnnotationExternallyManaged)
 
 	// Add note about invalid components if any were found
@@ -1597,7 +1601,8 @@ func (r *MultiClusterEngineReconciler) checkExternallyManagedComponents(mce *bac
 ensureDisabledComponentCRDsRemoved deletes CRDs for the specified component.
 This is used when a component is disabled to clean up its CRDs.
 */
-func (r *MultiClusterEngineReconciler) ensureDisabledComponentCRDsRemoved(ctx context.Context, mce *backplanev1.MultiClusterEngine, componentName string) error {
+func (r *MultiClusterEngineReconciler) ensureDisabledComponentCRDsRemoved(ctx context.Context,
+	mce *backplanev1.MultiClusterEngine, componentName string) error {
 	crdDir, exists := backplanev1.ComponentToCRDDirectory[componentName]
 	if !exists {
 		return nil

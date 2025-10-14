@@ -153,7 +153,8 @@ func (val *Values) ToValues() (chartutil.Values, error) {
 	return vals, nil
 }
 
-func RenderCRDs(crdDir string, backplaneConfig *v1.MultiClusterEngine, skipDirs []string) ([]*unstructured.Unstructured, []error) {
+func RenderCRDs(crdDir string, backplaneConfig *v1.MultiClusterEngine, skipDirs []string) (
+	[]*unstructured.Unstructured, []error) {
 	var crds []*unstructured.Unstructured
 	errs := []error{}
 
@@ -191,7 +192,7 @@ func RenderCRDs(crdDir string, backplaneConfig *v1.MultiClusterEngine, skipDirs 
 			}
 		}
 
-		bytesFile, e := os.ReadFile(filePath)
+		bytesFile, e := os.ReadFile(filepath.Clean(filePath)) // #nosec G304 -- filePath from filepath.Walk
 		if e != nil {
 			errs = append(errs, fmt.Errorf("%s - error reading file: %v", info.Name(), err.Error()))
 		}
