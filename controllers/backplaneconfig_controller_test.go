@@ -2549,9 +2549,11 @@ func Test_ensureDisabledComponentCRDsRemoved(t *testing.T) {
 		},
 	}
 
-	// Set UNIT_TEST environment variable
+	// Set UNIT_TEST and DIRECTORY_OVERRIDE environment variables
 	os.Setenv("UNIT_TEST", "true")
 	defer os.Unsetenv("UNIT_TEST")
+	os.Setenv("DIRECTORY_OVERRIDE", "../")
+	defer os.Unsetenv("DIRECTORY_OVERRIDE")
 
 	registerScheme()
 	apixv1.AddToScheme(scheme.Scheme)
