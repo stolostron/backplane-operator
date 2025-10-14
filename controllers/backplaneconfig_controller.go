@@ -554,7 +554,7 @@ func (r *MultiClusterEngineReconciler) SetupWithManager(mgr ctrl.Manager) error 
 			handler.EnqueueRequestForOwner(mgr.GetScheme(), mgr.GetRESTMapper(), &backplanev1.MultiClusterEngine{}),
 		).
 		Watches(&hiveconfig.HiveConfig{}, &handler.Funcs{
-			DeleteFunc: func(ctx context.Context, e event.DeleteEvent, q workqueue.RateLimitingInterface) {
+			DeleteFunc: func(ctx context.Context, e event.TypedDeleteEvent[client.Object], q workqueue.TypedRateLimitingInterface[reconcile.Request]) {
 				labels := e.Object.GetLabels()
 				q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
 					Name: labels["backplaneconfig.name"],
@@ -562,13 +562,13 @@ func (r *MultiClusterEngineReconciler) SetupWithManager(mgr ctrl.Manager) error 
 			},
 		}, builder.WithPredicates(predicate.LabelChangedPredicate{})).
 		Watches(&clustermanager.ClusterManager{}, &handler.Funcs{
-			DeleteFunc: func(ctx context.Context, e event.DeleteEvent, q workqueue.RateLimitingInterface) {
+			DeleteFunc: func(ctx context.Context, e event.TypedDeleteEvent[client.Object], q workqueue.TypedRateLimitingInterface[reconcile.Request]) {
 				labels := e.Object.GetLabels()
 				q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
 					Name: labels["backplaneconfig.name"],
 				}})
 			},
-			UpdateFunc: func(ctx context.Context, e event.UpdateEvent, q workqueue.RateLimitingInterface) {
+			UpdateFunc: func(ctx context.Context, e event.TypedUpdateEvent[client.Object], q workqueue.TypedRateLimitingInterface[reconcile.Request]) {
 				labels := e.ObjectOld.GetLabels()
 				q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
 					Name: labels["backplaneconfig.name"],
@@ -578,7 +578,7 @@ func (r *MultiClusterEngineReconciler) SetupWithManager(mgr ctrl.Manager) error 
 
 	if utils.DeployOnOCP() {
 		mceBuilder.Watches(&monitorv1.ServiceMonitor{}, &handler.Funcs{
-			DeleteFunc: func(ctx context.Context, e event.DeleteEvent, q workqueue.RateLimitingInterface) {
+			DeleteFunc: func(ctx context.Context, e event.TypedDeleteEvent[client.Object], q workqueue.TypedRateLimitingInterface[reconcile.Request]) {
 				labels := e.Object.GetLabels()
 				if label, ok := labels["backplaneconfig.name"]; ok {
 					q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
@@ -1429,9 +1429,14 @@ func (r *MultiClusterEngineReconciler) applyTemplate(ctx context.Context,
 				}
 
 				if err := r.Client.Create(ctx, template, &client.CreateOptions{}); err != nil {
-					return r.logAndSetCondition(err, "failed to create resource", template, backplaneConfig)
+					if !apierrors.IsAlreadyExists(err) {
+						return r.logAndSetCondition(err, "failed to create resource", template, backplaneConfig)
+					}
+					// If already exists, that's fine - another reconcile may have created it
+					log.V(1).Info("Resource already exists", "Kind", template.GetKind(), "Name", template.GetName())
+				} else {
+					log.Info("Creating resource", "Kind", template.GetKind(), "Name", template.GetName())
 				}
-				log.Info("Creating resource", "Kind", template.GetKind(), "Name", template.GetName())
 			} else {
 				return r.logAndSetCondition(err, "failed to get resource", existing, backplaneConfig)
 			}
@@ -1843,8 +1848,7 @@ func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Conte
 			r.StatusManager.AddCondition(terminatingCondition)
 		}
 
-		return ctrl.Result{}, fmt.Errorf(
-			fmt.Sprintf("waiting for '%v' namespace to be terminated before proceeding with uninstallation", backplaneConfig.Spec.LocalClusterName))
+		return ctrl.Result{}, fmt.Errorf("waiting for '%v' namespace to be terminated before proceeding with uninstallation", backplaneConfig.Spec.LocalClusterName)
 
 	} else if !apierrors.IsNotFound(err) {
 		return ctrl.Result{}, err
