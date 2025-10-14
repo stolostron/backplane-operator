@@ -3,6 +3,8 @@ package mcewebhook
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/go-logr/logr"
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 	"github.com/stolostron/backplane-operator/pkg/utils"
@@ -18,7 +20,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"time"
 )
 
 const (
@@ -84,7 +85,8 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).Named(ControllerName).
 		Watches(&admissionregistration.ValidatingWebhookConfiguration{},
 			&handler.Funcs{
-				CreateFunc: func(ctx context.Context, e event.TypedCreateEvent[client.Object], q workqueue.TypedRateLimitingInterface[reconcile.Request]) {
+				CreateFunc: func(ctx context.Context, e event.TypedCreateEvent[client.Object],
+					q workqueue.TypedRateLimitingInterface[reconcile.Request]) {
 					switch e.Object.GetName() {
 					case MCEValidatingWebhookName:
 						q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
@@ -92,7 +94,8 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 						}})
 					}
 				},
-				UpdateFunc: func(ctx context.Context, e event.TypedUpdateEvent[client.Object], q workqueue.TypedRateLimitingInterface[reconcile.Request]) {
+				UpdateFunc: func(ctx context.Context, e event.TypedUpdateEvent[client.Object],
+					q workqueue.TypedRateLimitingInterface[reconcile.Request]) {
 					switch e.ObjectNew.GetName() {
 					case MCEValidatingWebhookName:
 						q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
@@ -100,7 +103,8 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 						}})
 					}
 				},
-				DeleteFunc: func(ctx context.Context, e event.TypedDeleteEvent[client.Object], q workqueue.TypedRateLimitingInterface[reconcile.Request]) {
+				DeleteFunc: func(ctx context.Context, e event.TypedDeleteEvent[client.Object],
+					q workqueue.TypedRateLimitingInterface[reconcile.Request]) {
 					switch e.Object.GetName() {
 					case MCEValidatingWebhookName:
 						q.Add(reconcile.Request{NamespacedName: types.NamespacedName{

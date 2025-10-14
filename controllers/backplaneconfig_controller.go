@@ -554,7 +554,8 @@ func (r *MultiClusterEngineReconciler) SetupWithManager(mgr ctrl.Manager) error 
 			handler.EnqueueRequestForOwner(mgr.GetScheme(), mgr.GetRESTMapper(), &backplanev1.MultiClusterEngine{}),
 		).
 		Watches(&hiveconfig.HiveConfig{}, &handler.Funcs{
-			DeleteFunc: func(ctx context.Context, e event.TypedDeleteEvent[client.Object], q workqueue.TypedRateLimitingInterface[reconcile.Request]) {
+			DeleteFunc: func(ctx context.Context, e event.TypedDeleteEvent[client.Object],
+				q workqueue.TypedRateLimitingInterface[reconcile.Request]) {
 				labels := e.Object.GetLabels()
 				q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
 					Name: labels["backplaneconfig.name"],
@@ -562,13 +563,15 @@ func (r *MultiClusterEngineReconciler) SetupWithManager(mgr ctrl.Manager) error 
 			},
 		}, builder.WithPredicates(predicate.LabelChangedPredicate{})).
 		Watches(&clustermanager.ClusterManager{}, &handler.Funcs{
-			DeleteFunc: func(ctx context.Context, e event.TypedDeleteEvent[client.Object], q workqueue.TypedRateLimitingInterface[reconcile.Request]) {
+			DeleteFunc: func(ctx context.Context, e event.TypedDeleteEvent[client.Object],
+				q workqueue.TypedRateLimitingInterface[reconcile.Request]) {
 				labels := e.Object.GetLabels()
 				q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
 					Name: labels["backplaneconfig.name"],
 				}})
 			},
-			UpdateFunc: func(ctx context.Context, e event.TypedUpdateEvent[client.Object], q workqueue.TypedRateLimitingInterface[reconcile.Request]) {
+			UpdateFunc: func(ctx context.Context, e event.TypedUpdateEvent[client.Object],
+				q workqueue.TypedRateLimitingInterface[reconcile.Request]) {
 				labels := e.ObjectOld.GetLabels()
 				q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
 					Name: labels["backplaneconfig.name"],
@@ -578,7 +581,8 @@ func (r *MultiClusterEngineReconciler) SetupWithManager(mgr ctrl.Manager) error 
 
 	if utils.DeployOnOCP() {
 		mceBuilder.Watches(&monitorv1.ServiceMonitor{}, &handler.Funcs{
-			DeleteFunc: func(ctx context.Context, e event.TypedDeleteEvent[client.Object], q workqueue.TypedRateLimitingInterface[reconcile.Request]) {
+			DeleteFunc: func(ctx context.Context, e event.TypedDeleteEvent[client.Object],
+				q workqueue.TypedRateLimitingInterface[reconcile.Request]) {
 				labels := e.Object.GetLabels()
 				if label, ok := labels["backplaneconfig.name"]; ok {
 					q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
