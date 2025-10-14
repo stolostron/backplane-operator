@@ -297,3 +297,13 @@ rules:
     - watch
   resources:
     - searches
+
+- apiGroups:
+  - user.openshift.io
+  resources:
+  - users
+  - groups
+  verbs:
+  - get
+  - list
+  - watch

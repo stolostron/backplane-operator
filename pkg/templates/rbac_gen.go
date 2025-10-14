@@ -455,6 +455,7 @@ package main
 //+kubebuilder:rbac:groups=register.open-cluster-management.io,resources=managedclusters/accept,verbs=update
 //+kubebuilder:rbac:groups=register.open-cluster-management.io,resources=managedclusters/clientcertificates,verbs=renew
 //+kubebuilder:rbac:groups=route.openshift.io,resources=routes,verbs=create;delete;get;list;patch;update;watch
+//+kubebuilder:rbac:groups=route.openshift.io,resources=routes,verbs=get
 //+kubebuilder:rbac:groups=route.openshift.io,resources=routes,verbs=get;list;create;delete;update;patch
 //+kubebuilder:rbac:groups=route.openshift.io,resources=routes/custom-host,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=route.openshift.io,resources=routes;routes/custom-host,verbs=create;get
@@ -465,6 +466,7 @@ package main
 //+kubebuilder:rbac:groups=storage.k8s.io,resources=volumeattachments,verbs=list;watch
 //+kubebuilder:rbac:groups=submarineraddon.open-cluster-management.io,resources=submarinerconfigs,verbs=list;watch
 //+kubebuilder:rbac:groups=tower.ansible.com;batch;"",resources=ansiblejobs;jobs;secrets;serviceaccounts,verbs=create
+//+kubebuilder:rbac:groups=user.openshift.io,resources=users;groups,verbs=get;list;watch
 //+kubebuilder:rbac:groups=velero.io,resources=backups,verbs=create
 //+kubebuilder:rbac:groups=view.open-cluster-management.io,resources=managedclusterviews,verbs=create
 //+kubebuilder:rbac:groups=view.open-cluster-management.io,resources=managedclusterviews,verbs=get;create;update;delete
