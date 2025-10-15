@@ -24,7 +24,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path/filepath"
 	"slices"
 	"strings"
 	"time"
@@ -431,7 +430,7 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 	// Build list of CRD directories to skip for externally managed components
 	skipCRDDirs := r.getExternallyManagedCRDDirectories(backplaneConfig)
 
-	// Also skip CRDs for disabled components that should have their CRDs removed
+	// Also skip CRDs for disabled components to prevent updates
 	disabledCRDDirs := r.getDisabledComponentCRDDirectories(backplaneConfig)
 
 	// Merge and deduplicate the skip lists
@@ -444,12 +443,12 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}
 
 	// Convert map back to slice
-	skipCRDDirs = []string{}
+	mergedSkipCRDDirs := []string{}
 	for dir := range dirMap {
-		skipCRDDirs = append(skipCRDDirs, dir)
+		mergedSkipCRDDirs = append(mergedSkipCRDDirs, dir)
 	}
 
-	crds, errs := renderer.RenderCRDs(crdsDir, backplaneConfig, skipCRDDirs)
+	crds, errs := renderer.RenderCRDs(crdsDir, backplaneConfig, mergedSkipCRDDirs)
 	if len(errs) > 0 {
 		for _, err := range errs {
 			return result, err
@@ -1466,26 +1465,27 @@ func (r *MultiClusterEngineReconciler) getExternallyManagedCRDDirectories(mce *b
 
 /*
 getDisabledComponentCRDDirectories returns a list of CRD directory names to skip
-for components that are disabled and should have their CRDs removed.
+for components that are disabled. This prevents CRD updates for disabled components
+without deleting the CRDs.
 */
 func (r *MultiClusterEngineReconciler) getDisabledComponentCRDDirectories(mce *backplanev1.MultiClusterEngine) []string {
-	// List of components that should have their CRDs removed when disabled
-	componentsWithRemovableCRDs := []string{
-		backplanev1.ClusterAPI,
-		backplanev1.ClusterAPIProviderAWS,
-	}
-
+	// Build list of CRD directories to skip for disabled components
 	skipDirs := []string{}
 	dirMap := make(map[string]bool) // Track unique directories
 
-	for _, comp := range componentsWithRemovableCRDs {
-		if !mce.Enabled(comp) {
-			if crdDir, exists := backplanev1.ComponentToCRDDirectory[comp]; exists {
-				// Only add if not already in the list
-				if !dirMap[crdDir] {
-					skipDirs = append(skipDirs, crdDir)
-					dirMap[crdDir] = true
-				}
+	// Check each component to see if it's disabled
+	for _, comp := range backplanev1.MCEComponents {
+		// Skip if component is enabled or externally managed
+		if mce.Enabled(comp) || r.isComponentExternallyManaged(mce, comp) {
+			continue
+		}
+
+		// Component is disabled - add its CRD directory to skip list
+		if crdDir, exists := backplanev1.ComponentToCRDDirectory[comp]; exists {
+			// Only add if not already in the list
+			if !dirMap[crdDir] {
+				skipDirs = append(skipDirs, crdDir)
+				dirMap[crdDir] = true
 			}
 		}
 	}
@@ -1595,56 +1595,6 @@ func (r *MultiClusterEngineReconciler) checkExternallyManagedComponents(mce *bac
 		message,
 	)
 	r.StatusManager.AddCondition(cond)
-}
-
-/*
-ensureDisabledComponentCRDsRemoved deletes CRDs for the specified component.
-This is used when a component is disabled to clean up its CRDs.
-*/
-func (r *MultiClusterEngineReconciler) ensureDisabledComponentCRDsRemoved(ctx context.Context,
-	mce *backplanev1.MultiClusterEngine, componentName string) error {
-	crdDir, exists := backplanev1.ComponentToCRDDirectory[componentName]
-	if !exists {
-		return nil
-	}
-
-	var crdsDir string
-	if val, ok := os.LookupEnv("UNIT_TEST"); ok && val == "true" {
-		crdsDir = "test/unit-test-crds"
-	} else {
-		crdsDir = "pkg/templates/crds"
-	}
-
-	fullPath := filepath.Join(crdsDir, crdDir)
-	crds, errs := renderer.RenderCRDs(fullPath, mce, []string{})
-	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Error(err, "Failed to render CRDs for deletion", "component", componentName)
-		}
-		return nil
-	}
-
-	for _, crd := range crds {
-		// Check if CRD exists before attempting to delete
-		existingCRD := crd.DeepCopy()
-		if err := r.Client.Get(ctx, types.NamespacedName{Name: crd.GetName()}, existingCRD); err != nil {
-			if apierrors.IsNotFound(err) {
-				// CRD doesn't exist, nothing to delete
-				continue
-			}
-			// Some other error occurred
-			log.Error(err, "Failed to get CRD", "Name", crd.GetName())
-			return err
-		}
-
-		// CRD exists, delete it
-		log.V(1).Info("Deleting CRD for disabled component", "CRD", crd.GetName(), "component", componentName)
-		if err := r.Client.Delete(ctx, crd); err != nil && !apierrors.IsNotFound(err) {
-			log.Error(err, "Failed to delete CRD", "Name", crd.GetName())
-			return err
-		}
-	}
-	return nil
 }
 
 /*

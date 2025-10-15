@@ -50,19 +50,19 @@ const (
 	ServerFoundation                 = "server-foundation"
 
 	// CRD directory names
-	AssistedServiceCRDDir              = "assisted-service"
-	ClusterAPICRDDir                   = "cluster-api"
-	ClusterAPIProviderAWSCRDDir        = "cluster-api-provider-aws"
-	ClusterAPIProviderMetalCRDDir      = "cluster-api-provider-metal3"
-	ClusterAPIProviderOACRDDir         = "cluster-api-provider-openshift-assisted"
-	ClusterLifecycleCRDDir             = "cluster-lifecycle"
-	ClusterManagerCRDDir               = "cluster-manager"
-	ClusterProxyAddonCRDDir            = "cluster-proxy-addon"
-	DiscoveryCRDDir                    = "discovery-operator"
-	HiveCRDDir                         = "hive-operator"
-	ImageBasedInstallOperatorCRDDir    = "image-based-install-operator"
-	ManagedServiceAccountCRDDir        = "managed-serviceaccount"
-	ServerFoundationCRDDir             = "foundation"
+	AssistedServiceCRDDir           = "assisted-service"
+	ClusterAPICRDDir                = "cluster-api"
+	ClusterAPIProviderAWSCRDDir     = "cluster-api-provider-aws"
+	ClusterAPIProviderMetalCRDDir   = "cluster-api-provider-metal3"
+	ClusterAPIProviderOACRDDir      = "cluster-api-provider-openshift-assisted"
+	ClusterLifecycleCRDDir          = "cluster-lifecycle"
+	ClusterManagerCRDDir            = "cluster-manager"
+	ClusterProxyAddonCRDDir         = "cluster-proxy-addon"
+	DiscoveryCRDDir                 = "discovery-operator"
+	HiveCRDDir                      = "hive-operator"
+	ImageBasedInstallOperatorCRDDir = "image-based-install-operator"
+	ManagedServiceAccountCRDDir     = "managed-serviceaccount"
+	ServerFoundationCRDDir          = "foundation"
 )
 
 // AllComponents is a slice containing all valid component names
