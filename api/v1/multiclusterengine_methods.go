@@ -77,6 +77,7 @@ var AllComponents = []string{
 	ClusterAPIProviderAWSPreview,
 	ClusterAPIProviderMetal,
 	ClusterAPIProviderOAPreview,
+	ClusterAPIProviderOA,
 	ClusterAPIProviderMetalPreview,
 	ClusterLifecycle,
 	ClusterManager,
@@ -101,7 +102,7 @@ var MCEComponents = []string{
 	ClusterAPI,
 	ClusterAPIProviderAWS,
 	ClusterAPIProviderMetalPreview,
-	ClusterAPIProviderOAPreview,
+	ClusterAPIProviderOA,
 	ClusterLifecycle,
 	ClusterManager,
 	ClusterProxyAddon,
@@ -122,6 +123,7 @@ These components are candidates for pruning when the stable version replaces the
 var PreviewComponents = []string{
 	ClusterAPIPreview,
 	ClusterAPIProviderAWSPreview,
+	ClusterAPIProviderOAPreview,
 	HyperShiftPreview,
 	ImageBasedInstallOperatorPreview,
 	ManagedServiceAccountPreview,
@@ -134,6 +136,7 @@ This mapping is used to enable the stable component when the preview version is 
 var PreviewToStable = map[string]string{
 	ClusterAPIPreview:                ClusterAPI,                // Upgraded in ACM 2.14 / MCE 2.9
 	ClusterAPIProviderAWSPreview:     ClusterAPIProviderAWS,     // Upgraded in ACM 2.14 / MCE 2.9
+	ClusterAPIProviderOAPreview:      ClusterAPIProviderOA,      // Upgraded in ACM 2.15 / MCE 2.10
 	HyperShiftPreview:                HyperShift,                // Upgraded in ACM 2.8 / MCE 2.3
 	ImageBasedInstallOperatorPreview: ImageBasedInstallOperator, // Upgraded in ACM 2.12 / MCE 2.7
 	ManagedServiceAccountPreview:     ManagedServiceAccount,     // Upgraded in ACM 2.9 / MCE 2.4
