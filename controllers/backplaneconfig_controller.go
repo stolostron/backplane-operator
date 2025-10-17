@@ -1469,12 +1469,17 @@ for components that are disabled. This prevents CRD updates for disabled compone
 without deleting the CRDs.
 */
 func (r *MultiClusterEngineReconciler) getDisabledComponentCRDDirectories(mce *backplanev1.MultiClusterEngine) []string {
-	// Build list of CRD directories to skip for disabled components
+	// Build list of CRD directories to skip for disabled cluster-api components only
 	skipDirs := []string{}
 	dirMap := make(map[string]bool) // Track unique directories
 
-	// Check each component to see if it's disabled
-	for _, comp := range backplanev1.MCEComponents {
+	// Only check cluster-api and cluster-api-provider-aws components
+	componentsToCheck := []string{
+		backplanev1.ClusterAPI,
+		backplanev1.ClusterAPIProviderAWS,
+	}
+
+	for _, comp := range componentsToCheck {
 		// Skip if component is enabled or externally managed
 		if mce.Enabled(comp) || r.isComponentExternallyManaged(mce, comp) {
 			continue
