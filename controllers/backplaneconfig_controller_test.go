@@ -2593,8 +2593,14 @@ func Test_ensureToggleableComponents_withExternallyManagedComponents(t *testing.
 					},
 				},
 			}
-			if err := recon.Client.Create(context.TODO(), cv); err != nil {
-				t.Fatalf("failed to create ClusterVersion: %v", err)
+			if err := recon.Client.Get(context.TODO(), types.NamespacedName{Name: cv.GetName()}, cv); err != nil {
+				if errors.IsNotFound(err) {
+					if err := recon.Client.Create(context.TODO(), cv); err != nil {
+						t.Fatalf("failed to create ClusterVersion: %v", err)
+					}
+				} else {
+					t.Fatalf("failed to get ClusterVersion: %v", err)
+				}
 			}
 			defer recon.Client.Delete(context.TODO(), cv)
 
