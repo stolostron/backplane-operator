@@ -2521,3 +2521,87 @@ func Test_getExternallyManagedCRDDirectories(t *testing.T) {
 		})
 	}
 }
+
+func Test_ensureToggleableComponents_withExternallyManagedComponents(t *testing.T) {
+	tests := []struct {
+		name string
+		mce  *backplanev1.MultiClusterEngine
+		want error
+	}{
+		{
+			name: "all components externally managed should skip reconciliation",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-mce",
+					Annotations: map[string]string{
+						utils.AnnotationExternallyManaged: `["managedserviceaccount","image-based-install-operator","hypershift","console-mce","discovery","hive","assisted-service","cluster-lifecycle","cluster-manager","server-foundation","cluster-proxy-addon","cluster-api","cluster-api-provider-aws","cluster-api-provider-metal3-preview","cluster-api-provider-openshift-assisted-preview","local-cluster"]`,
+					},
+				},
+				Spec: backplanev1.MultiClusterEngineSpec{
+					LocalClusterName: "local-cluster",
+					TargetNamespace:  "test-ns",
+					Overrides: &backplanev1.Overrides{
+						Components: []backplanev1.ComponentConfig{
+							{Name: backplanev1.ManagedServiceAccount, Enabled: true},
+							{Name: backplanev1.ImageBasedInstallOperator, Enabled: true},
+							{Name: backplanev1.HyperShift, Enabled: true},
+							{Name: backplanev1.ConsoleMCE, Enabled: true},
+							{Name: backplanev1.Discovery, Enabled: true},
+							{Name: backplanev1.Hive, Enabled: true},
+							{Name: backplanev1.AssistedService, Enabled: true},
+							{Name: backplanev1.ClusterLifecycle, Enabled: true},
+							{Name: backplanev1.ClusterManager, Enabled: true},
+							{Name: backplanev1.ServerFoundation, Enabled: true},
+							{Name: backplanev1.ClusterProxyAddon, Enabled: true},
+							{Name: backplanev1.ClusterAPI, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderAWS, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderMetalPreview, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderOAPreview, Enabled: true},
+							{Name: backplanev1.LocalCluster, Enabled: true},
+						},
+					},
+				},
+			},
+			want: nil,
+		},
+	}
+
+	registerScheme()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Set environment for OCP deployment
+			// os.Setenv("UNIT_TEST", "true")
+			// os.Setenv("ACM_HUB_OCP_VERSION", "4.12.0")
+			// defer os.Unsetenv("UNIT_TEST")
+			// defer os.Unsetenv("ACM_HUB_OCP_VERSION")
+
+			// Create ClusterVersion resource that CheckConsole expects
+			cv := &configv1.ClusterVersion{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "version",
+				},
+				Spec: configv1.ClusterVersionSpec{
+					Channel:   "stable-4.12",
+					ClusterID: "test-cluster-id",
+				},
+				Status: configv1.ClusterVersionStatus{
+					Capabilities: configv1.ClusterVersionCapabilitiesStatus{
+						EnabledCapabilities: []configv1.ClusterVersionCapability{"Console"},
+					},
+					History: []configv1.UpdateHistory{
+						{Version: "4.12.0"},
+					},
+				},
+			}
+			if err := recon.Client.Create(context.TODO(), cv); err != nil {
+				t.Fatalf("failed to create ClusterVersion: %v", err)
+			}
+			defer recon.Client.Delete(context.TODO(), cv)
+
+			_, err := recon.ensureToggleableComponents(context.TODO(), tt.mce)
+			if err != tt.want {
+				t.Errorf("ensureToggleableComponents() error = %v, want %v", err, tt.want)
+			}
+		})
+	}
+}
