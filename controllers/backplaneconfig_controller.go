@@ -20,15 +20,18 @@ package controllers
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
+	"slices"
 	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 	"github.com/stolostron/backplane-operator/pkg/foundation"
+	"github.com/stolostron/backplane-operator/pkg/messages"
 	"github.com/stolostron/backplane-operator/pkg/overrides"
 	renderer "github.com/stolostron/backplane-operator/pkg/rendering"
 	"github.com/stolostron/backplane-operator/pkg/status"
@@ -187,6 +190,9 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 	for _, c := range backplaneConfig.Status.Conditions {
 		r.StatusManager.AddCondition(c)
 	}
+
+	// Check for externally managed components and add warning condition
+	r.checkExternallyManagedComponents(backplaneConfig)
 
 	// Check to see if upgradeable
 	r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing, metav1.ConditionTrue,
@@ -421,26 +427,45 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		crdsDir = "pkg/templates/crds"
 	}
 
-	crds, errs := renderer.RenderCRDs(crdsDir, backplaneConfig)
+	// Build list of CRD directories to skip for externally managed components
+	skipCRDDirs := r.getExternallyManagedCRDDirectories(backplaneConfig)
+
+	// Also skip CRDs for disabled components to prevent updates
+	disabledCRDDirs := r.getDisabledComponentCRDDirectories(backplaneConfig)
+
+	// Merge and deduplicate the skip lists
+	dirMap := make(map[string]bool)
+	for _, dir := range skipCRDDirs {
+		dirMap[dir] = true
+	}
+	for _, dir := range disabledCRDDirs {
+		dirMap[dir] = true
+	}
+
+	// Convert map back to slice
+	mergedSkipCRDDirs := []string{}
+	for dir := range dirMap {
+		mergedSkipCRDDirs = append(mergedSkipCRDDirs, dir)
+	}
+
+	crds, errs := renderer.RenderCRDs(crdsDir, backplaneConfig, mergedSkipCRDDirs)
 	if len(errs) > 0 {
 		for _, err := range errs {
 			return result, err
 		}
 	}
 
-	// udpate CRDs with retrygo
+	// Apply ALL CRDs with retry logic
 	for i := range crds {
-		_, conversion, _ := unstructured.NestedMap(crds[i].Object, "spec", "conversion", "webhook", "clientConfig", "service")
-		if conversion {
-			retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-				crd := crds[i]
-				e := ensureCRD(context.TODO(), r.Client, crd)
-				return e
-			})
-			if retryErr != nil {
-				r.Log.Error(retryErr, "Failed to apply CRD")
-				return result, retryErr
-			}
+		retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			crd := crds[i]
+			e := ensureCRD(context.TODO(), r.Client, crd)
+			return e
+		})
+
+		if retryErr != nil {
+			r.Log.Error(retryErr, "Failed to apply CRD", "CRD", crds[i].GetName())
+			return result, retryErr
 		}
 	}
 
@@ -844,6 +869,12 @@ func (r *MultiClusterEngineReconciler) ensureInternalEngineComponent(
 	backplaneConfig *backplanev1.MultiClusterEngine,
 	component string) (ctrl.Result, error) {
 
+	// Check if component is externally managed - skip reconciliation if so
+	if r.isComponentExternallyManaged(backplaneConfig, component) {
+		log.Info(messages.SkippingExternallyManaged, "component", component)
+		return ctrl.Result{}, nil
+	}
+
 	iec := &backplanev1.InternalEngineComponent{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: backplanev1.GroupVersion.String(),
@@ -953,58 +984,70 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 	errs := map[string]error{}
 	requeue := false
 
-	if backplaneConfig.Enabled(backplanev1.ManagedServiceAccount) && foundation.CanInstallAddons(ctx, r.Client) {
-		result, err := r.ensureManagedServiceAccount(ctx, backplaneConfig)
-		if result != (ctrl.Result{}) {
-			requeue = true
-		}
-		if err != nil {
-			errs[backplanev1.ManagedServiceAccount] = err
+	if !r.isComponentExternallyManaged(backplaneConfig, backplanev1.ManagedServiceAccount) {
+		if backplaneConfig.Enabled(backplanev1.ManagedServiceAccount) && foundation.CanInstallAddons(ctx, r.Client) {
+			result, err := r.ensureManagedServiceAccount(ctx, backplaneConfig)
+			if result != (ctrl.Result{}) {
+				requeue = true
+			}
+			if err != nil {
+				errs[backplanev1.ManagedServiceAccount] = err
+			}
+		} else {
+			result, err := r.ensureNoManagedServiceAccount(ctx, backplaneConfig)
+			if result != (ctrl.Result{}) {
+				requeue = true
+			}
+			if err != nil {
+				errs[backplanev1.ManagedServiceAccount] = err
+			}
 		}
 	} else {
-		result, err := r.ensureNoManagedServiceAccount(ctx, backplaneConfig)
-		if result != (ctrl.Result{}) {
-			requeue = true
-		}
-		if err != nil {
-			errs[backplanev1.ManagedServiceAccount] = err
-		}
+		log.Info(messages.SkippingExternallyManaged, "component", backplanev1.ManagedServiceAccount)
 	}
 
-	if backplaneConfig.Enabled(backplanev1.ImageBasedInstallOperator) {
-		result, err := r.ensureImageBasedInstallOperator(ctx, backplaneConfig)
-		if result != (ctrl.Result{}) {
-			requeue = true
-		}
-		if err != nil {
-			errs[backplanev1.ImageBasedInstallOperator] = err
+	if !r.isComponentExternallyManaged(backplaneConfig, backplanev1.ImageBasedInstallOperator) {
+		if backplaneConfig.Enabled(backplanev1.ImageBasedInstallOperator) {
+			result, err := r.ensureImageBasedInstallOperator(ctx, backplaneConfig)
+			if result != (ctrl.Result{}) {
+				requeue = true
+			}
+			if err != nil {
+				errs[backplanev1.ImageBasedInstallOperator] = err
+			}
+		} else {
+			result, err := r.ensureNoImageBasedInstallOperator(ctx, backplaneConfig)
+			if result != (ctrl.Result{}) {
+				requeue = true
+			}
+			if err != nil {
+				errs[backplanev1.ImageBasedInstallOperator] = err
+			}
 		}
 	} else {
-		result, err := r.ensureNoImageBasedInstallOperator(ctx, backplaneConfig)
-		if result != (ctrl.Result{}) {
-			requeue = true
-		}
-		if err != nil {
-			errs[backplanev1.ImageBasedInstallOperator] = err
-		}
+		log.Info(messages.SkippingExternallyManaged, "component", backplanev1.ImageBasedInstallOperator)
 	}
 
-	if backplaneConfig.Enabled(backplanev1.HyperShift) && foundation.CanInstallAddons(ctx, r.Client) {
-		result, err := r.ensureHyperShift(ctx, backplaneConfig)
-		if result != (ctrl.Result{}) {
-			requeue = true
-		}
-		if err != nil {
-			errs[backplanev1.HyperShift] = err
+	if !r.isComponentExternallyManaged(backplaneConfig, backplanev1.HyperShift) {
+		if backplaneConfig.Enabled(backplanev1.HyperShift) && foundation.CanInstallAddons(ctx, r.Client) {
+			result, err := r.ensureHyperShift(ctx, backplaneConfig)
+			if result != (ctrl.Result{}) {
+				requeue = true
+			}
+			if err != nil {
+				errs[backplanev1.HyperShift] = err
+			}
+		} else {
+			result, err := r.ensureNoHyperShift(ctx, backplaneConfig)
+			if result != (ctrl.Result{}) {
+				requeue = true
+			}
+			if err != nil {
+				errs[backplanev1.HyperShift] = err
+			}
 		}
 	} else {
-		result, err := r.ensureNoHyperShift(ctx, backplaneConfig)
-		if result != (ctrl.Result{}) {
-			requeue = true
-		}
-		if err != nil {
-			errs[backplanev1.HyperShift] = err
-		}
+		log.Info(messages.SkippingExternallyManaged, "component", backplanev1.HyperShift)
 	}
 
 	result, err := r.reconcileHypershiftLocalHosting(ctx, backplaneConfig)
@@ -1021,221 +1064,271 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 			return ctrl.Result{}, err
 		}
 
-		if backplaneConfig.Enabled(backplanev1.ConsoleMCE) && ocpConsole {
-			result, err = r.ensureConsoleMCE(ctx, backplaneConfig)
-			if result != (ctrl.Result{}) {
-				requeue = true
-			}
-			if err != nil {
-				errs[backplanev1.ConsoleMCE] = err
+		if !r.isComponentExternallyManaged(backplaneConfig, backplanev1.ConsoleMCE) {
+			if backplaneConfig.Enabled(backplanev1.ConsoleMCE) && ocpConsole {
+				result, err = r.ensureConsoleMCE(ctx, backplaneConfig)
+				if result != (ctrl.Result{}) {
+					requeue = true
+				}
+				if err != nil {
+					errs[backplanev1.ConsoleMCE] = err
+				}
+			} else {
+				result, err = r.ensureNoConsoleMCE(ctx, backplaneConfig, ocpConsole)
+				if result != (ctrl.Result{}) {
+					requeue = true
+				}
+				if err != nil {
+					errs[backplanev1.ConsoleMCE] = err
+				}
 			}
 		} else {
-			result, err = r.ensureNoConsoleMCE(ctx, backplaneConfig, ocpConsole)
+			log.Info(messages.SkippingExternallyManaged, "component", backplanev1.ConsoleMCE)
+		}
+	}
+
+	if !r.isComponentExternallyManaged(backplaneConfig, backplanev1.Discovery) {
+		if backplaneConfig.Enabled(backplanev1.Discovery) {
+			result, err = r.ensureDiscovery(ctx, backplaneConfig)
 			if result != (ctrl.Result{}) {
 				requeue = true
 			}
 			if err != nil {
-				errs[backplanev1.ConsoleMCE] = err
+				errs[backplanev1.Discovery] = err
+			}
+		} else {
+			result, err = r.ensureNoDiscovery(ctx, backplaneConfig)
+			if result != (ctrl.Result{}) {
+				requeue = true
+			}
+			if err != nil {
+				errs[backplanev1.Discovery] = err
 			}
 		}
+	} else {
+		log.Info(messages.SkippingExternallyManaged, "component", backplanev1.Discovery)
 	}
 
-	if backplaneConfig.Enabled(backplanev1.Discovery) {
-		result, err = r.ensureDiscovery(ctx, backplaneConfig)
-		if result != (ctrl.Result{}) {
-			requeue = true
-		}
-		if err != nil {
-			errs[backplanev1.Discovery] = err
+	if !r.isComponentExternallyManaged(backplaneConfig, backplanev1.Hive) {
+		if backplaneConfig.Enabled(backplanev1.Hive) {
+			result, err = r.ensureHive(ctx, backplaneConfig)
+			if result != (ctrl.Result{}) {
+				requeue = true
+			}
+			if err != nil {
+				errs[backplanev1.Hive] = err
+			}
+		} else {
+			result, err = r.ensureNoHive(ctx, backplaneConfig)
+			if result != (ctrl.Result{}) {
+				requeue = true
+			}
+			if err != nil {
+				errs[backplanev1.Hive] = err
+			}
 		}
 	} else {
-		result, err = r.ensureNoDiscovery(ctx, backplaneConfig)
-		if result != (ctrl.Result{}) {
-			requeue = true
-		}
-		if err != nil {
-			errs[backplanev1.Discovery] = err
-		}
+		log.Info(messages.SkippingExternallyManaged, "component", backplanev1.Hive)
 	}
 
-	if backplaneConfig.Enabled(backplanev1.Hive) {
-		result, err = r.ensureHive(ctx, backplaneConfig)
-		if result != (ctrl.Result{}) {
-			requeue = true
-		}
-		if err != nil {
-			errs[backplanev1.Hive] = err
+	if !r.isComponentExternallyManaged(backplaneConfig, backplanev1.AssistedService) {
+		if backplaneConfig.Enabled(backplanev1.AssistedService) {
+			result, err = r.ensureAssistedService(ctx, backplaneConfig)
+			if result != (ctrl.Result{}) {
+				requeue = true
+			}
+			if err != nil {
+				errs[backplanev1.AssistedService] = err
+			}
+		} else {
+			result, err = r.ensureNoAssistedService(ctx, backplaneConfig)
+			if result != (ctrl.Result{}) {
+				requeue = true
+			}
+			if err != nil {
+				errs[backplanev1.AssistedService] = err
+			}
 		}
 	} else {
-		result, err = r.ensureNoHive(ctx, backplaneConfig)
-		if result != (ctrl.Result{}) {
-			requeue = true
-		}
-		if err != nil {
-			errs[backplanev1.Hive] = err
-		}
+		log.Info(messages.SkippingExternallyManaged, "component", backplanev1.AssistedService)
 	}
 
-	if backplaneConfig.Enabled(backplanev1.AssistedService) {
-		result, err = r.ensureAssistedService(ctx, backplaneConfig)
-		if result != (ctrl.Result{}) {
-			requeue = true
-		}
-		if err != nil {
-			errs[backplanev1.AssistedService] = err
+	if !r.isComponentExternallyManaged(backplaneConfig, backplanev1.ClusterLifecycle) {
+		if backplaneConfig.Enabled(backplanev1.ClusterLifecycle) {
+			result, err = r.ensureClusterLifecycle(ctx, backplaneConfig)
+			if result != (ctrl.Result{}) {
+				requeue = true
+			}
+			if err != nil {
+				errs[backplanev1.ClusterLifecycle] = err
+			}
+		} else {
+			result, err = r.ensureNoClusterLifecycle(ctx, backplaneConfig)
+			if result != (ctrl.Result{}) {
+				requeue = true
+			}
+			if err != nil {
+				errs[backplanev1.ClusterLifecycle] = err
+			}
 		}
 	} else {
-		result, err = r.ensureNoAssistedService(ctx, backplaneConfig)
-		if result != (ctrl.Result{}) {
-			requeue = true
-		}
-		if err != nil {
-			errs[backplanev1.AssistedService] = err
-		}
+		log.Info(messages.SkippingExternallyManaged, "component", backplanev1.ClusterLifecycle)
 	}
 
-	if backplaneConfig.Enabled(backplanev1.ClusterLifecycle) {
-		result, err = r.ensureClusterLifecycle(ctx, backplaneConfig)
-		if result != (ctrl.Result{}) {
-			requeue = true
-		}
-		if err != nil {
-			errs[backplanev1.ClusterLifecycle] = err
+	if !r.isComponentExternallyManaged(backplaneConfig, backplanev1.ClusterManager) {
+		if backplaneConfig.Enabled(backplanev1.ClusterManager) {
+			result, err = r.ensureClusterManager(ctx, backplaneConfig)
+			if result != (ctrl.Result{}) {
+				requeue = true
+			}
+			if err != nil {
+				errs[backplanev1.ClusterManager] = err
+			}
+		} else {
+			result, err = r.ensureNoClusterManager(ctx, backplaneConfig)
+			if result != (ctrl.Result{}) {
+				requeue = true
+			}
+			if err != nil {
+				errs[backplanev1.ClusterManager] = err
+			}
 		}
 	} else {
-		result, err = r.ensureNoClusterLifecycle(ctx, backplaneConfig)
-		if result != (ctrl.Result{}) {
-			requeue = true
-		}
-		if err != nil {
-			errs[backplanev1.ClusterLifecycle] = err
-		}
+		log.Info(messages.SkippingExternallyManaged, "component", backplanev1.ClusterManager)
 	}
 
-	if backplaneConfig.Enabled(backplanev1.ClusterManager) {
-		result, err = r.ensureClusterManager(ctx, backplaneConfig)
-		if result != (ctrl.Result{}) {
-			requeue = true
-		}
-		if err != nil {
-			errs[backplanev1.ClusterManager] = err
+	if !r.isComponentExternallyManaged(backplaneConfig, backplanev1.ServerFoundation) {
+		if backplaneConfig.Enabled(backplanev1.ServerFoundation) {
+			result, err = r.ensureServerFoundation(ctx, backplaneConfig)
+			if result != (ctrl.Result{}) {
+				requeue = true
+			}
+			if err != nil {
+				errs[backplanev1.ServerFoundation] = err
+			}
+		} else {
+			result, err = r.ensureNoServerFoundation(ctx, backplaneConfig)
+			if result != (ctrl.Result{}) {
+				requeue = true
+			}
+			if err != nil {
+				errs[backplanev1.ServerFoundation] = err
+			}
 		}
 	} else {
-		result, err = r.ensureNoClusterManager(ctx, backplaneConfig)
-		if result != (ctrl.Result{}) {
-			requeue = true
-		}
-		if err != nil {
-			errs[backplanev1.ClusterManager] = err
-		}
+		log.Info(messages.SkippingExternallyManaged, "component", backplanev1.ServerFoundation)
 	}
 
-	if backplaneConfig.Enabled(backplanev1.ServerFoundation) {
-		result, err = r.ensureServerFoundation(ctx, backplaneConfig)
-		if result != (ctrl.Result{}) {
-			requeue = true
-		}
-		if err != nil {
-			errs[backplanev1.ServerFoundation] = err
+	if !r.isComponentExternallyManaged(backplaneConfig, backplanev1.ClusterProxyAddon) {
+		if backplaneConfig.Enabled(backplanev1.ClusterProxyAddon) && foundation.CanInstallAddons(ctx, r.Client) {
+			result, err = r.ensureClusterProxyAddon(ctx, backplaneConfig)
+			if result != (ctrl.Result{}) {
+				requeue = true
+			}
+			if err != nil {
+				errs[backplanev1.ClusterProxyAddon] = err
+			}
+		} else {
+			result, err = r.ensureNoClusterProxyAddon(ctx, backplaneConfig)
+			if result != (ctrl.Result{}) {
+				requeue = true
+			}
+			if err != nil {
+				errs[backplanev1.ClusterProxyAddon] = err
+			}
 		}
 	} else {
-		result, err = r.ensureNoServerFoundation(ctx, backplaneConfig)
-		if result != (ctrl.Result{}) {
-			requeue = true
-		}
-		if err != nil {
-			errs[backplanev1.ServerFoundation] = err
-		}
+		log.Info(messages.SkippingExternallyManaged, "component", backplanev1.ClusterProxyAddon)
 	}
 
-	if backplaneConfig.Enabled(backplanev1.ClusterProxyAddon) && foundation.CanInstallAddons(ctx, r.Client) {
-		result, err = r.ensureClusterProxyAddon(ctx, backplaneConfig)
-		if result != (ctrl.Result{}) {
-			requeue = true
-		}
-		if err != nil {
-			errs[backplanev1.ClusterProxyAddon] = err
+	if !r.isComponentExternallyManaged(backplaneConfig, backplanev1.ClusterAPI) {
+		if backplaneConfig.Enabled(backplanev1.ClusterAPI) {
+			result, err = r.ensureClusterAPI(ctx, backplaneConfig)
+			if result != (ctrl.Result{}) {
+				requeue = true
+			}
+			if err != nil {
+				errs[backplanev1.ClusterAPI] = err
+			}
+		} else {
+			result, err = r.ensureNoClusterAPI(ctx, backplaneConfig)
+			if result != (ctrl.Result{}) {
+				requeue = true
+			}
+			if err != nil {
+				errs[backplanev1.ClusterAPI] = err
+			}
 		}
 	} else {
-		result, err = r.ensureNoClusterProxyAddon(ctx, backplaneConfig)
-		if result != (ctrl.Result{}) {
-			requeue = true
-		}
-		if err != nil {
-			errs[backplanev1.ClusterProxyAddon] = err
-		}
+		log.Info(messages.SkippingExternallyManaged, "component", backplanev1.ClusterAPI)
 	}
 
-	if backplaneConfig.Enabled(backplanev1.ClusterAPI) {
-		result, err = r.ensureClusterAPI(ctx, backplaneConfig)
-		if result != (ctrl.Result{}) {
-			requeue = true
-		}
-		if err != nil {
-			errs[backplanev1.ClusterAPI] = err
+	if !r.isComponentExternallyManaged(backplaneConfig, backplanev1.ClusterAPIProviderAWS) {
+		if backplaneConfig.Enabled(backplanev1.ClusterAPIProviderAWS) {
+			result, err = r.ensureClusterAPIProviderAWS(ctx, backplaneConfig)
+			if result != (ctrl.Result{}) {
+				requeue = true
+			}
+			if err != nil {
+				errs[backplanev1.ClusterAPIProviderAWS] = err
+			}
+		} else {
+			result, err = r.ensureNoClusterAPIProviderAWS(ctx, backplaneConfig)
+			if result != (ctrl.Result{}) {
+				requeue = true
+			}
+			if err != nil {
+				errs[backplanev1.ClusterAPIProviderAWS] = err
+			}
 		}
 	} else {
-		result, err = r.ensureNoClusterAPI(ctx, backplaneConfig)
-		if result != (ctrl.Result{}) {
-			requeue = true
-		}
-		if err != nil {
-			errs[backplanev1.ClusterAPI] = err
-		}
+		log.Info(messages.SkippingExternallyManaged, "component", backplanev1.ClusterAPIProviderAWS)
 	}
 
-	if backplaneConfig.Enabled(backplanev1.ClusterAPIProviderAWS) {
-		result, err = r.ensureClusterAPIProviderAWS(ctx, backplaneConfig)
-		if result != (ctrl.Result{}) {
-			requeue = true
-		}
-		if err != nil {
-			errs[backplanev1.ClusterAPIProviderAWS] = err
+	if !r.isComponentExternallyManaged(backplaneConfig, backplanev1.ClusterAPIProviderMetalPreview) {
+		if backplaneConfig.Enabled(backplanev1.ClusterAPIProviderMetalPreview) {
+			result, err = r.ensureClusterAPIProviderMetal(ctx, backplaneConfig)
+			if result != (ctrl.Result{}) {
+				requeue = true
+			}
+			if err != nil {
+				errs[backplanev1.ClusterAPIProviderMetalPreview] = err
+			}
+		} else {
+			result, err = r.ensureNoClusterAPIProviderMetal(ctx, backplaneConfig)
+			if result != (ctrl.Result{}) {
+				requeue = true
+			}
+			if err != nil {
+				errs[backplanev1.ClusterAPIProviderMetalPreview] = err
+			}
 		}
 	} else {
-		result, err = r.ensureNoClusterAPIProviderAWS(ctx, backplaneConfig)
-		if result != (ctrl.Result{}) {
-			requeue = true
-		}
-		if err != nil {
-			errs[backplanev1.ClusterAPIProviderAWS] = err
-		}
+		log.Info(messages.SkippingExternallyManaged, "component",
+			backplanev1.ClusterAPIProviderMetalPreview)
 	}
 
-	if backplaneConfig.Enabled(backplanev1.ClusterAPIProviderMetalPreview) {
-		result, err = r.ensureClusterAPIProviderMetal(ctx, backplaneConfig)
-		if result != (ctrl.Result{}) {
-			requeue = true
-		}
-		if err != nil {
-			errs[backplanev1.ClusterAPIProviderMetalPreview] = err
-		}
-	} else {
-		result, err = r.ensureNoClusterAPIProviderMetal(ctx, backplaneConfig)
-		if result != (ctrl.Result{}) {
-			requeue = true
-		}
-		if err != nil {
-			errs[backplanev1.ClusterAPIProviderMetalPreview] = err
-		}
-	}
-
-	if backplaneConfig.Enabled(backplanev1.ClusterAPIProviderOAPreview) {
-		result, err = r.ensureClusterAPIProviderOA(ctx, backplaneConfig)
-		if result != (ctrl.Result{}) {
-			requeue = true
-		}
-		if err != nil {
-			errs[backplanev1.ClusterAPIProviderOAPreview] = err
+	if !r.isComponentExternallyManaged(backplaneConfig, backplanev1.ClusterAPIProviderOAPreview) {
+		if backplaneConfig.Enabled(backplanev1.ClusterAPIProviderOAPreview) {
+			result, err = r.ensureClusterAPIProviderOA(ctx, backplaneConfig)
+			if result != (ctrl.Result{}) {
+				requeue = true
+			}
+			if err != nil {
+				errs[backplanev1.ClusterAPIProviderOAPreview] = err
+			}
+		} else {
+			result, err = r.ensureNoClusterAPIProviderOA(ctx, backplaneConfig)
+			if result != (ctrl.Result{}) {
+				requeue = true
+			}
+			if err != nil {
+				errs[backplanev1.ClusterAPIProviderOAPreview] = err
+			}
 		}
 	} else {
-		result, err = r.ensureNoClusterAPIProviderOA(ctx, backplaneConfig)
-		if result != (ctrl.Result{}) {
-			requeue = true
-		}
-		if err != nil {
-			errs[backplanev1.ClusterAPIProviderOAPreview] = err
-		}
+		log.Info(messages.SkippingExternallyManaged, "component",
+			backplanev1.ClusterAPIProviderOAPreview)
 	}
 
 	if backplaneConfig.Enabled(backplanev1.LocalCluster) {
@@ -1299,6 +1392,214 @@ func (r *MultiClusterEngineReconciler) getDeploymentConfig(deployments []backpla
 		}
 	}
 	return &backplanev1.DeploymentConfig{}, false
+}
+
+/*
+isComponentExternallyManaged checks if a component is marked as externally managed
+in the MultiClusterEngine annotations.
+*/
+func (r *MultiClusterEngineReconciler) isComponentExternallyManaged(mce *backplanev1.MultiClusterEngine,
+	componentName string) bool {
+	annotations := mce.GetAnnotations()
+	if annotations == nil {
+		return false
+	}
+
+	managedComponents, ok := annotations[utils.AnnotationExternallyManaged]
+	if !ok || managedComponents == "" {
+		return false
+	}
+
+	// Parse JSON array
+	var components []string
+	if err := json.Unmarshal([]byte(managedComponents), &components); err != nil {
+		return false
+	}
+
+	// Check if component is in the list
+	for _, comp := range components {
+		if comp == componentName {
+			return true
+		}
+	}
+	return false
+}
+
+/*
+getExternallyManagedCRDDirectories returns a list of CRD directory names to skip
+for components marked as externally managed.
+*/
+func (r *MultiClusterEngineReconciler) getExternallyManagedCRDDirectories(mce *backplanev1.MultiClusterEngine) []string {
+	annotations := mce.GetAnnotations()
+	if annotations == nil {
+		return []string{}
+	}
+
+	managedComponents, ok := annotations[utils.AnnotationExternallyManaged]
+	if !ok || managedComponents == "" {
+		return []string{}
+	}
+
+	// Parse JSON array
+	var components []string
+	if err := json.Unmarshal([]byte(managedComponents), &components); err != nil {
+		return []string{}
+	}
+
+	// Build list of CRD directories to skip
+	skipDirs := []string{}
+	dirMap := make(map[string]bool) // Track unique directories
+
+	for _, comp := range components {
+		if crdDir, exists := backplanev1.ComponentToCRDDirectory[comp]; exists {
+			// Only add if not already in the list
+			if !dirMap[crdDir] {
+				skipDirs = append(skipDirs, crdDir)
+				dirMap[crdDir] = true
+			}
+		}
+	}
+
+	return skipDirs
+}
+
+/*
+getDisabledComponentCRDDirectories returns a list of CRD directory names to skip
+for components that are disabled. This prevents CRD updates for disabled components
+without deleting the CRDs.
+*/
+func (r *MultiClusterEngineReconciler) getDisabledComponentCRDDirectories(mce *backplanev1.MultiClusterEngine) []string {
+	// Build list of CRD directories to skip for disabled cluster-api components only
+	skipDirs := []string{}
+	dirMap := make(map[string]bool) // Track unique directories
+
+	// Only check cluster-api and cluster-api-provider-aws components
+	componentsToCheck := []string{
+		backplanev1.ClusterAPI,
+		backplanev1.ClusterAPIProviderAWS,
+	}
+
+	for _, comp := range componentsToCheck {
+		// Skip if component is enabled or externally managed
+		if mce.Enabled(comp) || r.isComponentExternallyManaged(mce, comp) {
+			continue
+		}
+
+		// Component is disabled - add its CRD directory to skip list
+		if crdDir, exists := backplanev1.ComponentToCRDDirectory[comp]; exists {
+			// Only add if not already in the list
+			if !dirMap[crdDir] {
+				skipDirs = append(skipDirs, crdDir)
+				dirMap[crdDir] = true
+			}
+		}
+	}
+
+	return skipDirs
+}
+
+// isValidComponent checks if a component name is valid
+func isValidComponent(componentName string) bool {
+	return slices.Contains(backplanev1.AllComponents, componentName)
+}
+
+/*
+checkExternallyManagedComponents checks if any components are externally managed and adds
+a status condition to warn the user. This helps users understand which components MCE is
+not reconciling.
+*/
+func (r *MultiClusterEngineReconciler) checkExternallyManagedComponents(mce *backplanev1.MultiClusterEngine) {
+	annotations := mce.GetAnnotations()
+	if annotations == nil {
+		// No annotations, ensure condition is removed
+		r.StatusManager.Conditions = status.FilterOutConditionWithSubString(
+			r.StatusManager.Conditions,
+			backplanev1.MultiClusterEngineComponentsExternallyManaged,
+		)
+		return
+	}
+
+	managedComponents, ok := annotations[utils.AnnotationExternallyManaged]
+	if !ok || managedComponents == "" {
+		// Annotation not present or empty, ensure condition is removed
+		r.StatusManager.Conditions = status.FilterOutConditionWithSubString(
+			r.StatusManager.Conditions,
+			backplanev1.MultiClusterEngineComponentsExternallyManaged,
+		)
+		return
+	}
+
+	// Parse JSON array
+	var components []string
+	if err := json.Unmarshal([]byte(managedComponents), &components); err != nil {
+		log.Error(err, "Failed to parse externally managed components annotation")
+		// On parse error, remove the condition to avoid showing stale data
+		r.StatusManager.Conditions = status.FilterOutConditionWithSubString(
+			r.StatusManager.Conditions,
+			backplanev1.MultiClusterEngineComponentsExternallyManaged,
+		)
+		return
+	}
+
+	if len(components) == 0 {
+		// Empty component list, ensure condition is removed
+		r.StatusManager.Conditions = status.FilterOutConditionWithSubString(
+			r.StatusManager.Conditions,
+			backplanev1.MultiClusterEngineComponentsExternallyManaged,
+		)
+		return
+	}
+
+	// Validate and filter components
+	validComponents := []string{}
+	invalidComponents := []string{}
+
+	for _, comp := range components {
+		if isValidComponent(comp) {
+			validComponents = append(validComponents, comp)
+		} else {
+			invalidComponents = append(invalidComponents, comp)
+		}
+	}
+
+	// Log warning for invalid components
+	if len(invalidComponents) > 0 {
+		log.Info("Invalid component names in externally-managed annotation will be ignored",
+			"invalid", invalidComponents, "valid", validComponents)
+	}
+
+	// If no valid components after filtering, remove the condition if it exists
+	if len(validComponents) == 0 {
+		// Remove the ComponentsExternallyManaged condition since no components are externally managed
+		r.StatusManager.Conditions = status.FilterOutConditionWithSubString(
+			r.StatusManager.Conditions,
+			backplanev1.MultiClusterEngineComponentsExternallyManaged,
+		)
+		return
+	}
+
+	// Log at reconciler level (only valid components)
+	log.Info("External component management enabled", "components", validComponents, "count", len(validComponents))
+
+	// Create a user-friendly message (only valid components)
+	componentList := strings.Join(validComponents, ", ")
+	message := fmt.Sprintf("The following components are externally managed and will not be reconciled by MCE: %s. "+
+		"To allow MCE to manage these components again, remove them from the \"%s\" annotation.",
+		componentList, utils.AnnotationExternallyManaged)
+
+	// Add note about invalid components if any were found
+	if len(invalidComponents) > 0 {
+		invalidList := strings.Join(invalidComponents, ", ")
+		message += fmt.Sprintf(" Note: The following invalid component names were ignored: %s.", invalidList)
+	}
+
+	cond := status.NewCondition(
+		backplanev1.MultiClusterEngineComponentsExternallyManaged,
+		metav1.ConditionTrue,
+		status.ExternalManagementReason,
+		message,
+	)
+	r.StatusManager.AddCondition(cond)
 }
 
 /*
@@ -1460,7 +1761,6 @@ func (r *MultiClusterEngineReconciler) applyTemplate(ctx context.Context,
 			}
 
 			if !utils.IsTemplateAnnotationTrue(template, utils.AnnotationEditable) {
-
 				// Resource exists; use the original template for patching to avoid issues with managedFields
 				// Apply the object data.
 				force := true
@@ -2230,17 +2530,22 @@ func ensureCRD(ctx context.Context, c client.Client, crd *unstructured.Unstructu
 	err := c.Get(ctx, types.NamespacedName{Name: crd.GetName()}, existingCRD)
 	if err != nil && apierrors.IsNotFound(err) {
 		// CRD not found. Create and return
+		log.V(1).Info("Creating CRD", "Name", crd.GetName())
 		err = c.Create(ctx, crd)
 		if err != nil {
 			return fmt.Errorf("error creating CRD '%s': %w", crd.GetName(), err)
 		}
 	} else if err != nil {
 		return fmt.Errorf("error getting CRD '%s': %w", crd.GetName(), err)
+
 	} else if err == nil {
 		// CRD already exists. Update and return
 		if utils.AnnotationPresent(utils.AnnotationMCEIgnore, existingCRD) {
+			log.V(1).Info("CRD has ignore annotation - skipping", "Name", crd.GetName())
 			return nil
 		}
+
+		log.V(1).Info("Updating CRD", "Name", crd.GetName())
 		crd.SetResourceVersion(existingCRD.GetResourceVersion())
 		err = c.Update(ctx, crd)
 		if err != nil {

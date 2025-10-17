@@ -454,6 +454,7 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterAPI(ctx context.Context,
 			return result, err
 		}
 	}
+
 	return ctrl.Result{}, nil
 }
 
@@ -529,6 +530,7 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterAPIProviderAWS(ctx context
 			return result, err
 		}
 	}
+
 	return ctrl.Result{}, nil
 }
 
