@@ -1463,7 +1463,7 @@ func (r *MultiClusterEngineReconciler) getExternallyManagedCRDDirectories(mce *b
 	dirMap := make(map[string]bool) // Track unique directories
 
 	for _, comp := range components {
-		if crdDir, exists := backplanev1.ComponentToCRDDirectory()[comp]; exists {
+		if crdDir, exists := utils.ComponentToCRDDirectory()[comp]; exists {
 			// Only add if not already in the list
 			if !dirMap[crdDir] {
 				skipDirs = append(skipDirs, crdDir)
@@ -1498,7 +1498,7 @@ func (r *MultiClusterEngineReconciler) getDisabledComponentCRDDirectories(mce *b
 		}
 
 		// Component is disabled - add its CRD directory to skip list
-		if crdDir, exists := backplanev1.ComponentToCRDDirectory()[comp]; exists {
+		if crdDir, exists := utils.ComponentToCRDDirectory()[comp]; exists {
 			// Only add if not already in the list
 			if !dirMap[crdDir] {
 				skipDirs = append(skipDirs, crdDir)

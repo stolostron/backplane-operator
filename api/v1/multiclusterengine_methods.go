@@ -50,22 +50,22 @@ const (
 	ServerFoundation                 = "server-foundation"
 
 	// CRD directory names
-	AssistedServiceCRDDir           = "assisted-service"
-	ClusterAPICRDDir                = "cluster-api"
-	ClusterAPIK8SCRDDir             = "cluster-api-k8s"
-	ClusterAPIProviderAWSCRDDir     = "cluster-api-provider-aws"
-	ClusterAPIProviderMetalCRDDir   = "cluster-api-provider-metal3"
-	ClusterAPIProviderMetalK8SCRDDir   = "cluster-api-provider-metal3-k8s"
-	ClusterAPIProviderOACRDDir      = "cluster-api-provider-openshift-assisted"
-	ClusterAPIProviderOAK8SCRDDir      = "cluster-api-provider-openshift-assisted-k8s"
-	ClusterLifecycleCRDDir          = "cluster-lifecycle"
-	ClusterManagerCRDDir            = "cluster-manager"
-	ClusterProxyAddonCRDDir         = "cluster-proxy-addon"
-	DiscoveryCRDDir                 = "discovery-operator"
-	HiveCRDDir                      = "hive-operator"
-	ImageBasedInstallOperatorCRDDir = "image-based-install-operator"
-	ManagedServiceAccountCRDDir     = "managed-serviceaccount"
-	ServerFoundationCRDDir          = "foundation"
+	AssistedServiceCRDDir            = "assisted-service"
+	ClusterAPICRDDir                 = "cluster-api"
+	ClusterAPIK8SCRDDir              = "cluster-api-k8s"
+	ClusterAPIProviderAWSCRDDir      = "cluster-api-provider-aws"
+	ClusterAPIProviderMetalCRDDir    = "cluster-api-provider-metal3"
+	ClusterAPIProviderMetalK8SCRDDir = "cluster-api-provider-metal3-k8s"
+	ClusterAPIProviderOACRDDir       = "cluster-api-provider-openshift-assisted"
+	ClusterAPIProviderOAK8SCRDDir    = "cluster-api-provider-openshift-assisted-k8s"
+	ClusterLifecycleCRDDir           = "cluster-lifecycle"
+	ClusterManagerCRDDir             = "cluster-manager"
+	ClusterProxyAddonCRDDir          = "cluster-proxy-addon"
+	DiscoveryCRDDir                  = "discovery-operator"
+	HiveCRDDir                       = "hive-operator"
+	ImageBasedInstallOperatorCRDDir  = "image-based-install-operator"
+	ManagedServiceAccountCRDDir      = "managed-serviceaccount"
+	ServerFoundationCRDDir           = "foundation"
 )
 
 // AllComponents is a slice containing all valid component names
@@ -137,48 +137,6 @@ var PreviewToStable = map[string]string{
 	HyperShiftPreview:                HyperShift,                // Upgraded in ACM 2.8 / MCE 2.3
 	ImageBasedInstallOperatorPreview: ImageBasedInstallOperator, // Upgraded in ACM 2.12 / MCE 2.7
 	ManagedServiceAccountPreview:     ManagedServiceAccount,     // Upgraded in ACM 2.9 / MCE 2.4
-}
-
-/*
-ComponentToCRDDirectory returns a map of component names to their corresponding CRD directory names.
-This mapping is used to skip CRD rendering for externally managed components.
-When NonOCP() returns true, the ClusterAPI component uses 'k8s' as its CRD directory.
-*/
-func ComponentToCRDDirectory() map[string]string {
-	var clusterAPICRDDir string
-	var clusterAPIProviderOACRDDir string
-	var clusterAPIProviderMetalCRDDir string
-
-	if utils.DeployOnOCP() {
-		clusterAPICRDDir = ClusterAPICRDDir
-		clusterAPIProviderOACRDDir = ClusterAPIProviderOACRDDir
-		clusterAPIProviderMetalCRDDir = ClusterAPIProviderMetalCRDDir
-	} else {
-		clusterAPICRDDir = ClusterAPIK8SCRDDir
-		clusterAPIProviderOACRDDir = ClusterAPIProviderOAK8SCRDDir
-		clusterAPIProviderMetalCRDDir = ClusterAPIProviderMetalK8SCRDDir
-	}
-	return map[string]string{
-		AssistedService:                  AssistedServiceCRDDir,
-		ClusterAPI:                       clusterAPICRDDir,
-		ClusterAPIPreview:                clusterAPICRDDir,
-		ClusterAPIProviderAWS:            ClusterAPIProviderAWSCRDDir,
-		ClusterAPIProviderAWSPreview:     ClusterAPIProviderAWSCRDDir,
-		ClusterAPIProviderMetal:          clusterAPIProviderMetalCRDDir,
-		ClusterAPIProviderMetalPreview:   clusterAPIProviderMetalCRDDir,
-		ClusterAPIProviderOA:             clusterAPIProviderOACRDDir,
-		ClusterAPIProviderOAPreview:      clusterAPIProviderOACRDDir,
-		ClusterLifecycle:                 ClusterLifecycleCRDDir,
-		ClusterManager:                   ClusterManagerCRDDir,
-		ClusterProxyAddon:                ClusterProxyAddonCRDDir,
-		Discovery:                        DiscoveryCRDDir,
-		Hive:                             HiveCRDDir,
-		ImageBasedInstallOperator:        ImageBasedInstallOperatorCRDDir,
-		ImageBasedInstallOperatorPreview: ImageBasedInstallOperatorCRDDir,
-		ManagedServiceAccount:            ManagedServiceAccountCRDDir,
-		ManagedServiceAccountPreview:     ManagedServiceAccountCRDDir,
-		ServerFoundation:                 ServerFoundationCRDDir,
-	}
 }
 
 /*
