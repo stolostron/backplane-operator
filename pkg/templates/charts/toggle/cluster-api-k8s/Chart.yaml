@@ -1,0 +1,6 @@
+apiVersion: v2
+name: cluster-api
+description: Cluster API
+type: application
+version: "4.20"
+appVersion: "4.20"

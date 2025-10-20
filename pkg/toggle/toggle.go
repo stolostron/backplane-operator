@@ -20,9 +20,11 @@ import (
 const (
 	AssistedServiceChartDir           = "pkg/templates/charts/toggle/assisted-service"
 	ClusterAPIChartDir                = "pkg/templates/charts/toggle/cluster-api"
+	ClusterAPIChartK8SDir             = "pkg/templates/charts/toggle/cluster-api-k8s"
 	ClusterAPIProviderAWSChartDir     = "pkg/templates/charts/toggle/cluster-api-provider-aws"
 	ClusterAPIProviderMetalChartDir   = "pkg/templates/charts/toggle/cluster-api-provider-metal3"
-	ClusterAPIProviderOAChartDir      = "pkg/templates/charts/toggle/cluster-api-provider-openshift-assisted"
+	ClusterAPIProviderMetalK8SChartDir   = "pkg/templates/charts/toggle/cluster-api-provider-metal3-k8s"
+	ClusterAPIProviderOAK8SChartDir      = "pkg/templates/charts/toggle/cluster-api-provider-openshift-assisted-k8s"
 	ClusterLifecycleChartDir          = "pkg/templates/charts/toggle/cluster-lifecycle"
 	ClusterManagerChartDir            = "pkg/templates/charts/toggle/cluster-manager"
 	ClusterProxyAddonDir              = "pkg/templates/charts/toggle/cluster-proxy-addon"

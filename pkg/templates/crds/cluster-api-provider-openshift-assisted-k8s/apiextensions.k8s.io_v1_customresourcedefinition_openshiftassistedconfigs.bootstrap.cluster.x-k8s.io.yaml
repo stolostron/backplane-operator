@@ -1,0 +1,330 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.17.2
+  labels:
+    cluster.x-k8s.io/v1beta1: v1alpha1
+  name: openshiftassistedconfigs.bootstrap.cluster.x-k8s.io
+spec:
+  group: bootstrap.cluster.x-k8s.io
+  names:
+    kind: OpenshiftAssistedConfig
+    listKind: OpenshiftAssistedConfigList
+    plural: openshiftassistedconfigs
+    shortNames:
+    - oac
+    - oacs
+    singular: openshiftassistedconfig
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: OpenshiftAssistedConfig is the Schema for the openshiftassistedconfig
+          API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: OpenshiftAssistedConfigSpec defines the desired state of
+              OpenshiftAssistedConfig
+            properties:
+              additionalNTPSources:
+                description: |-
+                  AdditionalNTPSources is a list of NTP sources (hostname or IP) to be added to all cluster
+                  hosts. They are added to any NTP sources that were configured through other means.
+                items:
+                  type: string
+                type: array
+              additionalTrustBundle:
+                description: |-
+                  PEM-encoded X.509 certificate bundle. Hosts discovered by this
+                  infra-env will trust the certificates in this bundle. Clusters formed
+                  from the hosts discovered by this infra-env will also trust the
+                  certificates in this bundle.
+                type: string
+              cpuArchitecture:
+                default: x86_64
+                description: CpuArchitecture specifies the target CPU architecture.
+                  Default is x86_64
+                type: string
+              kernelArguments:
+                description: |-
+                  KernelArguments is the additional kernel arguments to be passed during boot time of the discovery image.
+                  Applicable for both iPXE, and ISO streaming from Image Service.
+                items:
+                  properties:
+                    operation:
+                      description: Operation is the operation to apply on the kernel
+                        argument.
+                      enum:
+                      - append
+                      - replace
+                      - delete
+                      type: string
+                    value:
+                      description: |-
+                        Value can have the form <parameter> or <parameter>=<value>. The following examples should be supported:
+                        rd.net.timeout.carrier=60
+                        isolcpus=1,2,10-20,100-2000:2/25
+                        quiet
+                      pattern: ^(?:(?:[^ \t\n\r"]+)|(?:"[^"]*"))+$
+                      type: string
+                  type: object
+                type: array
+              nmStateConfigLabelSelector:
+                description: |-
+                  NmstateConfigLabelSelector associates NMStateConfigs for hosts that are considered part
+                  of this installation environment.
+                properties:
+                  matchExpressions:
+                    description: matchExpressions is a list of label selector requirements.
+                      The requirements are ANDed.
+                    items:
+                      description: |-
+                        A label selector requirement is a selector that contains values, a key, and an operator that
+                        relates the key and values.
+                      properties:
+                        key:
+                          description: key is the label key that the selector applies
+                            to.
+                          type: string
+                        operator:
+                          description: |-
+                            operator represents a key's relationship to a set of values.
+                            Valid operators are In, NotIn, Exists and DoesNotExist.
+                          type: string
+                        values:
+                          description: |-
+                            values is an array of string values. If the operator is In or NotIn,
+                            the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                            the values array must be empty. This array is replaced during a strategic
+                            merge patch.
+                          items:
+                            type: string
+                          type: array
+                          x-kubernetes-list-type: atomic
+                      required:
+                      - key
+                      - operator
+                      type: object
+                    type: array
+                    x-kubernetes-list-type: atomic
+                  matchLabels:
+                    additionalProperties:
+                      type: string
+                    description: |-
+                      matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                      map is equivalent to an element of matchExpressions, whose key field is "key", the
+                      operator is "In", and the values array contains only "value". The requirements are ANDed.
+                    type: object
+                type: object
+                x-kubernetes-map-type: atomic
+              nodeRegistration:
+                description: NodeRegistrationOption holds fields related to registering
+                  nodes to the cluster
+                properties:
+                  kubeletExtraLabels:
+                    description: KubeletExtraLabels passes extra labels to kubelet.
+                    items:
+                      type: string
+                    type: array
+                  name:
+                    description: Defaults to the hostname of the node if not provided.
+                    type: string
+                type: object
+              osImageVersion:
+                description: |-
+                  OSImageVersion is the version of OS image to use when generating the InfraEnv.
+                  The version should refer to an OSImage specified in the AgentServiceConfig
+                  (i.e. OSImageVersion should equal to an OpenshiftVersion in OSImages list).
+                  Note: OSImageVersion can't be specified along with ClusterRef.
+                type: string
+              proxy:
+                description: |-
+                  Proxy defines the proxy settings for agents and clusters that use the InfraEnv. If
+                  unset, the agents and clusters will not be configured to use a proxy.
+                properties:
+                  httpProxy:
+                    description: HTTPProxy is the URL of the proxy for HTTP requests.
+                    type: string
+                  httpsProxy:
+                    description: HTTPSProxy is the URL of the proxy for HTTPS requests.
+                    type: string
+                  noProxy:
+                    description: |-
+                      NoProxy is a comma-separated list of domains and CIDRs for which the proxy should not be
+                      used.
+                    type: string
+                type: object
+              pullSecretRef:
+                description: PullSecretRef is the reference to the secret to use when
+                  pulling images.
+                properties:
+                  name:
+                    default: ""
+                    description: |-
+                      Name of the referent.
+                      This field is effectively required, but due to backwards compatibility is
+                      allowed to be empty. Instances of this type with an empty value here are
+                      almost certainly wrong.
+                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                    type: string
+                type: object
+                x-kubernetes-map-type: atomic
+              sshAuthorizedKey:
+                description: SSHAuthorizedKey is a SSH public keys that will be added
+                  to all agents for use in debugging.
+                type: string
+            type: object
+          status:
+            description: OpenshiftAssistedConfigStatus defines the observed state
+              of OpenshiftAssistedConfig
+            properties:
+              agentRef:
+                description: AgentRef references the agent this agent bootstrap config
+                  has booted
+                properties:
+                  name:
+                    default: ""
+                    description: |-
+                      Name of the referent.
+                      This field is effectively required, but due to backwards compatibility is
+                      allowed to be empty. Instances of this type with an empty value here are
+                      almost certainly wrong.
+                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                    type: string
+                type: object
+                x-kubernetes-map-type: atomic
+              conditions:
+                description: Conditions defines current service state of the OpenshiftAssistedConfig.
+                items:
+                  description: Condition defines an observation of a Cluster API resource
+                    operational state.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        Last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed. If that is not known, then using the time when
+                        the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        A human readable message indicating details about the transition.
+                        This field may be empty.
+                      type: string
+                    reason:
+                      description: |-
+                        The reason for the condition's last transition in CamelCase.
+                        The specific API may choose whether or not this field is considered a guaranteed API.
+                        This field may be empty.
+                      type: string
+                    severity:
+                      description: |-
+                        severity provides an explicit classification of Reason code, so the users or machines can immediately
+                        understand the current situation and act accordingly.
+                        The Severity field MUST be set only when Status=False.
+                      type: string
+                    status:
+                      description: status of the condition, one of True, False, Unknown.
+                      type: string
+                    type:
+                      description: |-
+                        type of condition in CamelCase or in foo.example.com/CamelCase.
+                        Many .condition.type values are consistent across resources like Available, but because arbitrary conditions
+                        can be useful (see .node.status.conditions), the ability to deconflict is important.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - status
+                  - type
+                  type: object
+                type: array
+              dataSecretName:
+                description: DataSecretName is the name of the secret that stores
+                  the bootstrap data script.
+                type: string
+              failureMessage:
+                description: FailureMessage will be set on non-retryable errors
+                type: string
+              failureReason:
+                description: FailureReason will be set on non-retryable errors
+                type: string
+              infraEnvRef:
+                description: |-
+                  INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
+                  Important: Run "make" to regenerate code after modifying this file
+                  InfraEnvRef references the infra env to generate the ISO
+                properties:
+                  apiVersion:
+                    description: API version of the referent.
+                    type: string
+                  fieldPath:
+                    description: |-
+                      If referring to a piece of an object instead of an entire object, this string
+                      should contain a valid JSON/Go field access statement, such as desiredState.manifest.containers[2].
+                      For example, if the object reference is to a container within a pod, this would take on a value like:
+                      "spec.containers{name}" (where "name" refers to the name of the container that triggered
+                      the event) or if no container name is specified "spec.containers[2]" (container with
+                      index 2 in this pod). This syntax is chosen only to have some well-defined way of
+                      referencing a part of an object.
+                    type: string
+                  kind:
+                    description: |-
+                      Kind of the referent.
+                      More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+                    type: string
+                  name:
+                    description: |-
+                      Name of the referent.
+                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                    type: string
+                  namespace:
+                    description: |-
+                      Namespace of the referent.
+                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
+                    type: string
+                  resourceVersion:
+                    description: |-
+                      Specific resourceVersion to which this reference is made, if any.
+                      More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency
+                    type: string
+                  uid:
+                    description: |-
+                      UID of the referent.
+                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids
+                    type: string
+                type: object
+                x-kubernetes-map-type: atomic
+              observedGeneration:
+                description: ObservedGeneration is the latest generation observed
+                  by the controller.
+                format: int64
+                type: integer
+              ready:
+                description: Ready indicates the BootstrapData field is ready to be
+                  consumed
+                type: boolean
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

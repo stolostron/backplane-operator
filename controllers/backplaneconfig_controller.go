@@ -952,12 +952,24 @@ func (r *MultiClusterEngineReconciler) ensureNoInternalEngineComponent(ctx conte
 }
 
 func (r *MultiClusterEngineReconciler) fetchChartOrCRDPath(component string) string {
+	var clusterAPIChartLoc string
+	var clusterAPIMetalChartLoc string
+	var clusterAPIOAChartLoc string
+	if utils.DeployOnOCP() {
+		clusterAPIChartLoc = toggle.ClusterAPIChartDir
+		clusterAPIMetalChartLoc = toggle.ClusterAPIProviderMetalChartDir
+		clusterAPIOAChartLoc = toggle.ClusterAPIProviderOAChartDir
+	} else {
+		clusterAPIChartLoc = toggle.ClusterAPIK8SChartDir
+		clusterAPIMetalChartLoc = toggle.ClusterAPIProviderMetalK8SChartDir
+		clusterAPIOAChartLoc = toggle.ClusterAPIProviderOAK8SChartDir
+	}
 	chartDirs := map[string]string{
 		backplanev1.AssistedService:                toggle.AssistedServiceChartDir,
-		backplanev1.ClusterAPI:                     toggle.ClusterAPIChartDir,
+		backplanev1.ClusterAPI:                     clusterAPIChartLoc,
 		backplanev1.ClusterAPIProviderAWS:          toggle.ClusterAPIProviderAWSChartDir,
-		backplanev1.ClusterAPIProviderMetalPreview: toggle.ClusterAPIProviderMetalChartDir,
-		backplanev1.ClusterAPIProviderOAPreview:    toggle.ClusterAPIProviderOAChartDir,
+		backplanev1.ClusterAPIProviderMetalPreview: clusterAPIMetalChartLoc,
+		backplanev1.ClusterAPIProviderOAPreview:    clusterAPIOAChartLoc,
 		backplanev1.ClusterLifecycle:               toggle.ClusterLifecycleChartDir,
 		backplanev1.ClusterManager:                 toggle.ClusterManagerChartDir,
 		backplanev1.ClusterProxyAddon:              toggle.ClusterProxyAddonDir,
@@ -1451,7 +1463,7 @@ func (r *MultiClusterEngineReconciler) getExternallyManagedCRDDirectories(mce *b
 	dirMap := make(map[string]bool) // Track unique directories
 
 	for _, comp := range components {
-		if crdDir, exists := backplanev1.ComponentToCRDDirectory[comp]; exists {
+		if crdDir, exists := backplanev1.ComponentToCRDDirectory()[comp]; exists {
 			// Only add if not already in the list
 			if !dirMap[crdDir] {
 				skipDirs = append(skipDirs, crdDir)
@@ -1486,7 +1498,7 @@ func (r *MultiClusterEngineReconciler) getDisabledComponentCRDDirectories(mce *b
 		}
 
 		// Component is disabled - add its CRD directory to skip list
-		if crdDir, exists := backplanev1.ComponentToCRDDirectory[comp]; exists {
+		if crdDir, exists := backplanev1.ComponentToCRDDirectory()[comp]; exists {
 			// Only add if not already in the list
 			if !dirMap[crdDir] {
 				skipDirs = append(skipDirs, crdDir)

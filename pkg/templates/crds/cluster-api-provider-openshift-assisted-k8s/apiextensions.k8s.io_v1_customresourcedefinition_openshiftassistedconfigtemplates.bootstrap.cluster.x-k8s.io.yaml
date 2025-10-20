@@ -1,0 +1,240 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.17.2
+  labels:
+    cluster.x-k8s.io/v1beta1: v1alpha1
+  name: openshiftassistedconfigtemplates.bootstrap.cluster.x-k8s.io
+spec:
+  group: bootstrap.cluster.x-k8s.io
+  names:
+    kind: OpenshiftAssistedConfigTemplate
+    listKind: OpenshiftAssistedConfigTemplateList
+    plural: openshiftassistedconfigtemplates
+    singular: openshiftassistedconfigtemplate
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: OpenshiftAssistedConfigTemplate is the Schema for the openshiftassistedconfigtemplates
+          API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: OpenshiftAssistedConfigTemplateSpec defines the desired state
+              of OpenshiftAssistedConfigTemplate
+            properties:
+              template:
+                description: OpenshiftAssistedConfig template
+                properties:
+                  metadata:
+                    description: |-
+                      Standard object's metadata.
+                      More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
+                    properties:
+                      annotations:
+                        additionalProperties:
+                          type: string
+                        description: |-
+                          annotations is an unstructured key value map stored with a resource that may be
+                          set by external tools to store and retrieve arbitrary metadata. They are not
+                          queryable and should be preserved when modifying objects.
+                          More info: http://kubernetes.io/docs/user-guide/annotations
+                        type: object
+                      labels:
+                        additionalProperties:
+                          type: string
+                        description: |-
+                          Map of string keys and values that can be used to organize and categorize
+                          (scope and select) objects. May match selectors of replication controllers
+                          and services.
+                          More info: http://kubernetes.io/docs/user-guide/labels
+                        type: object
+                    type: object
+                  spec:
+                    description: OpenshiftAssistedConfigSpec defines the desired state
+                      of OpenshiftAssistedConfig
+                    properties:
+                      additionalNTPSources:
+                        description: |-
+                          AdditionalNTPSources is a list of NTP sources (hostname or IP) to be added to all cluster
+                          hosts. They are added to any NTP sources that were configured through other means.
+                        items:
+                          type: string
+                        type: array
+                      additionalTrustBundle:
+                        description: |-
+                          PEM-encoded X.509 certificate bundle. Hosts discovered by this
+                          infra-env will trust the certificates in this bundle. Clusters formed
+                          from the hosts discovered by this infra-env will also trust the
+                          certificates in this bundle.
+                        type: string
+                      cpuArchitecture:
+                        default: x86_64
+                        description: CpuArchitecture specifies the target CPU architecture.
+                          Default is x86_64
+                        type: string
+                      kernelArguments:
+                        description: |-
+                          KernelArguments is the additional kernel arguments to be passed during boot time of the discovery image.
+                          Applicable for both iPXE, and ISO streaming from Image Service.
+                        items:
+                          properties:
+                            operation:
+                              description: Operation is the operation to apply on
+                                the kernel argument.
+                              enum:
+                              - append
+                              - replace
+                              - delete
+                              type: string
+                            value:
+                              description: |-
+                                Value can have the form <parameter> or <parameter>=<value>. The following examples should be supported:
+                                rd.net.timeout.carrier=60
+                                isolcpus=1,2,10-20,100-2000:2/25
+                                quiet
+                              pattern: ^(?:(?:[^ \t\n\r"]+)|(?:"[^"]*"))+$
+                              type: string
+                          type: object
+                        type: array
+                      nmStateConfigLabelSelector:
+                        description: |-
+                          NmstateConfigLabelSelector associates NMStateConfigs for hosts that are considered part
+                          of this installation environment.
+                        properties:
+                          matchExpressions:
+                            description: matchExpressions is a list of label selector
+                              requirements. The requirements are ANDed.
+                            items:
+                              description: |-
+                                A label selector requirement is a selector that contains values, a key, and an operator that
+                                relates the key and values.
+                              properties:
+                                key:
+                                  description: key is the label key that the selector
+                                    applies to.
+                                  type: string
+                                operator:
+                                  description: |-
+                                    operator represents a key's relationship to a set of values.
+                                    Valid operators are In, NotIn, Exists and DoesNotExist.
+                                  type: string
+                                values:
+                                  description: |-
+                                    values is an array of string values. If the operator is In or NotIn,
+                                    the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                                    the values array must be empty. This array is replaced during a strategic
+                                    merge patch.
+                                  items:
+                                    type: string
+                                  type: array
+                                  x-kubernetes-list-type: atomic
+                              required:
+                              - key
+                              - operator
+                              type: object
+                            type: array
+                            x-kubernetes-list-type: atomic
+                          matchLabels:
+                            additionalProperties:
+                              type: string
+                            description: |-
+                              matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                              map is equivalent to an element of matchExpressions, whose key field is "key", the
+                              operator is "In", and the values array contains only "value". The requirements are ANDed.
+                            type: object
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      nodeRegistration:
+                        description: NodeRegistrationOption holds fields related to
+                          registering nodes to the cluster
+                        properties:
+                          kubeletExtraLabels:
+                            description: KubeletExtraLabels passes extra labels to
+                              kubelet.
+                            items:
+                              type: string
+                            type: array
+                          name:
+                            description: Defaults to the hostname of the node if not
+                              provided.
+                            type: string
+                        type: object
+                      osImageVersion:
+                        description: |-
+                          OSImageVersion is the version of OS image to use when generating the InfraEnv.
+                          The version should refer to an OSImage specified in the AgentServiceConfig
+                          (i.e. OSImageVersion should equal to an OpenshiftVersion in OSImages list).
+                          Note: OSImageVersion can't be specified along with ClusterRef.
+                        type: string
+                      proxy:
+                        description: |-
+                          Proxy defines the proxy settings for agents and clusters that use the InfraEnv. If
+                          unset, the agents and clusters will not be configured to use a proxy.
+                        properties:
+                          httpProxy:
+                            description: HTTPProxy is the URL of the proxy for HTTP
+                              requests.
+                            type: string
+                          httpsProxy:
+                            description: HTTPSProxy is the URL of the proxy for HTTPS
+                              requests.
+                            type: string
+                          noProxy:
+                            description: |-
+                              NoProxy is a comma-separated list of domains and CIDRs for which the proxy should not be
+                              used.
+                            type: string
+                        type: object
+                      pullSecretRef:
+                        description: PullSecretRef is the reference to the secret
+                          to use when pulling images.
+                        properties:
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      sshAuthorizedKey:
+                        description: SSHAuthorizedKey is a SSH public keys that will
+                          be added to all agents for use in debugging.
+                        type: string
+                    type: object
+                type: object
+            required:
+            - template
+            type: object
+          status:
+            description: OpenshiftAssistedConfigTemplateStatus defines the observed
+              state of OpenshiftAssistedConfigTemplate
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

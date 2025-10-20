@@ -52,9 +52,12 @@ const (
 	// CRD directory names
 	AssistedServiceCRDDir           = "assisted-service"
 	ClusterAPICRDDir                = "cluster-api"
+	ClusterAPIK8SCRDDir             = "cluster-api-k8s"
 	ClusterAPIProviderAWSCRDDir     = "cluster-api-provider-aws"
 	ClusterAPIProviderMetalCRDDir   = "cluster-api-provider-metal3"
+	ClusterAPIProviderMetalK8SCRDDir   = "cluster-api-provider-metal3-k8s"
 	ClusterAPIProviderOACRDDir      = "cluster-api-provider-openshift-assisted"
+	ClusterAPIProviderOAK8SCRDDir      = "cluster-api-provider-openshift-assisted-k8s"
 	ClusterLifecycleCRDDir          = "cluster-lifecycle"
 	ClusterManagerCRDDir            = "cluster-manager"
 	ClusterProxyAddonCRDDir         = "cluster-proxy-addon"
@@ -137,29 +140,46 @@ var PreviewToStable = map[string]string{
 }
 
 /*
-ComponentToCRDDirectory maps component names to their corresponding CRD directory names.
+ComponentToCRDDirectory returns a map of component names to their corresponding CRD directory names.
 This mapping is used to skip CRD rendering for externally managed components.
+When NonOCP() returns true, the ClusterAPI component uses 'k8s' as its CRD directory.
 */
-var ComponentToCRDDirectory = map[string]string{
-	AssistedService:                  AssistedServiceCRDDir,
-	ClusterAPI:                       ClusterAPICRDDir,
-	ClusterAPIPreview:                ClusterAPICRDDir,
-	ClusterAPIProviderAWS:            ClusterAPIProviderAWSCRDDir,
-	ClusterAPIProviderAWSPreview:     ClusterAPIProviderAWSCRDDir,
-	ClusterAPIProviderMetal:          ClusterAPIProviderMetalCRDDir,
-	ClusterAPIProviderMetalPreview:   ClusterAPIProviderMetalCRDDir,
-	ClusterAPIProviderOA:             ClusterAPIProviderOACRDDir,
-	ClusterAPIProviderOAPreview:      ClusterAPIProviderOACRDDir,
-	ClusterLifecycle:                 ClusterLifecycleCRDDir,
-	ClusterManager:                   ClusterManagerCRDDir,
-	ClusterProxyAddon:                ClusterProxyAddonCRDDir,
-	Discovery:                        DiscoveryCRDDir,
-	Hive:                             HiveCRDDir,
-	ImageBasedInstallOperator:        ImageBasedInstallOperatorCRDDir,
-	ImageBasedInstallOperatorPreview: ImageBasedInstallOperatorCRDDir,
-	ManagedServiceAccount:            ManagedServiceAccountCRDDir,
-	ManagedServiceAccountPreview:     ManagedServiceAccountCRDDir,
-	ServerFoundation:                 ServerFoundationCRDDir,
+func ComponentToCRDDirectory() map[string]string {
+	var clusterAPICRDDir string
+	var clusterAPIProviderOACRDDir string
+	var clusterAPIProviderMetalCRDDir string
+
+	if utils.DeployOnOCP() {
+		clusterAPICRDDir = ClusterAPICRDDir
+		clusterAPIProviderOACRDDir = ClusterAPIProviderOACRDDir
+		clusterAPIProviderMetalCRDDir = ClusterAPIProviderMetalCRDDir
+	} else {
+		clusterAPICRDDir = ClusterAPIK8SCRDDir
+		clusterAPIProviderOACRDDir = ClusterAPIProviderOAK8SCRDDir
+		clusterAPIProviderMetalCRDDir = ClusterAPIProviderMetalK8SCRDDir
+	}	
+
+	return map[string]string{
+		AssistedService:                  AssistedServiceCRDDir,
+		ClusterAPI:                       clusterAPICRDDir,
+		ClusterAPIPreview:                clusterAPICRDDir,
+		ClusterAPIProviderAWS:            ClusterAPIProviderAWSCRDDir,
+		ClusterAPIProviderAWSPreview:     ClusterAPIProviderAWSCRDDir,
+		ClusterAPIProviderMetal:          clusterAPIProviderMetalCRDDir,
+		ClusterAPIProviderMetalPreview:   clusterAPIProviderMetalCRDDir,
+		ClusterAPIProviderOA:             clusterAPIProviderOACRDDir,
+		ClusterAPIProviderOAPreview:      clusterAPIProviderOACRDDir,
+		ClusterLifecycle:                 ClusterLifecycleCRDDir,
+		ClusterManager:                   ClusterManagerCRDDir,
+		ClusterProxyAddon:                ClusterProxyAddonCRDDir,
+		Discovery:                        DiscoveryCRDDir,
+		Hive:                             HiveCRDDir,
+		ImageBasedInstallOperator:        ImageBasedInstallOperatorCRDDir,
+		ImageBasedInstallOperatorPreview: ImageBasedInstallOperatorCRDDir,
+		ManagedServiceAccount:            ManagedServiceAccountCRDDir,
+		ManagedServiceAccountPreview:     ManagedServiceAccountCRDDir,
+		ServerFoundation:                 ServerFoundationCRDDir,
+	}
 }
 
 /*
