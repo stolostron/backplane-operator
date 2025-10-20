@@ -157,8 +157,7 @@ func ComponentToCRDDirectory() map[string]string {
 		clusterAPICRDDir = ClusterAPIK8SCRDDir
 		clusterAPIProviderOACRDDir = ClusterAPIProviderOAK8SCRDDir
 		clusterAPIProviderMetalCRDDir = ClusterAPIProviderMetalK8SCRDDir
-	}	
-
+	}
 	return map[string]string{
 		AssistedService:                  AssistedServiceCRDDir,
 		ClusterAPI:                       clusterAPICRDDir,
