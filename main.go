@@ -38,7 +38,6 @@ import (
 	operatorsapiv2 "github.com/operator-framework/api/pkg/operators/v2"
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 	"github.com/stolostron/backplane-operator/controllers"
-	renderer "github.com/stolostron/backplane-operator/pkg/rendering"
 	"github.com/stolostron/backplane-operator/pkg/status"
 	"github.com/stolostron/backplane-operator/pkg/utils"
 	"github.com/stolostron/backplane-operator/pkg/version"
@@ -49,14 +48,12 @@ import (
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
-	"k8s.io/client-go/util/retry"
 
 	"go.uber.org/zap/zapcore"
 	admissionregistration "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -168,7 +165,7 @@ func main() {
 			Port: 9443,
 			TLSOpts: []func(*tls.Config){
 				func(config *tls.Config) {
-					config.MinVersion = tls.VersionTLS12
+					config.MinVersion = tls.VersionTLS13
 				},
 			},
 		}),
@@ -287,30 +284,6 @@ func main() {
 		}
 	}
 
-	// Render CRD templates
-
-	var backplaneConfig *backplanev1.MultiClusterEngine
-	crds, errs := renderer.RenderCRDs(crdsDir, backplaneConfig)
-	if len(errs) > 0 {
-		for _, err := range errs {
-			setupLog.Info(err.Error())
-		}
-		os.Exit(1)
-	}
-
-	// udpate CRDs with retry
-	for i := range crds {
-		retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-			crd := crds[i]
-			e := ensureCRD(context.TODO(), uncachedClient, crd)
-			return e
-		})
-		if retryErr != nil {
-			setupLog.Error(err, "unable to ensure CRD exists in alloted time. Failing.")
-			os.Exit(1)
-		}
-	}
-
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
 		// https://book.kubebuilder.io/cronjob-tutorial/running.html#running-webhooks-locally, https://book.kubebuilder.io/multiversion-tutorial/webhooks.html#and-maingo
 		if err = ensureWebhooks(uncachedClient); err != nil {
@@ -354,36 +327,6 @@ func main() {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
-}
-
-func ensureCRD(ctx context.Context, c client.Client, crd *unstructured.Unstructured) error {
-	existingCRD := &unstructured.Unstructured{}
-	existingCRD.SetGroupVersionKind(crd.GroupVersionKind())
-	err := c.Get(ctx, types.NamespacedName{Name: crd.GetName()}, existingCRD)
-	if err != nil && errors.IsNotFound(err) {
-		// CRD not found. Create and return
-		setupLog.Info("Creating CRD", "Name", crd.GetName())
-		if err = c.Create(ctx, crd); err != nil {
-			return fmt.Errorf("error creating CRD '%s': %w", crd.GetName(), err)
-		}
-
-	} else if err != nil {
-		return fmt.Errorf("error getting CRD '%s': %w", crd.GetName(), err)
-
-	} else {
-		// CRD already exists. Update and return
-		if utils.AnnotationPresent(utils.AnnotationMCEIgnore, existingCRD) {
-			setupLog.Info("CRD has ignore label. Skipping update.", "Name", crd.GetName())
-			return nil
-		}
-
-		crd.SetResourceVersion(existingCRD.GetResourceVersion())
-		setupLog.Info("Updating CRD", "Name", crd.GetName())
-		if err = c.Update(ctx, crd); err != nil {
-			return fmt.Errorf("error updating CRD '%s': %w", crd.GetName(), err)
-		}
-	}
-	return nil
 }
 
 func ensureWebhooks(k8sClient client.Client) error {

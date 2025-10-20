@@ -41,6 +41,8 @@ const (
 	ComponentDisabledReason = "ComponentDisabled"
 	// ComponentUpdatingReason is added when the hub is actively updating a component resource
 	ComponentsUpdatingReason = "UpdatingComponentResource"
+	// ExternalManagementReason is added when components are marked as externally managed
+	ExternalManagementReason = "ExternalManagement"
 )
 
 // NewCondition creates a new condition.
