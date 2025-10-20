@@ -539,7 +539,7 @@ func TestRenderCoreCRDs(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var backplaneConfig *backplane.MultiClusterEngine
-			got, errs := RenderCRDs(tt.crdDir, backplaneConfig)
+			got, errs := RenderCRDs(tt.crdDir, backplaneConfig, []string{})
 			if errs != nil && len(errs) > 1 {
 				t.Errorf("RenderCRDs() got = %v, want %v", errs, nil)
 			}
@@ -580,7 +580,7 @@ func TestRenderCRDs(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, errs := RenderCRDs(tt.crdDir, testBackplane)
+			got, errs := RenderCRDs(tt.crdDir, testBackplane, []string{})
 			if errs != nil && len(errs) > 1 {
 				t.Errorf("RenderCRDs() got = %v, want %v", errs, nil)
 			}
@@ -601,6 +601,65 @@ func TestRenderCRDs(t *testing.T) {
 					t.Errorf("did not properly set namespace")
 				}
 
+			}
+		})
+	}
+}
+
+func TestRenderCRDsSkipDirectories(t *testing.T) {
+	// Test that "cluster-api" skip doesn't affect "cluster-api-provider-aws"
+	tests := []struct {
+		name         string
+		crdDir       string
+		skipDirs     []string
+		expectedCRDs map[string]bool // CRD names that should be rendered
+	}{
+		{
+			name:     "Skip cluster-api but not cluster-api-provider-aws",
+			crdDir:   "../../test/unit-test-crds",
+			skipDirs: []string{"cluster-api"},
+			expectedCRDs: map[string]bool{
+				// CAPA CRDs should still be rendered
+				"awsclusters.infrastructure.cluster.x-k8s.io": true,
+				// CAPI CRDs should be skipped
+				"clusters.cluster.x-k8s.io": false,
+			},
+		},
+		{
+			name:     "Skip cluster-api-provider-aws but not cluster-api",
+			crdDir:   "../../test/unit-test-crds",
+			skipDirs: []string{"cluster-api-provider-aws"},
+			expectedCRDs: map[string]bool{
+				// CAPI CRDs should be rendered
+				"clusters.cluster.x-k8s.io": true,
+				// CAPA CRDs should be skipped
+				"awsclusters.infrastructure.cluster.x-k8s.io": false,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, errs := RenderCRDs(tt.crdDir, nil, tt.skipDirs)
+			if len(errs) > 0 {
+				t.Errorf("RenderCRDs() errors = %v", errs)
+			}
+
+			// Create map of rendered CRD names
+			renderedCRDs := make(map[string]bool)
+			for _, crd := range got {
+				renderedCRDs[crd.GetName()] = true
+			}
+
+			// Check expectations
+			for expectedCRD, shouldBeRendered := range tt.expectedCRDs {
+				_, wasRendered := renderedCRDs[expectedCRD]
+				if shouldBeRendered && !wasRendered {
+					t.Errorf("Expected CRD %s to be rendered but it was skipped", expectedCRD)
+				}
+				if !shouldBeRendered && wasRendered {
+					t.Errorf("Expected CRD %s to be skipped but it was rendered", expectedCRD)
+				}
 			}
 		})
 	}
