@@ -375,10 +375,10 @@ package main
 //+kubebuilder:rbac:groups=imageregistry.open-cluster-management.io,resources=managedclusterimageregistries;managedclusterimageregistries/status,verbs=get;list;watch;update
 //+kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=awsclustercontrolleridentities,verbs=create;get;list;watch
 //+kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=awsclusterroleidentities;awsclusterstaticidentities;awsmachinetemplates,verbs=get;list;watch
-//+kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=awsclusters/status;awsfargateprofiles/status;rosaclusters/status;rosaroleconfigs/status,verbs=get;patch;update
+//+kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=awsclusters/status;awsfargateprofiles/status;rosaclusters/status;rosanetworks/status;rosaroleconfigs/status,verbs=get;patch;update
 //+kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=awsclusters;awsfargateprofiles;awsmachinepools;awsmanagedclusters;awsmanagedmachinepools;rosaclusters,verbs=delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=awsmachinepools/status;awsmachines/status;awsmanagedclusters/status;awsmanagedmachinepools/status,verbs=get;list;patch;update;watch
-//+kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=awsmachines;rosamachinepools;rosaroleconfigs,verbs=create;delete;get;list;patch;update;watch
+//+kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=awsmachines;rosamachinepools;rosanetworks;rosaroleconfigs,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=metal3clusters/status;metal3dataclaims/status;metal3datas/status;metal3datatemplates/status;metal3machines/status;metal3remediations/status,verbs=get;patch;update
 //+kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=metal3clusters;metal3dataclaims;metal3datas;metal3datatemplates;metal3machines;metal3machinetemplates;metal3remediations,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=metal3machines;metal3machinetemplates,verbs=create;delete;get;list;patch;update;watch
