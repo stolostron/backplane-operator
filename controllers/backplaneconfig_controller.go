@@ -969,7 +969,7 @@ func (r *MultiClusterEngineReconciler) fetchChartOrCRDPath(component string) str
 		backplanev1.ClusterAPI:                     clusterAPIChartLoc,
 		backplanev1.ClusterAPIProviderAWS:          toggle.ClusterAPIProviderAWSChartDir,
 		backplanev1.ClusterAPIProviderMetalPreview: clusterAPIMetalChartLoc,
-		backplanev1.ClusterAPIProviderOAPreview:    clusterAPIOAChartLoc,
+		backplanev1.ClusterAPIProviderOA:           clusterAPIOAChartLoc,
 		backplanev1.ClusterLifecycle:               toggle.ClusterLifecycleChartDir,
 		backplanev1.ClusterManager:                 toggle.ClusterManagerChartDir,
 		backplanev1.ClusterProxyAddon:              toggle.ClusterProxyAddonDir,
