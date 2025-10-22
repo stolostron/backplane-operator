@@ -1320,14 +1320,14 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 			backplanev1.ClusterAPIProviderMetalPreview)
 	}
 
-	if !r.isComponentExternallyManaged(backplaneConfig, backplanev1.ClusterAPIProviderOAPreview) {
-		if backplaneConfig.Enabled(backplanev1.ClusterAPIProviderOAPreview) {
+	if !r.isComponentExternallyManaged(backplaneConfig, backplanev1.ClusterAPIProviderOA) {
+		if backplaneConfig.Enabled(backplanev1.ClusterAPIProviderOA) {
 			result, err = r.ensureClusterAPIProviderOA(ctx, backplaneConfig)
 			if result != (ctrl.Result{}) {
 				requeue = true
 			}
 			if err != nil {
-				errs[backplanev1.ClusterAPIProviderOAPreview] = err
+				errs[backplanev1.ClusterAPIProviderOA] = err
 			}
 		} else {
 			result, err = r.ensureNoClusterAPIProviderOA(ctx, backplaneConfig)
@@ -1335,36 +1335,18 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 				requeue = true
 			}
 			if err != nil {
-				errs[backplanev1.ClusterAPIProviderOAPreview] = err
+				errs[backplanev1.ClusterAPIProviderOA] = err
 			}
 		}
 	} else {
 		log.Info(messages.SkippingExternallyManaged, "component",
-			backplanev1.ClusterAPIProviderOAPreview)
+			backplanev1.ClusterAPIProviderOA)
 		result, err = r.ensureNoClusterAPIProviderMetal(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
 			requeue = true
 		}
 		if err != nil {
 			errs[backplanev1.ClusterAPIProviderMetalPreview] = err
-		}
-	}
-
-	if backplaneConfig.Enabled(backplanev1.ClusterAPIProviderOA) {
-		result, err = r.ensureClusterAPIProviderOA(ctx, backplaneConfig)
-		if result != (ctrl.Result{}) {
-			requeue = true
-		}
-		if err != nil {
-			errs[backplanev1.ClusterAPIProviderOA] = err
-		}
-	} else {
-		result, err = r.ensureNoClusterAPIProviderOA(ctx, backplaneConfig)
-		if result != (ctrl.Result{}) {
-			requeue = true
-		}
-		if err != nil {
-			errs[backplanev1.ClusterAPIProviderOA] = err
 		}
 	}
 
