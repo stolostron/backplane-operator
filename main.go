@@ -38,11 +38,13 @@ import (
 	operatorsapiv2 "github.com/operator-framework/api/pkg/operators/v2"
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 	"github.com/stolostron/backplane-operator/controllers"
+	renderer "github.com/stolostron/backplane-operator/pkg/rendering"
 	"github.com/stolostron/backplane-operator/pkg/status"
 	"github.com/stolostron/backplane-operator/pkg/utils"
 	"github.com/stolostron/backplane-operator/pkg/version"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	clustermanager "open-cluster-management.io/api/operator/v1"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -165,7 +167,7 @@ func main() {
 			Port: 9443,
 			TLSOpts: []func(*tls.Config){
 				func(config *tls.Config) {
-					config.MinVersion = tls.VersionTLS13
+					config.MinVersion = tls.VersionTLS12
 				},
 			},
 		}),
@@ -235,6 +237,30 @@ func main() {
 			os.Exit(1)
 		}
 	}
+
+	// Apply all component CRDs except cluster-api ones (which may be disabled)
+	// cluster-api and cluster-api-provider-aws CRDs are conditionally applied in the reconciler
+	setupLog.Info("Applying component CRDs")
+	skipCRDDirs := []string{
+		"cluster-api",
+		"cluster-api-provider-aws",
+	}
+
+	crds, errs := renderer.RenderCRDs(crdsDir, nil, skipCRDDirs)
+	if len(errs) > 0 {
+		for _, err := range errs {
+			setupLog.Error(err, "Failed to render CRD")
+		}
+		os.Exit(1)
+	}
+
+	for i := range crds {
+		if err := ensureCRD(ctx, uncachedClient, crds[i]); err != nil {
+			setupLog.Error(err, "Failed to apply CRD", "CRD", crds[i].GetName())
+			os.Exit(1)
+		}
+	}
+	setupLog.Info("Component CRDs applied successfully")
 
 	if err = (&controllers.MultiClusterEngineReconciler{
 		Client:          mgr.GetClient(),
@@ -327,6 +353,36 @@ func main() {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
+}
+
+func ensureCRD(ctx context.Context, c client.Client, crd *unstructured.Unstructured) error {
+	existingCRD := &unstructured.Unstructured{}
+	existingCRD.SetGroupVersionKind(crd.GroupVersionKind())
+	err := c.Get(ctx, types.NamespacedName{Name: crd.GetName()}, existingCRD)
+	if err != nil && errors.IsNotFound(err) {
+		// CRD not found. Create and return
+		setupLog.Info("Creating CRD", "Name", crd.GetName())
+		if err = c.Create(ctx, crd); err != nil {
+			return fmt.Errorf("error creating CRD '%s': %w", crd.GetName(), err)
+		}
+
+	} else if err != nil {
+		return fmt.Errorf("error getting CRD '%s': %w", crd.GetName(), err)
+
+	} else {
+		// CRD already exists. Update and return
+		if utils.AnnotationPresent(utils.AnnotationMCEIgnore, existingCRD) {
+			setupLog.Info("CRD has ignore label. Skipping update.", "Name", crd.GetName())
+			return nil
+		}
+
+		crd.SetResourceVersion(existingCRD.GetResourceVersion())
+		setupLog.Info("Updating CRD", "Name", crd.GetName())
+		if err = c.Update(ctx, crd); err != nil {
+			return fmt.Errorf("error updating CRD '%s': %w", crd.GetName(), err)
+		}
+	}
+	return nil
 }
 
 func ensureWebhooks(k8sClient client.Client) error {

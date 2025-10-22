@@ -459,7 +459,7 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 	for i := range crds {
 		retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 			crd := crds[i]
-			e := ensureCRD(context.TODO(), r.Client, crd)
+			e := EnsureCRD(context.TODO(), r.Client, crd)
 			return e
 		})
 
@@ -2524,34 +2524,34 @@ func (r *MultiClusterEngineReconciler) CheckDeprecatedFieldUsage(m *backplanev1.
 	}
 }
 
-func ensureCRD(ctx context.Context, c client.Client, crd *unstructured.Unstructured) error {
+func EnsureCRD(ctx context.Context, c client.Client, crd *unstructured.Unstructured) error {
 	existingCRD := &unstructured.Unstructured{}
 	existingCRD.SetGroupVersionKind(crd.GroupVersionKind())
-	err := c.Get(ctx, types.NamespacedName{Name: crd.GetName()}, existingCRD)
-	if err != nil && apierrors.IsNotFound(err) {
-		// CRD not found. Create and return
-		log.V(1).Info("Creating CRD", "Name", crd.GetName())
-		err = c.Create(ctx, crd)
-		if err != nil {
-			return fmt.Errorf("error creating CRD '%s': %w", crd.GetName(), err)
+	if err := c.Get(ctx, types.NamespacedName{Name: crd.GetName()}, existingCRD); err != nil {
+		if apierrors.IsNotFound(err) {
+			log.Info("Creating CRD", "Name", crd.GetName())
+			if err = c.Create(ctx, crd); err != nil {
+				return fmt.Errorf("error creating CRD '%s': %w", crd.GetName(), err)
+			}
+			return nil
 		}
-	} else if err != nil {
 		return fmt.Errorf("error getting CRD '%s': %w", crd.GetName(), err)
-
-	} else if err == nil {
+	} else {
 		// CRD already exists. Update and return
 		if utils.AnnotationPresent(utils.AnnotationMCEIgnore, existingCRD) {
-			log.V(1).Info("CRD has ignore annotation - skipping", "Name", crd.GetName())
+			log.Info("CRD has ignore label. Skipping update.", "Name", crd.GetName())
 			return nil
 		}
 
-		log.V(1).Info("Updating CRD", "Name", crd.GetName())
+		// Set resource version for update
 		crd.SetResourceVersion(existingCRD.GetResourceVersion())
-		err = c.Update(ctx, crd)
-		if err != nil {
+
+		// log.Info("Updating CRD", "Name", crd.GetName())
+		if err = c.Update(ctx, crd); err != nil {
 			return fmt.Errorf("error updating CRD '%s': %w", crd.GetName(), err)
 		}
 	}
+
 	return nil
 }
 
