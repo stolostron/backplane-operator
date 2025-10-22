@@ -304,18 +304,18 @@ func TestComponentToCRDDirectory(t *testing.T) {
 		name        string
 		deployOnOCP bool
 		assertions  []struct {
-			component       string
-			expectedCRDDir  string
-			description     string
+			component      string
+			expectedCRDDir string
+			description    string
 		}
 	}{
 		{
 			name:        "OCP deployment - uses OCP CRD directories",
 			deployOnOCP: true,
 			assertions: []struct {
-				component       string
-				expectedCRDDir  string
-				description     string
+				component      string
+				expectedCRDDir string
+				description    string
 			}{
 				{
 					component:      backplanev1.ClusterAPI,
@@ -368,9 +368,9 @@ func TestComponentToCRDDirectory(t *testing.T) {
 			name:        "Non-OCP deployment - uses K8S CRD directories",
 			deployOnOCP: false,
 			assertions: []struct {
-				component       string
-				expectedCRDDir  string
-				description     string
+				component      string
+				expectedCRDDir string
+				description    string
 			}{
 				{
 					component:      backplanev1.ClusterAPI,
