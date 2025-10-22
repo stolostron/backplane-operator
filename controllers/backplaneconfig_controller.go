@@ -969,7 +969,7 @@ func (r *MultiClusterEngineReconciler) fetchChartOrCRDPath(component string) str
 		backplanev1.ClusterAPI:                     clusterAPIChartLoc,
 		backplanev1.ClusterAPIProviderAWS:          toggle.ClusterAPIProviderAWSChartDir,
 		backplanev1.ClusterAPIProviderMetalPreview: clusterAPIMetalChartLoc,
-		backplanev1.ClusterAPIProviderOAPreview:    clusterAPIOAChartLoc,
+		backplanev1.ClusterAPIProviderOA:           clusterAPIOAChartLoc,
 		backplanev1.ClusterLifecycle:               toggle.ClusterLifecycleChartDir,
 		backplanev1.ClusterManager:                 toggle.ClusterManagerChartDir,
 		backplanev1.ClusterProxyAddon:              toggle.ClusterProxyAddonDir,
@@ -1320,14 +1320,14 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 			backplanev1.ClusterAPIProviderMetalPreview)
 	}
 
-	if !r.isComponentExternallyManaged(backplaneConfig, backplanev1.ClusterAPIProviderOAPreview) {
-		if backplaneConfig.Enabled(backplanev1.ClusterAPIProviderOAPreview) {
+	if !r.isComponentExternallyManaged(backplaneConfig, backplanev1.ClusterAPIProviderOA) {
+		if backplaneConfig.Enabled(backplanev1.ClusterAPIProviderOA) {
 			result, err = r.ensureClusterAPIProviderOA(ctx, backplaneConfig)
 			if result != (ctrl.Result{}) {
 				requeue = true
 			}
 			if err != nil {
-				errs[backplanev1.ClusterAPIProviderOAPreview] = err
+				errs[backplanev1.ClusterAPIProviderOA] = err
 			}
 		} else {
 			result, err = r.ensureNoClusterAPIProviderOA(ctx, backplaneConfig)
@@ -1335,12 +1335,12 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 				requeue = true
 			}
 			if err != nil {
-				errs[backplanev1.ClusterAPIProviderOAPreview] = err
+				errs[backplanev1.ClusterAPIProviderOA] = err
 			}
 		}
 	} else {
 		log.Info(messages.SkippingExternallyManaged, "component",
-			backplanev1.ClusterAPIProviderOAPreview)
+			backplanev1.ClusterAPIProviderOA)
 	}
 
 	if backplaneConfig.Enabled(backplanev1.LocalCluster) {
@@ -1928,7 +1928,7 @@ func (r *MultiClusterEngineReconciler) ensureNoAllInternalEngineComponents(ctx c
 		backplanev1.ClusterAPI,
 		backplanev1.ClusterAPIProviderAWS,
 		backplanev1.ClusterAPIProviderMetalPreview,
-		backplanev1.ClusterAPIProviderOAPreview,
+		backplanev1.ClusterAPIProviderOA,
 		backplanev1.ClusterLifecycle,
 		backplanev1.ClusterManager,
 		backplanev1.ClusterProxyAddon,
