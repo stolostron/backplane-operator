@@ -323,11 +323,8 @@ package main
 //+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;watch;update;create;patch
 //+kubebuilder:rbac:groups=discovery.open-cluster-management.io,resources=discoveredclusters,verbs=create;delete;deletecollection;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=discovery.open-cluster-management.io,resources=discoveredclusters,verbs=get;list;watch;create;update;delete;deletecollection;patch
-//+kubebuilder:rbac:groups=discovery.open-cluster-management.io,resources=discoveredclusters/finalizers,verbs=get;patch;update
-//+kubebuilder:rbac:groups=discovery.open-cluster-management.io,resources=discoveredclusters/status,verbs=get;patch;update
+//+kubebuilder:rbac:groups=discovery.open-cluster-management.io,resources=discoveredclusters/finalizers;discoveredclusters/status;discoveryconfigs/finalizers;discoveryconfigs/status,verbs=get;patch;update
 //+kubebuilder:rbac:groups=discovery.open-cluster-management.io,resources=discoveryconfigs,verbs=create;delete;get;list;patch;update;watch
-//+kubebuilder:rbac:groups=discovery.open-cluster-management.io,resources=discoveryconfigs/finalizers,verbs=get;patch;update
-//+kubebuilder:rbac:groups=discovery.open-cluster-management.io,resources=discoveryconfigs/status,verbs=get;patch;update
 //+kubebuilder:rbac:groups=discovery.open-cluster-management.io,resources=discoveryconfigs;discoveredclusters,verbs=list;watch
 //+kubebuilder:rbac:groups=events.k8s.io,resources=events,verbs=create;patch
 //+kubebuilder:rbac:groups=extensions.hive.openshift.io,resources=*,verbs=*
