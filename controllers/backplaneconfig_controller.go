@@ -1341,12 +1341,12 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 	} else {
 		log.Info(messages.SkippingExternallyManaged, "component",
 			backplanev1.ClusterAPIProviderOA)
-		result, err = r.ensureNoClusterAPIProviderMetal(ctx, backplaneConfig)
+		result, err = r.ensureNoClusterAPIProviderOA(ctx, backplaneConfig)
 		if result != (ctrl.Result{}) {
 			requeue = true
 		}
 		if err != nil {
-			errs[backplanev1.ClusterAPIProviderMetalPreview] = err
+			errs[backplanev1.ClusterAPIProviderOA] = err
 		}
 	}
 
