@@ -240,6 +240,11 @@ spec:
                     type:
                       description: Type is the type of the cluster condition.
                       type: string
+                  required:
+                  - message
+                  - reason
+                  - status
+                  - type
                   type: object
                 type: array
               conditions:
@@ -269,6 +274,11 @@ spec:
                     type:
                       description: Type is the type of the cluster condition.
                       type: string
+                  required:
+                  - message
+                  - reason
+                  - status
+                  - type
                   type: object
                 type: array
               currentVersion:
