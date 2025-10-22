@@ -298,3 +298,219 @@ func TestIsEUSUpgrading(t *testing.T) {
 		})
 	}
 }
+
+func TestComponentToCRDDirectory(t *testing.T) {
+	tests := []struct {
+		name        string
+		deployOnOCP bool
+		assertions  []struct {
+			component      string
+			expectedCRDDir string
+			description    string
+		}
+	}{
+		{
+			name:        "OCP deployment - uses OCP CRD directories",
+			deployOnOCP: true,
+			assertions: []struct {
+				component      string
+				expectedCRDDir string
+				description    string
+			}{
+				{
+					component:      backplanev1.ClusterAPI,
+					expectedCRDDir: backplanev1.ClusterAPICRDDir,
+					description:    "ClusterAPI should use OCP CRD directory",
+				},
+				{
+					component:      backplanev1.ClusterAPIPreview,
+					expectedCRDDir: backplanev1.ClusterAPICRDDir,
+					description:    "ClusterAPIPreview should use OCP CRD directory",
+				},
+				{
+					component:      backplanev1.ClusterAPIProviderOA,
+					expectedCRDDir: backplanev1.ClusterAPIProviderOACRDDir,
+					description:    "ClusterAPIProviderOA should use OCP CRD directory",
+				},
+				{
+					component:      backplanev1.ClusterAPIProviderOAPreview,
+					expectedCRDDir: backplanev1.ClusterAPIProviderOACRDDir,
+					description:    "ClusterAPIProviderOAPreview should use OCP CRD directory",
+				},
+				{
+					component:      backplanev1.ClusterAPIProviderMetal,
+					expectedCRDDir: backplanev1.ClusterAPIProviderMetalCRDDir,
+					description:    "ClusterAPIProviderMetal should use OCP CRD directory",
+				},
+				{
+					component:      backplanev1.ClusterAPIProviderMetalPreview,
+					expectedCRDDir: backplanev1.ClusterAPIProviderMetalCRDDir,
+					description:    "ClusterAPIProviderMetalPreview should use OCP CRD directory",
+				},
+				{
+					component:      backplanev1.AssistedService,
+					expectedCRDDir: backplanev1.AssistedServiceCRDDir,
+					description:    "AssistedService should use correct CRD directory",
+				},
+				{
+					component:      backplanev1.ClusterLifecycle,
+					expectedCRDDir: backplanev1.ClusterLifecycleCRDDir,
+					description:    "ClusterLifecycle should use correct CRD directory",
+				},
+				{
+					component:      backplanev1.ClusterManager,
+					expectedCRDDir: backplanev1.ClusterManagerCRDDir,
+					description:    "ClusterManager should use correct CRD directory",
+				},
+			},
+		},
+		{
+			name:        "Non-OCP deployment - uses K8S CRD directories",
+			deployOnOCP: false,
+			assertions: []struct {
+				component      string
+				expectedCRDDir string
+				description    string
+			}{
+				{
+					component:      backplanev1.ClusterAPI,
+					expectedCRDDir: backplanev1.ClusterAPIK8SCRDDir,
+					description:    "ClusterAPI should use K8S CRD directory on non-OCP",
+				},
+				{
+					component:      backplanev1.ClusterAPIPreview,
+					expectedCRDDir: backplanev1.ClusterAPIK8SCRDDir,
+					description:    "ClusterAPIPreview should use K8S CRD directory on non-OCP",
+				},
+				{
+					component:      backplanev1.ClusterAPIProviderOA,
+					expectedCRDDir: backplanev1.ClusterAPIProviderOAK8SCRDDir,
+					description:    "ClusterAPIProviderOA should use K8S CRD directory on non-OCP",
+				},
+				{
+					component:      backplanev1.ClusterAPIProviderOAPreview,
+					expectedCRDDir: backplanev1.ClusterAPIProviderOAK8SCRDDir,
+					description:    "ClusterAPIProviderOAPreview should use K8S CRD directory on non-OCP",
+				},
+				{
+					component:      backplanev1.ClusterAPIProviderMetal,
+					expectedCRDDir: backplanev1.ClusterAPIProviderMetalK8SCRDDir,
+					description:    "ClusterAPIProviderMetal should use K8S CRD directory on non-OCP",
+				},
+				{
+					component:      backplanev1.ClusterAPIProviderMetalPreview,
+					expectedCRDDir: backplanev1.ClusterAPIProviderMetalK8SCRDDir,
+					description:    "ClusterAPIProviderMetalPreview should use K8S CRD directory on non-OCP",
+				},
+				{
+					component:      backplanev1.AssistedService,
+					expectedCRDDir: backplanev1.AssistedServiceCRDDir,
+					description:    "AssistedService should use correct CRD directory",
+				},
+				{
+					component:      backplanev1.ClusterLifecycle,
+					expectedCRDDir: backplanev1.ClusterLifecycleCRDDir,
+					description:    "ClusterLifecycle should use correct CRD directory",
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Set the deployment type
+			originalDeployOnOCP := GlobalDeployOnOCP
+			SetDeployOnOCP(tt.deployOnOCP)
+			defer SetDeployOnOCP(originalDeployOnOCP) // Restore original value after test
+
+			// Get the component to CRD directory mapping
+			result := ComponentToCRDDirectory()
+
+			// Verify the result is not nil
+			if result == nil {
+				t.Fatal("ComponentToCRDDirectory() returned nil")
+			}
+
+			// Run all assertions for this test case
+			for _, assertion := range tt.assertions {
+				if got, ok := result[assertion.component]; !ok {
+					t.Errorf("%s: component %s not found in result map", assertion.description, assertion.component)
+				} else if got != assertion.expectedCRDDir {
+					t.Errorf("%s: got %v, want %v", assertion.description, got, assertion.expectedCRDDir)
+				}
+			}
+		})
+	}
+}
+
+func TestComponentToCRDDirectory_AllComponents(t *testing.T) {
+	// Store original value
+	originalDeployOnOCP := GlobalDeployOnOCP
+	defer SetDeployOnOCP(originalDeployOnOCP)
+
+	// Test on OCP
+	SetDeployOnOCP(true)
+	ocpResult := ComponentToCRDDirectory()
+
+	// Verify all expected components are present in OCP mode
+	expectedComponents := []string{
+		backplanev1.AssistedService,
+		backplanev1.ClusterAPI,
+		backplanev1.ClusterAPIPreview,
+		backplanev1.ClusterAPIProviderAWS,
+		backplanev1.ClusterAPIProviderAWSPreview,
+		backplanev1.ClusterAPIProviderMetal,
+		backplanev1.ClusterAPIProviderMetalPreview,
+		backplanev1.ClusterAPIProviderOA,
+		backplanev1.ClusterAPIProviderOAPreview,
+		backplanev1.ClusterLifecycle,
+		backplanev1.ClusterManager,
+		backplanev1.ClusterProxyAddon,
+		backplanev1.Discovery,
+		backplanev1.Hive,
+		backplanev1.ImageBasedInstallOperator,
+		backplanev1.ImageBasedInstallOperatorPreview,
+		backplanev1.ManagedServiceAccount,
+		backplanev1.ManagedServiceAccountPreview,
+		backplanev1.ServerFoundation,
+	}
+
+	for _, component := range expectedComponents {
+		if _, ok := ocpResult[component]; !ok {
+			t.Errorf("Component %s not found in OCP result map", component)
+		}
+	}
+
+	// Test on non-OCP (K8S)
+	SetDeployOnOCP(false)
+	k8sResult := ComponentToCRDDirectory()
+
+	// Verify all expected components are present in K8S mode
+	for _, component := range expectedComponents {
+		if _, ok := k8sResult[component]; !ok {
+			t.Errorf("Component %s not found in K8S result map", component)
+		}
+	}
+
+	// Verify that ClusterAPI components use different directories on OCP vs K8S
+	if ocpResult[backplanev1.ClusterAPI] == k8sResult[backplanev1.ClusterAPI] {
+		t.Error("ClusterAPI should use different CRD directories on OCP vs K8S")
+	}
+
+	if ocpResult[backplanev1.ClusterAPIProviderOA] == k8sResult[backplanev1.ClusterAPIProviderOA] {
+		t.Error("ClusterAPIProviderOA should use different CRD directories on OCP vs K8S")
+	}
+
+	if ocpResult[backplanev1.ClusterAPIProviderMetal] == k8sResult[backplanev1.ClusterAPIProviderMetal] {
+		t.Error("ClusterAPIProviderMetal should use different CRD directories on OCP vs K8S")
+	}
+
+	// Verify that non-ClusterAPI components use the same directories on both platforms
+	if ocpResult[backplanev1.AssistedService] != k8sResult[backplanev1.AssistedService] {
+		t.Error("AssistedService should use the same CRD directory on OCP and K8S")
+	}
+
+	if ocpResult[backplanev1.ClusterAPIProviderAWS] != k8sResult[backplanev1.ClusterAPIProviderAWS] {
+		t.Error("ClusterAPIProviderAWS should use the same CRD directory on OCP and K8S")
+	}
+}

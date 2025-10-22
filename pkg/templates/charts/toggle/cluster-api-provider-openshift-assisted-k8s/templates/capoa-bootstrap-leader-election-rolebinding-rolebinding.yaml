@@ -1,0 +1,13 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: capoa-bootstrap-leader-election-rolebinding
+  namespace: '{{ default "capoa-bootstrap-system" .Values.global.namespace }}'
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: capoa-bootstrap-leader-election-role
+subjects:
+- kind: ServiceAccount
+  name: capoa-bootstrap-controller-manager
+  namespace: '{{ default "capoa-bootstrap-system" .Values.global.namespace }}'

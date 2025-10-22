@@ -1,0 +1,9 @@
+
+# Source: cluster-api-provider-openshift-assisted/templates/cert-manager.io_v1_issuer_capoa-bootstrap-selfsigned-issuer.yaml
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: capoa-bootstrap-selfsigned-issuer
+  namespace: capoa-bootstrap-system
+spec:
+  selfSigned: {}

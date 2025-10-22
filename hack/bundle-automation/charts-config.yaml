@@ -80,3 +80,51 @@
         - "HUB_KUBECONFIG"
         - "INSTALL_NAMESPACE"
 
+
+- repo_name: "cluster-api-installer-k8s"
+  github_ref: "https://github.com/rccrdpccl/cluster-api-installer.git"
+  branch: "k8s-charts"
+  charts:
+    - name: "cluster-api-k8s"
+      chart-path: "charts/cluster-api-k8s"
+      always-or-toggle: "toggle"
+      imageMappings:
+        ose-cluster-api-rhel9: ose_cluster_api_rhel9
+        mce-capi-webhook-config-rhel9: mce_capi_webhook_config_rhel9
+      inclusions:
+        - "pullSecretOverride"
+      skipRBACOverrides: true
+      updateChartVersion: true # the chart version will be retrieved from trimmed branch name, e.g. backplane-2.6 -> 2.6
+      escape-template-variables:
+        - "CLUSTER_NAME"
+        - "HUB_KUBECONFIG"
+        - "INSTALL_NAMESPACE"
+    - name: "cluster-api-provider-openshift-assisted-k8s"
+      chart-path: "charts/cluster-api-provider-openshift-assisted-k8s"
+      always-or-toggle: "toggle"
+      imageMappings:
+        cluster-api-controlplane-provider-openshift-assisted: "cluster_api_provider_openshift_assisted_control_plane"
+        cluster-api-bootstrap-provider-openshift-assisted: "cluster_api_provider_openshift_assisted_bootstrap"
+      inclusions:
+        - "pullSecretOverride"
+      skipRBACOverrides: true
+      updateChartVersion: true # the chart version will be retrieved from trimmed branch name, e.g. backplane-2.6 -> 2.6
+      escape-template-variables:
+        - "CLUSTER_NAME"
+        - "HUB_KUBECONFIG"
+        - "INSTALL_NAMESPACE"
+
+    - name: "cluster-api-provider-metal3-k8s"
+      chart-path: "charts/cluster-api-provider-metal3-k8s"
+      always-or-toggle: "toggle"
+      imageMappings:
+        ip-address-manager: "ip_address_manager"
+        ose-baremetal-cluster-api-controllers-rhel9: "ose_baremetal_cluster_api_controllers_rhel9"
+      inclusions:
+        - "pullSecretOverride"
+      skipRBACOverrides: true
+      updateChartVersion: true # the chart version will be retrieved from trimmed branch name, e.g. backplane-2.6 -> 2.6
+      escape-template-variables:
+        - "CLUSTER_NAME"
+        - "HUB_KUBECONFIG"
+        - "INSTALL_NAMESPACE"

@@ -38,6 +38,8 @@ const (
 //+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=addontemplates,verbs=create;get;list;update;patch;watch;delete
 //+kubebuilder:rbac:groups=console.openshift.io,resources=consoleplugins;consolequickstarts,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=monitoring.coreos.com,resources=servicemonitors,verbs=get;create;update;list;watch;delete;patch
+//+kubebuilder:rbac:groups=cert-manager.io,resources=certificates,verbs=get;create;update;list;watch;delete;patch
+//+kubebuilder:rbac:groups=cert-manager.io,resources=issuers,verbs=get;create;update;list;watch;delete;patch
 
 // cluster-proxy-addon
 //+kubebuilder:rbac:groups=route.openshift.io,resources=routes,verbs=get;create;update;list;watch;delete;patch
@@ -68,6 +70,8 @@ var resources = []string{
 	"ServiceAccount",
 	"ServiceMonitor",
 	"ValidatingWebhookConfiguration",
+	"Certificate",
+	"Issuer",
 }
 
 func main() {

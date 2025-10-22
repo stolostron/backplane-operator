@@ -458,3 +458,45 @@ func DumpServingCertSecret() error {
 
 	return nil
 }
+
+/*
+ComponentToCRDDirectory returns a map of component names to their corresponding CRD directory names.
+This mapping is used to skip CRD rendering for externally managed components.
+When NonOCP() returns true, the ClusterAPI component uses 'k8s' as its CRD directory.
+*/
+func ComponentToCRDDirectory() map[string]string {
+	var clusterAPICRDDir string
+	var clusterAPIProviderOACRDDir string
+	var clusterAPIProviderMetalCRDDir string
+
+	if DeployOnOCP() {
+		clusterAPICRDDir = backplanev1.ClusterAPICRDDir
+		clusterAPIProviderOACRDDir = backplanev1.ClusterAPIProviderOACRDDir
+		clusterAPIProviderMetalCRDDir = backplanev1.ClusterAPIProviderMetalCRDDir
+	} else {
+		clusterAPICRDDir = backplanev1.ClusterAPIK8SCRDDir
+		clusterAPIProviderOACRDDir = backplanev1.ClusterAPIProviderOAK8SCRDDir
+		clusterAPIProviderMetalCRDDir = backplanev1.ClusterAPIProviderMetalK8SCRDDir
+	}
+	return map[string]string{
+		backplanev1.AssistedService:                  backplanev1.AssistedServiceCRDDir,
+		backplanev1.ClusterAPI:                       clusterAPICRDDir,
+		backplanev1.ClusterAPIPreview:                clusterAPICRDDir,
+		backplanev1.ClusterAPIProviderAWS:            backplanev1.ClusterAPIProviderAWSCRDDir,
+		backplanev1.ClusterAPIProviderAWSPreview:     backplanev1.ClusterAPIProviderAWSCRDDir,
+		backplanev1.ClusterAPIProviderMetal:          clusterAPIProviderMetalCRDDir,
+		backplanev1.ClusterAPIProviderMetalPreview:   clusterAPIProviderMetalCRDDir,
+		backplanev1.ClusterAPIProviderOA:             clusterAPIProviderOACRDDir,
+		backplanev1.ClusterAPIProviderOAPreview:      clusterAPIProviderOACRDDir,
+		backplanev1.ClusterLifecycle:                 backplanev1.ClusterLifecycleCRDDir,
+		backplanev1.ClusterManager:                   backplanev1.ClusterManagerCRDDir,
+		backplanev1.ClusterProxyAddon:                backplanev1.ClusterProxyAddonCRDDir,
+		backplanev1.Discovery:                        backplanev1.DiscoveryCRDDir,
+		backplanev1.Hive:                             backplanev1.HiveCRDDir,
+		backplanev1.ImageBasedInstallOperator:        backplanev1.ImageBasedInstallOperatorCRDDir,
+		backplanev1.ImageBasedInstallOperatorPreview: backplanev1.ImageBasedInstallOperatorCRDDir,
+		backplanev1.ManagedServiceAccount:            backplanev1.ManagedServiceAccountCRDDir,
+		backplanev1.ManagedServiceAccountPreview:     backplanev1.ManagedServiceAccountCRDDir,
+		backplanev1.ServerFoundation:                 backplanev1.ServerFoundationCRDDir,
+	}
+}
