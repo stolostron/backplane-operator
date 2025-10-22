@@ -47,7 +47,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	"k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -2528,11 +2527,9 @@ func (r *MultiClusterEngineReconciler) CheckDeprecatedFieldUsage(m *backplanev1.
 func EnsureCRD(ctx context.Context, c client.Client, crd *unstructured.Unstructured) error {
 	existingCRD := &unstructured.Unstructured{}
 	existingCRD.SetGroupVersionKind(crd.GroupVersionKind())
-
 	if err := c.Get(ctx, types.NamespacedName{Name: crd.GetName()}, existingCRD); err != nil {
 		if apierrors.IsNotFound(err) {
 			log.Info("Creating CRD", "Name", crd.GetName())
-
 			if err = c.Create(ctx, crd); err != nil {
 				return fmt.Errorf("error creating CRD '%s': %w", crd.GetName(), err)
 			}
@@ -2542,30 +2539,14 @@ func EnsureCRD(ctx context.Context, c client.Client, crd *unstructured.Unstructu
 	} else {
 		// CRD already exists. Update and return
 		if utils.AnnotationPresent(utils.AnnotationMCEIgnore, existingCRD) {
-			log.V(1).Info("CRD has ignore annotation - skipping", "Name", crd.GetName())
-			return nil
-		}
-
-		// Compare existing and desired spec
-		// Create deep copies to avoid mutating originals
-		desiredCopy := crd.DeepCopy()
-		existingCopy := existingCRD.DeepCopy()
-
-		// Normalize metadata
-		desiredCopy.SetResourceVersion(existingCopy.GetResourceVersion())
-		desiredCopy.SetCreationTimestamp(existingCopy.GetCreationTimestamp())
-		desiredCopy.SetUID(existingCopy.GetUID())
-
-		if equality.Semantic.DeepEqual(existingCopy.Object["spec"], desiredCopy.Object["spec"]) &&
-			equality.Semantic.DeepEqual(existingCopy.GetAnnotations(), desiredCopy.GetAnnotations()) {
-			log.V(2).Info("CRD is already up-to-date", "Name", crd.GetName())
+			log.Info("CRD has ignore label. Skipping update.", "Name", crd.GetName())
 			return nil
 		}
 
 		// Set resource version for update
 		crd.SetResourceVersion(existingCRD.GetResourceVersion())
 
-		log.Info("Updating CRD", "Name", crd.GetName())
+		// log.Info("Updating CRD", "Name", crd.GetName())
 		if err = c.Update(ctx, crd); err != nil {
 			return fmt.Errorf("error updating CRD '%s': %w", crd.GetName(), err)
 		}
