@@ -1341,6 +1341,7 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 	} else {
 		log.Info(messages.SkippingExternallyManaged, "component",
 			backplanev1.ClusterAPIProviderOA)
+	}
 
 	if backplaneConfig.Enabled(backplanev1.LocalCluster) {
 		result, err := r.ensureLocalCluster(ctx, backplaneConfig)
