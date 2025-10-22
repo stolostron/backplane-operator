@@ -103,7 +103,6 @@ var MCEComponents = []string{
 	ClusterAPIProviderAWS,
 	ClusterAPIProviderMetalPreview,
 	ClusterAPIProviderOA,
-	ClusterAPIProviderOAPreview,
 	ClusterLifecycle,
 	ClusterManager,
 	ClusterProxyAddon,
