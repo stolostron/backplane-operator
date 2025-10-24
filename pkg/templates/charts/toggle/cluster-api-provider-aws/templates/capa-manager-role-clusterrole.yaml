@@ -215,6 +215,7 @@ rules:
   - infrastructure.cluster.x-k8s.io
   resources:
   - rosamachinepools/finalizers
+  - rosanetworks/finalizers
   - rosaroleconfigs/finalizers
   verbs:
   - update
