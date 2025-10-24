@@ -2,7 +2,7 @@ apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: capoa-bootstrap-cert
-  namespace: capoa-bootstrap-system
+  namespace: '{{ .Values.global.namespace }}'
 spec:
   commonName: capoa-bootstrap-webhook-service.{{ .Values.global.namespace }}.svc
   dnsNames:
