@@ -424,8 +424,30 @@ func GetServingCertCABundle() (string, error) {
 func DumpServingCertSecret() error {
 	certKeySecret, err := GlobalServingCertGetter.kubeClient.CoreV1().Secrets(GlobalServingCertGetter.namespace).
 		Get(context.Background(), "multicluster-engine-operator-webhook", metav1.GetOptions{})
+
 	if err != nil {
 		return fmt.Errorf("failed to get secret multicluster-engine-operator-webhook: %v", err)
+	}
+
+	// Validate that the secret contains the required keys and valid PEM data
+	tlsCert, certExists := certKeySecret.Data["tls.crt"]
+	tlsKey, keyExists := certKeySecret.Data["tls.key"]
+
+	if !certExists || !keyExists {
+		return fmt.Errorf("secret multicluster-engine-operator-webhook is missing required keys (tls.crt or tls.key)")
+	}
+
+	if len(tlsCert) == 0 || len(tlsKey) == 0 {
+		return fmt.Errorf("secret multicluster-engine-operator-webhook contains empty certificate or key data")
+	}
+
+	// Validate that the certificate data contains valid PEM data
+	if !bytes.Contains(tlsCert, []byte("BEGIN CERTIFICATE")) {
+		return fmt.Errorf("tls.crt does not contain valid PEM certificate data")
+	}
+
+	if !bytes.Contains(tlsKey, []byte("BEGIN")) || !bytes.Contains(tlsKey, []byte("PRIVATE KEY")) {
+		return fmt.Errorf("tls.key does not contain valid PEM private key data")
 	}
 
 	dir := "/tmp/k8s-webhook-server/serving-certs"
@@ -434,6 +456,7 @@ func DumpServingCertSecret() error {
 	if err != nil {
 		return fmt.Errorf("failed to create directory %q: %v", dir, err)
 	}
+
 	for key, data := range certKeySecret.Data {
 		filename := path.Clean(path.Join(dir, key))
 		lastData, err := os.ReadFile(filepath.Clean(filename))
