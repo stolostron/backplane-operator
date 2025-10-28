@@ -82,8 +82,8 @@
 
 
 - repo_name: "cluster-api-installer-k8s"
-  github_ref: "https://github.com/rccrdpccl/cluster-api-installer.git"
-  branch: "k8s-charts"
+  github_ref: "https://github.com/stolostron/cluster-api-installer.git"
+  branch: "backplane-2.10"
   charts:
     - name: "cluster-api-k8s"
       chart-path: "charts/cluster-api-k8s"
