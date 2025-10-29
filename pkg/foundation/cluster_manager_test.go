@@ -4,11 +4,16 @@
 package foundation
 
 import (
+	"context"
 	"os"
 	"testing"
 
+	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	ocmapiv1 "open-cluster-management.io/api/operator/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	v1 "github.com/stolostron/backplane-operator/api/v1"
 )
@@ -118,6 +123,89 @@ func TestClusterManager(t *testing.T) {
 
 			if mode != string(ocmapiv1.InstallModeDefault) {
 				t.Errorf("expected deploy mode %s, got %s", ocmapiv1.InstallModeDefault, mode)
+			}
+		})
+	}
+}
+
+func TestCRDNotFoundError(t *testing.T) {
+	tests := []struct {
+		name        string
+		crdName     string
+		expectedMsg string
+	}{
+		{
+			name:        "clustermanagementaddons CRD not found",
+			crdName:     "clustermanagementaddons.addon.open-cluster-management.io",
+			expectedMsg: "CRD not found: clustermanagementaddons.addon.open-cluster-management.io",
+		},
+		{
+			name:        "generic CRD not found",
+			crdName:     "someresource.example.com",
+			expectedMsg: "CRD not found: someresource.example.com",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			err := &CRDNotFoundError{CRDName: test.crdName}
+			if err.Error() != test.expectedMsg {
+				t.Errorf("expected error message %q, got %q", test.expectedMsg, err.Error())
+			}
+		})
+	}
+}
+
+func TestCanInstallAddons(t *testing.T) {
+	tests := []struct {
+		name        string
+		crdExists   bool
+		expectError bool
+	}{
+		{
+			name:        "CRD exists - can install addons",
+			crdExists:   true,
+			expectError: false,
+		},
+		{
+			name:        "CRD does not exist - cannot install addons",
+			crdExists:   false,
+			expectError: true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			scheme := runtime.NewScheme()
+			_ = apixv1.AddToScheme(scheme)
+
+			var objs []runtime.Object
+			if test.crdExists {
+				crd := &apixv1.CustomResourceDefinition{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: clusterManagementAddonCRDName,
+					},
+				}
+				objs = append(objs, crd)
+			}
+
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(objs...).Build()
+
+			err := CanInstallAddons(context.Background(), fakeClient)
+
+			if test.expectError && err == nil {
+				t.Errorf("expected error but got nil")
+			}
+			if !test.expectError && err != nil {
+				t.Errorf("expected no error but got: %v", err)
+			}
+			if test.expectError {
+				if _, ok := err.(*CRDNotFoundError); !ok {
+					t.Errorf("expected CRDNotFoundError but got: %T", err)
+				}
+				if err.Error() != "CRD not found: "+clusterManagementAddonCRDName {
+					t.Errorf("expected error message 'CRD not found: %s', got %q", clusterManagementAddonCRDName, err.Error())
+				}
 			}
 		})
 	}
