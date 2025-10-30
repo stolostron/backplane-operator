@@ -5,10 +5,13 @@ package utils
 import (
 	"os"
 	"reflect"
+	"strings"
 	"testing"
 
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/fake"
 )
 
 func Test_deduplicate(t *testing.T) {
@@ -512,5 +515,535 @@ func TestComponentToCRDDirectory_AllComponents(t *testing.T) {
 
 	if ocpResult[backplanev1.ClusterAPIProviderAWS] != k8sResult[backplanev1.ClusterAPIProviderAWS] {
 		t.Error("ClusterAPIProviderAWS should use the same CRD directory on OCP and K8S")
+	}
+}
+
+func TestDumpServingCertSecret_Validation(t *testing.T) {
+	namespace := "test-namespace"
+
+	// Valid PEM certificate and key for successful test cases
+	validCert := []byte(`-----BEGIN CERTIFICATE-----
+MIICljCCAX4CCQCKz8Vz1V9Z8jANBgkqhkiG9w0BAQsFADANMQswCQYDVQQGEwJV
+UzAeFw0yNDAxMDEwMDAwMDBaFw0yNTAxMDEwMDAwMDBaMA0xCzAJBgNVBAYTAlVT
+-----END CERTIFICATE-----`)
+
+	validKey := []byte(`-----BEGIN PRIVATE KEY-----
+MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC7VJTUt9Us8cKj
+MzEfYyjiWA4R4/M2bS1+fWIcPm15j9m26wEqEPwYPVmT2rM0eBWaNcl0qMTktQKm
+-----END PRIVATE KEY-----`)
+
+	tests := []struct {
+		name        string
+		secret      *corev1.Secret
+		wantErr     bool
+		expectedErr string
+	}{
+		{
+			name: "valid secret with tls.crt and tls.key",
+			secret: &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "multicluster-engine-operator-webhook",
+					Namespace: namespace,
+				},
+				Data: map[string][]byte{
+					"tls.crt": validCert,
+					"tls.key": validKey,
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "missing tls.crt key",
+			secret: &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "multicluster-engine-operator-webhook",
+					Namespace: namespace,
+				},
+				Data: map[string][]byte{
+					"tls.key": validKey,
+				},
+			},
+			wantErr:     true,
+			expectedErr: "secret multicluster-engine-operator-webhook is missing required keys (tls.crt or tls.key)",
+		},
+		{
+			name: "missing tls.key key",
+			secret: &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "multicluster-engine-operator-webhook",
+					Namespace: namespace,
+				},
+				Data: map[string][]byte{
+					"tls.crt": validCert,
+				},
+			},
+			wantErr:     true,
+			expectedErr: "secret multicluster-engine-operator-webhook is missing required keys (tls.crt or tls.key)",
+		},
+		{
+			name: "both keys missing",
+			secret: &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "multicluster-engine-operator-webhook",
+					Namespace: namespace,
+				},
+				Data: map[string][]byte{},
+			},
+			wantErr:     true,
+			expectedErr: "secret multicluster-engine-operator-webhook is missing required keys (tls.crt or tls.key)",
+		},
+		{
+			name: "empty tls.crt data",
+			secret: &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "multicluster-engine-operator-webhook",
+					Namespace: namespace,
+				},
+				Data: map[string][]byte{
+					"tls.crt": []byte(""),
+					"tls.key": validKey,
+				},
+			},
+			wantErr:     true,
+			expectedErr: "secret multicluster-engine-operator-webhook contains empty certificate or key data",
+		},
+		{
+			name: "empty tls.key data",
+			secret: &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "multicluster-engine-operator-webhook",
+					Namespace: namespace,
+				},
+				Data: map[string][]byte{
+					"tls.crt": validCert,
+					"tls.key": []byte(""),
+				},
+			},
+			wantErr:     true,
+			expectedErr: "secret multicluster-engine-operator-webhook contains empty certificate or key data",
+		},
+		{
+			name: "both empty",
+			secret: &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "multicluster-engine-operator-webhook",
+					Namespace: namespace,
+				},
+				Data: map[string][]byte{
+					"tls.crt": []byte(""),
+					"tls.key": []byte(""),
+				},
+			},
+			wantErr:     true,
+			expectedErr: "secret multicluster-engine-operator-webhook contains empty certificate or key data",
+		},
+		{
+			name: "invalid PEM certificate data - missing BEGIN CERTIFICATE",
+			secret: &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "multicluster-engine-operator-webhook",
+					Namespace: namespace,
+				},
+				Data: map[string][]byte{
+					"tls.crt": []byte("invalid certificate data"),
+					"tls.key": validKey,
+				},
+			},
+			wantErr:     true,
+			expectedErr: "tls.crt does not contain valid PEM certificate data",
+		},
+		{
+			name: "invalid PEM certificate data - corrupted PEM",
+			secret: &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "multicluster-engine-operator-webhook",
+					Namespace: namespace,
+				},
+				Data: map[string][]byte{
+					"tls.crt": []byte("-----END CERTIFICATE-----"),
+					"tls.key": validKey,
+				},
+			},
+			wantErr:     true,
+			expectedErr: "tls.crt does not contain valid PEM certificate data",
+		},
+		{
+			name: "invalid PEM private key data - missing BEGIN",
+			secret: &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "multicluster-engine-operator-webhook",
+					Namespace: namespace,
+				},
+				Data: map[string][]byte{
+					"tls.crt": validCert,
+					"tls.key": []byte("PRIVATE KEY-----\nsome data\n-----END PRIVATE KEY-----"),
+				},
+			},
+			wantErr:     true,
+			expectedErr: "tls.key does not contain valid PEM private key data",
+		},
+		{
+			name: "invalid PEM private key data - missing PRIVATE KEY",
+			secret: &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "multicluster-engine-operator-webhook",
+					Namespace: namespace,
+				},
+				Data: map[string][]byte{
+					"tls.crt": validCert,
+					"tls.key": []byte("-----BEGIN SOMETHING-----\nsome data\n-----END SOMETHING-----"),
+				},
+			},
+			wantErr:     true,
+			expectedErr: "tls.key does not contain valid PEM private key data",
+		},
+		{
+			name: "invalid PEM private key data - completely invalid",
+			secret: &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "multicluster-engine-operator-webhook",
+					Namespace: namespace,
+				},
+				Data: map[string][]byte{
+					"tls.crt": validCert,
+					"tls.key": []byte("invalid key data"),
+				},
+			},
+			wantErr:     true,
+			expectedErr: "tls.key does not contain valid PEM private key data",
+		},
+		{
+			name: "valid RSA PRIVATE KEY format",
+			secret: &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "multicluster-engine-operator-webhook",
+					Namespace: namespace,
+				},
+				Data: map[string][]byte{
+					"tls.crt": validCert,
+					"tls.key": []byte(`-----BEGIN RSA PRIVATE KEY-----
+MIIEpAIBAAKCAQEAu1SU1LfVLPHCozMxH2Mo4lgOEePzNm0tfn1iHD5teY/Ztus=
+-----END RSA PRIVATE KEY-----`),
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "valid EC PRIVATE KEY format",
+			secret: &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "multicluster-engine-operator-webhook",
+					Namespace: namespace,
+				},
+				Data: map[string][]byte{
+					"tls.crt": validCert,
+					"tls.key": []byte(`-----BEGIN EC PRIVATE KEY-----
+MHcCAQEEIIGlRHdF6i0VfzJNMG9HMF8VfzJNMG9HMF8VfzJNMG9HoAoGCCqGSM49
+-----END EC PRIVATE KEY-----`),
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "nil Data field",
+			secret: &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "multicluster-engine-operator-webhook",
+					Namespace: namespace,
+				},
+				Data: nil,
+			},
+			wantErr:     true,
+			expectedErr: "secret multicluster-engine-operator-webhook is missing required keys",
+		},
+		{
+			name: "tls.crt with only whitespace",
+			secret: &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "multicluster-engine-operator-webhook",
+					Namespace: namespace,
+				},
+				Data: map[string][]byte{
+					"tls.crt": []byte("   \n\t  "),
+					"tls.key": validKey,
+				},
+			},
+			wantErr:     true,
+			expectedErr: "tls.crt does not contain valid PEM certificate data",
+		},
+		{
+			name: "tls.key with only whitespace",
+			secret: &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "multicluster-engine-operator-webhook",
+					Namespace: namespace,
+				},
+				Data: map[string][]byte{
+					"tls.crt": validCert,
+					"tls.key": []byte("   \n\t  "),
+				},
+			},
+			wantErr:     true,
+			expectedErr: "tls.key does not contain valid PEM private key data",
+		},
+		{
+			name: "tls.key with ENCRYPTED PRIVATE KEY (valid)",
+			secret: &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "multicluster-engine-operator-webhook",
+					Namespace: namespace,
+				},
+				Data: map[string][]byte{
+					"tls.crt": validCert,
+					"tls.key": []byte(`-----BEGIN ENCRYPTED PRIVATE KEY-----
+MIIFHDBOBgkqhkiG9w0BBQ0wQTApBgkqhkiG9w0BBQwwHAQIhKLn4g0M5GcCAggA
+-----END ENCRYPTED PRIVATE KEY-----`),
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "tls.key with only BEGIN but no PRIVATE KEY",
+			secret: &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "multicluster-engine-operator-webhook",
+					Namespace: namespace,
+				},
+				Data: map[string][]byte{
+					"tls.crt": validCert,
+					"tls.key": []byte("-----BEGIN PUBLIC KEY-----\ndata\n-----END PUBLIC KEY-----"),
+				},
+			},
+			wantErr:     true,
+			expectedErr: "tls.key does not contain valid PEM private key data",
+		},
+		{
+			name: "tls.crt with multiple certificates (valid)",
+			secret: &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "multicluster-engine-operator-webhook",
+					Namespace: namespace,
+				},
+				Data: map[string][]byte{
+					"tls.crt": []byte(`-----BEGIN CERTIFICATE-----
+MIICljCCAX4CCQCKz8Vz1V9Z8jANBgkqhkiG9w0BAQsFADANMQswCQYDVQQGEwJV
+-----END CERTIFICATE-----
+-----BEGIN CERTIFICATE-----
+MIICljCCAX4CCQCKz8Vz1V9Z8jANBgkqhkiG9w0BAQsFADANMQswCQYDVQQGEwJV
+-----END CERTIFICATE-----`),
+					"tls.key": validKey,
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "case sensitivity - BEGIN certificate (lowercase)",
+			secret: &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "multicluster-engine-operator-webhook",
+					Namespace: namespace,
+				},
+				Data: map[string][]byte{
+					"tls.crt": []byte("-----BEGIN certificate-----\ndata\n-----END certificate-----"),
+					"tls.key": validKey,
+				},
+			},
+			wantErr:     true,
+			expectedErr: "tls.crt does not contain valid PEM certificate data",
+		},
+		{
+			name: "case sensitivity - BEGIN private key (lowercase)",
+			secret: &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "multicluster-engine-operator-webhook",
+					Namespace: namespace,
+				},
+				Data: map[string][]byte{
+					"tls.crt": validCert,
+					"tls.key": []byte("-----BEGIN private key-----\ndata\n-----END private key-----"),
+				},
+			},
+			wantErr:     true,
+			expectedErr: "tls.key does not contain valid PEM private key data",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Create a fake Kubernetes client with the test secret
+			fakeClient := fake.NewSimpleClientset(tt.secret)
+
+			// Initialize the global serving cert getter with the fake client
+			NewGlobalServingCertCABundleGetter(fakeClient, "test-ca-bundle", namespace)
+
+			// Call DumpServingCertSecret
+			err := DumpServingCertSecret()
+
+			// Check if error expectation matches
+			if (err != nil) != tt.wantErr {
+				t.Errorf("DumpServingCertSecret() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			// If we expect an error, verify the error message
+			if tt.wantErr && err != nil {
+				if !strings.Contains(err.Error(), tt.expectedErr) {
+					t.Errorf("DumpServingCertSecret() error = %v, expected error to contain %v", err, tt.expectedErr)
+				}
+			}
+		})
+	}
+}
+
+func TestDumpServingCertSecret_SecretNotFound(t *testing.T) {
+	namespace := "test-namespace"
+
+	// Create a fake Kubernetes client without the required secret
+	fakeClient := fake.NewSimpleClientset()
+
+	// Initialize the global serving cert getter with the fake client
+	NewGlobalServingCertCABundleGetter(fakeClient, "test-ca-bundle", namespace)
+
+	// Call DumpServingCertSecret
+	err := DumpServingCertSecret()
+
+	// Verify that an error is returned
+	if err == nil {
+		t.Error("DumpServingCertSecret() expected error when secret not found, got nil")
+		return
+	}
+
+	// Verify the error message indicates the secret was not found
+	expectedErrSubstring := "failed to get secret multicluster-engine-operator-webhook"
+	if !strings.Contains(err.Error(), expectedErrSubstring) {
+		t.Errorf("DumpServingCertSecret() error = %v, expected error to contain %v", err, expectedErrSubstring)
+	}
+}
+
+func TestGetServingCertCABundle(t *testing.T) {
+	namespace := "test-namespace"
+	configMapName := "test-ca-bundle"
+
+	tests := []struct {
+		name        string
+		setupClient func() *fake.Clientset
+		wantErr     bool
+		expectedErr string
+		wantResult  string
+	}{
+		{
+			name: "valid CA bundle",
+			setupClient: func() *fake.Clientset {
+				cm := &corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      configMapName,
+						Namespace: namespace,
+					},
+					Data: map[string]string{
+						"ca-bundle.crt": "-----BEGIN CERTIFICATE-----\ntest-ca-bundle\n-----END CERTIFICATE-----",
+					},
+				}
+				return fake.NewSimpleClientset(cm)
+			},
+			wantErr:    false,
+			wantResult: "-----BEGIN CERTIFICATE-----\ntest-ca-bundle\n-----END CERTIFICATE-----",
+		},
+		{
+			name: "empty CA bundle",
+			setupClient: func() *fake.Clientset {
+				cm := &corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      configMapName,
+						Namespace: namespace,
+					},
+					Data: map[string]string{
+						"ca-bundle.crt": "",
+					},
+				}
+				return fake.NewSimpleClientset(cm)
+			},
+			wantErr:     true,
+			expectedErr: "CA bundle ConfigMap does not contain a CA bundle",
+		},
+		{
+			name: "missing ca-bundle.crt key",
+			setupClient: func() *fake.Clientset {
+				cm := &corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      configMapName,
+						Namespace: namespace,
+					},
+					Data: map[string]string{},
+				}
+				return fake.NewSimpleClientset(cm)
+			},
+			wantErr:     true,
+			expectedErr: "CA bundle ConfigMap does not contain a CA bundle",
+		},
+		{
+			name: "configmap not found",
+			setupClient: func() *fake.Clientset {
+				return fake.NewSimpleClientset()
+			},
+			wantErr:     true,
+			expectedErr: "not found",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Setup the fake client
+			fakeClient := tt.setupClient()
+
+			// Initialize the global serving cert getter
+			NewGlobalServingCertCABundleGetter(fakeClient, configMapName, namespace)
+
+			// Call GetServingCertCABundle
+			result, err := GetServingCertCABundle()
+
+			// Check if error expectation matches
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetServingCertCABundle() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			// If we expect an error, verify the error message
+			if tt.wantErr && err != nil {
+				if !strings.Contains(err.Error(), tt.expectedErr) {
+					t.Errorf("GetServingCertCABundle() error = %v, expected error to contain %v", err, tt.expectedErr)
+				}
+			}
+
+			// If we don't expect an error, verify the result
+			if !tt.wantErr && result != tt.wantResult {
+				t.Errorf("GetServingCertCABundle() = %v, want %v", result, tt.wantResult)
+			}
+		})
+	}
+}
+
+func TestGetServingCertCABundle_NilGlobalGetter(t *testing.T) {
+	// Save the original global getter
+	originalGetter := GlobalServingCertGetter
+	defer func() {
+		GlobalServingCertGetter = originalGetter
+	}()
+
+	// Set GlobalServingCertGetter to nil
+	GlobalServingCertGetter = nil
+
+	// Call GetServingCertCABundle
+	_, err := GetServingCertCABundle()
+
+	// Verify that an error is returned
+	if err == nil {
+		t.Error("GetServingCertCABundle() expected error when GlobalServingCertGetter is nil, got nil")
+		return
+	}
+
+	// Verify the error message
+	expectedErr := "GlobalServingCertCABundleGetter is nil"
+	if err.Error() != expectedErr {
+		t.Errorf("GetServingCertCABundle() error = %v, want %v", err, expectedErr)
 	}
 }
