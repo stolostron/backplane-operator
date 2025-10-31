@@ -9,7 +9,7 @@ spec:
   commonName: capm3-webhook-service.{{ .Values.global.namespace }}.svc
   dnsNames:
   - capm3-webhook-service.{{ .Values.global.namespace }}.svc
-  - capm3-webhook-service.capm3-system.svc.cluster.local
+  - capm3-webhook-service.{{ .Values.global.namespace }}.svc.cluster.local
   issuerRef:
     kind: Issuer
     name: capm3-selfsigned-issuer
