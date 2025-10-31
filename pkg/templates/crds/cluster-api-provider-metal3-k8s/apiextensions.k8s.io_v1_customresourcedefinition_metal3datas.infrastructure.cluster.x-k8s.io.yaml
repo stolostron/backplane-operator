@@ -16,7 +16,7 @@ spec:
       clientConfig:
         service:
           name: capm3-webhook-service
-          namespace: multicluster-engine
+          namespace: '{{ .Release.Namespace }}'
           path: /convert
       conversionReviewVersions:
       - v1

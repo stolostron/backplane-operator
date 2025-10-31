@@ -1,9 +1,0 @@
-
-# Source: cluster-api-provider-metal3/templates/v1_namespace_capm3-system.yaml
-apiVersion: v1
-kind: Namespace
-metadata:
-  labels:
-    cluster.x-k8s.io/provider: infrastructure-metal3
-    pod-security.kubernetes.io/enforce: restricted
-  name: capm3-system
