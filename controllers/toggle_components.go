@@ -227,7 +227,7 @@ func (r *MultiClusterEngineReconciler) ensureNoManagedServiceAccount(ctx context
 
 	// Deletes all templates
 	for _, template := range templates {
-		if template.GetKind() == foundation.ClusterManagementAddonKind && !foundation.CanInstallAddons(ctx, r.Client) {
+		if template.GetKind() == foundation.ClusterManagementAddonKind && foundation.CanInstallAddons(ctx, r.Client) != nil {
 			// Can't delete ClusterManagementAddon if Kind doesn't exists
 			continue
 		}
