@@ -256,6 +256,28 @@ webhooks:
     service:
       name: capa-webhook-service
       namespace: '{{ default "capa-system" .Values.global.namespace }}'
+      path: /validate-infrastructure-cluster-x-k8s-io-v1beta2-rosanetwork
+  failurePolicy: Fail
+  matchPolicy: Equivalent
+  name: validation.rosanetwork.infrastructure.cluster.x-k8s.io
+  rules:
+  - apiGroups:
+    - infrastructure.cluster.x-k8s.io
+    apiVersions:
+    - v1beta2
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - rosanetworks
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  - v1beta1
+  clientConfig:
+    service:
+      name: capa-webhook-service
+      namespace: '{{ default "capa-system" .Values.global.namespace }}'
       path: /validate-infrastructure-cluster-x-k8s-io-v1beta2-rosaroleconfig
   failurePolicy: Fail
   matchPolicy: Equivalent
