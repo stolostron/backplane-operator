@@ -44,7 +44,7 @@ var ctx context.Context
 var cancel context.CancelFunc
 
 var _ = Describe("Non-OCP cert management", func() {
-	It("creating and managing certs", func() {
+	It("creating certs from scratch", func() {
 		ctx, cancel = context.WithCancel(context.Background())
 
 		testEnv = &envtest.Environment{
@@ -75,29 +75,8 @@ var _ = Describe("Non-OCP cert management", func() {
 		})
 		Expect(err).ToNot(HaveOccurred())
 
-		err = k8sClient.Create(context.Background(), &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "multicluster-engine-operator-webhook",
-				Namespace: "test", // Change this to your desired namespace
-			},
-			Data: map[string][]byte{
-				"ca.crt":  []byte(""),
-				"tls.key": []byte(""),
-				"tls.crt": []byte(""),
-			},
-		})
-		Expect(err).ToNot(HaveOccurred())
-
-		err = k8sClient.Create(context.Background(), &corev1.ConfigMap{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      servingcert.DefaultCABundleConfigmapName,
-				Namespace: "test",
-			},
-			Data: map[string]string{
-				"ca-bundle.crt": "value",
-			},
-		})
-		Expect(err).ToNot(HaveOccurred())
+		// Don't pre-create the secret or configmap - let the ServingCertController create them
+		// This tests that the controller can properly initialize and populate certificates from scratch
 
 		NewGlobalServingCertCABundleGetter(kubeClient, servingcert.DefaultCABundleConfigmapName, "test")
 
@@ -114,10 +93,100 @@ var _ = Describe("Non-OCP cert management", func() {
 				},
 			}).Start(ctx)
 
-		_, err = GetServingCertCABundle()
+		// Wait for ServingCertController to populate the CA bundle configmap asynchronously
+		Eventually(func() error {
+			_, err := GetServingCertCABundle()
+			return err
+		}, "10s", "1s").Should(Succeed())
+
+		// Wait for ServingCertController to populate the secret asynchronously
+		Eventually(func() error {
+			return DumpServingCertSecret()
+		}, "10s", "1s").Should(Succeed())
+
+	})
+
+	It("managing pre-existing certs", func() {
+		ctx, cancel = context.WithCancel(context.Background())
+
+		testEnv = &envtest.Environment{
+			CRDDirectoryPaths: []string{},
+			CRDInstallOptions: envtest.CRDInstallOptions{
+				CleanUpAfterUse: true,
+			},
+			ErrorIfCRDPathMissing: false,
+		}
+
+		cfg, err := testEnv.Start()
+		Expect(err).NotTo(HaveOccurred())
+
+		k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
+		Expect(err).NotTo(HaveOccurred())
+		Expect(k8sClient).NotTo(BeNil())
+		err = DetectOpenShift(k8sClient)
 		Expect(err).ToNot(HaveOccurred())
-		err = DumpServingCertSecret()
+
+		kubeClient, err := kubernetes.NewForConfig(cfg)
 		Expect(err).ToNot(HaveOccurred())
+
+		err = k8sClient.Create(context.Background(), &corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "test2",
+			},
+			Spec: corev1.NamespaceSpec{},
+		})
+		Expect(err).ToNot(HaveOccurred())
+
+		// Pre-create the secret and configmap to simulate user-provided resources
+		// This tests that the controller can properly reconcile and populate pre-existing certificates
+		err = k8sClient.Create(context.Background(), &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "multicluster-engine-operator-webhook",
+				Namespace: "test2",
+			},
+			Data: map[string][]byte{
+				"ca.crt":  []byte(""),
+				"tls.key": []byte(""),
+				"tls.crt": []byte(""),
+			},
+		})
+		Expect(err).ToNot(HaveOccurred())
+
+		err = k8sClient.Create(context.Background(), &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      servingcert.DefaultCABundleConfigmapName,
+				Namespace: "test2",
+			},
+			Data: map[string]string{
+				"ca-bundle.crt": "",
+			},
+		})
+		Expect(err).ToNot(HaveOccurred())
+
+		NewGlobalServingCertCABundleGetter(kubeClient, servingcert.DefaultCABundleConfigmapName, "test2")
+
+		servingcert.NewServingCertController("test2", kubeClient).
+			WithTargetServingCerts([]servingcert.TargetServingCertOptions{
+				{
+					Name:      "multicluster-engine-operator-webhook",
+					HostNames: []string{fmt.Sprintf("multicluster-engine-operator-webhook-service.%s.svc", "test2")},
+				},
+				{
+					Name:      "ocm-webhook",
+					HostNames: []string{fmt.Sprintf("ocm-webhook.%s.svc", "test2")},
+				},
+			}).Start(ctx)
+
+		// Wait for ServingCertController to populate the CA bundle configmap asynchronously
+		Eventually(func() error {
+			_, err := GetServingCertCABundle()
+			return err
+		}, "10s", "1s").Should(Succeed())
+
+		// Wait for ServingCertController to populate the secret asynchronously
+		Eventually(func() error {
+			return DumpServingCertSecret()
+		}, "10s", "1s").Should(Succeed())
 
 	})
 	It("checking other functions", func() {
