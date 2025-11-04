@@ -48,6 +48,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
@@ -2736,12 +2737,12 @@ func Test_ensureToggleableComponents_withMissingAddonCRD(t *testing.T) {
 
 func Test_ensureCustomResources_withMissingAddonCRD(t *testing.T) {
 	tests := []struct {
-		name          string
-		mce           *backplanev1.MultiClusterEngine
-		expectRequeue bool
+		name        string
+		mce         *backplanev1.MultiClusterEngine
+		expectError bool
 	}{
 		{
-			name: "ClusterManagementAddon CRD missing should requeue",
+			name: "ClusterManagementAddon CRD missing should return error",
 			mce: &backplanev1.MultiClusterEngine{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-mce",
@@ -2750,7 +2751,7 @@ func Test_ensureCustomResources_withMissingAddonCRD(t *testing.T) {
 					TargetNamespace: "test-ns",
 				},
 			},
-			expectRequeue: true,
+			expectError: true,
 		},
 	}
 
@@ -2759,19 +2760,19 @@ func Test_ensureCustomResources_withMissingAddonCRD(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := recon.ensureCustomResources(context.TODO(), tt.mce)
 
-			if tt.expectRequeue {
-				if err != nil {
-					t.Errorf("ensureCustomResources() error = %v, expected nil (error should be handled by requeue)", err)
+			if tt.expectError {
+				if err == nil {
+					t.Errorf("ensureCustomResources() error = nil, expected error when CRD is missing")
 				}
-				if result.RequeueAfter == 0 {
-					t.Errorf("ensureCustomResources() should set RequeueAfter, got %v", result)
+				if result != (ctrl.Result{}) {
+					t.Errorf("ensureCustomResources() should return empty result when error occurs, got %v", result)
 				}
 			} else {
 				if err != nil {
 					t.Errorf("ensureCustomResources() error = %v, expected nil", err)
 				}
-				if result.RequeueAfter != 0 {
-					t.Errorf("ensureCustomResources() should not requeue, got %v", result)
+				if result != (ctrl.Result{}) {
+					t.Errorf("ensureCustomResources() should return empty result when successful, got %v", result)
 				}
 			}
 		})

@@ -1892,8 +1892,8 @@ func (r *MultiClusterEngineReconciler) ensureCustomResources(ctx context.Context
 			}
 		}
 	} else {
-		log.Info(fmt.Sprintf("Waiting to install addons. Error: %s", err.Error()))
-		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+		log.Info(fmt.Sprintf("Failed to install addons. Error: %s", err.Error()))
+		return ctrl.Result{}, err
 	}
 
 	return ctrl.Result{}, nil
