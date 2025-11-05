@@ -9,4 +9,4 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: capoa-controlplane-controller-manager
-  namespace: '{{ default "capoa-controlplane-system" .Values.global.namespace }}'
+  namespace: '{{ default "{{ .Values.global.namespace }}" .Values.global.namespace }}'

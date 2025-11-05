@@ -4,8 +4,9 @@ metadata:
   labels:
     cluster.x-k8s.io/provider: cluster-api
   name: capi-serving-cert
-  namespace: capi-system
+  namespace: '{{ .Values.global.namespace }}'
 spec:
+  commonName: capi-webhook-service.{{ .Values.global.namespace }}.svc
   dnsNames:
   - capi-webhook-service.{{ .Values.global.namespace }}.svc
   - capi-webhook-service.{{ .Values.global.namespace }}.svc.cluster.local
