@@ -436,7 +436,7 @@ package main
 //+kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=metal3machines;metal3machinetemplates,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=metal3machines;metal3machinetemplates,verbs=get;update
 //+kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=metal3machines;metal3machinetemplates,verbs=get;update
-//+kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=rosamachinepools/finalizers;rosaroleconfigs/finalizers,verbs=update
+//+kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=rosamachinepools/finalizers;rosanetworks/finalizers;rosaroleconfigs/finalizers,verbs=update
 //+kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=rosamachinepools/status,verbs=create;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=internal.open-cluster-management.io,resources=managedclusterinfos,verbs=get;list;watch
 //+kubebuilder:rbac:groups=internal.open-cluster-management.io,resources=managedclusterinfos,verbs=get;list;watch
