@@ -1,11 +1,9 @@
-
-# Source: cluster-api-provider-metal3/templates/cert-manager.io_v1_issuer_capm3-selfsigned-issuer.yaml
 apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
   labels:
     cluster.x-k8s.io/provider: infrastructure-metal3
   name: capm3-selfsigned-issuer
-  namespace: capm3-system
+  namespace: '{{ .Values.global.namespace }}'
 spec:
   selfSigned: {}
