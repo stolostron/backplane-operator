@@ -1497,10 +1497,12 @@ func (r *MultiClusterEngineReconciler) getDisabledComponentCRDDirectories(mce *b
 	skipDirs := []string{}
 	dirMap := make(map[string]bool) // Track unique directories
 
-	// Only check cluster-api and cluster-api-provider-aws components
+	// Only check CAPI components
 	componentsToCheck := []string{
 		backplanev1.ClusterAPI,
 		backplanev1.ClusterAPIProviderAWS,
+		backplanev1.ClusterAPIProviderMetal,
+		backplanev1.ClusterAPIProviderOA,
 	}
 
 	for _, comp := range componentsToCheck {
