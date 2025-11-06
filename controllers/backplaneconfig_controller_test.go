@@ -48,6 +48,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
@@ -2607,6 +2608,229 @@ func Test_ensureToggleableComponents_withExternallyManagedComponents(t *testing.
 			_, err := recon.ensureToggleableComponents(context.TODO(), tt.mce)
 			if err != tt.want {
 				t.Errorf("ensureToggleableComponents() error = %v, want %v", err, tt.want)
+			}
+		})
+	}
+}
+
+func Test_ensureToggleableComponents_withMissingAddonCRD(t *testing.T) {
+	tests := []struct {
+		name             string
+		mce              *backplanev1.MultiClusterEngine
+		expectError      bool
+		errorShouldMatch string
+	}{
+		{
+			name: "ManagedServiceAccount enabled but ClusterManagementAddon CRD missing",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-mce",
+					Annotations: map[string]string{
+						utils.AnnotationExternallyManaged: `["image-based-install-operator","hypershift","console-mce","discovery","hive","assisted-service","cluster-lifecycle","cluster-manager","server-foundation","cluster-proxy-addon","cluster-api","cluster-api-provider-aws","cluster-api-provider-metal3-preview","cluster-api-provider-openshift-assisted","local-cluster"]`,
+					},
+				},
+				Spec: backplanev1.MultiClusterEngineSpec{
+					LocalClusterName: "local-cluster",
+					TargetNamespace:  "test-ns",
+					Overrides: &backplanev1.Overrides{
+						Components: []backplanev1.ComponentConfig{
+							{Name: backplanev1.ManagedServiceAccount, Enabled: true},
+						},
+					},
+				},
+			},
+			expectError:      true,
+			errorShouldMatch: "CRD not found",
+		},
+		{
+			name: "HyperShift enabled but ClusterManagementAddon CRD missing",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-mce",
+					Annotations: map[string]string{
+						utils.AnnotationExternallyManaged: `["managedserviceaccount","image-based-install-operator","console-mce","discovery","hive","assisted-service","cluster-lifecycle","cluster-manager","server-foundation","cluster-proxy-addon","cluster-api","cluster-api-provider-aws","cluster-api-provider-metal3-preview","cluster-api-provider-openshift-assisted","local-cluster"]`,
+					},
+				},
+				Spec: backplanev1.MultiClusterEngineSpec{
+					LocalClusterName: "local-cluster",
+					TargetNamespace:  "test-ns",
+					Overrides: &backplanev1.Overrides{
+						Components: []backplanev1.ComponentConfig{
+							{Name: backplanev1.HyperShift, Enabled: true},
+						},
+					},
+				},
+			},
+			expectError:      true,
+			errorShouldMatch: "CRD not found",
+		},
+		{
+			name: "ClusterProxyAddon enabled but ClusterManagementAddon CRD missing",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-mce",
+					Annotations: map[string]string{
+						utils.AnnotationExternallyManaged: `["managedserviceaccount","image-based-install-operator","hypershift","console-mce","discovery","hive","assisted-service","cluster-lifecycle","cluster-manager","server-foundation","cluster-api","cluster-api-provider-aws","cluster-api-provider-metal3-preview","cluster-api-provider-openshift-assisted","local-cluster"]`,
+					},
+				},
+				Spec: backplanev1.MultiClusterEngineSpec{
+					LocalClusterName: "local-cluster",
+					TargetNamespace:  "test-ns",
+					Overrides: &backplanev1.Overrides{
+						Components: []backplanev1.ComponentConfig{
+							{Name: backplanev1.ClusterProxyAddon, Enabled: true},
+						},
+					},
+				},
+			},
+			expectError:      true,
+			errorShouldMatch: "CRD not found",
+		},
+	}
+
+	registerScheme()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cv := &configv1.ClusterVersion{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "version",
+				},
+				Spec: configv1.ClusterVersionSpec{
+					Channel:   "stable-4.12",
+					ClusterID: "test-cluster-id",
+				},
+				Status: configv1.ClusterVersionStatus{
+					Capabilities: configv1.ClusterVersionCapabilitiesStatus{
+						EnabledCapabilities: []configv1.ClusterVersionCapability{"Console"},
+					},
+					History: []configv1.UpdateHistory{
+						{Version: "4.12.0"},
+					},
+				},
+			}
+			if err := recon.Client.Get(context.TODO(), types.NamespacedName{Name: cv.GetName()}, cv); err != nil {
+				if errors.IsNotFound(err) {
+					if err := recon.Client.Create(context.TODO(), cv); err != nil {
+						t.Fatalf("failed to create ClusterVersion: %v", err)
+					}
+				} else {
+					t.Fatalf("failed to get ClusterVersion: %v", err)
+				}
+			}
+			defer recon.Client.Delete(context.TODO(), cv)
+
+			_, err := recon.ensureToggleableComponents(context.TODO(), tt.mce)
+			if tt.expectError {
+				if err == nil {
+					t.Errorf("ensureToggleableComponents() error = nil, expected error containing %q", tt.errorShouldMatch)
+				} else if !strings.Contains(err.Error(), tt.errorShouldMatch) {
+					t.Errorf("ensureToggleableComponents() error = %v, expected error containing %q", err, tt.errorShouldMatch)
+				}
+			} else {
+				if err != nil {
+					t.Errorf("ensureToggleableComponents() error = %v, expected nil", err)
+				}
+			}
+		})
+	}
+}
+
+func Test_ensureCustomResources_withMissingAddonCRD(t *testing.T) {
+	tests := []struct {
+		name        string
+		mce         *backplanev1.MultiClusterEngine
+		expectError bool
+	}{
+		{
+			name: "ClusterManagementAddon CRD missing should return error",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-mce",
+				},
+				Spec: backplanev1.MultiClusterEngineSpec{
+					TargetNamespace: "test-ns",
+				},
+			},
+			expectError: true,
+		},
+	}
+
+	registerScheme()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := recon.ensureCustomResources(context.TODO(), tt.mce)
+
+			if tt.expectError {
+				if err == nil {
+					t.Errorf("ensureCustomResources() error = nil, expected error when CRD is missing")
+				}
+				if result != (ctrl.Result{}) {
+					t.Errorf("ensureCustomResources() should return empty result when error occurs, got %v", result)
+				}
+			} else {
+				if err != nil {
+					t.Errorf("ensureCustomResources() error = %v, expected nil", err)
+				}
+				if result != (ctrl.Result{}) {
+					t.Errorf("ensureCustomResources() should return empty result when successful, got %v", result)
+				}
+			}
+		})
+	}
+}
+
+func Test_ensureCustomResources_withAddonCRD(t *testing.T) {
+	tests := []struct {
+		name        string
+		mce         *backplanev1.MultiClusterEngine
+		expectError bool
+	}{
+		{
+			name: "ClusterManagementAddon CRD exists should succeed",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-mce",
+				},
+				Spec: backplanev1.MultiClusterEngineSpec{
+					TargetNamespace: "test-ns",
+				},
+			},
+			expectError: false,
+		},
+	}
+
+	registerScheme()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			crd := &apixv1.CustomResourceDefinition{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "clustermanagementaddons.addon.open-cluster-management.io",
+				},
+			}
+			if err := recon.Client.Get(context.TODO(), types.NamespacedName{Name: crd.GetName()}, crd); err != nil {
+				if errors.IsNotFound(err) {
+					if err := recon.Client.Create(context.TODO(), crd); err != nil {
+						t.Fatalf("failed to create CRD: %v", err)
+					}
+				} else {
+					t.Fatalf("failed to get CRD: %v", err)
+				}
+			}
+			defer recon.Client.Delete(context.TODO(), crd)
+
+			result, err := recon.ensureCustomResources(context.TODO(), tt.mce)
+
+			if tt.expectError {
+				if err == nil {
+					t.Errorf("ensureCustomResources() error = nil, expected error")
+				}
+			} else {
+				if err != nil {
+					if strings.Contains(err.Error(), "CRD not found") {
+						t.Errorf("ensureCustomResources() got CRDNotFoundError, expected to pass CRD check")
+					}
+				}
+				_ = result
 			}
 		})
 	}

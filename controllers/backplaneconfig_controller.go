@@ -997,7 +997,11 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 	requeue := false
 
 	if !r.isComponentExternallyManaged(backplaneConfig, backplanev1.ManagedServiceAccount) {
-		if backplaneConfig.Enabled(backplanev1.ManagedServiceAccount) && foundation.CanInstallAddons(ctx, r.Client) {
+		if err := foundation.CanInstallAddons(ctx, r.Client); err != nil {
+			// Cannot install addons, store the error
+			errs[backplanev1.ManagedServiceAccount] = err
+			requeue = true
+		} else if backplaneConfig.Enabled(backplanev1.ManagedServiceAccount) {
 			result, err := r.ensureManagedServiceAccount(ctx, backplaneConfig)
 			if result != (ctrl.Result{}) {
 				requeue = true
@@ -1041,7 +1045,11 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 	}
 
 	if !r.isComponentExternallyManaged(backplaneConfig, backplanev1.HyperShift) {
-		if backplaneConfig.Enabled(backplanev1.HyperShift) && foundation.CanInstallAddons(ctx, r.Client) {
+		if err := foundation.CanInstallAddons(ctx, r.Client); err != nil {
+			// Cannot install addons, store the error
+			errs[backplanev1.HyperShift] = err
+			requeue = true
+		} else if backplaneConfig.Enabled(backplanev1.HyperShift) {
 			result, err := r.ensureHyperShift(ctx, backplaneConfig)
 			if result != (ctrl.Result{}) {
 				requeue = true
@@ -1232,7 +1240,11 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 	}
 
 	if !r.isComponentExternallyManaged(backplaneConfig, backplanev1.ClusterProxyAddon) {
-		if backplaneConfig.Enabled(backplanev1.ClusterProxyAddon) && foundation.CanInstallAddons(ctx, r.Client) {
+		if err := foundation.CanInstallAddons(ctx, r.Client); err != nil {
+			// Cannot install addons, store the error
+			errs[backplanev1.ClusterProxyAddon] = err
+			requeue = true
+		} else if backplaneConfig.Enabled(backplanev1.ClusterProxyAddon) {
 			result, err = r.ensureClusterProxyAddon(ctx, backplaneConfig)
 			if result != (ctrl.Result{}) {
 				requeue = true
@@ -1861,7 +1873,7 @@ func (r *MultiClusterEngineReconciler) deleteTemplate(ctx context.Context,
 func (r *MultiClusterEngineReconciler) ensureCustomResources(ctx context.Context,
 	backplaneConfig *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 
-	if foundation.CanInstallAddons(ctx, r.Client) {
+	if err := foundation.CanInstallAddons(ctx, r.Client); err == nil {
 		addonTemplates, err := foundation.GetAddons()
 		if err != nil {
 			return ctrl.Result{}, err
@@ -1880,8 +1892,8 @@ func (r *MultiClusterEngineReconciler) ensureCustomResources(ctx context.Context
 			}
 		}
 	} else {
-		log.Info("ClusterManagementAddon API is not installed. Waiting to install addons.")
-		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+		log.Info(fmt.Sprintf("Failed to install addons. Error: %s", err.Error()))
+		return ctrl.Result{}, err
 	}
 
 	return ctrl.Result{}, nil
