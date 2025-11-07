@@ -37,15 +37,6 @@ const (
 	ClusterManagementAddonKind    = "ClusterManagementAddOn"
 )
 
-// CRDNotFoundError is returned when a CRD is not found
-type CRDNotFoundError struct {
-	CRDName string
-}
-
-func (e *CRDNotFoundError) Error() string {
-	return "CRD not found: " + e.CRDName
-}
-
 // RegistrationImage ...
 func RegistrationImage(overrides map[string]string) string {
 	return overrides[RegistrationImageKey]
@@ -108,14 +99,11 @@ func ClusterManager(m *v1.MultiClusterEngine, overrides map[string]string) *unst
 	return unstructured
 }
 
-// CanInstallAddons returns nil if addons can be installed, or a CRDNotFoundError if the ClusterManagementAddon CRD is not found
-func CanInstallAddons(ctx context.Context, client client.Client) error {
+// CanInstallAddons returns true if addons can be installed
+func CanInstallAddons(ctx context.Context, client client.Client) bool {
 	addonCRD := &apixv1.CustomResourceDefinition{}
 	err := client.Get(ctx, types.NamespacedName{Name: clusterManagementAddonCRDName}, addonCRD)
-	if err != nil {
-		return &CRDNotFoundError{CRDName: clusterManagementAddonCRDName}
-	}
-	return nil
+	return err == nil
 }
 
 func GetAddons() ([]*unstructured.Unstructured, error) {
