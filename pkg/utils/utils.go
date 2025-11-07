@@ -65,7 +65,7 @@ var onComponents = []string{
 var offComponents = []string{
 	backplanev1.ClusterAPI,
 	backplanev1.ClusterAPIProviderAWS,
-	backplanev1.ClusterAPIProviderMetalPreview,
+	backplanev1.ClusterAPIProviderMetal,
 	backplanev1.ClusterAPIProviderOA,
 	backplanev1.ImageBasedInstallOperator,
 }
@@ -501,6 +501,7 @@ func ComponentToCRDDirectory() map[string]string {
 		clusterAPIProviderOACRDDir = backplanev1.ClusterAPIProviderOAK8SCRDDir
 		clusterAPIProviderMetalCRDDir = backplanev1.ClusterAPIProviderMetalK8SCRDDir
 	}
+
 	return map[string]string{
 		backplanev1.AssistedService:                  backplanev1.AssistedServiceCRDDir,
 		backplanev1.ClusterAPI:                       clusterAPICRDDir,
