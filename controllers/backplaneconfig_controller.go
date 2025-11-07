@@ -965,21 +965,21 @@ func (r *MultiClusterEngineReconciler) fetchChartOrCRDPath(component string) str
 		clusterAPIOAChartLoc = toggle.ClusterAPIProviderOAK8SChartDir
 	}
 	chartDirs := map[string]string{
-		backplanev1.AssistedService:                toggle.AssistedServiceChartDir,
-		backplanev1.ClusterAPI:                     clusterAPIChartLoc,
-		backplanev1.ClusterAPIProviderAWS:          toggle.ClusterAPIProviderAWSChartDir,
-		backplanev1.ClusterAPIProviderMetalPreview: clusterAPIMetalChartLoc,
-		backplanev1.ClusterAPIProviderOA:           clusterAPIOAChartLoc,
-		backplanev1.ClusterLifecycle:               toggle.ClusterLifecycleChartDir,
-		backplanev1.ClusterManager:                 toggle.ClusterManagerChartDir,
-		backplanev1.ClusterProxyAddon:              toggle.ClusterProxyAddonDir,
-		backplanev1.ConsoleMCE:                     toggle.ConsoleMCEChartsDir,
-		backplanev1.Discovery:                      toggle.DiscoveryChartDir,
-		backplanev1.Hive:                           toggle.HiveChartDir,
-		backplanev1.HyperShift:                     toggle.HyperShiftChartDir,
-		backplanev1.ImageBasedInstallOperator:      toggle.ImageBasedInstallOperatorChartDir,
-		backplanev1.ManagedServiceAccount:          toggle.ManagedServiceAccountChartDir,
-		backplanev1.ServerFoundation:               toggle.ServerFoundationChartDir,
+		backplanev1.AssistedService:           toggle.AssistedServiceChartDir,
+		backplanev1.ClusterAPI:                clusterAPIChartLoc,
+		backplanev1.ClusterAPIProviderAWS:     toggle.ClusterAPIProviderAWSChartDir,
+		backplanev1.ClusterAPIProviderMetal:   clusterAPIMetalChartLoc,
+		backplanev1.ClusterAPIProviderOA:      clusterAPIOAChartLoc,
+		backplanev1.ClusterLifecycle:          toggle.ClusterLifecycleChartDir,
+		backplanev1.ClusterManager:            toggle.ClusterManagerChartDir,
+		backplanev1.ClusterProxyAddon:         toggle.ClusterProxyAddonDir,
+		backplanev1.ConsoleMCE:                toggle.ConsoleMCEChartsDir,
+		backplanev1.Discovery:                 toggle.DiscoveryChartDir,
+		backplanev1.Hive:                      toggle.HiveChartDir,
+		backplanev1.HyperShift:                toggle.HyperShiftChartDir,
+		backplanev1.ImageBasedInstallOperator: toggle.ImageBasedInstallOperatorChartDir,
+		backplanev1.ManagedServiceAccount:     toggle.ManagedServiceAccountChartDir,
+		backplanev1.ServerFoundation:          toggle.ServerFoundationChartDir,
 	}
 
 	if dir, exists := chartDirs[component]; exists {
@@ -1297,14 +1297,14 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 		log.Info(messages.SkippingExternallyManaged, "component", backplanev1.ClusterAPIProviderAWS)
 	}
 
-	if !r.isComponentExternallyManaged(backplaneConfig, backplanev1.ClusterAPIProviderMetalPreview) {
-		if backplaneConfig.Enabled(backplanev1.ClusterAPIProviderMetalPreview) {
+	if !r.isComponentExternallyManaged(backplaneConfig, backplanev1.ClusterAPIProviderMetal) {
+		if backplaneConfig.Enabled(backplanev1.ClusterAPIProviderMetal) {
 			result, err = r.ensureClusterAPIProviderMetal(ctx, backplaneConfig)
 			if result != (ctrl.Result{}) {
 				requeue = true
 			}
 			if err != nil {
-				errs[backplanev1.ClusterAPIProviderMetalPreview] = err
+				errs[backplanev1.ClusterAPIProviderMetal] = err
 			}
 		} else {
 			result, err = r.ensureNoClusterAPIProviderMetal(ctx, backplaneConfig)
@@ -1312,12 +1312,12 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 				requeue = true
 			}
 			if err != nil {
-				errs[backplanev1.ClusterAPIProviderMetalPreview] = err
+				errs[backplanev1.ClusterAPIProviderMetal] = err
 			}
 		}
 	} else {
 		log.Info(messages.SkippingExternallyManaged, "component",
-			backplanev1.ClusterAPIProviderMetalPreview)
+			backplanev1.ClusterAPIProviderMetal)
 	}
 
 	if !r.isComponentExternallyManaged(backplaneConfig, backplanev1.ClusterAPIProviderOA) {
@@ -1929,7 +1929,7 @@ func (r *MultiClusterEngineReconciler) ensureNoAllInternalEngineComponents(ctx c
 		backplanev1.AssistedService,
 		backplanev1.ClusterAPI,
 		backplanev1.ClusterAPIProviderAWS,
-		backplanev1.ClusterAPIProviderMetalPreview,
+		backplanev1.ClusterAPIProviderMetal,
 		backplanev1.ClusterAPIProviderOA,
 		backplanev1.ClusterLifecycle,
 		backplanev1.ClusterManager,

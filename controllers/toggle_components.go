@@ -542,12 +542,12 @@ func (r *MultiClusterEngineReconciler) ensureClusterAPIProviderMetal(ctx context
 	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
 
 	// Ensure that the InternalHubComponent CR instance is created for component in MCE.
-	if result, err := r.ensureInternalEngineComponent(ctx, mce, backplanev1.ClusterAPIProviderMetalPreview); err != nil {
+	if result, err := r.ensureInternalEngineComponent(ctx, mce, backplanev1.ClusterAPIProviderMetal); err != nil {
 		return result, err
 	}
 
 	// Renders all templates from charts
-	chartPath := r.fetchChartOrCRDPath(backplanev1.ClusterAPIProviderMetalPreview)
+	chartPath := r.fetchChartOrCRDPath(backplanev1.ClusterAPIProviderMetal)
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
@@ -558,7 +558,7 @@ func (r *MultiClusterEngineReconciler) ensureClusterAPIProviderMetal(ctx context
 	}
 
 	// Apply deployment config overrides
-	if result, err := r.applyComponentDeploymentOverrides(mce, templates, backplanev1.ClusterAPIProviderMetalPreview); err != nil {
+	if result, err := r.applyComponentDeploymentOverrides(mce, templates, backplanev1.ClusterAPIProviderMetal); err != nil {
 		return result, err
 	}
 
@@ -580,12 +580,12 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterAPIProviderMetal(ctx conte
 
 	// Ensure that the InternalHubComponent CR instance is deleted for component in MCE.
 	if result, err := r.ensureNoInternalEngineComponent(ctx, mce,
-		backplanev1.ClusterAPIProviderMetalPreview); (result != ctrl.Result{}) || err != nil {
+		backplanev1.ClusterAPIProviderMetal); (result != ctrl.Result{}) || err != nil {
 		return result, err
 	}
 
 	// Renders all templates from charts
-	chartPath := r.fetchChartOrCRDPath(backplanev1.ClusterAPIProviderMetalPreview)
+	chartPath := r.fetchChartOrCRDPath(backplanev1.ClusterAPIProviderMetal)
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
