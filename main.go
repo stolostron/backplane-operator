@@ -242,10 +242,13 @@ func main() {
 	// cluster-api and cluster-api-provider-aws CRDs are conditionally applied in the reconciler
 	setupLog.Info("Applying component CRDs")
 	skipCRDDirs := []string{
-		backplanev1.ClusterAPI,
-		backplanev1.ClusterAPIProviderAWS,
-		backplanev1.ClusterAPIProviderMetal,
-		backplanev1.ClusterAPIProviderOA,
+		backplanev1.ClusterAPICRDDir,
+		backplanev1.ClusterAPIK8SCRDDir,
+		backplanev1.ClusterAPIProviderAWSCRDDir,
+		backplanev1.ClusterAPIProviderMetalCRDDir,
+		backplanev1.ClusterAPIProviderMetalK8SCRDDir,
+		backplanev1.ClusterAPIProviderOACRDDir,
+		backplanev1.ClusterAPIProviderOAK8SCRDDir,
 	}
 
 	crds, errs := renderer.RenderCRDs(crdsDir, nil, skipCRDDirs)
