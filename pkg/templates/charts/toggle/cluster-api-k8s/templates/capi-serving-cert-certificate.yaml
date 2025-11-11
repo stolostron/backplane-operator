@@ -9,7 +9,7 @@ spec:
   commonName: capi-webhook-service.{{ .Values.global.namespace }}.svc
   dnsNames:
   - capi-webhook-service.{{ .Values.global.namespace }}.svc
-  - capi-webhook-service.{{ .Values.global.namespace }}.svc.cluster.local
+  - capi-webhook-service.capi-system.svc.cluster.local
   issuerRef:
     kind: Issuer
     name: capi-selfsigned-issuer

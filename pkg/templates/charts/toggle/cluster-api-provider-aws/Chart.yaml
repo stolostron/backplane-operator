@@ -3,4 +3,4 @@ appVersion: 2.10.0-1
 description: Cluster API provider for AWS
 name: cluster-api-provider-aws
 type: application
-version: '2.10'
+version: '2.11'
