@@ -2463,7 +2463,7 @@ func Test_getExternallyManagedCRDDirectories(t *testing.T) {
 					},
 				},
 			},
-			want: []string{"cluster-api", "hive-operator"},
+			want: []string{"cluster-api", "cluster-api-k8s", "hive-operator"},
 		},
 		{
 			name: "single externally managed component",
@@ -2475,7 +2475,7 @@ func Test_getExternallyManagedCRDDirectories(t *testing.T) {
 					},
 				},
 			},
-			want: []string{"cluster-api"},
+			want: []string{"cluster-api", "cluster-api-k8s"},
 		},
 		{
 			name: "no externally managed components",
@@ -2508,7 +2508,7 @@ func Test_getExternallyManagedCRDDirectories(t *testing.T) {
 					},
 				},
 			},
-			want: []string{"cluster-api"},
+			want: []string{"cluster-api", "cluster-api-k8s"},
 		},
 	}
 
