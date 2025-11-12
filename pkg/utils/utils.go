@@ -482,45 +482,56 @@ func DumpServingCertSecret() error {
 	return nil
 }
 
-/*
-ComponentToCRDDirectory returns a map of component names to their corresponding CRD directory names.
-This mapping is used to skip CRD rendering for externally managed components.
-When NonOCP() returns true, the ClusterAPI component uses 'k8s' as its CRD directory.
-*/
-func ComponentToCRDDirectory() map[string]string {
-	var clusterAPICRDDir string
-	var clusterAPIProviderOACRDDir string
-	var clusterAPIProviderMetalCRDDir string
+// ComponentCRDDirectories returns all CRD directory paths for a given component.
+// For CAPI components with platform variants (ClusterAPI, ClusterAPIProviderMetal,
+// ClusterAPIProviderOA), this returns both OCP and K8s directory variants to ensure
+// proper CRD handling regardless of the platform.
+// For all other components, returns a single directory.
+func ComponentCRDDirectories(component string) []string {
+	switch component {
+	// ClusterAPI - has both OCP and K8s variants
+	case backplanev1.ClusterAPI, backplanev1.ClusterAPIPreview:
+		return []string{
+			backplanev1.ClusterAPICRDDir,    // cluster-api
+			backplanev1.ClusterAPIK8SCRDDir, // cluster-api-k8s
+		}
 
-	if DeployOnOCP() {
-		clusterAPICRDDir = backplanev1.ClusterAPICRDDir
-		clusterAPIProviderOACRDDir = backplanev1.ClusterAPIProviderOACRDDir
-		clusterAPIProviderMetalCRDDir = backplanev1.ClusterAPIProviderMetalCRDDir
-	} else {
-		clusterAPICRDDir = backplanev1.ClusterAPIK8SCRDDir
-		clusterAPIProviderOACRDDir = backplanev1.ClusterAPIProviderOAK8SCRDDir
-		clusterAPIProviderMetalCRDDir = backplanev1.ClusterAPIProviderMetalK8SCRDDir
-	}
+	// ClusterAPI Provider Metal - has both OCP and K8s variants
+	case backplanev1.ClusterAPIProviderMetal, backplanev1.ClusterAPIProviderMetalPreview:
+		return []string{
+			backplanev1.ClusterAPIProviderMetalCRDDir,    // cluster-api-provider-metal3
+			backplanev1.ClusterAPIProviderMetalK8SCRDDir, // cluster-api-provider-metal3-k8s
+		}
 
-	return map[string]string{
-		backplanev1.AssistedService:                  backplanev1.AssistedServiceCRDDir,
-		backplanev1.ClusterAPI:                       clusterAPICRDDir,
-		backplanev1.ClusterAPIPreview:                clusterAPICRDDir,
-		backplanev1.ClusterAPIProviderAWS:            backplanev1.ClusterAPIProviderAWSCRDDir,
-		backplanev1.ClusterAPIProviderAWSPreview:     backplanev1.ClusterAPIProviderAWSCRDDir,
-		backplanev1.ClusterAPIProviderMetal:          clusterAPIProviderMetalCRDDir,
-		backplanev1.ClusterAPIProviderMetalPreview:   clusterAPIProviderMetalCRDDir,
-		backplanev1.ClusterAPIProviderOA:             clusterAPIProviderOACRDDir,
-		backplanev1.ClusterAPIProviderOAPreview:      clusterAPIProviderOACRDDir,
-		backplanev1.ClusterLifecycle:                 backplanev1.ClusterLifecycleCRDDir,
-		backplanev1.ClusterManager:                   backplanev1.ClusterManagerCRDDir,
-		backplanev1.ClusterProxyAddon:                backplanev1.ClusterProxyAddonCRDDir,
-		backplanev1.Discovery:                        backplanev1.DiscoveryCRDDir,
-		backplanev1.Hive:                             backplanev1.HiveCRDDir,
-		backplanev1.ImageBasedInstallOperator:        backplanev1.ImageBasedInstallOperatorCRDDir,
-		backplanev1.ImageBasedInstallOperatorPreview: backplanev1.ImageBasedInstallOperatorCRDDir,
-		backplanev1.ManagedServiceAccount:            backplanev1.ManagedServiceAccountCRDDir,
-		backplanev1.ManagedServiceAccountPreview:     backplanev1.ManagedServiceAccountCRDDir,
-		backplanev1.ServerFoundation:                 backplanev1.ServerFoundationCRDDir,
+	// ClusterAPI Provider OpenShift Assisted - has both OCP and K8s variants
+	case backplanev1.ClusterAPIProviderOA, backplanev1.ClusterAPIProviderOAPreview:
+		return []string{
+			backplanev1.ClusterAPIProviderOACRDDir,    // cluster-api-provider-openshift-assisted
+			backplanev1.ClusterAPIProviderOAK8SCRDDir, // cluster-api-provider-openshift-assisted-k8s
+		}
+
+	// All other components - single directory (no platform variants)
+	case backplanev1.AssistedService:
+		return []string{backplanev1.AssistedServiceCRDDir}
+	case backplanev1.ClusterAPIProviderAWS, backplanev1.ClusterAPIProviderAWSPreview:
+		return []string{backplanev1.ClusterAPIProviderAWSCRDDir}
+	case backplanev1.ClusterLifecycle:
+		return []string{backplanev1.ClusterLifecycleCRDDir}
+	case backplanev1.ClusterManager:
+		return []string{backplanev1.ClusterManagerCRDDir}
+	case backplanev1.ClusterProxyAddon:
+		return []string{backplanev1.ClusterProxyAddonCRDDir}
+	case backplanev1.Discovery:
+		return []string{backplanev1.DiscoveryCRDDir}
+	case backplanev1.Hive:
+		return []string{backplanev1.HiveCRDDir}
+	case backplanev1.ImageBasedInstallOperator, backplanev1.ImageBasedInstallOperatorPreview:
+		return []string{backplanev1.ImageBasedInstallOperatorCRDDir}
+	case backplanev1.ManagedServiceAccount, backplanev1.ManagedServiceAccountPreview:
+		return []string{backplanev1.ManagedServiceAccountCRDDir}
+	case backplanev1.ServerFoundation:
+		return []string{backplanev1.ServerFoundationCRDDir}
+	default:
+		return []string{}
 	}
 }
