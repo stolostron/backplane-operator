@@ -9,7 +9,7 @@ spec:
     signer:
       type: SelfSigned
   proxyServer:
-    image: '{{ .Values.global.imageOverrides.cluster_proxy_addon }}'
+    image: '{{ .Values.global.imageOverrides.cluster_proxy }}'
     namespace: '{{ .Values.global.namespace }}'
     replicas: {{ .Values.hubconfig.replicaCount }}
     entrypoint:
@@ -35,7 +35,7 @@ spec:
   {{ toYaml . | indent 8 }}
       {{- end }}
   proxyAgent:
-    image: '{{ .Values.global.imageOverrides.cluster_proxy_addon }}'
+    image: '{{ .Values.global.imageOverrides.cluster_proxy }}'
     replicas: 1
     imagePullSecrets:
     - "open-cluster-management-image-pull-credentials"
