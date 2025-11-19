@@ -3,7 +3,6 @@ global:
   namespace: default
   pullSecret: null
   imageOverrides:
-    cluster_proxy_addon: ""
     cluster_proxy: ""
   templateOverrides: {}
 hubconfig:

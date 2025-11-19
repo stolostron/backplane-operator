@@ -65,7 +65,7 @@ spec:
                   - cluster-proxy-addon-user
       containers:
       - name: controllers
-        image: {{ .Values.global.imageOverrides.cluster_proxy_addon }}
+        image: {{ .Values.global.imageOverrides.cluster_proxy }}
         imagePullPolicy: {{ .Values.global.pullPolicy }}
         command:
           - "/cluster-proxy"
@@ -73,7 +73,7 @@ spec:
           - "controllers"
           - "--certificates-namespace={{ .Values.global.namespace }}" # keep the same with the values in manager-deployment.yaml
           - "--signer-secret-namespace={{ .Values.global.namespace }}"
-          - "--agent-image={{ .Values.global.imageOverrides.cluster_proxy_addon }}"
+          - "--agent-image={{ .Values.global.imageOverrides.cluster_proxy }}"
         env:
         {{- if .Values.hubconfig.proxyConfigs }}
           - name: HTTP_PROXY
@@ -92,7 +92,7 @@ spec:
           readOnlyRootFilesystem: true
           runAsNonRoot: true
       - name: user-server
-        image: '{{ .Values.global.imageOverrides.cluster_proxy_addon }}'
+        image: '{{ .Values.global.imageOverrides.cluster_proxy }}'
         imagePullPolicy: '{{ .Values.global.pullPolicy }}'
         command:
           - "/cluster-proxy"
