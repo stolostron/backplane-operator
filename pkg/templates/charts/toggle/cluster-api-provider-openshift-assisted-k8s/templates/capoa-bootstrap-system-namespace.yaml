@@ -1,0 +1,6 @@
+
+# Source: cluster-api-provider-openshift-assisted/templates/v1_namespace_capoa-bootstrap-system.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: capoa-bootstrap-system
