@@ -1,0 +1,6 @@
+
+# Source: cluster-api-provider-openshift-assisted/templates/v1_namespace_capoa-controlplane-system.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: capoa-controlplane-system
