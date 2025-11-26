@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: capoa-bootstrap-webhook-service
-  namespace: '{{ default "{{ .Values.global.namespace }}" .Values.global.namespace }}'
+  namespace: '{{ default "capoa-bootstrap-system" .Values.global.namespace }}'
 spec:
   ports:
   - port: 443
