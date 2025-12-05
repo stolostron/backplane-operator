@@ -303,6 +303,7 @@ rules:
   resources:
   - users
   - groups
+  - oauths
   verbs:
   - get
   - list

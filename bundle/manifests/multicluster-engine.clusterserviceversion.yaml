@@ -1688,6 +1688,7 @@ spec:
           resources:
           - groups
           - users
+          - oauths
           verbs:
           - get
           - list
