@@ -754,7 +754,6 @@ rules:
   - dnses
   - ingresses
   - proxies
-  - oauths
   verbs:
   - get
   - list
@@ -780,6 +779,7 @@ rules:
   - consolelinks
   - featuregates
   - infrastructures
+  - oauths
   - projects
   verbs:
   - get
