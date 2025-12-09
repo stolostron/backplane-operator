@@ -1,8 +1,6 @@
 module github.com/stolostron/backplane-operator
 
-go 1.24.0
-
-toolchain go1.24.8
+go 1.24.9
 
 require (
 	github.com/Masterminds/semver v1.5.0
@@ -63,7 +61,7 @@ require (
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/google/gnostic-models v0.6.9 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
-	github.com/google/pprof v0.0.0-20251002213607-436353cc1ee6 // indirect
+	github.com/google/pprof v0.0.0-20251208000136-3d256cb9ff16 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/huandu/xstrings v1.5.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
