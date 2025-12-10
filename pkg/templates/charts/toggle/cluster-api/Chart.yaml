@@ -3,4 +3,4 @@ appVersion: '4.20'
 description: Cluster API
 name: cluster-api
 type: application
-version: '2.10'
+version: '2.11'

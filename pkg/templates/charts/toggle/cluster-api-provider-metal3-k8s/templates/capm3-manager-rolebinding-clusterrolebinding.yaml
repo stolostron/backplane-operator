@@ -11,4 +11,4 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: capm3-manager
-  namespace: '{{ default "{{ .Values.global.namespace }}" .Values.global.namespace }}'
+  namespace: '{{ default "capm3-system" .Values.global.namespace }}'

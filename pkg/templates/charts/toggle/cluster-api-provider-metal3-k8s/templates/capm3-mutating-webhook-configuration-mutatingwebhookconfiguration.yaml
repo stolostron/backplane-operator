@@ -2,7 +2,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: '{{ .Values.global.namespace }}/capm3-serving-cert'
+    cert-manager.io/inject-ca-from: capm3-system/capm3-serving-cert
   labels:
     cluster.x-k8s.io/provider: infrastructure-metal3
   name: capm3-mutating-webhook-configuration
@@ -13,7 +13,7 @@ webhooks:
   clientConfig:
     service:
       name: capm3-webhook-service
-      namespace: '{{ default "{{ .Values.global.namespace }}" .Values.global.namespace }}'
+      namespace: '{{ default "capm3-system" .Values.global.namespace }}'
       path: /mutate-infrastructure-cluster-x-k8s-io-v1beta1-metal3cluster
   failurePolicy: Fail
   matchPolicy: Equivalent
@@ -35,7 +35,7 @@ webhooks:
   clientConfig:
     service:
       name: capm3-webhook-service
-      namespace: '{{ default "{{ .Values.global.namespace }}" .Values.global.namespace }}'
+      namespace: '{{ default "capm3-system" .Values.global.namespace }}'
       path: /mutate-infrastructure-cluster-x-k8s-io-v1beta1-metal3clustertemplate
   failurePolicy: Fail
   matchPolicy: Equivalent
@@ -57,7 +57,7 @@ webhooks:
   clientConfig:
     service:
       name: capm3-webhook-service
-      namespace: '{{ default "{{ .Values.global.namespace }}" .Values.global.namespace }}'
+      namespace: '{{ default "capm3-system" .Values.global.namespace }}'
       path: /mutate-infrastructure-cluster-x-k8s-io-v1beta1-metal3data
   failurePolicy: Fail
   matchPolicy: Equivalent
@@ -79,7 +79,7 @@ webhooks:
   clientConfig:
     service:
       name: capm3-webhook-service
-      namespace: '{{ default "{{ .Values.global.namespace }}" .Values.global.namespace }}'
+      namespace: '{{ default "capm3-system" .Values.global.namespace }}'
       path: /mutate-infrastructure-cluster-x-k8s-io-v1beta1-metal3dataclaim
   failurePolicy: Fail
   matchPolicy: Equivalent
@@ -101,7 +101,7 @@ webhooks:
   clientConfig:
     service:
       name: capm3-webhook-service
-      namespace: '{{ default "{{ .Values.global.namespace }}" .Values.global.namespace }}'
+      namespace: '{{ default "capm3-system" .Values.global.namespace }}'
       path: /mutate-infrastructure-cluster-x-k8s-io-v1beta1-metal3datatemplate
   failurePolicy: Fail
   matchPolicy: Equivalent
@@ -123,7 +123,7 @@ webhooks:
   clientConfig:
     service:
       name: capm3-webhook-service
-      namespace: '{{ default "{{ .Values.global.namespace }}" .Values.global.namespace }}'
+      namespace: '{{ default "capm3-system" .Values.global.namespace }}'
       path: /mutate-infrastructure-cluster-x-k8s-io-v1beta1-metal3machine
   failurePolicy: Fail
   matchPolicy: Equivalent
@@ -145,7 +145,7 @@ webhooks:
   clientConfig:
     service:
       name: capm3-webhook-service
-      namespace: '{{ default "{{ .Values.global.namespace }}" .Values.global.namespace }}'
+      namespace: '{{ default "capm3-system" .Values.global.namespace }}'
       path: /mutate-infrastructure-cluster-x-k8s-io-v1beta1-metal3machinetemplate
   failurePolicy: Fail
   matchPolicy: Equivalent
@@ -167,7 +167,7 @@ webhooks:
   clientConfig:
     service:
       name: capm3-webhook-service
-      namespace: '{{ default "{{ .Values.global.namespace }}" .Values.global.namespace }}'
+      namespace: '{{ default "capm3-system" .Values.global.namespace }}'
       path: /mutate-infrastructure-cluster-x-k8s-io-v1beta1-metal3remediation
   failurePolicy: Fail
   matchPolicy: Equivalent
@@ -189,7 +189,7 @@ webhooks:
   clientConfig:
     service:
       name: capm3-webhook-service
-      namespace: '{{ default "{{ .Values.global.namespace }}" .Values.global.namespace }}'
+      namespace: '{{ default "capm3-system" .Values.global.namespace }}'
       path: /mutate-infrastructure-cluster-x-k8s-io-v1beta1-metal3remediationtemplate
   failurePolicy: Fail
   matchPolicy: Equivalent
