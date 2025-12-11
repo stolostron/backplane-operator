@@ -1471,6 +1471,9 @@ rules:
 - apiGroups:
   - policy.open-cluster-management.io
   resources:
+  - certificatepolicies
+  - configurationpolicies
+  - operatorpolicies
   - placementbindings
   - policies
   - policyautomations

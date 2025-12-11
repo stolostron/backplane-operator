@@ -228,6 +228,9 @@ rules:
   - policies
   - policyautomations
   - policysets
+  - configurationpolicies
+  - operatorpolicies
+  - certificatepolicies
   verbs:
   - list
   - watch
@@ -307,3 +310,4 @@ rules:
   - get
   - list
   - watch
+
