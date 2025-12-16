@@ -171,6 +171,144 @@ var _ = Describe("Multiclusterengine webhook", func() {
 			})
 		})
 
+		It("Should fail to delete multiclusterengine when AgentServiceConfig exists", func() {
+			mce := &MultiClusterEngine{}
+			Expect(k8sClient.Get(ctx, types.NamespacedName{Name: multiClusterEngineName}, mce)).To(Succeed())
+
+			By("Creating an AgentServiceConfig resource", func() {
+				agentServiceConfig := &unstructured.Unstructured{
+					Object: map[string]interface{}{
+						"apiVersion": "agent-install.openshift.io/v1beta1",
+						"kind":       "AgentServiceConfig",
+						"metadata": map[string]interface{}{
+							"name": "test-agent-service-config",
+						},
+						"spec": map[string]interface{}{
+							"databaseStorage": map[string]interface{}{
+								"storageClassName": "test-storage",
+							},
+							"filesystemStorage": map[string]interface{}{
+								"storageClassName": "test-storage",
+							},
+						},
+					},
+				}
+				Expect(k8sClient.Create(ctx, agentServiceConfig)).To(Succeed())
+			})
+
+			By("Attempting to delete MCE should fail", func() {
+				err := k8sClient.Delete(ctx, mce)
+				Expect(err).NotTo(BeNil())
+				Expect(err.Error()).To(ContainSubstring("Existing AgentServiceConfig resources must first be deleted"))
+			})
+
+			By("Cleaning up AgentServiceConfig", func() {
+				agentServiceConfig := &unstructured.Unstructured{
+					Object: map[string]interface{}{
+						"apiVersion": "agent-install.openshift.io/v1beta1",
+						"kind":       "AgentServiceConfig",
+						"metadata": map[string]interface{}{
+							"name": "test-agent-service-config",
+						},
+					},
+				}
+				Expect(k8sClient.Delete(ctx, agentServiceConfig)).To(Succeed())
+			})
+		})
+
+		It("Should fail to delete multiclusterengine when ClusterPool exists", func() {
+			mce := &MultiClusterEngine{}
+			Expect(k8sClient.Get(ctx, types.NamespacedName{Name: multiClusterEngineName}, mce)).To(Succeed())
+
+			By("Creating a ClusterPool resource", func() {
+				clusterPool := &unstructured.Unstructured{
+					Object: map[string]interface{}{
+						"apiVersion": "hive.openshift.io/v1",
+						"kind":       "ClusterPool",
+						"metadata": map[string]interface{}{
+							"name":      "test-pool",
+							"namespace": "default",
+						},
+						"spec": map[string]interface{}{
+							"size":       1,
+							"baseDomain": "test.example.com",
+							"imageSetRef": map[string]interface{}{
+								"name": "test-imageset",
+							},
+							"platform": map[string]interface{}{
+								"aws": map[string]interface{}{
+									"region": "us-east-1",
+								},
+							},
+						},
+					},
+				}
+				Expect(k8sClient.Create(ctx, clusterPool)).To(Succeed())
+			})
+
+			By("Attempting to delete MCE should fail", func() {
+				err := k8sClient.Delete(ctx, mce)
+				Expect(err).NotTo(BeNil())
+				Expect(err.Error()).To(ContainSubstring("Existing ClusterPool resources must first be deleted"))
+			})
+
+			By("Cleaning up ClusterPool", func() {
+				clusterPool := &unstructured.Unstructured{
+					Object: map[string]interface{}{
+						"apiVersion": "hive.openshift.io/v1",
+						"kind":       "ClusterPool",
+						"metadata": map[string]interface{}{
+							"name":      "test-pool",
+							"namespace": "default",
+						},
+					},
+				}
+				Expect(k8sClient.Delete(ctx, clusterPool)).To(Succeed())
+			})
+		})
+
+		It("Should fail to delete multiclusterengine when DiscoveryConfig exists", func() {
+			mce := &MultiClusterEngine{}
+			Expect(k8sClient.Get(ctx, types.NamespacedName{Name: multiClusterEngineName}, mce)).To(Succeed())
+
+			By("Creating a DiscoveryConfig resource", func() {
+				discoveryConfig := &unstructured.Unstructured{
+					Object: map[string]interface{}{
+						"apiVersion": "discovery.open-cluster-management.io/v1",
+						"kind":       "DiscoveryConfig",
+						"metadata": map[string]interface{}{
+							"name":      "test-discovery",
+							"namespace": "default",
+						},
+						"spec": map[string]interface{}{
+							"credential": "test-credential",
+						},
+					},
+				}
+				Expect(k8sClient.Create(ctx, discoveryConfig)).To(Succeed())
+			})
+
+			By("Attempting to delete MCE should fail", func() {
+				err := k8sClient.Delete(ctx, mce)
+				Expect(err).NotTo(BeNil())
+				Expect(err.Error()).To(ContainSubstring("Existing DiscoveryConfig resources must first be deleted"))
+			})
+
+			By("Cleaning up DiscoveryConfig", func() {
+				discoveryConfig := &unstructured.Unstructured{
+					Object: map[string]interface{}{
+						"apiVersion": "discovery.open-cluster-management.io/v1",
+						"kind":       "DiscoveryConfig",
+						"metadata": map[string]interface{}{
+							"name":      "test-discovery",
+							"namespace": "default",
+						},
+					},
+				}
+				Expect(k8sClient.Delete(ctx, discoveryConfig)).To(Succeed())
+			})
+		})
+
 		It("Should succeed in deleting multiclusterengine", func() {
 			mce := &MultiClusterEngine{}
 			Expect(k8sClient.Get(ctx, types.NamespacedName{Name: multiClusterEngineName}, mce)).To(Succeed())
