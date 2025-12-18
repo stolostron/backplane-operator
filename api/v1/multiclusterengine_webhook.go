@@ -63,19 +63,27 @@ var (
 
 	blockDeletionResources = []BlockDeletionResource{
 		{
-			Name: "DiscoveryConfig",
-			GVK: schema.GroupVersionKind{
-				Group:   "discovery.open-cluster-management.io",
-				Version: "v1",
-				Kind:    "DiscoveryConfigList",
-			},
-		},
-		{
 			Name: "AgentServiceConfig",
 			GVK: schema.GroupVersionKind{
 				Group:   "agent-install.openshift.io",
 				Version: "v1beta1",
 				Kind:    "AgentServiceConfigList",
+			},
+		},
+		{
+			Name: "ClusterPool",
+			GVK: schema.GroupVersionKind{
+				Group:   "hive.openshift.io",
+				Version: "v1",
+				Kind:    "ClusterPoolList",
+			},
+		},
+		{
+			Name: "DiscoveryConfig",
+			GVK: schema.GroupVersionKind{
+				Group:   "discovery.open-cluster-management.io",
+				Version: "v1",
+				Kind:    "DiscoveryConfigList",
 			},
 		},
 	}
@@ -325,6 +333,7 @@ func (r *MultiClusterEngine) ValidateDelete() (admission.Warnings, error) {
 	// TODO(user): fill in your validation logic upon object deletion.
 	backplaneconfiglog.Info("validate delete", "Kind", r.Kind, "Name", r.GetName())
 	ctx := context.Background()
+
 	if val, ok := os.LookupEnv("ENV_TEST"); !ok || val == "false" {
 		var err error
 		cfg, err = config.GetConfig()
