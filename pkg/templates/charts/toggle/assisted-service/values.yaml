@@ -6,7 +6,7 @@ global:
     assisted_installer_agent: ''
     assisted_installer_controller: ''
     assisted_service_9: ''
-    postgresql_12: ''
+    postgresql_13: ''
   namespace: default
   pullSecret: null
   templateOverrides: {}
