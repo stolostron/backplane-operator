@@ -55,7 +55,7 @@ spec:
         - name: IMAGE_SERVICE_IMAGE
           value: '{{ .Values.global.imageOverrides.assisted_image_service }}'
         - name: DATABASE_IMAGE
-          value: '{{ .Values.global.imageOverrides.postgresql_12 }}'
+          value: '{{ .Values.global.imageOverrides.postgresql_13 }}'
         - name: AGENT_IMAGE
           value: '{{ .Values.global.imageOverrides.assisted_installer_agent }}'
         - name: CONTROLLER_IMAGE
