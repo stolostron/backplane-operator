@@ -3,4 +3,4 @@ appVersion: '4.20'
 description: Cluster API provider for Metal3
 name: cluster-api-provider-metal3
 type: application
-version: '2.10'
+version: '2.11'
