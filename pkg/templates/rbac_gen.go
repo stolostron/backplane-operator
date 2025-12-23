@@ -330,7 +330,7 @@ package main
 //+kubebuilder:rbac:groups=config.openshift.io,resources=infrastructures,verbs=get;list;watch;patch;update
 //+kubebuilder:rbac:groups=config.openshift.io,resources=proxies,verbs=get;list;watch
 //+kubebuilder:rbac:groups=config.openshift.io,resources=proxies,verbs=get;list;watch
-//+kubebuilder:rbac:groups=config.openshift.io;console.openshift.io;project.openshift.io;tower.ansible.com,resources=infrastructures;consolelinks;projects;featuregates;ansiblejobs;clusterversions,verbs=list;get;watch
+//+kubebuilder:rbac:groups=config.openshift.io;console.openshift.io;project.openshift.io;tower.ansible.com,resources=infrastructures;consolelinks;projects;featuregates;ansiblejobs;clusterversions;oauths,verbs=list;get;watch
 //+kubebuilder:rbac:groups=console.open-cluster-management.io,resources=userpreferences,verbs=create;get;list;patch;watch
 //+kubebuilder:rbac:groups=console.openshift.io,resources=consoleclidownloads,verbs=get;list;create;delete;update;patch
 //+kubebuilder:rbac:groups=controlplane.cluster.x-k8s.io,resources=*,verbs=get;list;watch
