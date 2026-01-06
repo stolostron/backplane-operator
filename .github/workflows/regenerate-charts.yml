@@ -21,10 +21,8 @@ jobs:
       fail-fast: false # If one jobs fail, we still want the other jobs to run.
       matrix:
         python-version: [3.9]
-        branch: ['main', 'backplane-2.5', 'backplane-2.6', 'backplane-2.7', 'backplane-2.8', 'backplane-2.9', 'backplane-2.10']
+        branch: ['main', 'backplane-2.6', 'backplane-2.7', 'backplane-2.8', 'backplane-2.9', 'backplane-2.10']
         include:
-          - branch: backplane-2.5
-            go-version: "1.20"
           - branch: backplane-2.6
             go-version: "1.21"
           - branch: backplane-2.7
