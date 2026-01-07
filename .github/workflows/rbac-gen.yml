@@ -15,7 +15,7 @@ jobs:
     strategy:
       matrix:
         go:
-          - '1.25.5'
+          - '1.25.2'
     name: Generate role permissions
     steps:
     - name: Checkout backplane
