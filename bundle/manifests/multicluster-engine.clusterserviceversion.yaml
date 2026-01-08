@@ -834,6 +834,7 @@ spec:
           - dnses
           - ingresses
           - proxies
+          - oauths
           verbs:
           - get
           - list
