@@ -1,6 +1,6 @@
 module github.com/stolostron/backplane-operator
 
-go 1.21
+go 1.23
 
 require (
 	github.com/Masterminds/semver v1.5.0
@@ -20,7 +20,7 @@ require (
 	k8s.io/apimachinery v0.29.3
 	k8s.io/client-go v0.29.3
 	k8s.io/kube-aggregator v0.29.3
-	k8s.io/utils v0.0.0-20240310230437-4693a0247e57
+	k8s.io/utils v0.0.0-20260106112306-0fe9cd71b2f8
 	open-cluster-management.io/api v0.13.0
 	sigs.k8s.io/controller-runtime v0.17.2
 	sigs.k8s.io/yaml v1.4.0
