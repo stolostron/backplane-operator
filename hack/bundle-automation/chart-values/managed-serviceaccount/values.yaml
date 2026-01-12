@@ -1,0 +1,18 @@
+# Image of the managed service-account instances
+image: quay.io/open-cluster-management/managed-serviceaccount
+tag:
+agentInstallAll: true
+
+# Number of replicas
+replicas: 1
+
+featureGates:
+  ephemeralIdentity: false
+
+agentImagePullSecret: ""
+
+# Hub deploy mode: AddOnTemplate or Deployment
+hubDeployMode: Deployment
+
+# Name of the managed service-account addon template, only used when hubDeployMode is AddOnTemplate
+# addOnTemplateName: managed-serviceaccount

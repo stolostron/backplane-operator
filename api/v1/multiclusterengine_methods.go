@@ -29,6 +29,8 @@ const (
 	ClusterAPIPreview                = "cluster-api-preview"
 	ClusterAPIProviderAWS            = "cluster-api-provider-aws"
 	ClusterAPIProviderAWSPreview     = "cluster-api-provider-aws-preview"
+	ClusterAPIProviderAzure          = "cluster-api-provider-azure"
+	ClusterAPIProviderAzurePreview   = "cluster-api-provider-azure-preview"
 	ClusterAPIProviderMetal          = "cluster-api-provider-metal3"
 	ClusterAPIProviderMetalPreview   = "cluster-api-provider-metal3-preview"
 	ClusterAPIProviderOA             = "cluster-api-provider-openshift-assisted"
@@ -54,6 +56,8 @@ const (
 	ClusterAPICRDDir                 = "cluster-api"
 	ClusterAPIK8SCRDDir              = "cluster-api-k8s"
 	ClusterAPIProviderAWSCRDDir      = "cluster-api-provider-aws"
+	ClusterAPIProviderAzureCRDDir    = "cluster-api-provider-azure"
+	ClusterAPIProviderAzureK8SCRDDir = "cluster-api-provider-azure-k8s"
 	ClusterAPIProviderMetalCRDDir    = "cluster-api-provider-metal3"
 	ClusterAPIProviderMetalK8SCRDDir = "cluster-api-provider-metal3-k8s"
 	ClusterAPIProviderOACRDDir       = "cluster-api-provider-openshift-assisted"
@@ -75,6 +79,8 @@ var AllComponents = []string{
 	ClusterAPIPreview,
 	ClusterAPIProviderAWS,
 	ClusterAPIProviderAWSPreview,
+	// ClusterAPIProviderAzure, Uncomment until stable release is available
+	ClusterAPIProviderAzurePreview,
 	ClusterAPIProviderMetal,
 	ClusterAPIProviderMetalPreview,
 	ClusterAPIProviderOAPreview,
@@ -101,6 +107,8 @@ var MCEComponents = []string{
 	AssistedService,
 	ClusterAPI,
 	ClusterAPIProviderAWS,
+	// ClusterAPIProviderAzure, Uncomment until stable release is available
+	ClusterAPIProviderAzurePreview,
 	ClusterAPIProviderMetal,
 	ClusterAPIProviderOA,
 	ClusterLifecycle,
@@ -123,6 +131,7 @@ These components are candidates for pruning when the stable version replaces the
 var PreviewComponents = []string{
 	ClusterAPIPreview,
 	ClusterAPIProviderAWSPreview,
+	ClusterAPIProviderAzurePreview,
 	ClusterAPIProviderMetalPreview,
 	ClusterAPIProviderOAPreview,
 	HyperShiftPreview,
@@ -135,8 +144,9 @@ PreviewToStable maps each preview component to its corresponding stable replacem
 This mapping is used to enable the stable component when the preview version is pruned.
 */
 var PreviewToStable = map[string]string{
-	ClusterAPIPreview:                ClusterAPI,                // Upgraded in ACM 2.14 / MCE 2.9
-	ClusterAPIProviderAWSPreview:     ClusterAPIProviderAWS,     // Upgraded in ACM 2.14 / MCE 2.9
+	ClusterAPIPreview:            ClusterAPI,            // Upgraded in ACM 2.14 / MCE 2.9
+	ClusterAPIProviderAWSPreview: ClusterAPIProviderAWS, // Upgraded in ACM 2.14 / MCE 2.9
+	// ClusterAPIProviderAzurePreview:   ClusterAPIProviderAzure,   // Upgraded in ACM 2.16 / MCE 2.11
 	ClusterAPIProviderMetalPreview:   ClusterAPIProviderMetal,   // Upgraded in ACM 2.15 / MCE 2.10
 	ClusterAPIProviderOAPreview:      ClusterAPIProviderOA,      // Upgraded in ACM 2.15 / MCE 2.10
 	HyperShiftPreview:                HyperShift,                // Upgraded in ACM 2.8 / MCE 2.3
