@@ -61,6 +61,7 @@ var resources = []string{
 	"ManagedProxyServiceResolver",
 	"MutatingWebhookConfiguration",
 	"Namespace",
+	"PodDisruptionBudget",
 	"PrometheusRule",
 	"Role",
 	"RoleBinding",
