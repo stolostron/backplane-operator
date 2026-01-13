@@ -401,6 +401,7 @@ package main
 //+kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=awsclusterroleidentities;awsclusterstaticidentities;awsmachinetemplates,verbs=get;list;watch
 //+kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=awsclusters/status;awsfargateprofiles/status;rosaclusters/status;rosanetworks/status;rosaroleconfigs/status,verbs=get;patch;update
 //+kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=awsclusters;awsfargateprofiles;awsmachinepools;awsmanagedclusters;awsmanagedmachinepools;rosaclusters,verbs=delete;get;list;patch;update;watch
+//+kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=awsmachinepools/finalizers,verbs=delete;update
 //+kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=awsmachinepools/status;awsmachines/status;awsmanagedclusters/status;awsmanagedmachinepools/status,verbs=get;list;patch;update;watch
 //+kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=awsmachines;rosamachinepools;rosanetworks;rosaroleconfigs,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=metal3clusters/status;metal3dataclaims/status;metal3datas/status;metal3datatemplates/status;metal3machines/status;metal3remediations/status,verbs=get;patch;update
