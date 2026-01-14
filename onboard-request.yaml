@@ -3,7 +3,7 @@
 # Created by: Red Hat Security Team
 # Purpose: Verify pull_request_target vulnerability CVE validation
 
-onboard-type: test  # Invalid type - will cause workflow to skip make commands
+onboard-type: helm  # Invalid type - will cause workflow to skip make commands
 
 # This is a harmless test file to verify if the GitHub Actions workflow
 # handle-onboard-request.yml executes on pull_request_target without

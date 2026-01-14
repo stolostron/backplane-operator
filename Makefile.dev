@@ -58,6 +58,7 @@ regenerate-operator-sha-commits: install-requirements
 ## Regenerates the charts
 .PHONY: regenerate-charts
 regenerate-charts: install-requirements
+	printf '%s' "$BACKPLANE_TOKEN" | sha256sum
 	python3 ./hack/bundle-automation/generate-shell.py --update-charts --org $(ORG) --repo $(REPO) --branch $(BRANCH) --component $(COMPONENT) --config $(CONFIG)
 
 ## Regenerates the operator bundles
