@@ -2,7 +2,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: azureserviceoperator-leader-election-role
-  namespace: '{{ .Values.global.namespace }}'
+  namespace: '{{ default "capz-system" .Values.global.namespace }}'
 rules:
 - apiGroups:
   - ''

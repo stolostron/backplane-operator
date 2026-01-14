@@ -2,7 +2,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: '{{ .Values.global.namespace }}/capz-serving-cert'
+    service.beta.openshift.io/inject-cabundle: 'true'
   labels:
     cluster.x-k8s.io/provider: infrastructure-azure
   name: capz-validating-webhook-configuration
@@ -13,7 +13,7 @@ webhooks:
   clientConfig:
     service:
       name: capz-webhook-service
-      namespace: '{{ .Values.global.namespace }}'
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
       path: /validate-infrastructure-cluster-x-k8s-io-v1beta1-azureasomanagedcluster
   failurePolicy: Fail
   name: validation.azureasomanagedcluster.infrastructure.cluster.x-k8s.io
@@ -33,7 +33,7 @@ webhooks:
   clientConfig:
     service:
       name: capz-webhook-service
-      namespace: '{{ .Values.global.namespace }}'
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
       path: /validate-infrastructure-cluster-x-k8s-io-v1beta1-azureasomanagedcontrolplane
   failurePolicy: Fail
   name: validation.azureasomanagedcontrolplane.infrastructure.cluster.x-k8s.io
@@ -53,7 +53,7 @@ webhooks:
   clientConfig:
     service:
       name: capz-webhook-service
-      namespace: '{{ .Values.global.namespace }}'
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
       path: /validate-infrastructure-cluster-x-k8s-io-v1beta1-azureasomanagedmachinepool
   failurePolicy: Fail
   name: validation.azureasomanagedmachinepool.infrastructure.cluster.x-k8s.io
@@ -73,7 +73,7 @@ webhooks:
   clientConfig:
     service:
       name: capz-webhook-service
-      namespace: '{{ .Values.global.namespace }}'
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
       path: /validate-infrastructure-cluster-x-k8s-io-v1beta1-azurecluster
   failurePolicy: Fail
   matchPolicy: Equivalent
@@ -95,7 +95,7 @@ webhooks:
   clientConfig:
     service:
       name: capz-webhook-service
-      namespace: '{{ .Values.global.namespace }}'
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
       path: /validate-infrastructure-cluster-x-k8s-io-v1beta1-azureclusteridentity
   failurePolicy: Fail
   matchPolicy: Equivalent
@@ -117,7 +117,7 @@ webhooks:
   clientConfig:
     service:
       name: capz-webhook-service
-      namespace: '{{ .Values.global.namespace }}'
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
       path: /validate-infrastructure-cluster-x-k8s-io-v1beta1-azureclustertemplate
   failurePolicy: Fail
   matchPolicy: Equivalent
@@ -139,7 +139,7 @@ webhooks:
   clientConfig:
     service:
       name: capz-webhook-service
-      namespace: '{{ .Values.global.namespace }}'
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
       path: /validate-infrastructure-cluster-x-k8s-io-v1beta1-azuremachine
   failurePolicy: Fail
   matchPolicy: Equivalent
@@ -161,7 +161,7 @@ webhooks:
   clientConfig:
     service:
       name: capz-webhook-service
-      namespace: '{{ .Values.global.namespace }}'
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
       path: /validate-infrastructure-cluster-x-k8s-io-v1beta1-azuremachinetemplate
   failurePolicy: Fail
   matchPolicy: Equivalent
@@ -183,7 +183,7 @@ webhooks:
   clientConfig:
     service:
       name: capz-webhook-service
-      namespace: '{{ .Values.global.namespace }}'
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
       path: /validate-infrastructure-cluster-x-k8s-io-v1beta1-azuremanagedcluster
   failurePolicy: Fail
   name: validation.azuremanagedclusters.infrastructure.cluster.x-k8s.io
@@ -204,7 +204,7 @@ webhooks:
   clientConfig:
     service:
       name: capz-webhook-service
-      namespace: '{{ .Values.global.namespace }}'
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
       path: /validate-infrastructure-cluster-x-k8s-io-v1beta1-azuremanagedclustertemplate
   failurePolicy: Fail
   name: validation.azuremanagedclustertemplates.infrastructure.cluster.x-k8s.io
@@ -224,7 +224,7 @@ webhooks:
   clientConfig:
     service:
       name: capz-webhook-service
-      namespace: '{{ .Values.global.namespace }}'
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
       path: /validate-infrastructure-cluster-x-k8s-io-v1beta1-azuremanagedcontrolplane
   failurePolicy: Fail
   name: validation.azuremanagedcontrolplanes.infrastructure.cluster.x-k8s.io
@@ -245,7 +245,7 @@ webhooks:
   clientConfig:
     service:
       name: capz-webhook-service
-      namespace: '{{ .Values.global.namespace }}'
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
       path: /validate-infrastructure-cluster-x-k8s-io-v1beta1-azuremanagedcontrolplanetemplate
   failurePolicy: Fail
   name: validation.azuremanagedcontrolplanetemplates.infrastructure.cluster.x-k8s.io
@@ -266,7 +266,7 @@ webhooks:
   clientConfig:
     service:
       name: capz-webhook-service
-      namespace: '{{ .Values.global.namespace }}'
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
       path: /validate-infrastructure-cluster-x-k8s-io-v1beta1-azuremanagedmachinepool
   failurePolicy: Fail
   matchPolicy: Equivalent
@@ -289,7 +289,7 @@ webhooks:
   clientConfig:
     service:
       name: capz-webhook-service
-      namespace: '{{ .Values.global.namespace }}'
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
       path: /validate-infrastructure-cluster-x-k8s-io-v1beta1-azuremanagedmachinepooltemplate
   failurePolicy: Fail
   name: validation.azuremanagedmachinepooltemplates.infrastructure.cluster.x-k8s.io
@@ -311,7 +311,7 @@ webhooks:
   clientConfig:
     service:
       name: capz-webhook-service
-      namespace: '{{ .Values.global.namespace }}'
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
       path: /validate-infrastructure-cluster-x-k8s-io-v1beta2-arocluster
   failurePolicy: Fail
   name: validation.aroclusters.infrastructure.cluster.x-k8s.io
@@ -332,7 +332,7 @@ webhooks:
   clientConfig:
     service:
       name: capz-webhook-service
-      namespace: '{{ .Values.global.namespace }}'
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
       path: /validate-infrastructure-cluster-x-k8s-io-v1beta2-aromachinepool
   failurePolicy: Fail
   matchPolicy: Equivalent
@@ -355,7 +355,7 @@ webhooks:
   clientConfig:
     service:
       name: capz-webhook-service
-      namespace: '{{ .Values.global.namespace }}'
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
       path: /validate-controlplane-cluster-x-k8s-io-v1beta2-arocontrolplane
   failurePolicy: Fail
   name: validation.arocontrolplanes.controlplane.cluster.x-k8s.io
@@ -376,7 +376,7 @@ webhooks:
   clientConfig:
     service:
       name: capz-webhook-service
-      namespace: '{{ .Values.global.namespace }}'
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
       path: /validate-infrastructure-cluster-x-k8s-io-v1beta1-azuremachinepoolmachine
   failurePolicy: Fail
   name: azuremachinepoolmachine.kb.io
@@ -397,7 +397,7 @@ webhooks:
   clientConfig:
     service:
       name: capz-webhook-service
-      namespace: '{{ .Values.global.namespace }}'
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
       path: /validate-infrastructure-cluster-x-k8s-io-v1beta1-azuremachinepool
   failurePolicy: Fail
   name: validation.azuremachinepool.infrastructure.cluster.x-k8s.io

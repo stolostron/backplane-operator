@@ -2,8 +2,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: multicluster-engine/capz-serving-cert
     controller-gen.kubebuilder.io/version: v0.18.0
+    service.beta.openshift.io/inject-cabundle: "true"
   labels:
     cluster.x-k8s.io/provider: infrastructure-azure
     cluster.x-k8s.io/v1beta1: v1beta1
@@ -15,7 +15,7 @@ spec:
       clientConfig:
         service:
           name: capz-webhook-service
-          namespace: multicluster-engine
+          namespace: capz-system
           path: /convert
       conversionReviewVersions:
       - v1

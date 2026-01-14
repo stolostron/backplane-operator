@@ -14,7 +14,7 @@ spec:
       clientConfig:
         service:
           name: capi-webhook-service
-          namespace: '{{ .Release.Namespace }}'
+          namespace: multicluster-engine
           path: /convert
       conversionReviewVersions:
       - v1

@@ -5,7 +5,7 @@ metadata:
     app.kubernetes.io/name: azure-service-operator
     control-plane: controller-manager
   name: azureserviceoperator-pdb
-  namespace: '{{ .Values.global.namespace }}'
+  namespace: '{{ default "capz-system" .Values.global.namespace }}'
 spec:
   minAvailable: 50%
   selector:

@@ -6,7 +6,7 @@ metadata:
     app.kubernetes.io/version: v2.13.0-hcpclusters.1
     control-plane: controller-manager
   name: azureserviceoperator-controller-manager-metrics-service
-  namespace: '{{ .Values.global.namespace }}'
+  namespace: '{{ default "capz-system" .Values.global.namespace }}'
 spec:
   ports:
   - name: metrics

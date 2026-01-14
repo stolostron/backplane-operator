@@ -9,4 +9,4 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: azureserviceoperator-default
-  namespace: '{{ .Values.global.namespace }}'
+  namespace: '{{ default "capz-system" .Values.global.namespace }}'

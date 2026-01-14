@@ -4,7 +4,7 @@ metadata:
   labels:
     cluster.x-k8s.io/provider: infrastructure-azure
   name: capz-leader-election-rolebinding
-  namespace: '{{ .Values.global.namespace }}'
+  namespace: '{{ default "capz-system" .Values.global.namespace }}'
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -12,4 +12,4 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: capz-manager
-  namespace: '{{ .Values.global.namespace }}'
+  namespace: '{{ default "capz-system" .Values.global.namespace }}'

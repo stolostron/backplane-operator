@@ -52,6 +52,21 @@ components:
           - "HUB_KUBECONFIG"
           - "INSTALL_NAMESPACE"
 
+      - name: "cluster-api-provider-azure"
+        chart-path: "charts/cluster-api-provider-azure"
+        always-or-toggle: "toggle"
+        imageMappings:
+          azure-service-operator-rhel9: azure_service_operator_rhel9
+          cluster-api-provider-azure-rhel9: cluster_api_provider_azure_rhel9
+        inclusions:
+          - "pullSecretOverride"
+        skipRBACOverrides: true
+        updateChartVersion: true # the chart version will be retrieved from trimmed branch name, e.g. backplane-2.6 -> 2.6
+        escape-template-variables:
+          - "CLUSTER_NAME"
+          - "HUB_KUBECONFIG"
+          - "INSTALL_NAMESPACE"
+
       - name: "cluster-api-provider-openshift-assisted"
         chart-path: "charts/cluster-api-provider-openshift-assisted"
         always-or-toggle: "toggle"
@@ -115,50 +130,61 @@ components:
           - "HUB_KUBECONFIG"
           - "INSTALL_NAMESPACE"
 
+  - repo_name: "cluster-api-installer-k8s"
+    github_ref: "https://github.com/stolostron/cluster-api-installer.git"
+    branch: "backplane-2.11"
+    charts:
+      - name: "cluster-api-k8s"
+        chart-path: "charts/cluster-api-k8s"
+        always-or-toggle: "toggle"
+        imageMappings:
+          ose-cluster-api-rhel9: ose_cluster_api_rhel9
+          mce-capi-webhook-config-rhel9: mce_capi_webhook_config_rhel9
+        inclusions:
+          - "pullSecretOverride"
+        skipRBACOverrides: true
+        updateChartVersion: true # the chart version will be retrieved from trimmed branch name, e.g. backplane-2.6 -> 2.6
+        escape-template-variables:
+          - "CLUSTER_NAME"
+          - "HUB_KUBECONFIG"
+          - "INSTALL_NAMESPACE"
+
+      - name: "cluster-api-provider-azure-k8s"
+        chart-path: "charts/cluster-api-provider-azure-k8s"
+        always-or-toggle: "toggle"
+        imageMappings:
+          azure-service-operator-rhel9: azure_service_operator_rhel9
+          cluster-api-provider-azure-rhel9: cluster_api_provider_azure_rhel9
+        inclusions:
+          - "pullSecretOverride"
+        skipRBACOverrides: true
+        updateChartVersion: true # the chart version will be retrieved from trimmed branch name, e.g. backplane-2.6 -> 2.6
+        escape-template-variables:
+          - "CLUSTER_NAME"
+          - "HUB_KUBECONFIG"
+          - "INSTALL_NAMESPACE"
+
+      - name: "cluster-api-provider-openshift-assisted-k8s"
+        chart-path: "charts/cluster-api-provider-openshift-assisted-k8s"
+        always-or-toggle: "toggle"
+        imageMappings:
+          cluster-api-controlplane-provider-openshift-assisted: "cluster_api_provider_openshift_assisted_control_plane"
+          cluster-api-bootstrap-provider-openshift-assisted: "cluster_api_provider_openshift_assisted_bootstrap"
+        inclusions:
+          - "pullSecretOverride"
+        skipRBACOverrides: true
+        updateChartVersion: true # the chart version will be retrieved from trimmed branch name, e.g. backplane-2.6 -> 2.6
+        escape-template-variables:
+          - "CLUSTER_NAME"
+          - "HUB_KUBECONFIG"
+          - "INSTALL_NAMESPACE"
+
       - name: "cluster-api-provider-metal3-k8s"
         chart-path: "charts/cluster-api-provider-metal3-k8s"
         always-or-toggle: "toggle"
         imageMappings:
           ip-address-manager: "ip_address_manager"
           ose-baremetal-cluster-api-controllers-rhel9: "ose_baremetal_cluster_api_controllers_rhel9"
-        inclusions:
-          - "pullSecretOverride"
-        skipRBACOverrides: true
-        updateChartVersion: true # the chart version will be retrieved from trimmed branch name, e.g. backplane-2.6 -> 2.6
-        escape-template-variables:
-          - "CLUSTER_NAME"
-          - "HUB_KUBECONFIG"
-          - "INSTALL_NAMESPACE"
-
-  - repo_name: "cluster-api-installer"
-    github_ref: "https://github.com/marek-veber/cluster-api-installer.git"
-    branch: "main+capz"
-    charts:
-      - name: "cluster-api-provider-azure"
-        chart-path: "charts/cluster-api-provider-azure"
-        always-or-toggle: "toggle"
-        imageMappings:
-          azure-service-operator-rhel9: azure_service_operator_rhel9
-          cluster-api-provider-azure-rhel9: cluster_api_provider_azure_rhel9
-        inclusions:
-          - "pullSecretOverride"
-        skipRBACOverrides: true
-        updateChartVersion: true # the chart version will be retrieved from trimmed branch name, e.g. backplane-2.6 -> 2.6
-        escape-template-variables:
-          - "CLUSTER_NAME"
-          - "HUB_KUBECONFIG"
-          - "INSTALL_NAMESPACE"
-
-  - repo_name: "cluster-api-installer-k8s"
-    github_ref: "https://github.com/marek-veber/cluster-api-installer.git"
-    branch: "main+capz"
-    charts:
-      - name: "cluster-api-provider-azure"
-        chart-path: "charts/cluster-api-provider-azure-k8s"
-        always-or-toggle: "toggle"
-        imageMappings:
-          azure-service-operator-rhel9: azure_service_operator_rhel9
-          cluster-api-provider-azure-rhel9: cluster_api_provider_azure_rhel9
         inclusions:
           - "pullSecretOverride"
         skipRBACOverrides: true
