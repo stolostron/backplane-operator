@@ -1,0 +1,295 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: azure-service-operator
+    app.kubernetes.io/version: v2.13.0-hcpclusters.1
+    control-plane: controller-manager
+  name: azureserviceoperator-controller-manager
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+      labels:
+        app.kubernetes.io/name: azure-service-operator
+        app.kubernetes.io/version: v2.13.0-hcpclusters.1
+        control-plane: controller-manager
+        ocm-antiaffinity-selector: azureserviceoperator-controller-manager
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - azureserviceoperator-controller-manager
+              topologyKey: topology.kubernetes.io/zone
+            weight: 70
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - azureserviceoperator-controller-manager
+              topologyKey: kubernetes.io/hostname
+            weight: 35
+      containers:
+      - args:
+        - --metrics-addr=0.0.0.0:8443
+        - --secure-metrics=true
+        - --profiling-metrics=false
+        - --health-addr=:8081
+        - --enable-leader-election
+        - --v=2
+        - --crd-pattern=resources.azure.com/*;containerservice.azure.com/*;keyvault.azure.com/*;managedidentity.azure.com/*;eventhub.azure.com/*;network.azure.com/*;authorization.azure.com/*
+        - --webhook-port=9443
+        - --webhook-cert-dir=/tmp/k8s-webhook-server/serving-certs
+        env:
+{{- if .Values.global.pullSecret }}
+        - name: AGENT_IMAGE_PULL_SECRET
+          value: {{ .Values.global.pullSecret }}
+{{- end }}
+{{- if .Values.hubconfig.proxyConfigs }}
+        - name: HTTP_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
+        - name: HTTPS_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.HTTPS_PROXY }}
+        - name: NO_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
+{{- end }}
+        - name: GOMEMLIMIT
+          value: 400MiB
+        - name: AZURE_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              key: AZURE_CLIENT_ID
+              name: aso-controller-settings
+        - name: AZURE_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              key: AZURE_CLIENT_SECRET
+              name: aso-controller-settings
+              optional: true
+        - name: AZURE_TENANT_ID
+          valueFrom:
+            secretKeyRef:
+              key: AZURE_TENANT_ID
+              name: aso-controller-settings
+        - name: AZURE_ADDITIONAL_TENANTS
+          valueFrom:
+            secretKeyRef:
+              key: AZURE_ADDITIONAL_TENANTS
+              name: aso-controller-settings
+              optional: true
+        - name: AZURE_USER_ASSIGNED_IDENTITY_CREDENTIALS
+          valueFrom:
+            secretKeyRef:
+              key: AZURE_USER_ASSIGNED_IDENTITY_CREDENTIALS
+              name: aso-controller-settings
+              optional: true
+        - name: AZURE_SUBSCRIPTION_ID
+          valueFrom:
+            secretKeyRef:
+              key: AZURE_SUBSCRIPTION_ID
+              name: aso-controller-settings
+        - name: AZURE_CLIENT_CERTIFICATE
+          valueFrom:
+            secretKeyRef:
+              key: AZURE_CLIENT_CERTIFICATE
+              name: aso-controller-settings
+              optional: true
+        - name: AZURE_CLIENT_CERTIFICATE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: AZURE_CLIENT_CERTIFICATE_PASSWORD
+              name: aso-controller-settings
+              optional: true
+        - name: AZURE_AUTHORITY_HOST
+          valueFrom:
+            secretKeyRef:
+              key: AZURE_AUTHORITY_HOST
+              name: aso-controller-settings
+              optional: true
+        - name: AZURE_RESOURCE_MANAGER_ENDPOINT
+          valueFrom:
+            secretKeyRef:
+              key: AZURE_RESOURCE_MANAGER_ENDPOINT
+              name: aso-controller-settings
+              optional: true
+        - name: AZURE_RESOURCE_MANAGER_AUDIENCE
+          valueFrom:
+            secretKeyRef:
+              key: AZURE_RESOURCE_MANAGER_AUDIENCE
+              name: aso-controller-settings
+              optional: true
+        - name: AZURE_TARGET_NAMESPACES
+          valueFrom:
+            secretKeyRef:
+              key: AZURE_TARGET_NAMESPACES
+              name: aso-controller-settings
+              optional: true
+        - name: AZURE_OPERATOR_MODE
+          valueFrom:
+            secretKeyRef:
+              key: AZURE_OPERATOR_MODE
+              name: aso-controller-settings
+              optional: true
+        - name: AZURE_SYNC_PERIOD
+          valueFrom:
+            secretKeyRef:
+              key: AZURE_SYNC_PERIOD
+              name: aso-controller-settings
+              optional: true
+        - name: USE_WORKLOAD_IDENTITY_AUTH
+          valueFrom:
+            secretKeyRef:
+              key: USE_WORKLOAD_IDENTITY_AUTH
+              name: aso-controller-settings
+              optional: true
+        - name: AZURE_USER_AGENT_SUFFIX
+          valueFrom:
+            secretKeyRef:
+              key: AZURE_USER_AGENT_SUFFIX
+              name: aso-controller-settings
+              optional: true
+        - name: MAX_CONCURRENT_RECONCILES
+          valueFrom:
+            secretKeyRef:
+              key: MAX_CONCURRENT_RECONCILES
+              name: aso-controller-settings
+              optional: true
+        - name: RATE_LIMIT_MODE
+          valueFrom:
+            secretKeyRef:
+              key: RATE_LIMIT_MODE
+              name: aso-controller-settings
+              optional: true
+        - name: RATE_LIMIT_QPS
+          valueFrom:
+            secretKeyRef:
+              key: RATE_LIMIT_QPS
+              name: aso-controller-settings
+              optional: true
+        - name: RATE_LIMIT_BUCKET_SIZE
+          valueFrom:
+            secretKeyRef:
+              key: RATE_LIMIT_BUCKET_SIZE
+              name: aso-controller-settings
+              optional: true
+        - name: DEFAULT_RECONCILE_POLICY
+          valueFrom:
+            secretKeyRef:
+              key: DEFAULT_RECONCILE_POLICY
+              name: aso-controller-settings
+              optional: true
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        image: '{{ .Values.global.imageOverrides.azure_service_operator_rhel9 }}'
+        imagePullPolicy: '{{ .Values.global.pullPolicy }}'
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 60
+        name: manager
+        ports:
+        - containerPort: 9443
+          name: webhook-server
+          protocol: TCP
+        - containerPort: 8081
+          name: health-port
+          protocol: TCP
+        - containerPort: 8443
+          name: metrics-port
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          initialDelaySeconds: 60
+        resources:
+          limits:
+            cpu: 500m
+            memory: 512Mi
+          requests:
+            cpu: 200m
+            memory: 256Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+        startupProbe:
+          failureThreshold: 12
+          httpGet:
+            path: /healthz
+            port: 8081
+          periodSeconds: 10
+        volumeMounts:
+        - mountPath: /var/run/secrets/tokens
+          name: azure-identity
+          readOnly: true
+        - mountPath: /tmp/k8s-webhook-server/serving-certs
+          name: cert
+          readOnly: true
+      hostIPC: false
+      hostNetwork: false
+      hostPID: false
+{{- if .Values.global.pullSecret }}
+      imagePullSecrets:
+      - name: {{ .Values.global.pullSecret }}
+{{- end }}
+{{- with .Values.hubconfig.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+{{- end }}
+      securityContext:
+        runAsNonRoot: true
+{{- if .Values.global.deployOnOCP }}
+{{- if semverCompare ">=4.11.0" .Values.hubconfig.ocpVersion }}
+        seccompProfile:
+          type: RuntimeDefault
+{{- end }}
+{{- end }}
+      serviceAccountName: azureserviceoperator-default
+      terminationGracePeriodSeconds: 10
+{{- with .Values.hubconfig.tolerations }}
+      tolerations:
+      {{- range . }}
+      - {{ if .Key }} key: {{ .Key }} {{- end }}
+        {{ if .Operator }} operator: {{ .Operator }} {{- end }}
+        {{ if .Value }} value: {{ .Value }} {{- end }}
+        {{ if .Effect }} effect: {{ .Effect }} {{- end }}
+        {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
+        {{- end }}
+{{- end }}
+      volumes:
+      - name: cert
+        secret:
+          defaultMode: 420
+          secretName: webhook-server-cert
+      - name: azure-identity
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              audience: api://AzureADTokenExchange
+              expirationSeconds: 3600
+              path: azure-identity
