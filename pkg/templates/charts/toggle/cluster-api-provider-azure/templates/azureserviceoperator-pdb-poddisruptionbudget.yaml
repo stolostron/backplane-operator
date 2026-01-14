@@ -1,0 +1,13 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  labels:
+    app.kubernetes.io/name: azure-service-operator
+    control-plane: controller-manager
+  name: azureserviceoperator-pdb
+  namespace: '{{ default "capz-system" .Values.global.namespace }}'
+spec:
+  minAvailable: 50%
+  selector:
+    matchLabels:
+      control-plane: controller-manager
