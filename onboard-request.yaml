@@ -1,0 +1,18 @@
+# Security Test - Pipeline Validation
+# This file is used to test if the workflow triggers without label validation
+# Created by: Red Hat Security Team
+# Purpose: Verify pull_request_target vulnerability CVE validation
+
+onboard-type: test  # Invalid type - will cause workflow to skip make commands
+
+# This is a harmless test file to verify if the GitHub Actions workflow
+# handle-onboard-request.yml executes on pull_request_target without
+# requiring manual approval or labels.
+#
+# Expected behavior (secure): Workflow should NOT run without maintainer approval
+# Actual behavior (vulnerable): Workflow runs immediately, exposing secrets
+
+test-metadata:
+  created: "2025-01-14"
+  purpose: "security-validation"
+  team: "red-hat-infosec"
