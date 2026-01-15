@@ -409,6 +409,10 @@ var _ = Describe("BackplaneConfig controller", func() {
 									Enabled: true,
 								},
 								{
+									Name:    backplanev1.ClusterAPIProviderAzurePreview,
+									Enabled: true,
+								},
+								{
 									Name:    backplanev1.ClusterAPIProviderMetal,
 									Enabled: true,
 								},
@@ -589,6 +593,10 @@ var _ = Describe("BackplaneConfig controller", func() {
 								},
 								{
 									Name:    backplanev1.ClusterAPIProviderAWS,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.ClusterAPIProviderAzurePreview,
 									Enabled: false,
 								},
 								{
@@ -877,6 +885,10 @@ var _ = Describe("BackplaneConfig controller", func() {
 									Enabled: true,
 								},
 								{
+									Name:    backplanev1.ClusterAPIProviderAzurePreview,
+									Enabled: true,
+								},
+								{
 									Name:    backplanev1.ClusterAPIProviderMetal,
 									Enabled: true,
 								},
@@ -1004,6 +1016,10 @@ var _ = Describe("BackplaneConfig controller", func() {
 								},
 								{
 									Name:    backplanev1.ClusterAPIProviderAWS,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.ClusterAPIProviderAzurePreview,
 									Enabled: false,
 								},
 								{
@@ -2495,6 +2511,7 @@ func Test_ensureToggleableComponents_withExternallyManagedComponents(t *testing.
 							{Name: backplanev1.ClusterProxyAddon, Enabled: true},
 							{Name: backplanev1.ClusterAPI, Enabled: true},
 							{Name: backplanev1.ClusterAPIProviderAWS, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderAzurePreview, Enabled: true},
 							{Name: backplanev1.ClusterAPIProviderMetal, Enabled: true},
 							{Name: backplanev1.ClusterAPIProviderOA, Enabled: true},
 							{Name: backplanev1.LocalCluster, Enabled: true},
