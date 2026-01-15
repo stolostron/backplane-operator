@@ -47,7 +47,7 @@ spec:
         - --insecure-diagnostics=false
         - --feature-gates=MachinePool=true,ClusterResourceSet=true,ClusterTopology=false,RuntimeSDK=false,MachineSetPreflightChecks=true,MachineWaitForVolumeDetachConsiderVolumeAttachments=true,PriorityQueue=false
         command:
-        - /bin/cluster-api-controller-manager
+        - /manager
         env:
 {{- if .Values.global.pullSecret }}
         - name: AGENT_IMAGE_PULL_SECRET
