@@ -131,7 +131,7 @@ These components are candidates for pruning when the stable version replaces the
 var PreviewComponents = []string{
 	ClusterAPIPreview,
 	ClusterAPIProviderAWSPreview,
-	ClusterAPIProviderAzurePreview,
+	// ClusterAPIProviderAzurePreview, // Uncomment when stable release is available
 	ClusterAPIProviderMetalPreview,
 	ClusterAPIProviderOAPreview,
 	HyperShiftPreview,

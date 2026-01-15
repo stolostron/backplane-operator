@@ -132,6 +132,7 @@ var (
 // +kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclustersets/join,verbs=create
 // +kubebuilder:rbac:groups=migration.k8s.io,resources=storageversionmigrations,verbs=create;get;list;update;patch;watch;delete
 // +kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=create;get;list;update;patch;watch;delete
+// +kubebuilder:rbac:groups=policy,resources=poddisruptionbudgets,verbs=create;delete;get;list;patch;update;watch
 // +kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=clustermanagementaddons;clustermanagementaddons/finalizers;managedclusteraddons;managedclusteraddons/finalizers;managedclusteraddons/status,verbs=create;get;list;update;patch;watch;delete;deletecollection
 // +kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=addondeploymentconfigs,verbs=get;list;watch;
 // +kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=addonplacementscores,verbs=create;get;list;update;patch;watch;delete;deletecollection
@@ -953,22 +954,27 @@ func (r *MultiClusterEngineReconciler) ensureNoInternalEngineComponent(ctx conte
 
 func (r *MultiClusterEngineReconciler) fetchChartOrCRDPath(component string) string {
 	var clusterAPIChartLoc string
+	var clusterAPIAzureChartLoc string
 	var clusterAPIMetalChartLoc string
 	var clusterAPIOAChartLoc string
+
 	if utils.DeployOnOCP() {
 		clusterAPIChartLoc = toggle.ClusterAPIChartDir
+		clusterAPIAzureChartLoc = toggle.ClusterAPIProviderAzureChartDir
 		clusterAPIMetalChartLoc = toggle.ClusterAPIProviderMetalChartDir
 		clusterAPIOAChartLoc = toggle.ClusterAPIProviderOAChartDir
 	} else {
 		clusterAPIChartLoc = toggle.ClusterAPIK8SChartDir
+		clusterAPIAzureChartLoc = toggle.ClusterAPIProviderAzureK8SChartDir
 		clusterAPIMetalChartLoc = toggle.ClusterAPIProviderMetalK8SChartDir
 		clusterAPIOAChartLoc = toggle.ClusterAPIProviderOAK8SChartDir
 	}
+
 	chartDirs := map[string]string{
 		backplanev1.AssistedService:                toggle.AssistedServiceChartDir,
 		backplanev1.ClusterAPI:                     clusterAPIChartLoc,
 		backplanev1.ClusterAPIProviderAWS:          toggle.ClusterAPIProviderAWSChartDir,
-		backplanev1.ClusterAPIProviderAzurePreview: toggle.ClusterAPIProviderAzureChartDir,
+		backplanev1.ClusterAPIProviderAzurePreview: clusterAPIAzureChartLoc,
 		backplanev1.ClusterAPIProviderMetal:        clusterAPIMetalChartLoc,
 		backplanev1.ClusterAPIProviderOA:           clusterAPIOAChartLoc,
 		backplanev1.ClusterLifecycle:               toggle.ClusterLifecycleChartDir,
@@ -1514,6 +1520,7 @@ func (r *MultiClusterEngineReconciler) getDisabledComponentCRDDirectories(mce *b
 	componentsToCheck := []string{
 		backplanev1.ClusterAPI,
 		backplanev1.ClusterAPIProviderAWS,
+		backplanev1.ClusterAPIProviderAzurePreview,
 		backplanev1.ClusterAPIProviderMetal,
 		backplanev1.ClusterAPIProviderOA,
 	}

@@ -65,6 +65,7 @@ var onComponents = []string{
 var offComponents = []string{
 	backplanev1.ClusterAPI,
 	backplanev1.ClusterAPIProviderAWS,
+	backplanev1.ClusterAPIProviderAzurePreview,
 	backplanev1.ClusterAPIProviderMetal,
 	backplanev1.ClusterAPIProviderOA,
 	backplanev1.ImageBasedInstallOperator,
@@ -510,6 +511,13 @@ func ComponentCRDDirectories(component string) []string {
 		return []string{
 			backplanev1.ClusterAPIProviderOACRDDir,    // cluster-api-provider-openshift-assisted
 			backplanev1.ClusterAPIProviderOAK8SCRDDir, // cluster-api-provider-openshift-assisted-k8s
+		}
+
+	// ClusterAPI Provider Azure - has both OCP and K8s variants
+	case backplanev1.ClusterAPIProviderAzure, backplanev1.ClusterAPIProviderAzurePreview:
+		return []string{
+			backplanev1.ClusterAPIProviderAzureCRDDir,    // cluster-api-provider-azure
+			backplanev1.ClusterAPIProviderAzureK8SCRDDir, // cluster-api-provider-azure-k8s
 		}
 
 	// All other components - single directory (no platform variants)

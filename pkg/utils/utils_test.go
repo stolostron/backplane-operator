@@ -364,6 +364,24 @@ func TestComponentCRDDirectories(t *testing.T) {
 			},
 			description: "ClusterAPIProviderOAPreview should return both OCP and K8s CRD directories",
 		},
+		{
+			name:      "ClusterAPIProviderAzure returns both variants",
+			component: backplanev1.ClusterAPIProviderAzure,
+			expectedDirs: []string{
+				backplanev1.ClusterAPIProviderAzureCRDDir,
+				backplanev1.ClusterAPIProviderAzureK8SCRDDir,
+			},
+			description: "ClusterAPIProviderAzure should return both OCP and K8s CRD directories",
+		},
+		{
+			name:      "ClusterAPIProviderAzurePreview returns both variants",
+			component: backplanev1.ClusterAPIProviderAzurePreview,
+			expectedDirs: []string{
+				backplanev1.ClusterAPIProviderAzureCRDDir,
+				backplanev1.ClusterAPIProviderAzureK8SCRDDir,
+			},
+			description: "ClusterAPIProviderAzurePreview should return both OCP and K8s CRD directories",
+		},
 
 		// Non-CAPI components - should return single directory
 		{
@@ -436,6 +454,8 @@ func TestComponentCRDDirectories_AllComponents(t *testing.T) {
 		backplanev1.ClusterAPIPreview,
 		backplanev1.ClusterAPIProviderAWS,
 		backplanev1.ClusterAPIProviderAWSPreview,
+		backplanev1.ClusterAPIProviderAzure,
+		backplanev1.ClusterAPIProviderAzurePreview,
 		backplanev1.ClusterAPIProviderMetal,
 		backplanev1.ClusterAPIProviderMetalPreview,
 		backplanev1.ClusterAPIProviderOA,
@@ -463,6 +483,8 @@ func TestComponentCRDDirectories_AllComponents(t *testing.T) {
 	capiComponents := []string{
 		backplanev1.ClusterAPI,
 		backplanev1.ClusterAPIPreview,
+		backplanev1.ClusterAPIProviderAzure,
+		backplanev1.ClusterAPIProviderAzurePreview,
 		backplanev1.ClusterAPIProviderMetal,
 		backplanev1.ClusterAPIProviderMetalPreview,
 		backplanev1.ClusterAPIProviderOA,

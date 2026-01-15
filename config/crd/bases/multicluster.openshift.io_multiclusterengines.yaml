@@ -156,6 +156,9 @@ spec:
                       - name
                       type: object
                     type: array
+                    x-kubernetes-list-map-keys:
+                    - name
+                    x-kubernetes-list-type: map
                   imagePullPolicy:
                     description: Pull policy for the MCE images
                     type: string
@@ -240,11 +243,6 @@ spec:
                     type:
                       description: Type is the type of the cluster condition.
                       type: string
-                  required:
-                  - message
-                  - reason
-                  - status
-                  - type
                   type: object
                 type: array
               conditions:

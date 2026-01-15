@@ -124,6 +124,8 @@ type Overrides struct {
 	// Provides optional configuration for components, the list of which can be found here: https://github.com/stolostron/backplane-operator/tree/main/docs/available-components.md
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Component Configuration",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	// +optional
+	//+listType=map
+	//+listMapKey=name
 	Components []ComponentConfig `json:"components,omitempty"`
 
 	// Namespace to install Assisted Installer operator
@@ -160,11 +162,9 @@ type ComponentCondition struct {
 	Available bool `json:"-"`
 
 	// Type is the type of the cluster condition.
-	// +required
 	Type string `json:"type,omitempty"`
 
 	// Status is the status of the condition. One of True, False, Unknown.
-	// +required
 	Status metav1.ConditionStatus `json:"status,omitempty"`
 
 	// The last time this condition was updated.
@@ -174,11 +174,9 @@ type ComponentCondition struct {
 	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
 
 	// Reason is a (brief) reason for the condition's last status change.
-	// +required
 	Reason string `json:"reason,omitempty"`
 
 	// Message is a human-readable message indicating details about the last status change.
-	// +required
 	Message string `json:"message,omitempty"`
 }
 
