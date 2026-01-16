@@ -1962,6 +1962,7 @@ func (r *MultiClusterEngineReconciler) ensureNoAllInternalEngineComponents(ctx c
 		backplanev1.AssistedService,
 		backplanev1.ClusterAPI,
 		backplanev1.ClusterAPIProviderAWS,
+		backplanev1.ClusterAPIProviderAzurePreview,
 		backplanev1.ClusterAPIProviderMetal,
 		backplanev1.ClusterAPIProviderOA,
 		backplanev1.ClusterLifecycle,
