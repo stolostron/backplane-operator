@@ -132,6 +132,7 @@ var (
 // +kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclustersets/join,verbs=create
 // +kubebuilder:rbac:groups=migration.k8s.io,resources=storageversionmigrations,verbs=create;get;list;update;patch;watch;delete
 // +kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=create;get;list;update;patch;watch;delete
+// +kubebuilder:rbac:groups=policy,resources=poddisruptionbudgets,verbs=create;delete;get;list;patch;update;watch
 // +kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=clustermanagementaddons;clustermanagementaddons/finalizers;managedclusteraddons;managedclusteraddons/finalizers;managedclusteraddons/status,verbs=create;get;list;update;patch;watch;delete;deletecollection
 // +kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=addondeploymentconfigs,verbs=get;list;watch;
 // +kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=addonplacementscores,verbs=create;get;list;update;patch;watch;delete;deletecollection
@@ -953,33 +954,39 @@ func (r *MultiClusterEngineReconciler) ensureNoInternalEngineComponent(ctx conte
 
 func (r *MultiClusterEngineReconciler) fetchChartOrCRDPath(component string) string {
 	var clusterAPIChartLoc string
+	var clusterAPIAzureChartLoc string
 	var clusterAPIMetalChartLoc string
 	var clusterAPIOAChartLoc string
+
 	if utils.DeployOnOCP() {
 		clusterAPIChartLoc = toggle.ClusterAPIChartDir
+		clusterAPIAzureChartLoc = toggle.ClusterAPIProviderAzureChartDir
 		clusterAPIMetalChartLoc = toggle.ClusterAPIProviderMetalChartDir
 		clusterAPIOAChartLoc = toggle.ClusterAPIProviderOAChartDir
 	} else {
 		clusterAPIChartLoc = toggle.ClusterAPIK8SChartDir
+		clusterAPIAzureChartLoc = toggle.ClusterAPIProviderAzureK8SChartDir
 		clusterAPIMetalChartLoc = toggle.ClusterAPIProviderMetalK8SChartDir
 		clusterAPIOAChartLoc = toggle.ClusterAPIProviderOAK8SChartDir
 	}
+
 	chartDirs := map[string]string{
-		backplanev1.AssistedService:           toggle.AssistedServiceChartDir,
-		backplanev1.ClusterAPI:                clusterAPIChartLoc,
-		backplanev1.ClusterAPIProviderAWS:     toggle.ClusterAPIProviderAWSChartDir,
-		backplanev1.ClusterAPIProviderMetal:   clusterAPIMetalChartLoc,
-		backplanev1.ClusterAPIProviderOA:      clusterAPIOAChartLoc,
-		backplanev1.ClusterLifecycle:          toggle.ClusterLifecycleChartDir,
-		backplanev1.ClusterManager:            toggle.ClusterManagerChartDir,
-		backplanev1.ClusterProxyAddon:         toggle.ClusterProxyAddonDir,
-		backplanev1.ConsoleMCE:                toggle.ConsoleMCEChartsDir,
-		backplanev1.Discovery:                 toggle.DiscoveryChartDir,
-		backplanev1.Hive:                      toggle.HiveChartDir,
-		backplanev1.HyperShift:                toggle.HyperShiftChartDir,
-		backplanev1.ImageBasedInstallOperator: toggle.ImageBasedInstallOperatorChartDir,
-		backplanev1.ManagedServiceAccount:     toggle.ManagedServiceAccountChartDir,
-		backplanev1.ServerFoundation:          toggle.ServerFoundationChartDir,
+		backplanev1.AssistedService:                toggle.AssistedServiceChartDir,
+		backplanev1.ClusterAPI:                     clusterAPIChartLoc,
+		backplanev1.ClusterAPIProviderAWS:          toggle.ClusterAPIProviderAWSChartDir,
+		backplanev1.ClusterAPIProviderAzurePreview: clusterAPIAzureChartLoc,
+		backplanev1.ClusterAPIProviderMetal:        clusterAPIMetalChartLoc,
+		backplanev1.ClusterAPIProviderOA:           clusterAPIOAChartLoc,
+		backplanev1.ClusterLifecycle:               toggle.ClusterLifecycleChartDir,
+		backplanev1.ClusterManager:                 toggle.ClusterManagerChartDir,
+		backplanev1.ClusterProxyAddon:              toggle.ClusterProxyAddonDir,
+		backplanev1.ConsoleMCE:                     toggle.ConsoleMCEChartsDir,
+		backplanev1.Discovery:                      toggle.DiscoveryChartDir,
+		backplanev1.Hive:                           toggle.HiveChartDir,
+		backplanev1.HyperShift:                     toggle.HyperShiftChartDir,
+		backplanev1.ImageBasedInstallOperator:      toggle.ImageBasedInstallOperatorChartDir,
+		backplanev1.ManagedServiceAccount:          toggle.ManagedServiceAccountChartDir,
+		backplanev1.ServerFoundation:               toggle.ServerFoundationChartDir,
 	}
 
 	if dir, exists := chartDirs[component]; exists {
@@ -1297,6 +1304,28 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 		log.Info(messages.SkippingExternallyManaged, "component", backplanev1.ClusterAPIProviderAWS)
 	}
 
+	if !r.isComponentExternallyManaged(backplaneConfig, backplanev1.ClusterAPIProviderAzurePreview) {
+		if backplaneConfig.Enabled(backplanev1.ClusterAPIProviderAzurePreview) {
+			result, err = r.ensureClusterAPIProviderAzure(ctx, backplaneConfig)
+			if result != (ctrl.Result{}) {
+				requeue = true
+			}
+			if err != nil {
+				errs[backplanev1.ClusterAPIProviderAzurePreview] = err
+			}
+		} else {
+			result, err = r.ensureNoClusterAPIProviderAzure(ctx, backplaneConfig)
+			if result != (ctrl.Result{}) {
+				requeue = true
+			}
+			if err != nil {
+				errs[backplanev1.ClusterAPIProviderAzurePreview] = err
+			}
+		}
+	} else {
+		log.Info(messages.SkippingExternallyManaged, "component", backplanev1.ClusterAPIProviderAzurePreview)
+	}
+
 	if !r.isComponentExternallyManaged(backplaneConfig, backplanev1.ClusterAPIProviderMetal) {
 		if backplaneConfig.Enabled(backplanev1.ClusterAPIProviderMetal) {
 			result, err = r.ensureClusterAPIProviderMetal(ctx, backplaneConfig)
@@ -1491,6 +1520,7 @@ func (r *MultiClusterEngineReconciler) getDisabledComponentCRDDirectories(mce *b
 	componentsToCheck := []string{
 		backplanev1.ClusterAPI,
 		backplanev1.ClusterAPIProviderAWS,
+		backplanev1.ClusterAPIProviderAzurePreview,
 		backplanev1.ClusterAPIProviderMetal,
 		backplanev1.ClusterAPIProviderOA,
 	}
@@ -1932,6 +1962,7 @@ func (r *MultiClusterEngineReconciler) ensureNoAllInternalEngineComponents(ctx c
 		backplanev1.AssistedService,
 		backplanev1.ClusterAPI,
 		backplanev1.ClusterAPIProviderAWS,
+		backplanev1.ClusterAPIProviderAzurePreview,
 		backplanev1.ClusterAPIProviderMetal,
 		backplanev1.ClusterAPIProviderOA,
 		backplanev1.ClusterLifecycle,
@@ -2271,10 +2302,6 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 			log.Info("Pruning preview component", "preview", preview)
 			updateNecessary = true
 		}
-	}
-
-	if utils.DeduplicateComponents(m) {
-		updateNecessary = true
 	}
 
 	if utils.DeployOnOCP() {

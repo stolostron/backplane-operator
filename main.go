@@ -245,6 +245,8 @@ func main() {
 		backplanev1.ClusterAPICRDDir,
 		backplanev1.ClusterAPIK8SCRDDir,
 		backplanev1.ClusterAPIProviderAWSCRDDir,
+		backplanev1.ClusterAPIProviderAzureCRDDir,
+		backplanev1.ClusterAPIProviderAzureK8SCRDDir,
 		backplanev1.ClusterAPIProviderMetalCRDDir,
 		backplanev1.ClusterAPIProviderMetalK8SCRDDir,
 		backplanev1.ClusterAPIProviderOACRDDir,

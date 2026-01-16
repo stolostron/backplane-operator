@@ -409,6 +409,10 @@ var _ = Describe("BackplaneConfig controller", func() {
 									Enabled: true,
 								},
 								{
+									Name:    backplanev1.ClusterAPIProviderAzurePreview,
+									Enabled: true,
+								},
+								{
 									Name:    backplanev1.ClusterAPIProviderMetal,
 									Enabled: true,
 								},
@@ -589,6 +593,10 @@ var _ = Describe("BackplaneConfig controller", func() {
 								},
 								{
 									Name:    backplanev1.ClusterAPIProviderAWS,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.ClusterAPIProviderAzurePreview,
 									Enabled: false,
 								},
 								{
@@ -877,6 +885,10 @@ var _ = Describe("BackplaneConfig controller", func() {
 									Enabled: true,
 								},
 								{
+									Name:    backplanev1.ClusterAPIProviderAzurePreview,
+									Enabled: true,
+								},
+								{
 									Name:    backplanev1.ClusterAPIProviderMetal,
 									Enabled: true,
 								},
@@ -1004,6 +1016,10 @@ var _ = Describe("BackplaneConfig controller", func() {
 								},
 								{
 									Name:    backplanev1.ClusterAPIProviderAWS,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.ClusterAPIProviderAzurePreview,
 									Enabled: false,
 								},
 								{
@@ -1358,66 +1374,6 @@ var _ = Describe("BackplaneConfig controller", func() {
 						return fmt.Errorf("addon template %s not found", test.NamespacedName.Name)
 					}, timeout, interval).ShouldNot(HaveOccurred())
 				}
-
-			})
-		})
-
-		Context("and components are defined multiple times in overrides", func() {
-			It("should deduplicate the component list in the override", func() {
-				By("creating the backplane config with repeated component")
-				backplaneConfig := &backplanev1.MultiClusterEngine{
-					TypeMeta: metav1.TypeMeta{
-						APIVersion: "multicluster.openshift.io/v1",
-						Kind:       "MultiClusterEngine",
-					},
-					ObjectMeta: metav1.ObjectMeta{
-						Name: BackplaneConfigName,
-					},
-					Spec: backplanev1.MultiClusterEngineSpec{
-						TargetNamespace: DestinationNamespace,
-						ImagePullSecret: "testsecret",
-						Overrides: &backplanev1.Overrides{
-							ImagePullPolicy: corev1.PullAlways,
-							Components: []backplanev1.ComponentConfig{
-								{
-									Name:    backplanev1.Discovery,
-									Enabled: true,
-								},
-								{
-									Name:    backplanev1.Discovery,
-									Enabled: true,
-								},
-								{
-									Name:    backplanev1.Discovery,
-									Enabled: false,
-								},
-							},
-						},
-					},
-				}
-				createCtx := context.Background()
-				Expect(k8sClient.Create(createCtx, backplaneConfig)).Should(Succeed())
-
-				By("ensuring component is collapsed to one, matching last config")
-				Eventually(func(g Gomega) {
-					multiClusterEngine := types.NamespacedName{
-						Name: BackplaneConfigName,
-					}
-					existingMCE := &backplanev1.MultiClusterEngine{}
-					g.Expect(k8sClient.Get(context.TODO(), multiClusterEngine, existingMCE)).To(Succeed(), "Failed to create new MCE")
-
-					g.Expect(existingMCE.Spec.Overrides).To(Not(BeNil()))
-					componentCount := 0
-					for _, c := range existingMCE.Spec.Overrides.Components {
-						if c.Name == backplanev1.Discovery {
-							componentCount++
-						}
-					}
-					g.Expect(componentCount).To(Equal(1), "Duplicate component still present")
-
-					g.Expect(existingMCE.Enabled(backplanev1.Discovery)).To(BeFalse(), "Not using last defined config in components")
-
-				}, timeout, interval).Should(Succeed())
 
 			})
 		})
@@ -2307,7 +2263,7 @@ func Test_ensureResourceVersionAlignment(t *testing.T) {
 					"kind":       "Deployment",
 					"metadata": map[string]interface{}{
 						"annotations": map[string]interface{}{
-							utils.AnnotationReleaseVersion: "2.8.0",
+							utils.AnnotationReleaseVersion: "2.11.0",
 						},
 						"name":      "test-deployment",
 						"namespace": "test-ns",
@@ -2319,7 +2275,7 @@ func Test_ensureResourceVersionAlignment(t *testing.T) {
 		},
 	}
 
-	os.Setenv("OPERATOR_VERSION", "2.8.0")
+	os.Setenv("OPERATOR_VERSION", "2.11.0")
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := recon.ensureResourceVersionAlignment(tt.template, os.Getenv("OPERATOR_VERSION"))
@@ -2555,6 +2511,7 @@ func Test_ensureToggleableComponents_withExternallyManagedComponents(t *testing.
 							{Name: backplanev1.ClusterProxyAddon, Enabled: true},
 							{Name: backplanev1.ClusterAPI, Enabled: true},
 							{Name: backplanev1.ClusterAPIProviderAWS, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderAzurePreview, Enabled: true},
 							{Name: backplanev1.ClusterAPIProviderMetal, Enabled: true},
 							{Name: backplanev1.ClusterAPIProviderOA, Enabled: true},
 							{Name: backplanev1.LocalCluster, Enabled: true},
