@@ -45,6 +45,8 @@ package main
 //+kubebuilder:rbac:groups="",resources=events,verbs=create
 //+kubebuilder:rbac:groups="",resources=events,verbs=create
 //+kubebuilder:rbac:groups="",resources=events,verbs=create
+//+kubebuilder:rbac:groups="",resources=events,verbs=create
+//+kubebuilder:rbac:groups="",resources=events,verbs=create;get;list;patch;update;watch
 //+kubebuilder:rbac:groups="",resources=events,verbs=create;get;list;patch;update;watch
 //+kubebuilder:rbac:groups="",resources=events,verbs=create;get;list;patch;update;watch
 //+kubebuilder:rbac:groups="",resources=events,verbs=create;get;list;patch;update;watch
@@ -71,9 +73,11 @@ package main
 //+kubebuilder:rbac:groups="",resources=namespaces;secrets;pods;pods/portforward,verbs=*
 //+kubebuilder:rbac:groups="",resources=nodes,verbs=delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups="",resources=nodes,verbs=delete;get;list;patch;update;watch
+//+kubebuilder:rbac:groups="",resources=nodes,verbs=delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups="",resources=nodes,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",resources=nodes;pods;endpoints;services;secrets,verbs=get;watch;list
 //+kubebuilder:rbac:groups="",resources=pods,verbs=get
+//+kubebuilder:rbac:groups="",resources=pods,verbs=list
 //+kubebuilder:rbac:groups="",resources=pods,verbs=list
 //+kubebuilder:rbac:groups="",resources=pods,verbs=list
 //+kubebuilder:rbac:groups="",resources=pods,verbs=list
@@ -84,6 +88,7 @@ package main
 //+kubebuilder:rbac:groups="",resources=pods;services;endpoints,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",resources=pods;services;endpoints,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=create
+//+kubebuilder:rbac:groups="",resources=secrets,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=create;delete;get;list;patch;update;watch
@@ -200,9 +205,11 @@ package main
 //+kubebuilder:rbac:groups=authentication.k8s.io,resources=tokenreviews,verbs=create
 //+kubebuilder:rbac:groups=authentication.k8s.io,resources=tokenreviews,verbs=create
 //+kubebuilder:rbac:groups=authentication.k8s.io,resources=tokenreviews,verbs=create
+//+kubebuilder:rbac:groups=authentication.k8s.io,resources=tokenreviews,verbs=create
 //+kubebuilder:rbac:groups=authentication.open-cluster-management.io,resources=managedserviceaccounts,verbs=get;list;watch;update;patch;delete
 //+kubebuilder:rbac:groups=authentication.open-cluster-management.io,resources=managedserviceaccounts,verbs=get;watch;list;create;update
 //+kubebuilder:rbac:groups=authentication.open-cluster-management.io,resources=managedserviceaccounts/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=authorization.k8s.io,resources=subjectaccessreviews,verbs=create
 //+kubebuilder:rbac:groups=authorization.k8s.io,resources=subjectaccessreviews,verbs=create
 //+kubebuilder:rbac:groups=authorization.k8s.io,resources=subjectaccessreviews,verbs=create
 //+kubebuilder:rbac:groups=authorization.k8s.io,resources=subjectaccessreviews,verbs=create
@@ -281,8 +288,10 @@ package main
 //+kubebuilder:rbac:groups=cluster.x-k8s.io,resources=clusters;clusters/status;machines;machines/status,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=cluster.x-k8s.io,resources=clusters;clusters/status;machinesets,verbs=get;list;watch
 //+kubebuilder:rbac:groups=cluster.x-k8s.io,resources=clusters;clusters/status;machinesets,verbs=get;list;watch
+//+kubebuilder:rbac:groups=cluster.x-k8s.io,resources=clusters;clusters/status;machinesets,verbs=get;list;watch
 //+kubebuilder:rbac:groups=cluster.x-k8s.io,resources=clusters;machines;machinesets;machinesets/status,verbs=get;list;watch
 //+kubebuilder:rbac:groups=cluster.x-k8s.io,resources=clusters;machines;machinesets;machinesets/status,verbs=get;list;watch
+//+kubebuilder:rbac:groups=cluster.x-k8s.io,resources=kubeadmcontrolplanes;machinedeployments;machines;machines/status,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=cluster.x-k8s.io,resources=kubeadmcontrolplanes;machinedeployments;machines;machines/status,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=cluster.x-k8s.io,resources=kubeadmcontrolplanes;machinedeployments;machines;machines/status,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=cluster.x-k8s.io,resources=machinedeployments,verbs=get;list;watch
@@ -328,6 +337,7 @@ package main
 //+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;create;update
 //+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;create;update;patch
 //+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;create;update;patch;delete
+//+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;watch;create;update;patch;delete
@@ -405,6 +415,8 @@ package main
 //+kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=awsmachines;rosamachinepools;rosanetworks;rosaroleconfigs,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=metal3clusters/status;metal3dataclaims/status;metal3datas/status;metal3datatemplates/status;metal3machines/status;metal3remediations/status,verbs=get;patch;update
 //+kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=metal3clusters/status;metal3dataclaims/status;metal3datas/status;metal3datatemplates/status;metal3machines/status;metal3remediations/status,verbs=get;patch;update
+//+kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=metal3clusters/status;metal3dataclaims/status;metal3datas/status;metal3datatemplates/status;metal3machines/status;metal3remediations/status,verbs=get;patch;update
+//+kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=metal3clusters;metal3dataclaims;metal3datas;metal3datatemplates;metal3machines;metal3machinetemplates;metal3remediations,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=metal3clusters;metal3dataclaims;metal3datas;metal3datatemplates;metal3machines;metal3machinetemplates;metal3remediations,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=metal3clusters;metal3dataclaims;metal3datas;metal3datatemplates;metal3machines;metal3machinetemplates;metal3remediations,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=metal3machines;metal3machinetemplates,verbs=create;delete;get;list;patch;update;watch
@@ -421,6 +433,8 @@ package main
 //+kubebuilder:rbac:groups=internal.open-cluster-management.io;"",resources=managedclusterinfos;pods;secrets,verbs=get
 //+kubebuilder:rbac:groups=ipam.cluster.x-k8s.io,resources=ipaddressclaims,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=ipam.cluster.x-k8s.io,resources=ipaddressclaims,verbs=create;delete;get;list;patch;update;watch
+//+kubebuilder:rbac:groups=ipam.cluster.x-k8s.io,resources=ipaddressclaims,verbs=create;delete;get;list;patch;update;watch
+//+kubebuilder:rbac:groups=ipam.cluster.x-k8s.io,resources=ipaddressclaims/status,verbs=get;watch
 //+kubebuilder:rbac:groups=ipam.cluster.x-k8s.io,resources=ipaddressclaims/status,verbs=get;watch
 //+kubebuilder:rbac:groups=ipam.cluster.x-k8s.io,resources=ipaddressclaims/status,verbs=get;watch
 //+kubebuilder:rbac:groups=ipam.cluster.x-k8s.io,resources=ipaddressclaims/status,verbs=patch;update
@@ -429,12 +443,17 @@ package main
 //+kubebuilder:rbac:groups=ipam.cluster.x-k8s.io,resources=ipaddressclaims;ipaddresses,verbs=get;list;patch;update;watch
 //+kubebuilder:rbac:groups=ipam.cluster.x-k8s.io;ipam.metal3.io,resources=ipaddresses,verbs=get;list;watch
 //+kubebuilder:rbac:groups=ipam.cluster.x-k8s.io;ipam.metal3.io,resources=ipaddresses,verbs=get;list;watch
+//+kubebuilder:rbac:groups=ipam.cluster.x-k8s.io;ipam.metal3.io,resources=ipaddresses,verbs=get;list;watch
+//+kubebuilder:rbac:groups=ipam.cluster.x-k8s.io;ipam.metal3.io,resources=ipaddresses/status,verbs=get
 //+kubebuilder:rbac:groups=ipam.cluster.x-k8s.io;ipam.metal3.io,resources=ipaddresses/status,verbs=get
 //+kubebuilder:rbac:groups=ipam.cluster.x-k8s.io;ipam.metal3.io,resources=ipaddresses/status,verbs=get
 //+kubebuilder:rbac:groups=ipam.metal3.io,resources=ipclaims,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=ipam.metal3.io,resources=ipclaims,verbs=create;delete;get;list;patch;update;watch
+//+kubebuilder:rbac:groups=ipam.metal3.io,resources=ipclaims,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=ipam.metal3.io,resources=ipclaims/status,verbs=get;watch
 //+kubebuilder:rbac:groups=ipam.metal3.io,resources=ipclaims/status,verbs=get;watch
+//+kubebuilder:rbac:groups=ipam.metal3.io,resources=ipclaims/status,verbs=get;watch
+//+kubebuilder:rbac:groups=metal3.io,resources=baremetalhosts,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=metal3.io,resources=baremetalhosts,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=metal3.io,resources=baremetalhosts,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=metal3.io,resources=baremetalhosts,verbs=get;list;patch;update;watch
@@ -443,6 +462,7 @@ package main
 //+kubebuilder:rbac:groups=metal3.io,resources=baremetalhosts,verbs=list;watch
 //+kubebuilder:rbac:groups=metal3.io,resources=baremetalhosts,verbs=list;watch
 //+kubebuilder:rbac:groups=metal3.io,resources=baremetalhosts/finalizers,verbs=update
+//+kubebuilder:rbac:groups=metal3.io,resources=baremetalhosts/status,verbs=get;patch;update
 //+kubebuilder:rbac:groups=metal3.io,resources=baremetalhosts/status,verbs=get;patch;update
 //+kubebuilder:rbac:groups=metal3.io,resources=baremetalhosts/status,verbs=get;patch;update
 //+kubebuilder:rbac:groups=metal3.io,resources=baremetalhosts;provisionings,verbs=list;watch
@@ -499,6 +519,7 @@ package main
 //+kubebuilder:rbac:groups=scheduling.k8s.io,resources=priorityclasses,verbs=get;create;patch;update
 //+kubebuilder:rbac:groups=search.open-cluster-management.io,resources=searches,verbs=list;watch
 //+kubebuilder:rbac:groups=storage.k8s.io,resources=storageclasses,verbs=list;watch
+//+kubebuilder:rbac:groups=storage.k8s.io,resources=volumeattachments,verbs=list;watch
 //+kubebuilder:rbac:groups=storage.k8s.io,resources=volumeattachments,verbs=list;watch
 //+kubebuilder:rbac:groups=storage.k8s.io,resources=volumeattachments,verbs=list;watch
 //+kubebuilder:rbac:groups=submarineraddon.open-cluster-management.io,resources=submarinerconfigs,verbs=list;watch
