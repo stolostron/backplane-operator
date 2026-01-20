@@ -2,7 +2,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.3
+    controller-gen.kubebuilder.io/version: v0.18.0
   name: hiveconfigs.hive.openshift.io
 spec:
   group: hive.openshift.io
@@ -654,6 +654,25 @@ spec:
                     For each cluster deployment, the contents of GlobalPullSecret will be merged with the specific pull secret for
                     a cluster deployment(if specified), with precedence given to the contents of the pull secret for the cluster deployment.
                     The global pull secret is assumed to be in the TargetNamespace.
+                  properties:
+                    name:
+                      default: ""
+                      description: |-
+                        Name of the referent.
+                        This field is effectively required, but due to backwards compatibility is
+                        allowed to be empty. Instances of this type with an empty value here are
+                        almost certainly wrong.
+                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      type: string
+                  type: object
+                  x-kubernetes-map-type: atomic
+                hiveImagePullSecretRef:
+                  description: |-
+                    HiveImagePullSecretRef is used to specify a pull secret that can be used to pull Hive's own image.
+                    If hive has been deployed from a private registry, cluster installations will not succeed unless
+                    this reference is specified. This secret must live in the same namespace as the Hive operator's deployment.
+                    NOTE: This secret will be copied into Hive's TargetNamespace (if it is different than the namespace
+                    that the Hive operator is deployed in), as well as the namespace of every ClusterDeployment.
                   properties:
                     name:
                       default: ""
