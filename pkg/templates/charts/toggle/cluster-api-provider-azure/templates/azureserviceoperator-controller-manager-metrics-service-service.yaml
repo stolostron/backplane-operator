@@ -4,7 +4,7 @@ metadata:
   labels:
     app.kubernetes.io/name: azure-service-operator
     app.kubernetes.io/version: v2.13.0-hcpclusters.1
-    control-plane: controller-manager
+    control-plane: azureserviceoperator-controller-manager
   name: azureserviceoperator-controller-manager-metrics-service
   namespace: '{{ default "capz-system" .Values.global.namespace }}'
 spec:
@@ -12,4 +12,4 @@ spec:
   - name: metrics
     port: 8443
   selector:
-    control-plane: controller-manager
+    control-plane: azureserviceoperator-controller-manager
