@@ -293,7 +293,7 @@ func main() {
 	crds, errs := renderer.RenderCRDs(crdsDir, backplaneConfig)
 	if len(errs) > 0 {
 		for _, err := range errs {
-			setupLog.Info(err.Error())
+			setupLog.Error(err, "Failed to render CRD")
 		}
 		os.Exit(1)
 	}
@@ -306,7 +306,7 @@ func main() {
 			return e
 		})
 		if retryErr != nil {
-			setupLog.Error(err, "unable to ensure CRD exists in alloted time. Failing.")
+			setupLog.Error(retryErr, "Failed to apply CRD", "CRD", crds[i].GetName())
 			os.Exit(1)
 		}
 	}
