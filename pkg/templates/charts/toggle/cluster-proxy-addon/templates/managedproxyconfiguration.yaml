@@ -37,5 +37,6 @@ spec:
   proxyAgent:
     image: '{{ .Values.global.imageOverrides.cluster_proxy }}'
     replicas: 1
+    additionalServiceCAConfigMap: openshift-service-ca.crt
     imagePullSecrets:
     - "open-cluster-management-image-pull-credentials"
