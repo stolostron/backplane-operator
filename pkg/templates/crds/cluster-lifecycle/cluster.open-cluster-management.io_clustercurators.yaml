@@ -359,6 +359,26 @@ spec:
                       upgrades. Setting both this value and DesiredUpdate will trigger
                       an EUS to EUS upgrade.
                     type: string
+                  upgradeType:
+                    description: UpgradeType specifies which components to upgrade
+                      for HostedCluster deployments. For standalone clusters, this
+                      field is ignored. Supported values are ControlPlane (upgrade
+                      only the HostedCluster control plane), NodePools (upgrade only
+                      the NodePools/worker nodes), or empty string (default, upgrade
+                      both control plane and node pools).
+                    type: string
+                    enum:
+                    - ControlPlane
+                    - NodePools
+                    - ""
+                  nodePoolNames:
+                    description: NodePoolNames specifies which NodePools to upgrade
+                      when upgradeType is NodePools or empty (default). If not specified
+                      or empty, all NodePools associated with the HostedCluster will
+                      be upgraded. This field is ignored when upgradeType is ControlPlane.
+                    type: array
+                    items:
+                      type: string
                   monitorTimeout:
                     default: 120
                     description: MonitorTimeout defines the monitor process timeout,
