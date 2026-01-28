@@ -2,7 +2,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   name: machinepools.hive.openshift.io
 spec:
   group: hive.openshift.io
@@ -260,6 +260,14 @@ spec:
                             offer:
                               description: Offer is the offer of the image.
                               type: string
+                            plan:
+                              description: |-
+                                Plan is the purchase plan of the image.
+                                If omitted, it defaults to "WithPurchasePlan".
+                              enum:
+                                - WithPurchasePlan
+                                - NoPurchasePlan
+                              type: string
                             publisher:
                               description: Publisher is the publisher of the image.
                               type: string
@@ -395,6 +403,13 @@ spec:
                             worker MachinePool, it is the user's responsibility to match this to the value
                             provided in the install-config.
                           type: string
+                        tags:
+                          description: |-
+                            Tags defines a set of network tags which will be added to instances in the machineset.
+                            Not to be confused with UserTags.
+                          items:
+                            type: string
+                          type: array
                         type:
                           description: |-
                             InstanceType defines the GCP instance type.
@@ -831,9 +846,7 @@ spec:
                         description: Required. The taint key to be applied to a node.
                         type: string
                       timeAdded:
-                        description: |-
-                          TimeAdded represents the time at which the taint was added.
-                          It is only written for NoExecute taints.
+                        description: TimeAdded represents the time at which the taint was added.
                         format: date-time
                         type: string
                       value:
