@@ -21,11 +21,13 @@ rules:
   - deletecollection
 - apiGroups:
   - ''
+  resourceNames:
+  - agent-registration-bootstrap
   resources:
   - serviceaccounts/token
   verbs:
+  - get
   - create
-  - subscribe
 - apiGroups:
   - ''
   resources:
