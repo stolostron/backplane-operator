@@ -56,6 +56,7 @@ spec:
         - --crd-pattern=resources.azure.com/*;containerservice.azure.com/*;keyvault.azure.com/*;managedidentity.azure.com/*;eventhub.azure.com/*;network.azure.com/*;authorization.azure.com/*
         - --webhook-port=9443
         - --webhook-cert-dir=/tmp/k8s-webhook-server/serving-certs
+        - --crd-management=none
         env:
 {{- if .Values.global.pullSecret }}
         - name: AGENT_IMAGE_PULL_SECRET

@@ -139,4 +139,4 @@ spec:
       - name: cert
         secret:
           defaultMode: 420
-          secretName: capm3-webhook-service-cert
+          secretName: mce-capm3-webhook-service-cert
