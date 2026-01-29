@@ -428,22 +428,29 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		crdsDir = "pkg/templates/crds"
 	}
 
-	// Build list of CRD directories to skip for externally managed components
-	skipCRDDirs := r.getExternallyManagedCRDDirectories(backplaneConfig)
+	// Collect CRD directories to exclude from rendering
+	// 1. Externally managed components - CRDs owned by external operators
+	externallyManagedCRDDirs := r.getExternallyManagedCRDSkipDirectories(backplaneConfig)
 
-	// Also skip CRDs for disabled components to prevent updates
-	disabledCRDDirs := r.getDisabledComponentCRDDirectories(backplaneConfig)
+	// 2. Disabled components - prevents CRD updates for disabled features
+	disabledComponentCRDDirs := r.getDisabledComponentCRDSkipDirectories(backplaneConfig)
 
-	// Merge and deduplicate the skip lists
+	// 3. Platform-specific variants - ensures only the appropriate variant (OCP or K8s) is deployed
+	platformSpecificCRDDirs := r.getPlatformSpecificCRDSkipDirectories()
+
+	// Merge all skip lists and deduplicate using a map
 	dirMap := make(map[string]bool)
-	for _, dir := range skipCRDDirs {
+	for _, dir := range externallyManagedCRDDirs {
 		dirMap[dir] = true
 	}
-	for _, dir := range disabledCRDDirs {
+	for _, dir := range disabledComponentCRDDirs {
+		dirMap[dir] = true
+	}
+	for _, dir := range platformSpecificCRDDirs {
 		dirMap[dir] = true
 	}
 
-	// Convert map back to slice
+	// Convert merged skip list back to slice for rendering
 	mergedSkipCRDDirs := []string{}
 	for dir := range dirMap {
 		mergedSkipCRDDirs = append(mergedSkipCRDDirs, dir)
@@ -1467,10 +1474,10 @@ func (r *MultiClusterEngineReconciler) isComponentExternallyManaged(mce *backpla
 }
 
 /*
-getExternallyManagedCRDDirectories returns a list of CRD directory names to skip
+getExternallyManagedCRDSkipDirectories returns a list of CRD directory names to skip
 for components marked as externally managed.
 */
-func (r *MultiClusterEngineReconciler) getExternallyManagedCRDDirectories(mce *backplanev1.MultiClusterEngine) []string {
+func (r *MultiClusterEngineReconciler) getExternallyManagedCRDSkipDirectories(mce *backplanev1.MultiClusterEngine) []string {
 	annotations := mce.GetAnnotations()
 	if annotations == nil {
 		return []string{}
@@ -1507,11 +1514,11 @@ func (r *MultiClusterEngineReconciler) getExternallyManagedCRDDirectories(mce *b
 }
 
 /*
-getDisabledComponentCRDDirectories returns a list of CRD directory names to skip
+getDisabledComponentCRDSkipDirectories returns a list of CRD directory names to skip
 for components that are disabled. This prevents CRD updates for disabled components
 without deleting the CRDs.
 */
-func (r *MultiClusterEngineReconciler) getDisabledComponentCRDDirectories(mce *backplanev1.MultiClusterEngine) []string {
+func (r *MultiClusterEngineReconciler) getDisabledComponentCRDSkipDirectories(mce *backplanev1.MultiClusterEngine) []string {
 	// Build list of CRD directories to skip for disabled cluster-api components only
 	skipDirs := []string{}
 	dirMap := make(map[string]bool) // Track unique directories
@@ -1540,6 +1547,34 @@ func (r *MultiClusterEngineReconciler) getDisabledComponentCRDDirectories(mce *b
 				dirMap[crdDir] = true
 			}
 		}
+	}
+
+	return skipDirs
+}
+
+// getPlatformSpecificCRDSkipDirectories returns the list of CRD directories to skip
+// based on the current platform (OpenShift vs vanilla Kubernetes).
+// For CAPI components with platform-specific variants, this ensures only the
+// appropriate variant (OCP or K8s) gets deployed.
+func (r *MultiClusterEngineReconciler) getPlatformSpecificCRDSkipDirectories() []string {
+	skipDirs := []string{}
+
+	if utils.DeployOnOCP() {
+		// On OpenShift, skip K8s variants
+		skipDirs = append(skipDirs,
+			backplanev1.ClusterAPIK8SCRDDir,
+			backplanev1.ClusterAPIProviderMetalK8SCRDDir,
+			backplanev1.ClusterAPIProviderOAK8SCRDDir,
+			backplanev1.ClusterAPIProviderAzureK8SCRDDir,
+		)
+	} else {
+		// On vanilla Kubernetes, skip OCP variants
+		skipDirs = append(skipDirs,
+			backplanev1.ClusterAPICRDDir,
+			backplanev1.ClusterAPIProviderMetalCRDDir,
+			backplanev1.ClusterAPIProviderOACRDDir,
+			backplanev1.ClusterAPIProviderAzureCRDDir,
+		)
 	}
 
 	return skipDirs
