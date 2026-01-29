@@ -2,11 +2,24 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
+    cert-manager.io/inject-ca-from: capoa-bootstrap-system/capoa-bootstrap-cert
     controller-gen.kubebuilder.io/version: v0.17.2
   labels:
     cluster.x-k8s.io/v1beta1: v1alpha1
+    cluster.x-k8s.io/v1beta2: v1alpha2
   name: openshiftassistedconfigs.bootstrap.cluster.x-k8s.io
 spec:
+  conversion:
+    strategy: Webhook
+    webhook:
+      clientConfig:
+        service:
+          name: capoa-bootstrap-webhook-service
+          namespace: capoa-bootstrap-system
+          path: /convert
+      conversionReviewVersions:
+      - v1
+      - v1beta1
   group: bootstrap.cluster.x-k8s.io
   names:
     kind: OpenshiftAssistedConfig
@@ -18,7 +31,9 @@ spec:
     singular: openshiftassistedconfig
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - deprecated: true
+    deprecationWarning: v1alpha1 is deprecated, use v1alpha2
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: OpenshiftAssistedConfig is the Schema for the openshiftassistedconfig
@@ -220,27 +235,32 @@ spec:
                   properties:
                     lastTransitionTime:
                       description: |-
-                        Last time the condition transitioned from one status to another.
+                        lastTransitionTime is the last time the condition transitioned from one status to another.
                         This should be when the underlying condition changed. If that is not known, then using the time when
                         the API field changed is acceptable.
                       format: date-time
                       type: string
                     message:
                       description: |-
-                        A human readable message indicating details about the transition.
+                        message is a human readable message indicating details about the transition.
                         This field may be empty.
+                      maxLength: 10240
+                      minLength: 1
                       type: string
                     reason:
                       description: |-
-                        The reason for the condition's last transition in CamelCase.
+                        reason is the reason for the condition's last transition in CamelCase.
                         The specific API may choose whether or not this field is considered a guaranteed API.
                         This field may be empty.
+                      maxLength: 256
+                      minLength: 1
                       type: string
                     severity:
                       description: |-
                         severity provides an explicit classification of Reason code, so the users or machines can immediately
                         understand the current situation and act accordingly.
                         The Severity field MUST be set only when Status=False.
+                      maxLength: 32
                       type: string
                     status:
                       description: status of the condition, one of True, False, Unknown.
@@ -250,6 +270,8 @@ spec:
                         type of condition in CamelCase or in foo.example.com/CamelCase.
                         Many .condition.type values are consistent across resources like Available, but because arbitrary conditions
                         can be useful (see .node.status.conditions), the ability to deconflict is important.
+                      maxLength: 256
+                      minLength: 1
                       type: string
                   required:
                   - lastTransitionTime
@@ -268,10 +290,8 @@ spec:
                 description: FailureReason will be set on non-retryable errors
                 type: string
               infraEnvRef:
-                description: |-
-                  INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-                  Important: Run "make" to regenerate code after modifying this file
-                  InfraEnvRef references the infra env to generate the ISO
+                description: InfraEnvRef references the infra env to generate the
+                  ISO
                 properties:
                   apiVersion:
                     description: API version of the referent.
@@ -322,6 +342,330 @@ spec:
                 description: Ready indicates the BootstrapData field is ready to be
                   consumed
                 type: boolean
+            type: object
+        type: object
+    served: true
+    storage: false
+    subresources:
+      status: {}
+  - name: v1alpha2
+    schema:
+      openAPIV3Schema:
+        description: OpenshiftAssistedConfig is the Schema for the openshiftassistedconfig
+          API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: OpenshiftAssistedConfigSpec defines the desired state of
+              OpenshiftAssistedConfig
+            properties:
+              additionalNTPSources:
+                description: |-
+                  AdditionalNTPSources is a list of NTP sources (hostname or IP) to be added to all cluster
+                  hosts. They are added to any NTP sources that were configured through other means.
+                items:
+                  type: string
+                type: array
+              additionalTrustBundle:
+                description: |-
+                  PEM-encoded X.509 certificate bundle. Hosts discovered by this
+                  infra-env will trust the certificates in this bundle. Clusters formed
+                  from the hosts discovered by this infra-env will also trust the
+                  certificates in this bundle.
+                type: string
+              cpuArchitecture:
+                default: x86_64
+                description: CpuArchitecture specifies the target CPU architecture.
+                  Default is x86_64
+                type: string
+              kernelArguments:
+                description: |-
+                  KernelArguments is the additional kernel arguments to be passed during boot time of the discovery image.
+                  Applicable for both iPXE, and ISO streaming from Image Service.
+                items:
+                  properties:
+                    operation:
+                      description: Operation is the operation to apply on the kernel
+                        argument.
+                      enum:
+                      - append
+                      - replace
+                      - delete
+                      type: string
+                    value:
+                      description: |-
+                        Value can have the form <parameter> or <parameter>=<value>. The following examples should be supported:
+                        rd.net.timeout.carrier=60
+                        isolcpus=1,2,10-20,100-2000:2/25
+                        quiet
+                      pattern: ^(?:(?:[^ \t\n\r"]+)|(?:"[^"]*"))+$
+                      type: string
+                  type: object
+                type: array
+              nmStateConfigLabelSelector:
+                description: |-
+                  NmstateConfigLabelSelector associates NMStateConfigs for hosts that are considered part
+                  of this installation environment.
+                properties:
+                  matchExpressions:
+                    description: matchExpressions is a list of label selector requirements.
+                      The requirements are ANDed.
+                    items:
+                      description: |-
+                        A label selector requirement is a selector that contains values, a key, and an operator that
+                        relates the key and values.
+                      properties:
+                        key:
+                          description: key is the label key that the selector applies
+                            to.
+                          type: string
+                        operator:
+                          description: |-
+                            operator represents a key's relationship to a set of values.
+                            Valid operators are In, NotIn, Exists and DoesNotExist.
+                          type: string
+                        values:
+                          description: |-
+                            values is an array of string values. If the operator is In or NotIn,
+                            the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                            the values array must be empty. This array is replaced during a strategic
+                            merge patch.
+                          items:
+                            type: string
+                          type: array
+                          x-kubernetes-list-type: atomic
+                      required:
+                      - key
+                      - operator
+                      type: object
+                    type: array
+                    x-kubernetes-list-type: atomic
+                  matchLabels:
+                    additionalProperties:
+                      type: string
+                    description: |-
+                      matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                      map is equivalent to an element of matchExpressions, whose key field is "key", the
+                      operator is "In", and the values array contains only "value". The requirements are ANDed.
+                    type: object
+                type: object
+                x-kubernetes-map-type: atomic
+              nodeRegistration:
+                description: NodeRegistrationOption holds fields related to registering
+                  nodes to the cluster
+                properties:
+                  kubeletExtraLabels:
+                    description: KubeletExtraLabels passes extra labels to kubelet.
+                    items:
+                      type: string
+                    type: array
+                  name:
+                    description: Defaults to the hostname of the node if not provided.
+                    type: string
+                type: object
+              osImageVersion:
+                description: |-
+                  OSImageVersion is the version of OS image to use when generating the InfraEnv.
+                  The version should refer to an OSImage specified in the AgentServiceConfig
+                  (i.e. OSImageVersion should equal to an OpenshiftVersion in OSImages list).
+                  Note: OSImageVersion can't be specified along with ClusterRef.
+                type: string
+              proxy:
+                description: |-
+                  Proxy defines the proxy settings for agents and clusters that use the InfraEnv. If
+                  unset, the agents and clusters will not be configured to use a proxy.
+                properties:
+                  httpProxy:
+                    description: HTTPProxy is the URL of the proxy for HTTP requests.
+                    type: string
+                  httpsProxy:
+                    description: HTTPSProxy is the URL of the proxy for HTTPS requests.
+                    type: string
+                  noProxy:
+                    description: |-
+                      NoProxy is a comma-separated list of domains and CIDRs for which the proxy should not be
+                      used.
+                    type: string
+                type: object
+              pullSecretRef:
+                description: PullSecretRef is the reference to the secret to use when
+                  pulling images.
+                properties:
+                  name:
+                    default: ""
+                    description: |-
+                      Name of the referent.
+                      This field is effectively required, but due to backwards compatibility is
+                      allowed to be empty. Instances of this type with an empty value here are
+                      almost certainly wrong.
+                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                    type: string
+                type: object
+                x-kubernetes-map-type: atomic
+              sshAuthorizedKey:
+                description: SSHAuthorizedKey is a SSH public keys that will be added
+                  to all agents for use in debugging.
+                type: string
+            type: object
+          status:
+            description: OpenshiftAssistedConfigStatus defines the observed state
+              of OpenshiftAssistedConfig
+            properties:
+              conditions:
+                description: |-
+                  conditions represents the observations of a OpenshiftAssistedConfig's current state.
+                  Known condition types are Ready, DataSecretAvailable, CertificatesAvailable.
+                items:
+                  description: Condition contains details for one aspect of the current
+                    state of this API Resource.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        lastTransitionTime is the last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        message is a human readable message indicating details about the transition.
+                        This may be an empty string.
+                      maxLength: 32768
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        observedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      minimum: 0
+                      type: integer
+                    reason:
+                      description: |-
+                        reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                        Producers of specific condition types may define expected values and meanings for this field,
+                        and whether the values are considered a guaranteed API.
+                        The value should be a CamelCase string.
+                        This field may not be empty.
+                      maxLength: 1024
+                      minLength: 1
+                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                      type: string
+                    status:
+                      description: status of the condition, one of True, False, Unknown.
+                      enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                      type: string
+                    type:
+                      description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                maxItems: 32
+                type: array
+                x-kubernetes-list-map-keys:
+                - type
+                x-kubernetes-list-type: map
+              dataSecretName:
+                description: dataSecretName is the name of the secret that stores
+                  the bootstrap data script.
+                maxLength: 253
+                minLength: 1
+                type: string
+              initialization:
+                description: |-
+                  initialization provides observations of the OpenshiftAssistedConfig initialization process.
+                  NOTE: Fields in this struct are part of the Cluster API contract and are used to orchestrate initial Machine provisioning.
+                properties:
+                  dataSecretCreated:
+                    description: |-
+                      dataSecretCreated is true when the Machine's bootstrap secret is created.
+                      NOTE: this field is part of the Cluster API contract, and it is used to orchestrate initial Machine provisioning.
+                    type: boolean
+                type: object
+              observedGeneration:
+                description: observedGeneration is the latest generation observed
+                  by the controller.
+                format: int64
+                minimum: 1
+                type: integer
+              v1beta1Conditions:
+                description: v1beta1Conditions holds the v1beta1 style conditions
+                  for backward compatibility with CAPI conditions utilities.
+                items:
+                  description: Condition defines an observation of a Cluster API resource
+                    operational state.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        lastTransitionTime is the last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed. If that is not known, then using the time when
+                        the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        message is a human readable message indicating details about the transition.
+                        This field may be empty.
+                      maxLength: 10240
+                      minLength: 1
+                      type: string
+                    reason:
+                      description: |-
+                        reason is the reason for the condition's last transition in CamelCase.
+                        The specific API may choose whether or not this field is considered a guaranteed API.
+                        This field may be empty.
+                      maxLength: 256
+                      minLength: 1
+                      type: string
+                    severity:
+                      description: |-
+                        severity provides an explicit classification of Reason code, so the users or machines can immediately
+                        understand the current situation and act accordingly.
+                        The Severity field MUST be set only when Status=False.
+                      maxLength: 32
+                      type: string
+                    status:
+                      description: status of the condition, one of True, False, Unknown.
+                      type: string
+                    type:
+                      description: |-
+                        type of condition in CamelCase or in foo.example.com/CamelCase.
+                        Many .condition.type values are consistent across resources like Available, but because arbitrary conditions
+                        can be useful (see .node.status.conditions), the ability to deconflict is important.
+                      maxLength: 256
+                      minLength: 1
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - status
+                  - type
+                  type: object
+                type: array
             type: object
         type: object
     served: true
