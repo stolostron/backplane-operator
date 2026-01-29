@@ -484,8 +484,9 @@ func DumpServingCertSecret() error {
 
 // ComponentCRDDirectories returns all CRD directory paths for a given component.
 // For CAPI components with platform variants (ClusterAPI, ClusterAPIProviderMetal,
-// ClusterAPIProviderOA), this returns both OCP and K8s directory variants to ensure
-// proper CRD handling regardless of the platform.
+// ClusterAPIProviderOA, ClusterAPIProviderAzure), this returns both OCP and K8s
+// directory variants. This is used when building skip lists for disabled or externally
+// managed components to ensure all variants are skipped.
 // For all other components, returns a single directory.
 func ComponentCRDDirectories(component string) []string {
 	switch component {

@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -2447,7 +2448,7 @@ func Test_isComponentExternallyManaged(t *testing.T) {
 	}
 }
 
-func Test_getExternallyManagedCRDDirectories(t *testing.T) {
+func Test_getExternallyManagedCRDSkipDirectories(t *testing.T) {
 	tests := []struct {
 		name string
 		mce  *backplanev1.MultiClusterEngine
@@ -2514,9 +2515,9 @@ func Test_getExternallyManagedCRDDirectories(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := recon.getExternallyManagedCRDDirectories(tt.mce)
+			got := recon.getExternallyManagedCRDSkipDirectories(tt.mce)
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("getExternallyManagedCRDDirectories() = %v, want %v", got, tt.want)
+				t.Errorf("getExternallyManagedCRDSkipDirectories() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -2607,6 +2608,386 @@ func Test_ensureToggleableComponents_withExternallyManagedComponents(t *testing.
 			_, err := recon.ensureToggleableComponents(context.TODO(), tt.mce)
 			if err != tt.want {
 				t.Errorf("ensureToggleableComponents() error = %v, want %v", err, tt.want)
+			}
+		})
+	}
+}
+
+func Test_getDisabledComponentCRDSkipDirectories(t *testing.T) {
+	tests := []struct {
+		name string
+		mce  *backplanev1.MultiClusterEngine
+		want []string
+	}{
+		{
+			name: "all CAPI components explicitly enabled",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-mce",
+				},
+				Spec: backplanev1.MultiClusterEngineSpec{
+					Overrides: &backplanev1.Overrides{
+						Components: []backplanev1.ComponentConfig{
+							{Name: backplanev1.ClusterAPI, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderAWS, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderAzurePreview, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderMetal, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderOA, Enabled: true},
+						},
+					},
+				},
+			},
+			want: []string{},
+		},
+		{
+			name: "cluster-api explicitly disabled",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-mce",
+				},
+				Spec: backplanev1.MultiClusterEngineSpec{
+					Overrides: &backplanev1.Overrides{
+						Components: []backplanev1.ComponentConfig{
+							{Name: backplanev1.ClusterAPI, Enabled: false},
+							{Name: backplanev1.ClusterAPIProviderAWS, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderAzurePreview, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderMetal, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderOA, Enabled: true},
+						},
+					},
+				},
+			},
+			want: []string{backplanev1.ClusterAPICRDDir, backplanev1.ClusterAPIK8SCRDDir},
+		},
+		{
+			name: "multiple CAPI components disabled",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-mce",
+				},
+				Spec: backplanev1.MultiClusterEngineSpec{
+					Overrides: &backplanev1.Overrides{
+						Components: []backplanev1.ComponentConfig{
+							{Name: backplanev1.ClusterAPI, Enabled: false},
+							{Name: backplanev1.ClusterAPIProviderMetal, Enabled: false},
+							{Name: backplanev1.ClusterAPIProviderAWS, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderAzurePreview, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderOA, Enabled: true},
+						},
+					},
+				},
+			},
+			want: []string{
+				backplanev1.ClusterAPICRDDir,
+				backplanev1.ClusterAPIK8SCRDDir,
+				backplanev1.ClusterAPIProviderMetalCRDDir,
+				backplanev1.ClusterAPIProviderMetalK8SCRDDir,
+			},
+		},
+		{
+			name: "externally managed cluster-api should not be in skip list even if not explicitly enabled",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-mce",
+					Annotations: map[string]string{
+						utils.AnnotationExternallyManaged: `["cluster-api"]`,
+					},
+				},
+				Spec: backplanev1.MultiClusterEngineSpec{
+					Overrides: &backplanev1.Overrides{
+						Components: []backplanev1.ComponentConfig{
+							{Name: backplanev1.ClusterAPIProviderAWS, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderAzurePreview, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderMetal, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderOA, Enabled: true},
+						},
+					},
+				},
+			},
+			want: []string{},
+		},
+		{
+			name: "azure preview component disabled",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-mce",
+				},
+				Spec: backplanev1.MultiClusterEngineSpec{
+					Overrides: &backplanev1.Overrides{
+						Components: []backplanev1.ComponentConfig{
+							{Name: backplanev1.ClusterAPI, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderAWS, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderAzurePreview, Enabled: false},
+							{Name: backplanev1.ClusterAPIProviderMetal, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderOA, Enabled: true},
+						},
+					},
+				},
+			},
+			want: []string{
+				backplanev1.ClusterAPIProviderAzureCRDDir,
+				backplanev1.ClusterAPIProviderAzureK8SCRDDir,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := recon.getDisabledComponentCRDSkipDirectories(tt.mce)
+
+			// Sort both slices for comparison since order doesn't matter
+			sort.Strings(got)
+			sort.Strings(tt.want)
+
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("getDisabledComponentCRDSkipDirectories() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_getPlatformSpecificCRDSkipDirectories(t *testing.T) {
+	// Save original platform state
+	originalPlatform := utils.DeployOnOCP()
+	defer utils.SetDeployOnOCP(originalPlatform)
+
+	tests := []struct {
+		name     string
+		isOCP    bool
+		wantDirs []string
+	}{
+		{
+			name:  "on OpenShift - should skip K8s variants",
+			isOCP: true,
+			wantDirs: []string{
+				backplanev1.ClusterAPIK8SCRDDir,
+				backplanev1.ClusterAPIProviderMetalK8SCRDDir,
+				backplanev1.ClusterAPIProviderOAK8SCRDDir,
+				backplanev1.ClusterAPIProviderAzureK8SCRDDir,
+			},
+		},
+		{
+			name:  "on vanilla Kubernetes - should skip OCP variants",
+			isOCP: false,
+			wantDirs: []string{
+				backplanev1.ClusterAPICRDDir,
+				backplanev1.ClusterAPIProviderMetalCRDDir,
+				backplanev1.ClusterAPIProviderOACRDDir,
+				backplanev1.ClusterAPIProviderAzureCRDDir,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Set platform for this test
+			utils.SetDeployOnOCP(tt.isOCP)
+
+			got := recon.getPlatformSpecificCRDSkipDirectories()
+
+			// Sort both for comparison
+			sort.Strings(got)
+			sort.Strings(tt.wantDirs)
+
+			if !reflect.DeepEqual(got, tt.wantDirs) {
+				t.Errorf("getPlatformSpecificCRDSkipDirectories() = %v, want %v", got, tt.wantDirs)
+			}
+
+			// Verify the count is correct
+			if len(got) != 4 {
+				t.Errorf("getPlatformSpecificCRDSkipDirectories() returned %d directories, expected 4", len(got))
+			}
+		})
+	}
+}
+
+func Test_CRDSkipListIntegration(t *testing.T) {
+	// Save original platform state
+	originalPlatform := utils.DeployOnOCP()
+	defer utils.SetDeployOnOCP(originalPlatform)
+
+	tests := []struct {
+		name            string
+		isOCP           bool
+		mce             *backplanev1.MultiClusterEngine
+		wantContains    []string
+		wantNotContains []string
+		description     string
+	}{
+		{
+			name:  "OCP with disabled cluster-api should skip both K8s variants and disabled component",
+			isOCP: true,
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-mce",
+				},
+				Spec: backplanev1.MultiClusterEngineSpec{
+					Overrides: &backplanev1.Overrides{
+						Components: []backplanev1.ComponentConfig{
+							{Name: backplanev1.ClusterAPI, Enabled: false},
+							{Name: backplanev1.ClusterAPIProviderAWS, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderAzurePreview, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderMetal, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderOA, Enabled: true},
+						},
+					},
+				},
+			},
+			wantContains: []string{
+				// K8s variants (platform-specific)
+				backplanev1.ClusterAPIK8SCRDDir,
+				backplanev1.ClusterAPIProviderMetalK8SCRDDir,
+				backplanev1.ClusterAPIProviderOAK8SCRDDir,
+				backplanev1.ClusterAPIProviderAzureK8SCRDDir,
+				// Disabled component (both variants)
+				backplanev1.ClusterAPICRDDir,
+			},
+			wantNotContains: []string{},
+			description:     "On OCP with disabled cluster-api, should skip all K8s variants plus disabled cluster-api OCP variant",
+		},
+		{
+			name:  "K8s with externally managed cluster-api should skip OCP variants and externally managed",
+			isOCP: false,
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-mce",
+					Annotations: map[string]string{
+						utils.AnnotationExternallyManaged: `["cluster-api"]`,
+					},
+				},
+				Spec: backplanev1.MultiClusterEngineSpec{
+					Overrides: &backplanev1.Overrides{
+						Components: []backplanev1.ComponentConfig{
+							{Name: backplanev1.ClusterAPIProviderAWS, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderAzurePreview, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderMetal, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderOA, Enabled: true},
+						},
+					},
+				},
+			},
+			wantContains: []string{
+				// OCP variants (platform-specific)
+				backplanev1.ClusterAPICRDDir,
+				backplanev1.ClusterAPIProviderMetalCRDDir,
+				backplanev1.ClusterAPIProviderOACRDDir,
+				backplanev1.ClusterAPIProviderAzureCRDDir,
+				// Externally managed (K8s variant)
+				backplanev1.ClusterAPIK8SCRDDir,
+			},
+			wantNotContains: []string{},
+			description:     "On K8s with externally managed cluster-api, should skip all OCP variants plus cluster-api K8s variant",
+		},
+		{
+			name:  "OCP with all CAPI components enabled should only skip K8s variants",
+			isOCP: true,
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-mce",
+				},
+				Spec: backplanev1.MultiClusterEngineSpec{
+					Overrides: &backplanev1.Overrides{
+						Components: []backplanev1.ComponentConfig{
+							{Name: backplanev1.ClusterAPI, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderAWS, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderAzurePreview, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderMetal, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderOA, Enabled: true},
+						},
+					},
+				},
+			},
+			wantContains: []string{
+				backplanev1.ClusterAPIK8SCRDDir,
+				backplanev1.ClusterAPIProviderMetalK8SCRDDir,
+				backplanev1.ClusterAPIProviderOAK8SCRDDir,
+				backplanev1.ClusterAPIProviderAzureK8SCRDDir,
+			},
+			wantNotContains: []string{
+				backplanev1.ClusterAPICRDDir,
+				backplanev1.ClusterAPIProviderMetalCRDDir,
+				backplanev1.ClusterAPIProviderOACRDDir,
+				backplanev1.ClusterAPIProviderAzureCRDDir,
+			},
+			description: "On OCP with all components enabled, should only skip K8s variants, not OCP variants",
+		},
+		{
+			name:  "K8s with all CAPI components enabled should only skip OCP variants",
+			isOCP: false,
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-mce",
+				},
+				Spec: backplanev1.MultiClusterEngineSpec{
+					Overrides: &backplanev1.Overrides{
+						Components: []backplanev1.ComponentConfig{
+							{Name: backplanev1.ClusterAPI, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderAWS, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderAzurePreview, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderMetal, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderOA, Enabled: true},
+						},
+					},
+				},
+			},
+			wantContains: []string{
+				backplanev1.ClusterAPICRDDir,
+				backplanev1.ClusterAPIProviderMetalCRDDir,
+				backplanev1.ClusterAPIProviderOACRDDir,
+				backplanev1.ClusterAPIProviderAzureCRDDir,
+			},
+			wantNotContains: []string{
+				backplanev1.ClusterAPIK8SCRDDir,
+				backplanev1.ClusterAPIProviderMetalK8SCRDDir,
+				backplanev1.ClusterAPIProviderOAK8SCRDDir,
+				backplanev1.ClusterAPIProviderAzureK8SCRDDir,
+			},
+			description: "On K8s with all components enabled, should only skip OCP variants, not K8s variants",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Set platform for this test
+			utils.SetDeployOnOCP(tt.isOCP)
+
+			// Get all skip lists
+			externallyManagedDirs := recon.getExternallyManagedCRDSkipDirectories(tt.mce)
+			disabledDirs := recon.getDisabledComponentCRDSkipDirectories(tt.mce)
+			platformDirs := recon.getPlatformSpecificCRDSkipDirectories()
+
+			// Merge them (simulating what happens in Reconcile)
+			dirMap := make(map[string]bool)
+			for _, dir := range externallyManagedDirs {
+				dirMap[dir] = true
+			}
+			for _, dir := range disabledDirs {
+				dirMap[dir] = true
+			}
+			for _, dir := range platformDirs {
+				dirMap[dir] = true
+			}
+
+			// Convert map to slice
+			mergedSkipDirs := []string{}
+			for dir := range dirMap {
+				mergedSkipDirs = append(mergedSkipDirs, dir)
+			}
+
+			// Check that all expected directories are present
+			for _, expectedDir := range tt.wantContains {
+				if !dirMap[expectedDir] {
+					t.Errorf("%s: expected skip list to contain %s, but it was not found. Skip list: %v",
+						tt.description, expectedDir, mergedSkipDirs)
+				}
+			}
+
+			// Check that unwanted directories are not present
+			for _, unwantedDir := range tt.wantNotContains {
+				if dirMap[unwantedDir] {
+					t.Errorf("%s: expected skip list NOT to contain %s, but it was found. Skip list: %v",
+						tt.description, unwantedDir, mergedSkipDirs)
+				}
 			}
 		})
 	}

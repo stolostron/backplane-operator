@@ -201,6 +201,11 @@ func RenderCRDs(crdDir string, backplaneConfig *v1.MultiClusterEngine, skipDirs 
 			errs = append(errs, fmt.Errorf("%s - error unmarshalling file to unstructured: %v", info.Name(), err.Error()))
 		}
 
+		// Log which directory this CRD is being rendered from
+		// relPath, _ := filepath.Rel(crdDir, filePath)
+		// sourceDir := filepath.Dir(relPath)
+		// fmt.Printf("Rendering CRD %s from directory: %s\n", crd.GetName(), sourceDir)
+
 		if backplaneConfig != nil {
 			_, conversion, _ := unstructured.NestedMap(crd.Object, "spec", "conversion", "webhook", "clientConfig", "service")
 			if conversion {
