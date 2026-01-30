@@ -1784,6 +1784,7 @@ rules:
 - apiGroups:
   - infrastructure.cluster.x-k8s.io
   resources:
+  - '*'
   - aroclusters
   - aromachinepools
   - awsmachines
@@ -1837,6 +1838,7 @@ rules:
   - aromachinepools/status
   - awsclusters/status
   - awsfargateprofiles/status
+  - awsmachinetemplates/status
   - azureasomanagedclusters/status
   - azureasomanagedcontrolplanes/status
   - azureasomanagedmachinepools/status

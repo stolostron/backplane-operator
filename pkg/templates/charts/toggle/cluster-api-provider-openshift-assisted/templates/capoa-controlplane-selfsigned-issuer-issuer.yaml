@@ -1,0 +1,7 @@
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: capoa-controlplane-selfsigned-issuer
+  namespace: '{{ default "capoa-controlplane-system" .Values.global.namespace }}'
+spec:
+  selfSigned: {}

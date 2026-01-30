@@ -2,11 +2,24 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
+    cert-manager.io/inject-ca-from: capoa-controlplane-system/capoa-controlplane-cert
     controller-gen.kubebuilder.io/version: v0.17.2
   labels:
     cluster.x-k8s.io/v1beta1: v1alpha2
+    cluster.x-k8s.io/v1beta2: v1alpha3
   name: openshiftassistedcontrolplanes.controlplane.cluster.x-k8s.io
 spec:
+  conversion:
+    strategy: Webhook
+    webhook:
+      clientConfig:
+        service:
+          name: capoa-controlplane-webhook-service
+          namespace: capoa-controlplane-system
+          path: /convert
+      conversionReviewVersions:
+      - v1
+      - v1beta1
   group: controlplane.cluster.x-k8s.io
   names:
     kind: OpenshiftAssistedControlPlane
@@ -49,7 +62,7 @@ spec:
     - description: Total number of non-terminated machines targeted by this control
         plane that have the desired template spec
       jsonPath: .status.updatedReplicas
-      name: Updated
+      name: Up-To-Date
       type: integer
     - description: Total number of unavailable machines targeted by this control plane
       jsonPath: .status.unavailableReplicas
@@ -63,6 +76,8 @@ spec:
       jsonPath: .spec.distributionVersion
       name: Distribution Version
       type: string
+    deprecated: true
+    deprecationWarning: v1alpha2 is deprecated, use v1alpha3
     name: v1alpha2
     schema:
       openAPIV3Schema:
@@ -91,7 +106,7 @@ spec:
               of OpenshiftAssistedControlPlane
             properties:
               config:
-                description: Config specs for the OpenshiftAssistedControlPlane
+                description: Config contains configuration specs for the OpenshiftAssistedControlPlane
                 properties:
                   apiVIPs:
                     description: |-
@@ -144,7 +159,12 @@ spec:
                         - none
                         - all
                         - masters
+                        - arbiters
                         - workers
+                        - masters,arbiters
+                        - masters,workers
+                        - arbiters,workers
+                        - masters,arbiters,workers
                         type: string
                       mode:
                         description: The disk encryption mode to use.
@@ -311,7 +331,7 @@ spec:
                         additionalProperties:
                           type: string
                         description: |-
-                          Map of string keys and values that can be used to organize and categorize
+                          labels is a map of string keys and values that can be used to organize and categorize
                           (scope and select) objects. May match selectors of replication controllers
                           and services.
                           More info: http://kubernetes.io/docs/user-guide/labels
@@ -553,27 +573,32 @@ spec:
                   properties:
                     lastTransitionTime:
                       description: |-
-                        Last time the condition transitioned from one status to another.
+                        lastTransitionTime is the last time the condition transitioned from one status to another.
                         This should be when the underlying condition changed. If that is not known, then using the time when
                         the API field changed is acceptable.
                       format: date-time
                       type: string
                     message:
                       description: |-
-                        A human readable message indicating details about the transition.
+                        message is a human readable message indicating details about the transition.
                         This field may be empty.
+                      maxLength: 10240
+                      minLength: 1
                       type: string
                     reason:
                       description: |-
-                        The reason for the condition's last transition in CamelCase.
+                        reason is the reason for the condition's last transition in CamelCase.
                         The specific API may choose whether or not this field is considered a guaranteed API.
                         This field may be empty.
+                      maxLength: 256
+                      minLength: 1
                       type: string
                     severity:
                       description: |-
                         severity provides an explicit classification of Reason code, so the users or machines can immediately
                         understand the current situation and act accordingly.
                         The Severity field MUST be set only when Status=False.
+                      maxLength: 32
                       type: string
                     status:
                       description: status of the condition, one of True, False, Unknown.
@@ -583,6 +608,8 @@ spec:
                         type of condition in CamelCase or in foo.example.com/CamelCase.
                         Many .condition.type values are consistent across resources like Available, but because arbitrary conditions
                         can be useful (see .node.status.conditions), the ability to deconflict is important.
+                      maxLength: 256
+                      minLength: 1
                       type: string
                   required:
                   - lastTransitionTime
@@ -657,6 +684,632 @@ spec:
                 description: |-
                   Version represents the minimum Kubernetes version for the control plane machines
                   in the cluster.
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: false
+    subresources:
+      scale:
+        labelSelectorPath: .status.selector
+        specReplicasPath: .spec.replicas
+        statusReplicasPath: .status.replicas
+      status: {}
+  - additionalPrinterColumns:
+    - description: Cluster
+      jsonPath: .metadata.labels['cluster\.x-k8s\.io/cluster-name']
+      name: Cluster
+      type: string
+    - description: This denotes whether or not the control plane has been initialized
+      jsonPath: .status.initialization.controlPlaneInitialized
+      name: Initialized
+      type: boolean
+    - description: Total number of machines desired by this control plane
+      jsonPath: .spec.replicas
+      name: Desired
+      priority: 10
+      type: integer
+    - description: Total number of non-terminated machines targeted by this control
+        plane
+      jsonPath: .status.replicas
+      name: Replicas
+      type: integer
+    - description: Total number of fully running and ready control plane machines
+      jsonPath: .status.readyReplicas
+      name: Ready
+      type: integer
+    - description: Total number of up-to-date replicas targeted by this control plane
+      jsonPath: .status.upToDateReplicas
+      name: Up-To-Date
+      type: integer
+    - description: Total number of available machines targeted by this control plane
+      jsonPath: .status.availableReplicas
+      name: Available
+      type: integer
+    - description: Time duration since creation of OpenshiftAssistedControlPlane
+      jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    - description: OpenShift version associated with this control plane
+      jsonPath: .spec.distributionVersion
+      name: Distribution Version
+      type: string
+    name: v1alpha3
+    schema:
+      openAPIV3Schema:
+        description: OpenshiftAssistedControlPlane is the Schema for the openshiftassistedcontrolplane
+          API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: OpenshiftAssistedControlPlaneSpec defines the desired state
+              of OpenshiftAssistedControlPlane
+            properties:
+              config:
+                description: Config contains configuration specs for the OpenshiftAssistedControlPlane
+                properties:
+                  apiVIPs:
+                    description: |-
+                      APIVIPs are the virtual IPs used to reach the OpenShift cluster's API.
+                      Enter one IP address for single-stack clusters, or up to two for dual-stack clusters (at
+                      most one IP address per IP stack used). The order of stacks should be the same as order
+                      of subnets in Cluster Networks, Service Networks, and Machine Networks.
+                    items:
+                      type: string
+                    maxItems: 2
+                    type: array
+                  baseDomain:
+                    description: BaseDomain is the base domain to which the cluster
+                      should belong.
+                    type: string
+                  capabilities:
+                    description: Capabilities specifies the capabilities set during
+                      an OpenShift cluster installation.
+                    properties:
+                      additionalEnabledCapabilities:
+                        description: |-
+                          AdditionalEnabledCapabilities is a list of OpenShift capabilities to specifically enable
+                          during the installation of the workload cluster. It is empty by default.
+                        items:
+                          type: string
+                        type: array
+                      baselineCapability:
+                        description: |-
+                          BaselineCapability provides a default set of capabilities to enable during the installation.
+                          Valid values are vCurrent, v4.x, or None. See the OpenShift doc for more details.
+                          Defaults to None for baremetal platform workload clusters or vCurrent otherwise.
+                        type: string
+                    type: object
+                  clusterName:
+                    description: |-
+                      ClusterName is the friendly name of the cluster. It is used for subdomains,
+                      some resource tagging, and other instances where a friendly name for the
+                      cluster is useful.
+                      If not defined ClusterName will be set as the CAPI ClusterName
+                    type: string
+                  diskEncryption:
+                    description: DiskEncryption is the configuration to enable/disable
+                      disk encryption for cluster nodes.
+                    properties:
+                      enableOn:
+                        default: none
+                        description: Enable/disable disk encryption on master nodes,
+                          worker nodes, or all nodes.
+                        enum:
+                        - none
+                        - all
+                        - masters
+                        - arbiters
+                        - workers
+                        - masters,arbiters
+                        - masters,workers
+                        - arbiters,workers
+                        - masters,arbiters,workers
+                        type: string
+                      mode:
+                        description: The disk encryption mode to use.
+                        enum:
+                        - tpmv2
+                        - tang
+                        type: string
+                      tangServers:
+                        description: JSON-formatted string containing additional information
+                          regarding tang's configuration
+                        type: string
+                    type: object
+                  imageRegistryRef:
+                    description: |-
+                      ImageRegistryRef is a reference to a configmap containing both the additional
+                      image registries and their corresponding certificate bundles to be used in the spoke cluster
+                    properties:
+                      name:
+                        default: ""
+                        description: |-
+                          Name of the referent.
+                          This field is effectively required, but due to backwards compatibility is
+                          allowed to be empty. Instances of this type with an empty value here are
+                          almost certainly wrong.
+                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                        type: string
+                    type: object
+                    x-kubernetes-map-type: atomic
+                  ingressVIPs:
+                    description: |-
+                      IngressVIPs are the virtual IPs used for cluster ingress traffic.
+                      Enter one IP address for single-stack clusters, or up to two for dual-stack clusters (at
+                      most one IP address per IP stack used). The order of stacks should be the same as order
+                      of subnets in Cluster Networks, Service Networks, and Machine Networks.
+                    items:
+                      type: string
+                    maxItems: 2
+                    type: array
+                  manifestsConfigMapRefs:
+                    description: |-
+                      ManifestsConfigMapRefs is an array of references to user-provided manifests ConfigMaps to
+                      add to or replace manifests that are generated by the installer.
+                      Manifest names in each ConfigMap should be unique across all referenced ConfigMaps.
+                    items:
+                      description: ManifestsConfigMapReference is a reference to a
+                        manifests ConfigMap
+                      properties:
+                        name:
+                          description: Name is the name of the ConfigMap that this
+                            refers to
+                          type: string
+                      required:
+                      - name
+                      type: object
+                    type: array
+                  mastersSchedulable:
+                    description: Set to true to allow control plane nodes to be schedulable
+                    type: boolean
+                  proxy:
+                    description: Proxy defines the proxy settings used for the install
+                      config
+                    properties:
+                      httpProxy:
+                        description: HTTPProxy is the URL of the proxy for HTTP requests.
+                        type: string
+                      httpsProxy:
+                        description: HTTPSProxy is the URL of the proxy for HTTPS
+                          requests.
+                        type: string
+                      noProxy:
+                        description: |-
+                          NoProxy is a comma-separated list of domains and CIDRs for which the proxy should not be
+                          used.
+                        type: string
+                    type: object
+                  pullSecretRef:
+                    description: PullSecretRef references pull secret necessary for
+                      the cluster installation
+                    properties:
+                      name:
+                        default: ""
+                        description: |-
+                          Name of the referent.
+                          This field is effectively required, but due to backwards compatibility is
+                          allowed to be empty. Instances of this type with an empty value here are
+                          almost certainly wrong.
+                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                        type: string
+                    type: object
+                    x-kubernetes-map-type: atomic
+                  sshAuthorizedKey:
+                    description: SSHAuthorizedKey ssh key for accessing the cluster
+                      nodes after reboot
+                    type: string
+                required:
+                - baseDomain
+                type: object
+              distributionVersion:
+                description: DistributionVersion describes the targeted OpenShift
+                  version
+                type: string
+              machineTemplate:
+                properties:
+                  deletion:
+                    default:
+                      nodeDeletionTimeoutSeconds: 10
+                    description: Deletion contains configuration options for Machine
+                      deletion.
+                    minProperties: 1
+                    properties:
+                      nodeDeletionTimeoutSeconds:
+                        description: |-
+                          nodeDeletionTimeoutSeconds defines how long the controller will attempt to delete the Node that the Machine
+                          hosts after the Machine is marked for deletion. A duration of 0 will retry deletion indefinitely.
+                          Defaults to 10 seconds.
+                        format: int32
+                        minimum: 0
+                        type: integer
+                      nodeDrainTimeoutSeconds:
+                        description: |-
+                          nodeDrainTimeoutSeconds is the total amount of time that the controller will spend on draining a node.
+                          The default value is 0, meaning that the node can be drained without any time limitations.
+                          NOTE: nodeDrainTimeoutSeconds is different from `kubectl drain --timeout`
+                        format: int32
+                        minimum: 0
+                        type: integer
+                      nodeVolumeDetachTimeoutSeconds:
+                        description: |-
+                          nodeVolumeDetachTimeoutSeconds is the total amount of time that the controller will spend on waiting for all volumes
+                          to be detached. The default value is 0, meaning that the volumes can be detached without any time limitations.
+                        format: int32
+                        minimum: 0
+                        type: integer
+                    type: object
+                  infrastructureRef:
+                    description: |-
+                      InfrastructureRef is a required reference to a custom resource
+                      offered by an infrastructure provider.
+                    properties:
+                      apiGroup:
+                        description: |-
+                          apiGroup is the group of the resource being referenced.
+                          apiGroup must be fully qualified domain name.
+                          The corresponding version for this reference will be looked up from the contract
+                          labels of the corresponding CRD of the resource being referenced.
+                        maxLength: 253
+                        minLength: 1
+                        pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                        type: string
+                      kind:
+                        description: |-
+                          kind of the resource being referenced.
+                          kind must consist of alphanumeric characters or '-', start with an alphabetic character, and end with an alphanumeric character.
+                        maxLength: 63
+                        minLength: 1
+                        pattern: ^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$
+                        type: string
+                      name:
+                        description: |-
+                          name of the resource being referenced.
+                          name must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character.
+                        maxLength: 253
+                        minLength: 1
+                        pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                        type: string
+                    required:
+                    - apiGroup
+                    - kind
+                    - name
+                    type: object
+                  metadata:
+                    description: |-
+                      Standard object's metadata.
+                      More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
+                    minProperties: 1
+                    properties:
+                      annotations:
+                        additionalProperties:
+                          type: string
+                        description: |-
+                          annotations is an unstructured key value map stored with a resource that may be
+                          set by external tools to store and retrieve arbitrary metadata. They are not
+                          queryable and should be preserved when modifying objects.
+                          More info: http://kubernetes.io/docs/user-guide/annotations
+                        type: object
+                      labels:
+                        additionalProperties:
+                          type: string
+                        description: |-
+                          labels is a map of string keys and values that can be used to organize and categorize
+                          (scope and select) objects. May match selectors of replication controllers
+                          and services.
+                          More info: http://kubernetes.io/docs/user-guide/labels
+                        type: object
+                    type: object
+                required:
+                - infrastructureRef
+                type: object
+              openshiftAssistedConfigSpec:
+                description: OpenshiftAssistedConfigSpec defines the desired state
+                  of OpenshiftAssistedConfig
+                properties:
+                  additionalNTPSources:
+                    description: |-
+                      AdditionalNTPSources is a list of NTP sources (hostname or IP) to be added to all cluster
+                      hosts. They are added to any NTP sources that were configured through other means.
+                    items:
+                      type: string
+                    type: array
+                  additionalTrustBundle:
+                    description: |-
+                      PEM-encoded X.509 certificate bundle. Hosts discovered by this
+                      infra-env will trust the certificates in this bundle. Clusters formed
+                      from the hosts discovered by this infra-env will also trust the
+                      certificates in this bundle.
+                    type: string
+                  cpuArchitecture:
+                    default: x86_64
+                    description: CpuArchitecture specifies the target CPU architecture.
+                      Default is x86_64
+                    type: string
+                  kernelArguments:
+                    description: |-
+                      KernelArguments is the additional kernel arguments to be passed during boot time of the discovery image.
+                      Applicable for both iPXE, and ISO streaming from Image Service.
+                    items:
+                      properties:
+                        operation:
+                          description: Operation is the operation to apply on the
+                            kernel argument.
+                          enum:
+                          - append
+                          - replace
+                          - delete
+                          type: string
+                        value:
+                          description: |-
+                            Value can have the form <parameter> or <parameter>=<value>. The following examples should be supported:
+                            rd.net.timeout.carrier=60
+                            isolcpus=1,2,10-20,100-2000:2/25
+                            quiet
+                          pattern: ^(?:(?:[^ \t\n\r"]+)|(?:"[^"]*"))+$
+                          type: string
+                      type: object
+                    type: array
+                  nmStateConfigLabelSelector:
+                    description: |-
+                      NmstateConfigLabelSelector associates NMStateConfigs for hosts that are considered part
+                      of this installation environment.
+                    properties:
+                      matchExpressions:
+                        description: matchExpressions is a list of label selector
+                          requirements. The requirements are ANDed.
+                        items:
+                          description: |-
+                            A label selector requirement is a selector that contains values, a key, and an operator that
+                            relates the key and values.
+                          properties:
+                            key:
+                              description: key is the label key that the selector
+                                applies to.
+                              type: string
+                            operator:
+                              description: |-
+                                operator represents a key's relationship to a set of values.
+                                Valid operators are In, NotIn, Exists and DoesNotExist.
+                              type: string
+                            values:
+                              description: |-
+                                values is an array of string values. If the operator is In or NotIn,
+                                the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                                the values array must be empty. This array is replaced during a strategic
+                                merge patch.
+                              items:
+                                type: string
+                              type: array
+                              x-kubernetes-list-type: atomic
+                          required:
+                          - key
+                          - operator
+                          type: object
+                        type: array
+                        x-kubernetes-list-type: atomic
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: |-
+                          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                          map is equivalent to an element of matchExpressions, whose key field is "key", the
+                          operator is "In", and the values array contains only "value". The requirements are ANDed.
+                        type: object
+                    type: object
+                    x-kubernetes-map-type: atomic
+                  nodeRegistration:
+                    description: NodeRegistrationOption holds fields related to registering
+                      nodes to the cluster
+                    properties:
+                      kubeletExtraLabels:
+                        description: KubeletExtraLabels passes extra labels to kubelet.
+                        items:
+                          type: string
+                        type: array
+                      name:
+                        description: Defaults to the hostname of the node if not provided.
+                        type: string
+                    type: object
+                  osImageVersion:
+                    description: |-
+                      OSImageVersion is the version of OS image to use when generating the InfraEnv.
+                      The version should refer to an OSImage specified in the AgentServiceConfig
+                      (i.e. OSImageVersion should equal to an OpenshiftVersion in OSImages list).
+                      Note: OSImageVersion can't be specified along with ClusterRef.
+                    type: string
+                  proxy:
+                    description: |-
+                      Proxy defines the proxy settings for agents and clusters that use the InfraEnv. If
+                      unset, the agents and clusters will not be configured to use a proxy.
+                    properties:
+                      httpProxy:
+                        description: HTTPProxy is the URL of the proxy for HTTP requests.
+                        type: string
+                      httpsProxy:
+                        description: HTTPSProxy is the URL of the proxy for HTTPS
+                          requests.
+                        type: string
+                      noProxy:
+                        description: |-
+                          NoProxy is a comma-separated list of domains and CIDRs for which the proxy should not be
+                          used.
+                        type: string
+                    type: object
+                  pullSecretRef:
+                    description: PullSecretRef is the reference to the secret to use
+                      when pulling images.
+                    properties:
+                      name:
+                        default: ""
+                        description: |-
+                          Name of the referent.
+                          This field is effectively required, but due to backwards compatibility is
+                          allowed to be empty. Instances of this type with an empty value here are
+                          almost certainly wrong.
+                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                        type: string
+                    type: object
+                    x-kubernetes-map-type: atomic
+                  sshAuthorizedKey:
+                    description: SSHAuthorizedKey is a SSH public keys that will be
+                      added to all agents for use in debugging.
+                    type: string
+                type: object
+              replicas:
+                format: int32
+                type: integer
+            required:
+            - distributionVersion
+            - machineTemplate
+            type: object
+          status:
+            properties:
+              availableReplicas:
+                description: availableReplicas is the number of available replicas
+                  targeted by this OpenshiftAssistedControlPlane. A machine is considered
+                  available when Machine's Available condition is true.
+                format: int32
+                type: integer
+              conditions:
+                description: |-
+                  conditions represents the observations of a OpenshiftAssistedControlPlane's current state.
+                  Known condition types are Available, CertificatesAvailable, EtcdClusterAvailable, MachinesReady, MachinesUpToDate,
+                  ScalingUp, ScalingDown, Remediating, Deleting, Paused.
+                items:
+                  description: Condition contains details for one aspect of the current
+                    state of this API Resource.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        lastTransitionTime is the last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        message is a human readable message indicating details about the transition.
+                        This may be an empty string.
+                      maxLength: 32768
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        observedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      minimum: 0
+                      type: integer
+                    reason:
+                      description: |-
+                        reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                        Producers of specific condition types may define expected values and meanings for this field,
+                        and whether the values are considered a guaranteed API.
+                        The value should be a CamelCase string.
+                        This field may not be empty.
+                      maxLength: 1024
+                      minLength: 1
+                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                      type: string
+                    status:
+                      description: status of the condition, one of True, False, Unknown.
+                      enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                      type: string
+                    type:
+                      description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                maxItems: 32
+                type: array
+                x-kubernetes-list-map-keys:
+                - type
+                x-kubernetes-list-type: map
+              distributionVersion:
+                description: |-
+                  DistributionVersion represents the current OpenShift version installed on the
+                  control plane machines in the cluster.
+                type: string
+              initialization:
+                description: |-
+                  initialization provides observations of the OpenshiftAssistedControlPlane initialization process.
+                  NOTE: Fields in this struct are part of the Cluster API contract and are used to orchestrate initial Machine provisioning.
+                minProperties: 1
+                properties:
+                  controlPlaneInitialized:
+                    description: |-
+                      controlPlaneInitialized is true when the OpenshiftAssistedControlPlane provider reports that the Kubernetes control plane is initialized;
+                      A control plane is considered initialized when it can accept requests, no matter if this happens before
+                      the control plane is fully provisioned or not.
+                      NOTE: this field is part of the Cluster API contract, and it is used to orchestrate initial Machine provisioning.
+                    type: boolean
+                type: object
+              observedGeneration:
+                description: observedGeneration is the latest generation observed
+                  by the controller.
+                format: int64
+                minimum: 1
+                type: integer
+              readyReplicas:
+                description: readyReplicas is the number of ready replicas for this
+                  OpenshiftAssistedControlPlane. A machine is considered ready when
+                  Machine's Ready condition is true.
+                format: int32
+                type: integer
+              replicas:
+                description: |-
+                  replicas is the total number of non-terminated machines targeted by this control plane
+                  (their labels match the selector).
+                format: int32
+                type: integer
+              selector:
+                description: |-
+                  selector is the label selector in string format to avoid introspection
+                  by clients, and is used to provide the CRD-based integration for the
+                  scale subresource and additional integrations for things like kubectl
+                  describe.. The string will be in the same format as the query-param syntax.
+                  More info about label selectors: http://kubernetes.io/docs/user-guide/labels#label-selectors
+                maxLength: 4096
+                minLength: 1
+                type: string
+              upToDateReplicas:
+                description: upToDateReplicas is the number of up-to-date replicas
+                  targeted by this OpenshiftAssistedControlPlane. A machine is considered
+                  up-to-date when Machine's UpToDate condition is true.
+                format: int32
+                type: integer
+              version:
+                description: |-
+                  version represents the minimum Kubernetes version for the control plane machines
+                  in the cluster.
+                maxLength: 256
+                minLength: 1
                 type: string
             type: object
         type: object

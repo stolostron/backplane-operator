@@ -139,8 +139,7 @@ rules:
 - apiGroups:
   - infrastructure.cluster.x-k8s.io
   resources:
-  - metal3machines
-  - metal3machinetemplates
+  - '*'
   verbs:
   - create
   - delete
