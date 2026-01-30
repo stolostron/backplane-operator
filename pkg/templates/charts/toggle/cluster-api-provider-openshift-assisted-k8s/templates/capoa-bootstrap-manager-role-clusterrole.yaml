@@ -83,18 +83,3 @@ rules:
   verbs:
   - list
   - watch
-- apiGroups:
-  - infrastructure.cluster.x-k8s.io
-  resources:
-  - metal3machines
-  - metal3machinetemplates
-  verbs:
-  - get
-  - update
-- apiGroups:
-  - metal3.io
-  resources:
-  - baremetalhosts
-  verbs:
-  - list
-  - watch
