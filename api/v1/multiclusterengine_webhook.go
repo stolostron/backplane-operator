@@ -449,7 +449,8 @@ func (r *MultiClusterEngine) validateComponentExclusivity() error {
 	// Reject if both are enabled
 	if hypershiftEnabled && clusterAPIEnabled {
 		return fmt.Errorf("%w: HyperShift components (hypershift, hypershift-local-hosting) "+
-			"and Cluster API components (cluster-api, cluster-api-provider-aws, cluster-api-provider-metal, cluster-api-provider-oa) "+
+			"and Cluster API components (cluster-api, cluster-api-provider-aws, "+
+			"cluster-api-provider-azure-preview, cluster-api-provider-metal3, cluster-api-provider-oa) "+
 			"cannot be enabled simultaneously. Please enable only one set of components",
 			ErrComponentExclusivity)
 	}
