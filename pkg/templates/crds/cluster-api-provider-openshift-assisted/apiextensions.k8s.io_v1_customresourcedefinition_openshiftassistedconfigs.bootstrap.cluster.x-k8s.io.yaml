@@ -2,8 +2,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: capoa-bootstrap-system/capoa-bootstrap-cert
     controller-gen.kubebuilder.io/version: v0.17.2
+    service.beta.openshift.io/inject-cabundle: "true"
   labels:
     cluster.x-k8s.io/v1beta1: v1alpha1
     cluster.x-k8s.io/v1beta2: v1alpha2
@@ -161,7 +161,10 @@ spec:
                       type: string
                     type: array
                   name:
-                    description: Defaults to the hostname of the node if not provided.
+                    description: |-
+                      Name specifies an environment variable reference (e.g., "$METADATA_HOSTNAME") from which
+                      to read the node name. The environment variable must be available in /etc/metadata_env
+                      (populated by configdrive). The value will be resolved safely and used to set the hostname.
                     type: string
                 type: object
               osImageVersion:
@@ -476,7 +479,10 @@ spec:
                       type: string
                     type: array
                   name:
-                    description: Defaults to the hostname of the node if not provided.
+                    description: |-
+                      Name specifies an environment variable reference (e.g., "$METADATA_HOSTNAME") from which
+                      to read the node name. The environment variable must be available in /etc/metadata_env
+                      (populated by configdrive). The value will be resolved safely and used to set the hostname.
                     type: string
                 type: object
               osImageVersion:
