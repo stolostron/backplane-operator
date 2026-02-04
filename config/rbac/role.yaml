@@ -1390,6 +1390,15 @@ rules:
 - apiGroups:
   - config.openshift.io
   resources:
+  - apiservers
+  - proxies
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - config.openshift.io
+  resources:
   - clusteroperators
   - clusterversions
   - dnses
@@ -1421,14 +1430,6 @@ rules:
   - config.openshift.io
   resources:
   - ingresses
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - config.openshift.io
-  resources:
-  - proxies
   verbs:
   - get
   - list
