@@ -225,6 +225,7 @@ rules:
 - apiGroups:
   - config.openshift.io
   resources:
+  - apiservers
   - proxies
   verbs:
   - get
