@@ -59,7 +59,7 @@ spec:
         - name: ASSISTED_CA_BUNDLE_NAME
           value: assisted-installer-ca
         - name: ASSISTED_CA_BUNDLE_NAMESPACE
-          value: '{{ .Values.global.namespace }}'
+          value: multicluster-engine
         - name: ASSISTED_CA_BUNDLE_RESOURCE
           value: secret
         - name: ASSISTED_CA_BUNDLE_KEY

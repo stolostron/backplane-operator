@@ -4,7 +4,7 @@ metadata:
   annotations:
     service.beta.openshift.io/serving-cert-secret-name: capoa-controlplane-webhook-cert-secret
   name: capoa-controlplane-webhook-service
-  namespace: '{{ default "capoa-controlplane-system" .Values.global.namespace }}'
+  namespace: '{{ default "multicluster-engine" .Values.global.namespace }}'
 spec:
   ports:
   - port: 443

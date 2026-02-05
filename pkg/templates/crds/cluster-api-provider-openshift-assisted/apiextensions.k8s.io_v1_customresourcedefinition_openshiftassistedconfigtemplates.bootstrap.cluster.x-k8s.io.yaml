@@ -15,7 +15,7 @@ spec:
       clientConfig:
         service:
           name: capoa-bootstrap-webhook-service
-          namespace: capoa-bootstrap-system
+          namespace: multicluster-engine
           path: /convert
       conversionReviewVersions:
       - v1
@@ -420,6 +420,12 @@ spec:
                               Name specifies an environment variable reference (e.g., "$METADATA_HOSTNAME") from which
                               to read the node name. The environment variable must be available in /etc/metadata_env
                               (populated by configdrive). The value will be resolved safely and used to set the hostname.
+                            type: string
+                          providerID:
+                            description: |-
+                              ProviderID specifies the provider ID to pass to kubelet via KUBELET_PROVIDERID environment
+                              variable in /etc/kubernetes/kubelet-env. This can be a static value or an environment
+                              variable reference (e.g., 'openstack://"$METADATA_UUID"') that will be resolved from /etc/metadata_env.
                             type: string
                         type: object
                       osImageVersion:
