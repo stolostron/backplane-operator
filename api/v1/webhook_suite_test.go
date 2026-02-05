@@ -34,6 +34,8 @@ import (
 
 	//+kubebuilder:scaffold:imports
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/discovery"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
@@ -132,6 +134,29 @@ var _ = BeforeSuite(func() {
 		conn.Close()
 		return nil
 	}).Should(Succeed())
+
+	// Ensure CRDs are discoverable before running tests to prevent race conditions
+	// This is critical for webhook validation that checks for resources via discovery
+	By("waiting for CRDs to be discoverable")
+	c, err := discovery.NewDiscoveryClientForConfig(cfg)
+	Expect(err).NotTo(HaveOccurred())
+
+	Eventually(func() error {
+		// Check if the API groups used in webhook validation are available
+		testGVs := []schema.GroupVersion{
+			{Group: "agent-install.openshift.io", Version: "v1beta1"},
+			{Group: "hive.openshift.io", Version: "v1"},
+			{Group: "discovery.open-cluster-management.io", Version: "v1"},
+		}
+
+		for _, gv := range testGVs {
+			err := discovery.ServerSupportsVersion(c, gv)
+			if err != nil {
+				return fmt.Errorf("API group %s/%s not ready: %w", gv.Group, gv.Version, err)
+			}
+		}
+		return nil
+	}, 10*time.Second, 100*time.Millisecond).Should(Succeed())
 
 })
 
