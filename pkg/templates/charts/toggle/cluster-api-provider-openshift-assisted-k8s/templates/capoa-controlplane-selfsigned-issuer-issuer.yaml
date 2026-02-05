@@ -2,6 +2,6 @@ apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
   name: capoa-controlplane-selfsigned-issuer
-  namespace: '{{ .Values.global.namespace }}'
+  namespace: '{{ default "multicluster-engine" .Values.global.namespace }}'
 spec:
   selfSigned: {}
