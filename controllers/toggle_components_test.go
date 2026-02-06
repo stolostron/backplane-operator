@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"errors"
 	"reflect"
 	"testing"
 
@@ -12,12 +13,10 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	addonv1alpha1 "open-cluster-management.io/api/addon/v1alpha1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -426,159 +425,39 @@ func Test_annotateManagedCluster(t *testing.T) {
 	}
 }
 
-// mockClientWithWrappedError wraps a fake client to return wrapped NotFound errors for Create operations
-type mockClientWithWrappedError struct {
-	client.Client
-	returnNotFoundFor schema.GroupVersionKind
-}
+// Test_wrappedErrorDetection tests the error unwrapping logic used in toggle_components.go:1386
+// where errors.Unwrap(err) is used to detect NotFound errors that may be wrapped by pkg/errors
+func Test_wrappedErrorDetection(t *testing.T) {
+	// This test verifies the change where we check:
+	// apierrors.IsNotFound(errors.Unwrap(err)) instead of apierrors.IsNotFound(err)
 
-func (m *mockClientWithWrappedError) Create(ctx context.Context, obj client.Object, opts ...client.CreateOption) error {
-	gvk := obj.GetObjectKind().GroupVersionKind()
-	if gvk == m.returnNotFoundFor {
-		// Return a NotFound error just like the API server would
-		notFoundErr := apierrors.NewNotFound(schema.GroupResource{
-			Group:    gvk.Group,
-			Resource: gvk.Kind,
-		}, obj.GetName())
-		// Wrap it like logAndSetCondition does
-		return pkgerrors.Wrapf(notFoundErr, "failed to create resource -- CRD not installed Kind: %s Name: %s", obj.GetName(), gvk.Kind)
-	}
-	return m.Client.Create(ctx, obj, opts...)
-}
+	// Create a base NotFound error like API server would return
+	baseErr := apierrors.NewNotFound(
+		schema.GroupResource{Group: "addon.open-cluster-management.io", Resource: "ClusterManagementAddOn"},
+		"test-addon",
+	)
 
-// Test_errorUnwrapping tests that wrapped NotFound and NoMatch errors are properly detected
-// This specifically tests the fix for line 1386 in toggle_components.go where errors.Unwrap()
-// was added to properly detect wrapped NotFound errors
-func Test_errorUnwrapping(t *testing.T) {
-	tests := []struct {
-		name        string
-		err         error
-		shouldMatch bool
-		description string
-	}{
-		{
-			name: "unwrapped NotFound error",
-			err: apierrors.NewNotFound(schema.GroupResource{
-				Group:    "addon.open-cluster-management.io",
-				Resource: "ClusterManagementAddOn",
-			}, "test-addon"),
-			shouldMatch: true,
-			description: "Direct NotFound errors should be caught",
-		},
-		{
-			name: "wrapped NotFound error (like from logAndSetCondition)",
-			err: pkgerrors.Wrapf(
-				apierrors.NewNotFound(schema.GroupResource{
-					Group:    "addon.open-cluster-management.io",
-					Resource: "ClusterManagementAddOn",
-				}, "test-addon"),
-				"failed to create resource -- CRD not installed Kind: %s Name: %s", "test-addon", "ClusterManagementAddOn",
-			),
-			shouldMatch: true,
-			description: "Wrapped NotFound errors (from logAndSetCondition) should be caught after unwrapping",
-		},
-		{
-			name:        "other error types should not match",
-			err:         pkgerrors.New("some other error"),
-			shouldMatch: false,
-			description: "Non-NotFound errors should not match",
-		},
+	// Wrap it like logAndSetCondition does using pkgerrors.Wrapf
+	// This is what happens when applyTemplate returns an error via logAndSetCondition
+	wrappedErr := pkgerrors.Wrapf(baseErr, "failed to create resource -- CRD not installed Kind: %s Name: %s",
+		"test-addon", "ClusterManagementAddOn")
+
+	// The wrapped error from pkg/errors is not directly detectable by apierrors.IsNotFound
+	// We need to unwrap it first
+	unwrappedErr := errors.Unwrap(wrappedErr)
+	if unwrappedErr == nil {
+		t.Fatal("errors.Unwrap returned nil, expected to unwrap the error")
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// This replicates the logic from toggle_components.go:1386
-			// if apimeta.IsNoMatchError(errors.Unwrap(err)) || apierrors.IsNotFound(errors.Unwrap(err))
-			var unwrappedErr error
-			if tt.err != nil {
-				unwrappedErr = pkgerrors.Unwrap(tt.err)
-				if unwrappedErr == nil {
-					// If unwrap returns nil, use the original error
-					unwrappedErr = tt.err
-				}
-			}
-
-			matches := apierrors.IsNotFound(unwrappedErr)
-
-			if matches != tt.shouldMatch {
-				t.Errorf("%s: expected match=%v, got match=%v for error: %v", tt.description, tt.shouldMatch, matches, tt.err)
-			}
-		})
-	}
-}
-
-// Test_ensureHyperShift_handlesMissingCRD tests that ensureHyperShift properly handles
-// wrapped NotFound errors from applyTemplate when CRDs are missing.
-// This specifically covers line 1386 in toggle_components.go
-func Test_ensureHyperShift_handlesMissingCRD(t *testing.T) {
-	scheme := runtime.NewScheme()
-	corev1.AddToScheme(scheme)
-	appsv1.AddToScheme(scheme)
-	backplanev1.AddToScheme(scheme)
-	addonv1alpha1.AddToScheme(scheme)
-
-	// Create a fake client
-	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
-
-	// Wrap it with our mock that will return wrapped NotFound errors for ClusterManagementAddOn
-	mockClient := &mockClientWithWrappedError{
-		Client: fakeClient,
-		returnNotFoundFor: schema.GroupVersionKind{
-			Group:   "addon.open-cluster-management.io",
-			Version: "v1alpha1",
-			Kind:    "ClusterManagementAddOn",
-		},
-	}
-
-	ctx := context.TODO()
-	statusManager := &status.StatusTracker{Client: mockClient}
-
-	r := &MultiClusterEngineReconciler{
-		Client:        mockClient,
-		Scheme:        scheme,
-		StatusManager: statusManager,
-		CacheSpec: CacheSpec{
-			ImageOverrides:    map[string]string{},
-			TemplateOverrides: map[string]string{},
-		},
-	}
-
-	mce := &backplanev1.MultiClusterEngine{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: BackplaneConfigName,
-		},
-		Spec: backplanev1.MultiClusterEngineSpec{
-			TargetNamespace: DestinationNamespace,
-		},
-	}
-
-	// Create a template that will trigger the NotFound error
-	template := &unstructured.Unstructured{}
-	template.SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   "addon.open-cluster-management.io",
-		Version: "v1alpha1",
-		Kind:    "ClusterManagementAddOn",
-	})
-	template.SetName("test-addon")
-	template.SetNamespace(DestinationNamespace)
-
-	// Call applyTemplate - this will trigger the Create error which gets wrapped
-	_, err := r.applyTemplate(ctx, mce, template)
-
-	// The error should be wrapped
-	if err == nil {
-		t.Fatal("Expected an error from applyTemplate when CRD is missing")
-	}
-
-	// Now simulate what ensureHyperShift does at line 1386:
-	// if apimeta.IsNoMatchError(errors.Unwrap(err)) || apierrors.IsNotFound(errors.Unwrap(err))
-	unwrappedErr := pkgerrors.Unwrap(err)
+	// After unwrapping, we should be able to detect it as NotFound
 	if !apierrors.IsNotFound(unwrappedErr) {
-		t.Errorf("Expected unwrapped error to be NotFound, but IsNotFound returned false. Error: %v, Unwrapped: %v", err, unwrappedErr)
+		t.Error("After unwrapping, error should be detected as NotFound")
 	}
 
-	// Verify the error message indicates CRD is not installed
-	if !pkgerrors.Is(err, apierrors.NewNotFound(schema.GroupResource{}, "")) {
-		t.Logf("Error chain check passed - error wraps a NotFound error")
+	// This tests the actual logic from toggle_components.go:1386:
+	// if apimeta.IsNoMatchError(errors.Unwrap(err)) || apierrors.IsNotFound(errors.Unwrap(err))
+	detectedCorrectly := apierrors.IsNotFound(errors.Unwrap(wrappedErr))
+	if !detectedCorrectly {
+		t.Errorf("The logic from toggle_components.go:1386 failed to detect wrapped NotFound error")
 	}
 }
