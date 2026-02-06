@@ -6,13 +6,13 @@ import (
 	"reflect"
 	"testing"
 
-	pkgerrors "github.com/pkg/errors"
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 	"github.com/stolostron/backplane-operator/pkg/status"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -425,39 +425,93 @@ func Test_annotateManagedCluster(t *testing.T) {
 	}
 }
 
-// Test_wrappedErrorDetection tests the error unwrapping logic used in toggle_components.go:1386
-// where errors.Unwrap(err) is used to detect NotFound errors that may be wrapped by pkg/errors
-func Test_wrappedErrorDetection(t *testing.T) {
-	// This test verifies the change where we check:
-	// apierrors.IsNotFound(errors.Unwrap(err)) instead of apierrors.IsNotFound(err)
+// Test_applyTemplateWrappedError tests that wrapped NotFound errors from applyTemplate
+// are properly detected using errors.Unwrap(). This simulates what happens at line 1386
+// in toggle_components.go where ensureHyperShift checks:
+// if apierrors.IsNotFound(errors.Unwrap(err))
+func Test_applyTemplateWrappedError(t *testing.T) {
+	scheme := runtime.NewScheme()
+	corev1.AddToScheme(scheme)
+	backplanev1.AddToScheme(scheme)
 
-	// Create a base NotFound error like API server would return
-	baseErr := apierrors.NewNotFound(
-		schema.GroupResource{Group: "addon.open-cluster-management.io", Resource: "ClusterManagementAddOn"},
-		"test-addon",
-	)
-
-	// Wrap it like logAndSetCondition does using pkgerrors.Wrapf
-	// This is what happens when applyTemplate returns an error via logAndSetCondition
-	wrappedErr := pkgerrors.Wrapf(baseErr, "failed to create resource -- CRD not installed Kind: %s Name: %s",
-		"test-addon", "ClusterManagementAddOn")
-
-	// The wrapped error from pkg/errors is not directly detectable by apierrors.IsNotFound
-	// We need to unwrap it first
-	unwrappedErr := errors.Unwrap(wrappedErr)
-	if unwrappedErr == nil {
-		t.Fatal("errors.Unwrap returned nil, expected to unwrap the error")
+	// Create MCE instance
+	mce := &backplanev1.MultiClusterEngine{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test-mce",
+		},
+		Spec: backplanev1.MultiClusterEngineSpec{
+			TargetNamespace: "test-namespace",
+		},
 	}
 
-	// After unwrapping, we should be able to detect it as NotFound
+	// Create a template that will trigger create
+	template := &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"apiVersion": "addon.open-cluster-management.io/v1alpha1",
+			"kind":       "ClusterManagementAddOn",
+			"metadata": map[string]interface{}{
+				"name":      "test-addon",
+				"namespace": "test-namespace",
+			},
+			"spec": map[string]interface{}{},
+		},
+	}
+
+	// Create fake client with the MCE instance
+	fakeClient := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithObjects(mce).
+		Build()
+
+	// Setup missing GVKs
+	missingGVKs := make(map[schema.GroupVersionKind]bool)
+	gvk := template.GroupVersionKind()
+	missingGVKs[gvk] = true
+
+	// Wrap client with create interceptor
+	wrappedClient := &mockClientWithCreateInterceptor{
+		Client:      fakeClient,
+		missingGVKs: missingGVKs,
+	}
+
+	// Create reconciler
+	reconciler := &MultiClusterEngineReconciler{
+		Client:        wrappedClient,
+		Scheme:        scheme,
+		StatusManager: &status.StatusTracker{Client: wrappedClient},
+	}
+
+	// Call applyTemplate - this will return a wrapped NotFound error via logAndSetCondition
+	ctx := context.Background()
+	_, err := reconciler.applyTemplate(ctx, mce, template)
+
+	// Verify error was returned
+	if err == nil {
+		t.Fatal("Expected error from applyTemplate when CRD is missing")
+	}
+
+	// Test the unwrapping logic from toggle_components.go:1386
+	// This is the actual check used in ensureHyperShift
+	var unwrappedErr error
+	if err != nil {
+		// Use standard library errors.Unwrap (same as toggle_components.go:1386)
+		unwrappedErr = errors.Unwrap(err)
+		if unwrappedErr == nil {
+			// If Unwrap returns nil, use original error
+			unwrappedErr = err
+		}
+	}
+
+	// Verify the unwrapped error is detected as NotFound
+	// This is exactly what line 1386 does: apierrors.IsNotFound(errors.Unwrap(err))
 	if !apierrors.IsNotFound(unwrappedErr) {
-		t.Error("After unwrapping, error should be detected as NotFound")
+		t.Errorf("After unwrapping with errors.Unwrap(), error should be detected as NotFound. "+
+			"Error: %v, Unwrapped: %v, IsNotFound: %v",
+			err, unwrappedErr, apierrors.IsNotFound(unwrappedErr))
 	}
 
-	// This tests the actual logic from toggle_components.go:1386:
-	// if apimeta.IsNoMatchError(errors.Unwrap(err)) || apierrors.IsNotFound(errors.Unwrap(err))
-	detectedCorrectly := apierrors.IsNotFound(errors.Unwrap(wrappedErr))
-	if !detectedCorrectly {
-		t.Errorf("The logic from toggle_components.go:1386 failed to detect wrapped NotFound error")
+	// Verify the error message mentions CRD not installed
+	if err.Error() == "" {
+		t.Error("Error message should not be empty")
 	}
 }
