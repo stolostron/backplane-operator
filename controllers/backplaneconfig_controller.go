@@ -1805,14 +1805,6 @@ func (r *MultiClusterEngineReconciler) applyTemplate(ctx context.Context,
 			Namespace: existing.GetNamespace()}, existing); err != nil {
 			// Template resource does not exist
 
-			// If CRD is not available, skip this resource
-			if apimeta.IsNoMatchError(err) {
-				log.Info("Skipping resource - CRD not installed",
-					"Kind", template.GetKind(), "Name", template.GetName(),
-					"APIVersion", template.GetAPIVersion())
-				return ctrl.Result{}, nil
-			}
-
 			if apierrors.IsNotFound(err) {
 				// Set owner reference.
 				// Don't set owner reference on hypershift-addon ManagedClusterAddOn. See ACM-2289
@@ -1824,8 +1816,12 @@ func (r *MultiClusterEngineReconciler) applyTemplate(ctx context.Context,
 				}
 
 				if err := r.Client.Create(ctx, template, &client.CreateOptions{}); err != nil {
+					// Check if the error is because the CRD doesn't exist
+					if apierrors.IsNotFound(err) {
+						return r.logAndSetCondition(err, "failed to create resource -- CRD not installed", template, backplaneConfig)
+					}
 					if !apierrors.IsAlreadyExists(err) {
-						return r.logAndSetCondition(err, "failed to create resource", template, backplaneConfig)
+						return r.logAndSetCondition(err, "failed to create resource -- Template already exists", template, backplaneConfig)
 					}
 					// If already exists, that's fine - another reconcile may have created it
 					log.V(1).Info("Resource already exists", "Kind", template.GetKind(), "Name", template.GetName())
