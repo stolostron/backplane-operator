@@ -14,7 +14,7 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    createdAt: "2026-01-16T21:03:56Z"
+    createdAt: "2026-02-05T19:18:08Z"
     operators.operatorframework.io/builder: operator-sdk-v1.41.1
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
   name: multicluster-engine.v0.0.1
@@ -1099,6 +1099,13 @@ spec:
           - list
           - watch
         - apiGroups:
+          - clusterview.open-cluster-management.io
+          resources:
+          - userpermissions
+          verbs:
+          - get
+          - list
+        - apiGroups:
           - compute.azure.com
           resources:
           - diskaccesses
@@ -1864,6 +1871,7 @@ spec:
         - apiGroups:
           - infrastructure.cluster.x-k8s.io
           resources:
+          - '*'
           - aroclusters
           - aromachinepools
           - awsmachines
@@ -1917,6 +1925,7 @@ spec:
           - aromachinepools/status
           - awsclusters/status
           - awsfargateprofiles/status
+          - awsmachinetemplates/status
           - azureasomanagedclusters/status
           - azureasomanagedcontrolplanes/status
           - azureasomanagedmachinepools/status
