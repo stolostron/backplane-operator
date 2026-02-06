@@ -4,6 +4,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
@@ -163,3 +164,149 @@ func TestApplyTemplate_MissingCRD(t *testing.T) {
 		})
 	}
 }
+
+// TestApplyTemplate_AlreadyExists tests the race condition where Get returns NotFound
+// but Create returns AlreadyExists (another reconcile created it). This should be handled
+// gracefully without returning an error. This covers line 1823-1827 in backplaneconfig_controller.go
+func TestApplyTemplate_AlreadyExists(t *testing.T) {
+	s := scheme.Scheme
+	backplanev1.AddToScheme(s)
+
+	mce := &backplanev1.MultiClusterEngine{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test-mce",
+		},
+		Spec: backplanev1.MultiClusterEngineSpec{
+			TargetNamespace: "test-namespace",
+		},
+	}
+
+	template := &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"apiVersion": "v1",
+			"kind":       "ConfigMap",
+			"metadata": map[string]interface{}{
+				"name":      "race-configmap",
+				"namespace": "test-namespace",
+			},
+			"data": map[string]interface{}{
+				"key": "value",
+			},
+		},
+	}
+
+	fakeClient := fake.NewClientBuilder().
+		WithScheme(s).
+		WithObjects(mce).
+		Build()
+
+	// Create a mock client that simulates a race: Get returns NotFound, Create returns AlreadyExists
+	mockClient := &mockClientAlreadyExists{
+		Client: fakeClient,
+	}
+
+	reconciler := &MultiClusterEngineReconciler{
+		Client:        mockClient,
+		Scheme:        s,
+		StatusManager: &status.StatusTracker{Client: mockClient},
+	}
+
+	ctx := context.Background()
+	result, err := reconciler.applyTemplate(ctx, mce, template)
+
+	// Should handle AlreadyExists gracefully (line 1825-1827)
+	if err != nil {
+		t.Errorf("Expected no error when resource already exists, got: %v", err)
+	}
+
+	// Verify result is not requeuing
+	if result.Requeue || result.RequeueAfter > 0 {
+		t.Errorf("Expected no requeue, but got result: %v", result)
+	}
+}
+
+// mockClientAlreadyExists simulates a race condition: Get returns NotFound, Create returns AlreadyExists
+type mockClientAlreadyExists struct {
+	client.Client
+}
+
+func (m *mockClientAlreadyExists) Get(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+	// Simulate resource not found
+	return apierrors.NewNotFound(schema.GroupResource{Resource: "ConfigMap"}, key.Name)
+}
+
+func (m *mockClientAlreadyExists) Create(ctx context.Context, obj client.Object, opts ...client.CreateOption) error {
+	// Simulate resource was created between Get and Create (race condition)
+	return apierrors.NewAlreadyExists(schema.GroupResource{Resource: obj.GetObjectKind().GroupVersionKind().Kind}, obj.GetName())
+}
+
+// Test applyTemplate_AlreadyExists_DifferentError tests that when Create returns an error
+// that is NOT NotFound and NOT AlreadyExists, it properly returns an error.
+// This helps ensure line 1824 is covered when the condition is false.
+func Test_applyTemplate_CreateOtherError(t *testing.T) {
+	s := scheme.Scheme
+	backplanev1.AddToScheme(s)
+
+	mce := &backplanev1.MultiClusterEngine{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test-mce",
+		},
+		Spec: backplanev1.MultiClusterEngineSpec{
+			TargetNamespace: "test-namespace",
+		},
+	}
+
+	template := &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"apiVersion": "v1",
+			"kind":       "ConfigMap",
+			"metadata": map[string]interface{}{
+				"name":      "test-configmap",
+				"namespace": "test-namespace",
+			},
+			"data": map[string]interface{}{
+				"key": "value",
+			},
+		},
+	}
+
+	fakeClient := fake.NewClientBuilder().
+		WithScheme(s).
+		WithObjects(mce).
+		Build()
+
+	// Create a mock client that returns a different error (not NotFound, not AlreadyExists)
+	mockClient := &mockClientReturningError{
+		Client: fakeClient,
+	}
+
+	reconciler := &MultiClusterEngineReconciler{
+		Client:        mockClient,
+		Scheme:        s,
+		StatusManager: &status.StatusTracker{Client: mockClient},
+	}
+
+	ctx := context.Background()
+	_, err := reconciler.applyTemplate(ctx, mce, template)
+
+	// Should return an error for other types of errors (line 1824)
+	if err == nil {
+		t.Error("Expected error for other create errors, got nil")
+	}
+}
+
+// mockClientReturningError returns a generic error on Create to test the else path at line 1824
+type mockClientReturningError struct {
+	client.Client
+}
+
+func (m *mockClientReturningError) Create(ctx context.Context, obj client.Object, opts ...client.CreateOption) error {
+	// Return a generic error that is NOT NotFound and NOT AlreadyExists
+	return apierrors.NewInternalError(fmt.Errorf("internal error"))
+}
+
+func (m *mockClientReturningError) Get(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+	// Return NotFound so Create gets called
+	return apierrors.NewNotFound(schema.GroupResource{}, key.Name)
+}
+// This covers line 1824 in backplaneconfig_controller.go
