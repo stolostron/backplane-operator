@@ -309,4 +309,5 @@ func (m *mockClientReturningError) Get(ctx context.Context, key client.ObjectKey
 	// Return NotFound so Create gets called
 	return apierrors.NewNotFound(schema.GroupResource{}, key.Name)
 }
+
 // This covers line 1824 in backplaneconfig_controller.go
