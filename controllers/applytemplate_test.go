@@ -56,11 +56,10 @@ func TestApplyTemplate_MissingCRD(t *testing.T) {
 		name        string
 		template    *unstructured.Unstructured
 		missingCRD  bool
-		expectSkip  bool
 		expectError bool
 	}{
 		{
-			name: "Should skip when CRD is missing",
+			name: "Should return error when CRD is missing",
 			template: &unstructured.Unstructured{
 				Object: map[string]interface{}{
 					"apiVersion": "addon.open-cluster-management.io/v1alpha1",
@@ -73,8 +72,7 @@ func TestApplyTemplate_MissingCRD(t *testing.T) {
 				},
 			},
 			missingCRD:  true,
-			expectSkip:  true,
-			expectError: false,
+			expectError: true,
 		},
 		{
 			name: "Should create when CRD exists and resource doesn't",
@@ -92,7 +90,6 @@ func TestApplyTemplate_MissingCRD(t *testing.T) {
 				},
 			},
 			missingCRD:  false,
-			expectSkip:  false,
 			expectError: false,
 		},
 	}
@@ -137,27 +134,25 @@ func TestApplyTemplate_MissingCRD(t *testing.T) {
 				t.Errorf("Expected no error but got: %v", err)
 			}
 
-			if tt.expectSkip {
-				// Verify the resource was NOT created
-				key := types.NamespacedName{
-					Name:      tt.template.GetName(),
-					Namespace: tt.template.GetNamespace(),
-				}
+			// Verify resource creation based on expectError
+			key := types.NamespacedName{
+				Name:      tt.template.GetName(),
+				Namespace: tt.template.GetNamespace(),
+			}
+
+			if tt.expectError {
+				// When error is expected, verify the resource was NOT created
 				checkObj := tt.template.DeepCopy()
-				err := fakeClient.Get(ctx, key, checkObj)
-				if !apierrors.IsNotFound(err) {
-					t.Errorf("Expected resource to not be created when CRD is missing, but got: %v", err)
+				getErr := fakeClient.Get(ctx, key, checkObj)
+				if !apierrors.IsNotFound(getErr) {
+					t.Errorf("Expected resource to not be created when CRD is missing, but got: %v", getErr)
 				}
-			} else if !tt.expectError {
-				// Verify the resource was created
-				key := types.NamespacedName{
-					Name:      tt.template.GetName(),
-					Namespace: tt.template.GetNamespace(),
-				}
+			} else {
+				// When no error is expected, verify the resource WAS created
 				checkObj := &corev1.ConfigMap{}
-				err := fakeClient.Get(ctx, key, checkObj)
-				if err != nil {
-					t.Errorf("Expected resource to be created but got error: %v", err)
+				getErr := fakeClient.Get(ctx, key, checkObj)
+				if getErr != nil {
+					t.Errorf("Expected resource to be created but got error: %v", getErr)
 				}
 			}
 
