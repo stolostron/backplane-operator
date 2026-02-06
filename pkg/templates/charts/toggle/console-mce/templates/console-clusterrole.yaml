@@ -307,3 +307,11 @@ rules:
   - get
   - list
   - watch
+
+- apiGroups:
+  - clusterview.open-cluster-management.io
+  verbs:
+    - get
+    - list
+  resources:
+    - userpermissions

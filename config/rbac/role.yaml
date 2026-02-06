@@ -1019,6 +1019,13 @@ rules:
   - list
   - watch
 - apiGroups:
+  - clusterview.open-cluster-management.io
+  resources:
+  - userpermissions
+  verbs:
+  - get
+  - list
+- apiGroups:
   - compute.azure.com
   resources:
   - diskaccesses
