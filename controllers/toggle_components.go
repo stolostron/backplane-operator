@@ -1383,7 +1383,7 @@ func (r *MultiClusterEngineReconciler) ensureHyperShift(ctx context.Context, mce
 		applyReleaseVersionAnnotation(template)
 		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
-			if apimeta.IsNoMatchError(errors.Unwrap(err)) || apierrors.IsNotFound(err) {
+			if apimeta.IsNoMatchError(errors.Unwrap(err)) || apierrors.IsNotFound(errors.Unwrap(err)) {
 				// addon CRD does not yet exist. Replace status.
 				log.Info("Couldn't apply template for hypershift due to missing CRD", "error is", err.Error())
 
