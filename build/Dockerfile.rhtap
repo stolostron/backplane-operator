@@ -34,7 +34,7 @@ LABEL org.label-schema.vendor="Red Hat" \
       io.k8s.description="Installer operator for Red Hat multicluster engine for Kubernetes" \
       com.redhat.component="multicluster-engine-operator-container" \
       io.openshift.tags="data,images" \
-      cpe="cpe:/a:redhat:multicluster_engine:2.11::el9"
+      cpe="cpe:/a:redhat:multicluster_engine:2.17::el9"
 
 WORKDIR /app
 COPY --from=builder /workspace/backplane-operator .
