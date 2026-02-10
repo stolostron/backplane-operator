@@ -59,116 +59,18 @@ spec:
           spec:
             description: AROMachinePoolSpec defines the desired state of AROMachinePool.
             properties:
-              additionalTags:
-                additionalProperties:
-                  type: string
-                description: AdditionalTags are user-defined tags to be added on the
-                  underlying EC2 instances associated with this machine pool.
-                type: object
-              autoRepair:
-                default: true
+              resources:
                 description: |-
-                  AutoRepair specifies whether health checks should be enabled for machines
-                  in the NodePool; default is true.
-                type: boolean
-              autoscaling:
-                description: |-
-                  Autoscaling specifies auto scaling behaviour for this MachinePool.
-                  required if Replicas is not configured
-                properties:
-                  maxReplicas:
-                    minimum: 1
-                    type: integer
-                  minReplicas:
-                    minimum: 1
-                    type: integer
-                type: object
-              labels:
-                additionalProperties:
-                  type: string
-                description: Labels specifies labels for the Kubernetes node objects
-                type: object
-              nodePoolName:
-                description: |-
-                  NodePoolName specifies the name of the nodepool in ARO.
-                  It must be a valid DNS-1035 label, so it must consist of lower case alphanumeric characters and have a maximum length of 15 characters.
-                maxLength: 15
-                pattern: ^[a-z]([-a-z0-9]*[a-z0-9])?$
-                type: string
-                x-kubernetes-validations:
-                - message: nodepoolName is immutable
-                  rule: self == oldSelf
-              platform:
-                description: AROPlatformProfileMachinePool represents the NodePool
-                  Azure platform configuration.
-                properties:
-                  availabilityZone:
-                    description: AvailabilityZone specifying the availability zone
-                      where instances of this machine pool should run.
-                    type: string
-                  diskSizeGiB:
-                    description: DiskSizeGiB sets the disk volume size for the machine
-                      pool, in Gib.
-                    format: int32
-                    type: integer
-                  diskStorageAccountType:
-                    description: |-
-                      DiskStorageAccountType represents supported Azure storage account types.
-                      Available values are Premium_LRS, StandardSSD_LRS and Standard_LRS.
-                    type: string
-                  subnet:
-                    description: Azure subnet id
-                    type: string
-                  subnetRef:
-                    description: SubnetRef is the name that is used to create the
-                      VirtualNetworksSubnet CR. The SubnetRef must be in the same
-                      namespace as the AROMachinePool and cannot be set with Subnet.
-                    type: string
-                  vmSize:
-                    description: VMSize sets the VM disk volume size to the node.
-                    type: string
-                type: object
-              providerIDList:
-                description: |-
-                  providerIDList are the identification IDs of machine instances provided by the provider.
-                  This field must match the provider IDs as seen on the node objects corresponding to a machine pool's machine instances.
+                  Resources are embedded ASO resources to be managed by this AROMachinePool.
+                  This allows you to define the HcpOpenShiftNodePool resource directly using ASO types.
+
+                  Required. Must include HcpOpenShiftClustersNodePool resource.
                 items:
-                  type: string
-                type: array
-              taints:
-                description: Taints specifies the taints to apply to the nodes of
-                  the machine pool
-                items:
-                  description: AROTaint represents a taint to be applied to a node.
-                  properties:
-                    effect:
-                      description: |-
-                        The effect of the taint on pods that do not tolerate the taint.
-                        Valid effects are NoSchedule, PreferNoSchedule and NoExecute.
-                      enum:
-                      - NoSchedule
-                      - PreferNoSchedule
-                      - NoExecute
-                      type: string
-                    key:
-                      description: The taint key to be applied to a node.
-                      type: string
-                    value:
-                      description: The taint value corresponding to the taint key.
-                      pattern: ^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?$
-                      type: string
-                  required:
-                  - effect
-                  - key
                   type: object
+                  x-kubernetes-preserve-unknown-fields: true
                 type: array
-              version:
-                description: |-
-                  Version specifies the OpenShift version of the nodes associated with this machinepool.
-                  AROMachinePool version is used if not set.
-                type: string
             required:
-            - nodePoolName
+            - resources
             type: object
           status:
             description: AROMachinePoolStatus defines the observed state of AROMachinePool.
@@ -313,6 +215,37 @@ spec:
                 description: Replicas is the most recently observed number of replicas.
                 format: int32
                 type: integer
+              resources:
+                description: |-
+                  Resources represents the status of ASO resources managed by this AROMachinePool.
+                  This is populated when using the Resources field in the spec.
+                items:
+                  description: ResourceStatus represents the status of a resource.
+                  properties:
+                    ready:
+                      type: boolean
+                    resource:
+                      description: StatusResource is a handle to a resource.
+                      properties:
+                        group:
+                          type: string
+                        kind:
+                          type: string
+                        name:
+                          type: string
+                        version:
+                          type: string
+                      required:
+                      - group
+                      - kind
+                      - name
+                      - version
+                      type: object
+                  required:
+                  - ready
+                  - resource
+                  type: object
+                type: array
               version:
                 description: ARO-HCP OpenShift version X.Y (without Z-stream), for
                   example "4.20".

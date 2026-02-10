@@ -59,23 +59,6 @@ spec:
           spec:
             description: AROControlPlaneSpec defines the desired state of AROControlPlane.
             properties:
-              additionalTags:
-                additionalProperties:
-                  type: string
-                description: AdditionalTags are user-defined tags to be added on the
-                  AWS resources associated with the control plane.
-                type: object
-              aroClusterName:
-                description: |-
-                  Cluster name must be a valid DNS-1035 label, so it must consist of lower case alphanumeric
-                  characters or '-', start with an alphabetic character, end with an alphanumeric character,
-                  and have a maximum length of 54 characters.
-                maxLength: 54
-                pattern: ^[a-z]([-a-z0-9]*[a-z0-9])?$
-                type: string
-                x-kubernetes-validations:
-                - message: aroClusterName is immutable
-                  rule: self == oldSelf
               azureEnvironment:
                 description: |-
                   AzureEnvironment is the name of the AzureCloud to be used.
@@ -96,278 +79,6 @@ spec:
 
                   [ASO docs]: https://azure.github.io/azure-service-operator/guide/aso-controller-settings-options/
                 type: string
-              channelGroup:
-                default: stable
-                description: OpenShift version channel group; default is stable.
-                enum:
-                - stable
-                - candidate
-                - nightly
-                - fast
-                - eus
-                type: string
-              domainPrefix:
-                description: |-
-                  DomainPrefix is an optional prefix added to the cluster's domain name. It will be used
-                  when generating a sub-domain for the cluster on the openshiftapps domain. It must be a valid DNS-1035 label
-                  consisting of lower case alphanumeric characters or '-', start with an alphabetic character,
-                  end with an alphanumeric character, and have a maximum length of 15 characters.
-                maxLength: 15
-                pattern: ^[a-z]([-a-z0-9]*[a-z0-9])?$
-                type: string
-                x-kubernetes-validations:
-                - message: domainPrefix is immutable
-                  rule: self == oldSelf
-              enableExternalAuthProviders:
-                default: false
-                description: EnableExternalAuthProviders enables external authentication
-                  configuration for the cluster.
-                type: boolean
-                x-kubernetes-validations:
-                - message: enableExternalAuthProviders is immutable
-                  rule: self == oldSelf
-              externalAuthProviders:
-                description: |-
-                  ExternalAuthProviders are external OIDC identity providers that can issue tokens for this cluster.
-                  Can only be set if "enableExternalAuthProviders" is set to "True".
-
-                  At most one provider can be configured.
-                items:
-                  description: ExternalAuthProvider is an external OIDC identity provider
-                    that can issue tokens for this cluster.
-                  properties:
-                    claimMappings:
-                      description: |-
-                        ClaimMappings describes rules on how to transform information from an
-                        ID token into a cluster identity
-                      properties:
-                        groups:
-                          description: |-
-                            Groups is a name of the claim that should be used to construct
-                            groups for the cluster identity.
-                            The referenced claim must use array of strings values.
-                          properties:
-                            claim:
-                              description: Claim is a JWT token claim to be used in
-                                the mapping
-                              type: string
-                            prefix:
-                              description: |-
-                                Prefix is a string to prefix the value from the token in the result of the
-                                claim mapping.
-
-                                By default, no prefixing occurs.
-
-                                Example: if `prefix` is set to "myoidc:"" and the `claim` in JWT contains
-                                an array of strings "a", "b" and  "c", the mapping will result in an
-                                array of string "myoidc:a", "myoidc:b" and "myoidc:c".
-                              type: string
-                          required:
-                          - claim
-                          type: object
-                        username:
-                          description: |-
-                            Username is a name of the claim that should be used to construct
-                            usernames for the cluster identity.
-
-                            Default value: "sub"
-                          properties:
-                            claim:
-                              description: Claim is a JWT token claim to be used in
-                                the mapping
-                              type: string
-                            prefix:
-                              description: Prefix is prepended to claim to prevent
-                                clashes with existing names.
-                              minLength: 1
-                              type: string
-                            prefixPolicy:
-                              description: |-
-                                PrefixPolicy specifies how a prefix should apply.
-
-                                By default, claims other than `email` will be prefixed with the issuer URL to
-                                prevent naming clashes with other plugins.
-
-                                Set to "NoPrefix" to disable prefixing.
-
-                                Example:
-                                    (1) `prefix` is set to "myoidc:" and `claim` is set to "username".
-                                        If the JWT claim `username` contains value `userA`, the resulting
-                                        mapped value will be "myoidc:userA".
-                                    (2) `prefix` is set to "myoidc:" and `claim` is set to "email". If the
-                                        JWT `email` claim contains value "userA@myoidc.tld", the resulting
-                                        mapped value will be "myoidc:userA@myoidc.tld".
-                                    (3) `prefix` is unset, `issuerURL` is set to `https://myoidc.tld`,
-                                        the JWT claims include "username":"userA" and "email":"userA@myoidc.tld",
-                                        and `claim` is set to:
-                                        (a) "username": the mapped value will be "https://myoidc.tld#userA"
-                                        (b) "email": the mapped value will be "userA@myoidc.tld"
-                              enum:
-                              - ""
-                              - NoPrefix
-                              - Prefix
-                              type: string
-                          required:
-                          - claim
-                          type: object
-                          x-kubernetes-validations:
-                          - message: prefix must be set if prefixPolicy is 'Prefix',
-                              but must remain unset otherwise
-                            rule: 'self.prefixPolicy == ''Prefix'' ? has(self.prefix)
-                              : !has(self.prefix)'
-                      type: object
-                    claimValidationRules:
-                      description: ClaimValidationRules are rules that are applied
-                        to validate token claims to authenticate users.
-                      items:
-                        description: TokenClaimValidationRule validates token claims
-                          to authenticate users.
-                        properties:
-                          requiredClaim:
-                            description: RequiredClaim allows configuring a required
-                              claim name and its expected value
-                            properties:
-                              claim:
-                                description: |-
-                                  Claim is a name of a required claim. Only claims with string values are
-                                  supported.
-                                minLength: 1
-                                type: string
-                              requiredValue:
-                                description: RequiredValue is the required value for
-                                  the claim.
-                                minLength: 1
-                                type: string
-                            required:
-                            - claim
-                            - requiredValue
-                            type: object
-                          type:
-                            default: RequiredClaim
-                            description: Type sets the type of the validation rule
-                            enum:
-                            - RequiredClaim
-                            type: string
-                        required:
-                        - requiredClaim
-                        - type
-                        type: object
-                      type: array
-                      x-kubernetes-list-type: atomic
-                    issuer:
-                      description: Issuer describes attributes of the OIDC token issuer
-                      properties:
-                        audiences:
-                          description: |-
-                            Audiences is an array of audiences that the token was issued for.
-                            Valid tokens must include at least one of these values in their
-                            "aud" claim.
-                            Must be set to exactly one value.
-                          items:
-                            description: TokenAudience is the audience that the token
-                              was issued for.
-                            minLength: 1
-                            type: string
-                          maxItems: 10
-                          minItems: 1
-                          type: array
-                          x-kubernetes-list-type: set
-                        issuerCertificateAuthority:
-                          description: |-
-                            CertificateAuthority is a reference to a config map in the
-                            configuration namespace. The .data of the configMap must contain
-                            the "ca-bundle.crt" key.
-                            If unset, system trust is used instead.
-                          properties:
-                            name:
-                              description: Name is the metadata.name of the referenced
-                                object.
-                              type: string
-                          required:
-                          - name
-                          type: object
-                        issuerURL:
-                          description: |-
-                            URL is the serving URL of the token issuer.
-                            Must use the https:// scheme.
-                          pattern: ^https:\/\/[^\s]
-                          type: string
-                      required:
-                      - audiences
-                      - issuerURL
-                      type: object
-                    name:
-                      description: Name of the OIDC provider
-                      minLength: 1
-                      type: string
-                    oidcClients:
-                      description: |-
-                        OIDCClients contains configuration for the platform's clients that
-                        need to request tokens from the issuer
-                      items:
-                        description: |-
-                          OIDCClientConfig contains configuration for the platform's client that
-                          need to request tokens from the issuer.
-                        properties:
-                          clientID:
-                            description: ClientID is the identifier of the OIDC client
-                              from the OIDC provider
-                            minLength: 1
-                            type: string
-                          clientSecret:
-                            description: |-
-                              ClientSecret refers to a secret that
-                              contains the client secret in the `clientSecret` key of the `.data` field
-                            properties:
-                              name:
-                                description: Name is the metadata.name of the referenced
-                                  object.
-                                type: string
-                            required:
-                            - name
-                            type: object
-                          componentName:
-                            description: |-
-                              ComponentName is the name of the component that is supposed to consume this
-                              client configuration
-                            maxLength: 256
-                            minLength: 1
-                            type: string
-                          componentNamespace:
-                            description: |-
-                              ComponentNamespace is the namespace of the component that is supposed to consume this
-                              client configuration
-                            maxLength: 63
-                            minLength: 1
-                            type: string
-                          extraScopes:
-                            description: ExtraScopes is an optional set of scopes
-                              to request tokens with.
-                            items:
-                              type: string
-                            type: array
-                            x-kubernetes-list-type: set
-                        required:
-                        - clientID
-                        - clientSecret
-                        - componentName
-                        - componentNamespace
-                        type: object
-                      maxItems: 20
-                      type: array
-                      x-kubernetes-list-map-keys:
-                      - componentNamespace
-                      - componentName
-                      x-kubernetes-list-type: map
-                  required:
-                  - issuer
-                  - name
-                  type: object
-                maxItems: 1
-                type: array
-                x-kubernetes-list-map-keys:
-                - name
-                x-kubernetes-list-type: map
               identityRef:
                 description: |-
                   IdentityRef is a reference to an identity to be used when reconciling the aro control plane.
@@ -413,168 +124,23 @@ spec:
                     type: string
                 type: object
                 x-kubernetes-map-type: atomic
-              network:
-                description: Network config for the ARO HCP cluster.
-                properties:
-                  hostPrefix:
-                    default: 23
-                    description: Network host prefix which is defaulted to `23` if
-                      not specified.
-                    type: integer
-                  machineCIDR:
-                    description: IP addresses block used by OpenShift while installing
-                      the cluster, for example "10.0.0.0/16".
-                    format: cidr
-                    type: string
-                  networkType:
-                    default: OVNKubernetes
-                    description: The CNI network type; default is OVNKubernetes.
-                    enum:
-                    - OVNKubernetes
-                    - Other
-                    type: string
-                  podCIDR:
-                    description: IP address block from which to assign pod IP addresses,
-                      for example `10.128.0.0/14`.
-                    format: cidr
-                    type: string
-                  serviceCIDR:
-                    description: IP address block from which to assign service IP
-                      addresses, for example `172.30.0.0/16`.
-                    format: cidr
-                    type: string
-                type: object
-              platform:
-                description: AROPlatformProfileControlPlane represents the Azure platform
-                  configuration.
-                properties:
-                  keyVault:
-                    description: Azure KeyVault id
-                    type: string
-                  location:
-                    description: Location should be valid Azure location ex; centralus
-                    type: string
-                  managedIdentities:
-                    description: ManagedIdentities Azure managed identities for ARO
-                      HCP.
-                    properties:
-                      controlPlaneOperators:
-                        description: ControlPlaneOperators Ref to Microsoft.ManagedIdentity/userAssignedIdentities
-                        properties:
-                          cloudControllerManager:
-                            description: CloudControllerManagerManagedIdentities "cloud-controller-manager"
-                              Microsoft.ManagedIdentity/userAssignedIdentities
-                            type: string
-                          cloudNetworkConfigManagedIdentities:
-                            description: CloudNetworkConfigManagedIdentities "cloud-network-config"
-                              Microsoft.ManagedIdentity/userAssignedIdentities
-                            type: string
-                          clusterApiAzureManagedIdentities:
-                            description: ClusterAPIAzureManagedIdentities "cluster-api-azure"
-                              Microsoft.ManagedIdentity/userAssignedIdentities
-                            type: string
-                          controlPlaneOperatorsManagedIdentities:
-                            description: ControlPlaneManagedIdentities "control-plane"
-                              Microsoft.ManagedIdentity/userAssignedIdentities
-                            type: string
-                          diskCsiDriverManagedIdentities:
-                            description: DiskCsiDriverManagedIdentities "disk-csi-driver"
-                              Microsoft.ManagedIdentity/userAssignedIdentities
-                            type: string
-                          fileCsiDriverManagedIdentities:
-                            description: FileCsiDriverManagedIdentities "file-csi-driver"
-                              Microsoft.ManagedIdentity/userAssignedIdentities
-                            type: string
-                          imageRegistryManagedIdentities:
-                            description: ImageRegistryManagedIdentities "image-registry"
-                              Microsoft.ManagedIdentity/userAssignedIdentities
-                            type: string
-                          ingressManagedIdentities:
-                            description: IngressManagedIdentities "ingress" Microsoft.ManagedIdentity/userAssignedIdentities
-                            type: string
-                          kmsManagedIdentities:
-                            description: KmsManagedIdentities "kms" Microsoft.ManagedIdentity/userAssignedIdentities
-                            type: string
-                        type: object
-                      createAROHCPManagedIdentities:
-                        description: |-
-                          CreateAROHCPManagedIdentities is used to create the required ARO-HCP managed identities if not provided.
-                          It will create UserAssignedIdentity CR for each required managed identity. Default is false.
-                        type: boolean
-                      dataPlaneOperators:
-                        description: DataPlaneOperators ref to Microsoft.ManagedIdentity/userAssignedIdentities
-                        properties:
-                          diskCsiDriverManagedIdentities:
-                            description: DiskCsiDriverManagedIdentities "disk-csi-driver"
-                              Microsoft.ManagedIdentity/userAssignedIdentities
-                            type: string
-                          fileCsiDriverManagedIdentities:
-                            description: FileCsiDriverManagedIdentities "file-csi-driver"
-                              Microsoft.ManagedIdentity/userAssignedIdentities
-                            type: string
-                          imageRegistryManagedIdentities:
-                            description: ImageRegistryManagedIdentities "image-registry"
-                              Microsoft.ManagedIdentity/userAssignedIdentities
-                            type: string
-                        type: object
-                      serviceManagedIdentity:
-                        description: ServiceManagedIdentity ref to Microsoft.ManagedIdentity/userAssignedIdentities
-                        type: string
-                    type: object
-                  networkSecurityGroupId:
-                    description: Azure Network Security Group ID
-                    type: string
-                  outboundType:
-                    description: OutboundType represents a routing strategy to provide
-                      egress to the Internet. Allowed value is loadBalancer
-                    type: string
-                  resourceGroup:
-                    description: Resource group name where the ARO-hcp will be attached
-                      to it.
-                    type: string
-                  resourceGroupRef:
-                    description: ResourceGroupRef is the name that is used to create
-                      the ResourceGroup CR. The ResourceGroupRef must be in the same
-                      namespace as the AROControlPlane and cannot be set with ResourceGroup.
-                    type: string
-                  subnet:
-                    description: Azure subnet id
-                    type: string
-                  subnetRef:
-                    description: SubnetRef is the name that is used to create the
-                      VirtualNetworksSubnet CR. The SubnetRef must be in the same
-                      namespace as the AROControlPlane and cannot be set with Subnet.
-                    type: string
-                type: object
-              subscriptionID:
-                description: SubscriptionID is the GUID of the Azure subscription
-                  that owns this cluster.
-                type: string
-              version:
-                description: OpenShift semantic version, for example "4.14.5".
-                type: string
-              versionGate:
-                default: WaitForAcknowledge
+              resources:
                 description: |-
-                  VersionGate requires acknowledgment when upgrading ARO-HCP y-stream versions (e.g., from 4.15 to 4.16).
-                  Default is WaitForAcknowledge.
-                  WaitForAcknowledge: If acknowledgment is required, the upgrade will not proceed until VersionGate is set to Acknowledge or AlwaysAcknowledge.
-                  Acknowledge: If acknowledgment is required, apply it for the upgrade. After upgrade is done set the version gate to WaitForAcknowledge.
-                  AlwaysAcknowledge: If acknowledgment is required, apply it and proceed with the upgrade.
-                enum:
-                - Acknowledge
-                - WaitForAcknowledge
-                - AlwaysAcknowledge
+                  Resources are embedded ASO resources to be managed by this AROControlPlane.
+                  This allows you to define the full infrastructure including HcpOpenShiftCluster and
+                  HcpOpenShiftClustersExternalAuth resources directly using ASO types.
+
+                  All cluster configuration (version, domain prefix, channel group, etc.) should be
+                  defined in the HcpOpenShiftCluster resource within this field.
+                items:
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: true
+                type: array
+              subscriptionID:
+                description: |-
+                  SubscriptionID is the GUID of the Azure subscription that owns this cluster.
+                  Required for Azure API authentication and ARM resource ID construction.
                 type: string
-              visibility:
-                description: Visibility represents the visibility of an API endpoint.
-                  Allowed values are public and private; default is public.
-                type: string
-            required:
-            - aroClusterName
-            - channelGroup
-            - version
-            - versionGate
             type: object
           status:
             description: AROControlPlaneStatus defines the observed state of AROControlPlane.
@@ -718,6 +284,37 @@ spec:
                 description: Ready denotes that the AROControlPlane API Server is
                   ready to receive requests.
                 type: boolean
+              resources:
+                description: |-
+                  Resources represents the status of ASO resources managed by this AROControlPlane.
+                  This is populated when using the Resources field in the spec.
+                items:
+                  description: ResourceStatus represents the status of a resource.
+                  properties:
+                    ready:
+                      type: boolean
+                    resource:
+                      description: StatusResource is a handle to a resource.
+                      properties:
+                        group:
+                          type: string
+                        kind:
+                          type: string
+                        name:
+                          type: string
+                        version:
+                          type: string
+                      required:
+                      - group
+                      - kind
+                      - name
+                      - version
+                      type: object
+                  required:
+                  - ready
+                  - resource
+                  type: object
+                type: array
               version:
                 description: ARO-HCP OpenShift semantic version, for example "4.20.0".
                 type: string
