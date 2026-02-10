@@ -7,7 +7,7 @@
   repo_name: hive
   git_remote: https://github.com/openshift/hive.git
 
-- branch: backplane-2.11
+- branch: backplane-2.17
   github_ref: https://github.com/openshift/image-based-install-operator.git
   operators:
   - bundlePath: bundle/manifests/
@@ -21,7 +21,7 @@
     - config/webhook/manifests.yaml
   repo_name: image-based-install-operator
 
-- branch: release-ocm-2.16
+- branch: release-ocm-2.17
   github_ref: https://github.com/openshift/assisted-service.git
   operators:
   - bundlePath: deploy/olm-catalog/manifests/
@@ -35,7 +35,7 @@
     name: assisted-service
   repo_name: assisted-service
 
-- branch: backplane-2.11
+- branch: backplane-2.17
   github_ref: https://github.com/stolostron/ocm.git
   operators:
   - bundlePath: deploy/cluster-manager/olm-catalog/latest/manifests/
@@ -46,7 +46,7 @@
     name: cluster-manager
   repo_name: registration-operator
 
-- branch: backplane-2.11
+- branch: backplane-2.17
   github_ref: https://github.com/stolostron/discovery.git
   operators:
   - bundlePath: bundle/manifests/

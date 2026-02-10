@@ -2264,7 +2264,7 @@ func Test_ensureResourceVersionAlignment(t *testing.T) {
 					"kind":       "Deployment",
 					"metadata": map[string]interface{}{
 						"annotations": map[string]interface{}{
-							utils.AnnotationReleaseVersion: "2.11.0",
+							utils.AnnotationReleaseVersion: "2.17.0",
 						},
 						"name":      "test-deployment",
 						"namespace": "test-ns",
@@ -2276,7 +2276,7 @@ func Test_ensureResourceVersionAlignment(t *testing.T) {
 		},
 	}
 
-	os.Setenv("OPERATOR_VERSION", "2.11.0")
+	os.Setenv("OPERATOR_VERSION", "2.17.0")
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := recon.ensureResourceVersionAlignment(tt.template, os.Getenv("OPERATOR_VERSION"))
