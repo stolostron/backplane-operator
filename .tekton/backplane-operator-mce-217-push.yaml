@@ -54,7 +54,7 @@ spec:
       - name: revision
         value: main
       - name: pathInRepo
-        value: pipelines/common_mce_2.17.yaml
+        value: pipelines/common.yaml
   taskRunTemplate:
     serviceAccountName: build-pipeline-backplane-operator-mce-217
   workspaces:
