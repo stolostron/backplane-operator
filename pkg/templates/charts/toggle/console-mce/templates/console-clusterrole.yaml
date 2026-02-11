@@ -59,6 +59,7 @@ rules:
 
 - verbs:
   - list
+  - watch
   apiGroups:
   - ''
   resources:

@@ -125,7 +125,7 @@ package main
 //+kubebuilder:rbac:groups="",resources=serviceaccounts/token,verbs=subscribe
 //+kubebuilder:rbac:groups="",resources=serviceaccounts;serviceaccounts/finalizers;secrets;secrets/finalizers;services;services/finalizers;endpoints;events;configmaps;namespaces;persistentvolumeclaims,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=serviceaccounts;services,verbs=get;list;watch
-//+kubebuilder:rbac:groups="",resources=services,verbs=list
+//+kubebuilder:rbac:groups="",resources=services,verbs=list;watch
 //+kubebuilder:rbac:groups="",resources=services;events;serviceaccounts,verbs=*
 //+kubebuilder:rbac:groups="",resources=services;services/finalizers;events;configmaps;secrets;serviceaccounts;namespaces,verbs=list;create;update;get;watch;patch;delete
 //+kubebuilder:rbac:groups="";coordination.k8s.io,resources=configmaps;leases,verbs=get;list;watch;create;update;patch;delete
