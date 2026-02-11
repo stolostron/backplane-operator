@@ -2636,6 +2636,16 @@ func EnsureCRD(ctx context.Context, c client.Client, crd *unstructured.Unstructu
 			return nil
 		}
 
+		// Preserve caBundle from existing CRD if it exists (injected by cert-manager in vanilla K8s)
+		existingCABundle, found, err := unstructured.NestedString(existingCRD.Object, "spec", "conversion", "webhook", "clientConfig", "caBundle")
+		if err == nil && found && existingCABundle != "" {
+			// Set the caBundle in the new CRD to match the existing one
+			if err := unstructured.SetNestedField(crd.Object, existingCABundle, "spec", "conversion", "webhook", "clientConfig", "caBundle"); err != nil {
+				return fmt.Errorf("error preserving caBundle in CRD '%s': %w", crd.GetName(), err)
+			}
+			log.V(1).Info("Preserved caBundle in CRD update", "Name", crd.GetName())
+		}
+
 		// Set resource version for update
 		crd.SetResourceVersion(existingCRD.GetResourceVersion())
 
