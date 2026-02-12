@@ -10,6 +10,17 @@ on:
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
+    inputs:
+      branch_arg:
+        description: 'BRANCH agrument for the make command'
+        required: false
+        default: 'main'
+        type: string
+      org_arg:
+        description: 'ORG argument for the make command'
+        required: false
+        default: 'stolostron'
+        type: string
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
