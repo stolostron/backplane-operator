@@ -17,13 +17,13 @@ func TestEnsureCRD_PreservesCABundle(t *testing.T) {
 	testCABundle := "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURQakNDQWlhZ0F3SUJBZ0lVRXhHY2FBPT0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo="
 
 	tests := []struct {
-		name              string
-		existingCRD       *unstructured.Unstructured
-		newCRD            *unstructured.Unstructured
-		expectCABundle    bool
-		expectedCABundle  string
-		expectError       bool
-		description       string
+		name             string
+		existingCRD      *unstructured.Unstructured
+		newCRD           *unstructured.Unstructured
+		expectCABundle   bool
+		expectedCABundle string
+		expectError      bool
+		description      string
 	}{
 		{
 			name: "Preserves caBundle when updating CRD with conversion webhook",
@@ -195,6 +195,60 @@ func TestEnsureCRD_PreservesCABundle(t *testing.T) {
 			expectCABundle: false,
 			expectError:    false,
 			description:    "Should handle CRDs without conversion webhooks",
+		},
+		{
+			name: "Does not copy caBundle when new CRD has no conversion section",
+			existingCRD: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "apiextensions.k8s.io/v1",
+					"kind":       "CustomResourceDefinition",
+					"metadata": map[string]interface{}{
+						"name":            "ipaddresses.ipam.metal3.io",
+						"resourceVersion": "1",
+					},
+					"spec": map[string]interface{}{
+						"group": "ipam.metal3.io",
+						"names": map[string]interface{}{
+							"kind":   "IPAddress",
+							"plural": "ipaddresses",
+						},
+						"conversion": map[string]interface{}{
+							"strategy": "Webhook",
+							"webhook": map[string]interface{}{
+								"clientConfig": map[string]interface{}{
+									"service": map[string]interface{}{
+										"name":      "webhook-service",
+										"namespace": "default",
+										"path":      "/convert",
+									},
+									"caBundle": testCABundle,
+								},
+								"conversionReviewVersions": []interface{}{"v1"},
+							},
+						},
+					},
+				},
+			},
+			newCRD: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "apiextensions.k8s.io/v1",
+					"kind":       "CustomResourceDefinition",
+					"metadata": map[string]interface{}{
+						"name": "ipaddresses.ipam.metal3.io",
+					},
+					"spec": map[string]interface{}{
+						"group": "ipam.metal3.io",
+						"names": map[string]interface{}{
+							"kind":   "IPAddress",
+							"plural": "ipaddresses",
+						},
+						// No conversion section at all
+					},
+				},
+			},
+			expectCABundle: false,
+			expectError:    false,
+			description:    "Should not copy caBundle when new CRD template has no conversion section (avoids invalid CRD)",
 		},
 	}
 
