@@ -625,7 +625,7 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterAPIProviderAzure(ctx conte
 func (r *MultiClusterEngineReconciler) ensureClusterAPIProviderMetal(ctx context.Context, mce *backplanev1.MultiClusterEngine) (
 	ctrl.Result, error) {
 
-	namespacedName := types.NamespacedName{Name: "capm3-controller-manager", Namespace: mce.Spec.TargetNamespace}
+	namespacedName := types.NamespacedName{Name: "mce-capm3-controller-manager", Namespace: mce.Spec.TargetNamespace}
 	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
 
@@ -664,7 +664,7 @@ func (r *MultiClusterEngineReconciler) ensureClusterAPIProviderMetal(ctx context
 
 func (r *MultiClusterEngineReconciler) ensureNoClusterAPIProviderMetal(ctx context.Context,
 	mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
-	namespacedName := types.NamespacedName{Name: "capm3-controller-manager", Namespace: mce.Spec.TargetNamespace}
+	namespacedName := types.NamespacedName{Name: "mce-capm3-controller-manager", Namespace: mce.Spec.TargetNamespace}
 
 	// Ensure that the InternalHubComponent CR instance is deleted for component in MCE.
 	if result, err := r.ensureNoInternalEngineComponent(ctx, mce,
