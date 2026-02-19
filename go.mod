@@ -1,8 +1,8 @@
 module github.com/stolostron/backplane-operator
 
-go 1.24.0
+go 1.25.0
 
-toolchain go1.24.11
+toolchain go1.25.2
 
 require (
 	github.com/Masterminds/semver v1.5.0
