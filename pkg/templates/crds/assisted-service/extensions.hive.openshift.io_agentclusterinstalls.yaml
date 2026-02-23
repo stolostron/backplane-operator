@@ -2,7 +2,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.14.0
+    controller-gen.kubebuilder.io/version: v0.17.0
   creationTimestamp: null
   name: agentclusterinstalls.extensions.hive.openshift.io
 spec:
@@ -74,7 +74,6 @@ spec:
                     description: |-
                       Name of the referent.
                       More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                      TODO: Add other useful fields. apiVersion, kind, uid?
                     type: string
                 type: object
                 x-kubernetes-map-type: atomic
@@ -93,7 +92,6 @@ spec:
                         description: |-
                           Name of the referent.
                           More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                          TODO: Add other useful fields. apiVersion, kind, uid?
                         type: string
                     type: object
                     x-kubernetes-map-type: atomic
@@ -106,7 +104,6 @@ spec:
                         description: |-
                           Name of the referent.
                           More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                          TODO: Add other useful fields. apiVersion, kind, uid?
                         type: string
                     type: object
                     x-kubernetes-map-type: atomic
@@ -120,6 +117,36 @@ spec:
                       during installation and used for tagging/naming resources in
                       cloud providers.
                     type: string
+                  platform:
+                    description: Platform holds platform-specific cluster metadata
+                    properties:
+                      aws:
+                        description: AWS holds AWS-specific cluster metadata
+                        properties:
+                          hostedZoneRole:
+                            description: |-
+                              HostedZoneRole is the role to assume when performing operations
+                              on a hosted zone owned by another account.
+                            type: string
+                        type: object
+                      azure:
+                        description: Azure holds azure-specific cluster metadata
+                        properties:
+                          resourceGroupName:
+                            description: ResourceGroupName is the name of the resource
+                              group in which the cluster resources were created.
+                            type: string
+                        required:
+                        - resourceGroupName
+                        type: object
+                      gcp:
+                        description: GCP holds GCP-specific cluster metadata
+                        properties:
+                          networkProjectID:
+                            description: NetworkProjectID is used for shared VPC setups
+                            type: string
+                        type: object
+                    type: object
                 required:
                 - adminKubeconfigSecretRef
                 - clusterID
@@ -298,7 +325,6 @@ spec:
                     description: |-
                       Name of the referent.
                       More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                      TODO: Add other useful fields. apiVersion, kind, uid?
                     type: string
                 type: object
                 x-kubernetes-map-type: atomic
