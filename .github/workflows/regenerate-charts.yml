@@ -35,15 +35,15 @@ jobs:
         branch: ['main', 'backplane-2.6', 'backplane-2.7', 'backplane-2.8', 'backplane-2.9', 'backplane-2.10', 'backplane-2.11']
         include:
           - branch: backplane-2.6
-            go-version: "1.21"
+            go-version: "1.24"
           - branch: backplane-2.7
-            go-version: "1.24"
+            go-version: "1.25"
           - branch: backplane-2.8
-            go-version: "1.24"
+            go-version: "1.25"
           - branch: backplane-2.9
-            go-version: "1.24"
+            go-version: "1.25"
           - branch: backplane-2.10
-            go-version: "1.24"
+            go-version: "1.25"
           - branch: backplane-2.11
             go-version: "1.25"
 
