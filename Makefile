@@ -107,11 +107,16 @@ fmt: ## Run go fmt against code.
 vet: ## Run go vet against code.
 	go vet ./...
 
+# Use toolchain from go.mod so Go uses a complete install (with covdata); avoids
+# "no such tool covdata" when auto-downloaded minimal toolchain is used (golang/go#75031).
+GOTOOLCHAIN ?= $(shell (grep '^toolchain ' go.mod | cut -d' ' -f2) || echo "go$$(grep '^go ' go.mod | cut -d' ' -f2)")
+export GOTOOLCHAIN
+
 test-prep: manifests generate fmt vet envtest ## prepare to run tests.
 	echo "Ready to run tests"
 
-test: manifests generate fmt vet envtest ## Run tests.
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" DIRECTORY_OVERRIDE="../" UNIT_TEST=true go test $(shell go list ./... | grep -E -v "test") -coverprofile cover.out
+test: manifests generate fmt vet envtest ## Run tests (with coverage).
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" DIRECTORY_OVERRIDE="../" UNIT_TEST=true ENV_TEST=true go test $(shell go list ./... | grep -E -v "test") -coverprofile cover.out
 
 ##@ Build
 
