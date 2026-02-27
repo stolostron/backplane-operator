@@ -24,6 +24,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"regexp"
 	"slices"
 	"strings"
 	"time"
@@ -39,6 +40,7 @@ import (
 	"github.com/stolostron/backplane-operator/pkg/utils"
 	"github.com/stolostron/backplane-operator/pkg/version"
 	"k8s.io/client-go/util/retry"
+	addonv1alpha1 "open-cluster-management.io/api/addon/v1alpha1"
 	clustermanager "open-cluster-management.io/api/operator/v1"
 
 	configv1 "github.com/openshift/api/config/v1"
@@ -135,6 +137,7 @@ var (
 // +kubebuilder:rbac:groups=policy,resources=poddisruptionbudgets,verbs=create;delete;get;list;patch;update;watch
 // +kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=clustermanagementaddons;clustermanagementaddons/finalizers;managedclusteraddons;managedclusteraddons/finalizers;managedclusteraddons/status,verbs=create;get;list;update;patch;watch;delete;deletecollection
 // +kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=addondeploymentconfigs,verbs=get;list;watch;
+// +kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=addontemplates,verbs=get;list;delete
 // +kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=addonplacementscores,verbs=create;get;list;update;patch;watch;delete;deletecollection
 // +kubebuilder:rbac:groups=proxy.open-cluster-management.io,resources=managedproxyconfigurations,verbs=create;get;list;update;patch;watch;delete;deletecollection
 // +kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclustersetbindings,verbs=create;get;list;update;patch;watch;delete;deletecollection
@@ -296,6 +299,11 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		if result, err := r.EnsureDeprecatedResourceCleanup(ctx, obj); (result != ctrl.Result{}) || err != nil {
 			return result, err
 		}
+	}
+
+	// Clean up versioned managed-serviceaccount AddOnTemplates
+	if result, err := r.CleanupVersionedAddOnTemplates(ctx, backplaneConfig); (result != ctrl.Result{}) || err != nil {
+		return result, err
 	}
 
 	if !utils.ShouldIgnoreOCPVersion(backplaneConfig) && utils.DeployOnOCP() {
@@ -2665,4 +2673,60 @@ func (r *MultiClusterEngineReconciler) GetDeprecatedResources(m *backplanev1.Mul
 			ObjectMeta: metav1.ObjectMeta{Name: "open-cluster-management:hypershift-preview:hypershift-addon-manager"},
 		},
 	}
+}
+
+/*
+CleanupVersionedAddOnTemplates removes old versioned managed-serviceaccount AddOnTemplates.
+Starting in MCE 2.17, managed-serviceaccount uses an unversioned AddOnTemplate name.
+This function cleans up any old versioned AddOnTemplates (e.g., managed-serviceaccount-2.11)
+that may exist from earlier MCE versions to prevent accumulation after upgrades.
+Only templates owned by the current MultiClusterEngine instance are cleaned up.
+*/
+func (r *MultiClusterEngineReconciler) CleanupVersionedAddOnTemplates(ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+	log := log.WithValues("Cleanup", "VersionedAddOnTemplates")
+
+	// Pattern to match versioned AddOnTemplate names like "managed-serviceaccount-2.11"
+	versionedPattern := regexp.MustCompile(`^managed-serviceaccount-2\.\d+$`)
+
+	// List all AddOnTemplates
+	addOnTemplateList := &addonv1alpha1.AddOnTemplateList{}
+	if err := r.Client.List(ctx, addOnTemplateList); err != nil {
+		log.Error(err, "Failed to list AddOnTemplates")
+		return ctrl.Result{}, err
+	}
+
+	// Find and delete versioned managed-serviceaccount AddOnTemplates owned by this MCE
+	for _, template := range addOnTemplateList.Items {
+		if versionedPattern.MatchString(template.Name) {
+			// Skip if already being deleted
+			if template.DeletionTimestamp != nil {
+				log.Info("AddOnTemplate is already being deleted", "name", template.Name)
+				continue
+			}
+
+			// Check if the template is owned by the current MultiClusterEngine instance
+			isOwnedByMCE := false
+			for _, ownerRef := range template.GetOwnerReferences() {
+				if ownerRef.Kind == "MultiClusterEngine" && ownerRef.Name == mce.Name {
+					isOwnedByMCE = true
+					break
+				}
+			}
+
+			if !isOwnedByMCE {
+				log.Info("Skipping AddOnTemplate not owned by this MultiClusterEngine",
+					"name", template.Name,
+					"mce", mce.Name)
+				continue
+			}
+
+			log.Info("Deleting old versioned AddOnTemplate", "name", template.Name)
+			if err := r.Client.Delete(ctx, &template); err != nil {
+				log.Error(err, "Failed to delete versioned AddOnTemplate", "name", template.Name)
+				return ctrl.Result{}, err
+			}
+		}
+	}
+
+	return ctrl.Result{}, nil
 }
