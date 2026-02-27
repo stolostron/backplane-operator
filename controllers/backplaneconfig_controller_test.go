@@ -40,6 +40,7 @@ import (
 	"github.com/stolostron/backplane-operator/pkg/utils"
 
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	addonv1alpha1 "open-cluster-management.io/api/addon/v1alpha1"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -1642,6 +1643,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 func registerScheme() {
 	backplanev1.AddToScheme(scheme.Scheme)
 	configv1.AddToScheme(scheme.Scheme)
+	addonv1alpha1.AddToScheme(scheme.Scheme)
 }
 
 func Test_getComponentConfig(t *testing.T) {
@@ -2948,4 +2950,224 @@ func Test_CRDSkipListIntegration(t *testing.T) {
 			}
 		})
 	}
+}
+
+func Test_CleanupVersionedAddOnTemplates(t *testing.T) {
+	mceName := "test-mce"
+	mceUID := types.UID("test-mce-uid")
+
+	tests := []struct {
+		name                string
+		existingTemplates   []string
+		templatesOwnedByMCE []string // Templates that have MCE as owner
+		expectedToBeDeleted []string
+		expectedToRemain    []string
+	}{
+		{
+			name: "should delete only versioned managed-serviceaccount-2.x templates owned by MCE",
+			existingTemplates: []string{
+				"managed-serviceaccount-2.11",
+				"managed-serviceaccount-2.17",
+				"managed-serviceaccount",
+				"some-other-addon-2.11",
+			},
+			templatesOwnedByMCE: []string{
+				"managed-serviceaccount-2.11",
+				"managed-serviceaccount-2.17",
+				"managed-serviceaccount",
+			},
+			expectedToBeDeleted: []string{
+				"managed-serviceaccount-2.11",
+				"managed-serviceaccount-2.17",
+			},
+			expectedToRemain: []string{
+				"managed-serviceaccount",
+				"some-other-addon-2.11",
+			},
+		},
+		{
+			name: "should not delete unversioned managed-serviceaccount template",
+			existingTemplates: []string{
+				"managed-serviceaccount",
+			},
+			templatesOwnedByMCE: []string{
+				"managed-serviceaccount",
+			},
+			expectedToBeDeleted: []string{},
+			expectedToRemain: []string{
+				"managed-serviceaccount",
+			},
+		},
+		{
+			name: "should handle multiple old versions",
+			existingTemplates: []string{
+				"managed-serviceaccount-2.8",
+				"managed-serviceaccount-2.9",
+				"managed-serviceaccount-2.10",
+				"managed-serviceaccount-2.11",
+				"managed-serviceaccount",
+			},
+			templatesOwnedByMCE: []string{
+				"managed-serviceaccount-2.8",
+				"managed-serviceaccount-2.9",
+				"managed-serviceaccount-2.10",
+				"managed-serviceaccount-2.11",
+				"managed-serviceaccount",
+			},
+			expectedToBeDeleted: []string{
+				"managed-serviceaccount-2.8",
+				"managed-serviceaccount-2.9",
+				"managed-serviceaccount-2.10",
+				"managed-serviceaccount-2.11",
+			},
+			expectedToRemain: []string{
+				"managed-serviceaccount",
+			},
+		},
+		{
+			name: "should not delete templates with different major versions",
+			existingTemplates: []string{
+				"managed-serviceaccount-1.5",
+				"managed-serviceaccount-3.0",
+				"managed-serviceaccount-2.11",
+			},
+			templatesOwnedByMCE: []string{
+				"managed-serviceaccount-1.5",
+				"managed-serviceaccount-3.0",
+				"managed-serviceaccount-2.11",
+			},
+			expectedToBeDeleted: []string{
+				"managed-serviceaccount-2.11",
+			},
+			expectedToRemain: []string{
+				"managed-serviceaccount-1.5",
+				"managed-serviceaccount-3.0",
+			},
+		},
+		{
+			name:                "should handle no templates",
+			existingTemplates:   []string{},
+			templatesOwnedByMCE: []string{},
+			expectedToBeDeleted: []string{},
+			expectedToRemain:    []string{},
+		},
+		{
+			name: "should not delete versioned templates not owned by MCE",
+			existingTemplates: []string{
+				"managed-serviceaccount-2.11",
+				"managed-serviceaccount-2.17",
+			},
+			templatesOwnedByMCE: []string{}, // Neither template is owned by MCE
+			expectedToBeDeleted: []string{},
+			expectedToRemain: []string{
+				"managed-serviceaccount-2.11",
+				"managed-serviceaccount-2.17",
+			},
+		},
+		{
+			name: "should delete only MCE-owned templates when some are not owned",
+			existingTemplates: []string{
+				"managed-serviceaccount-2.11",
+				"managed-serviceaccount-2.17",
+				"managed-serviceaccount-2.10",
+			},
+			templatesOwnedByMCE: []string{
+				"managed-serviceaccount-2.11",
+				"managed-serviceaccount-2.17",
+			}, // Only 2.11 and 2.17 are owned by MCE
+			expectedToBeDeleted: []string{
+				"managed-serviceaccount-2.11",
+				"managed-serviceaccount-2.17",
+			},
+			expectedToRemain: []string{
+				"managed-serviceaccount-2.10", // Not owned by MCE, should remain
+			},
+		},
+	}
+
+	registerScheme()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Create MCE instance
+			mce := &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: mceName,
+					UID:  mceUID,
+				},
+			}
+
+			// Create test templates
+			var initObjs []client.Object
+			for _, templateName := range tt.existingTemplates {
+				template := &addonv1alpha1.AddOnTemplate{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: templateName,
+					},
+				}
+
+				// Add owner reference if this template is owned by MCE
+				for _, ownedTemplateName := range tt.templatesOwnedByMCE {
+					if ownedTemplateName == templateName {
+						template.ObjectMeta.OwnerReferences = []metav1.OwnerReference{
+							{
+								APIVersion:         "multicluster.openshift.io/v1",
+								Kind:               "MultiClusterEngine",
+								Name:               mceName,
+								UID:                mceUID,
+								Controller:         ptr(true),
+								BlockOwnerDeletion: ptr(true),
+							},
+						}
+						break
+					}
+				}
+
+				initObjs = append(initObjs, template)
+			}
+
+			// Create fake client with test templates
+			fakeClient := fake.NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(initObjs...).
+				Build()
+
+			reconciler := &MultiClusterEngineReconciler{
+				Client:        fakeClient,
+				Scheme:        scheme.Scheme,
+				StatusManager: &status.StatusTracker{Client: fakeClient},
+			}
+
+			// Run cleanup
+			_, err := reconciler.CleanupVersionedAddOnTemplates(context.TODO(), mce)
+			if err != nil {
+				t.Errorf("CleanupVersionedAddOnTemplates() error = %v", err)
+				return
+			}
+
+			// Verify deleted templates are gone
+			for _, templateName := range tt.expectedToBeDeleted {
+				template := &addonv1alpha1.AddOnTemplate{}
+				err := fakeClient.Get(context.TODO(), types.NamespacedName{Name: templateName}, template)
+				if err == nil {
+					t.Errorf("Expected template %s to be deleted, but it still exists", templateName)
+				} else if !errors.IsNotFound(err) {
+					t.Errorf("Unexpected error when checking template %s: %v", templateName, err)
+				}
+			}
+
+			// Verify remaining templates still exist
+			for _, templateName := range tt.expectedToRemain {
+				template := &addonv1alpha1.AddOnTemplate{}
+				err := fakeClient.Get(context.TODO(), types.NamespacedName{Name: templateName}, template)
+				if err != nil {
+					t.Errorf("Expected template %s to remain, but got error: %v", templateName, err)
+				}
+			}
+		})
+	}
+}
+
+// Helper function to create a pointer to a bool
+func ptr(b bool) *bool {
+	return &b
 }
