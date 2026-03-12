@@ -2691,6 +2691,11 @@ func (r *MultiClusterEngineReconciler) CleanupVersionedAddOnTemplates(ctx contex
 	// List all AddOnTemplates
 	addOnTemplateList := &addonv1alpha1.AddOnTemplateList{}
 	if err := r.Client.List(ctx, addOnTemplateList); err != nil {
+		if apimeta.IsNoMatchError(err) {
+			// AddOnTemplate CRD does not exist yet, this can happen during a fresh install
+			log.Info("AddOnTemplate CRD not available yet, skipping cleanup")
+			return ctrl.Result{}, nil
+		}
 		log.Error(err, "Failed to list AddOnTemplates")
 		return ctrl.Result{}, err
 	}
