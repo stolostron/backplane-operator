@@ -2763,6 +2763,31 @@ rules:
   - rbac.open-cluster-management.io
   resources:
   - clusterpermissions
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - rbac.open-cluster-management.io
+  resources:
+  - clusterpermissions/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - rbac.open-cluster-management.io
+  resources:
+  - clusterpermissions/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - rbac.open-cluster-management.io
+  resources:
   - multiclusterroleassignments
   verbs:
   - get

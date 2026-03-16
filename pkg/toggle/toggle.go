@@ -30,6 +30,7 @@ const (
 	ClusterAPIProviderOAK8SChartDir    = "pkg/templates/charts/toggle/cluster-api-provider-openshift-assisted-k8s"
 	ClusterLifecycleChartDir           = "pkg/templates/charts/toggle/cluster-lifecycle"
 	ClusterManagerChartDir             = "pkg/templates/charts/toggle/cluster-manager"
+	ClusterPermissionChartDir          = "pkg/templates/charts/toggle/cluster-permission"
 	ClusterProxyAddonDir               = "pkg/templates/charts/toggle/cluster-proxy-addon"
 	ConsoleMCEChartsDir                = "pkg/templates/charts/toggle/console-mce"
 	DiscoveryChartDir                  = "pkg/templates/charts/toggle/discovery-operator"
