@@ -1,0 +1,141 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: maestro-db
+  namespace: maestro
+spec:
+  serviceName: maestro-db
+  replicas: 1
+  selector:
+    matchLabels:
+      name: maestro-db
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        name: maestro-db
+    spec:
+      hostIPC: false
+      hostNetwork: false
+      hostPID: false
+      securityContext:
+        runAsNonRoot: true
+{{- if .Values.global.deployOnOCP }}
+{{- if semverCompare ">=4.11.0" .Values.hubconfig.ocpVersion }}
+        seccompProfile:
+          type: RuntimeDefault
+{{- end }}
+{{- end }}
+      containers:
+      - name: postgresql
+        image: {{ .Values.global.imageOverrides.postgresql_13 }}
+        imagePullPolicy: {{ .Values.global.pullPolicy }}
+        ports:
+        - containerPort: 5432
+          protocol: TCP
+        env:
+        - name: POSTGRESQL_USER
+          valueFrom:
+            secretKeyRef:
+              key: user
+              name: maestro-db-config
+        - name: POSTGRESQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: maestro-db-config
+        - name: POSTGRESQL_DATABASE
+          valueFrom:
+            secretKeyRef:
+              key: name
+              name: maestro-db-config
+        - name: PGDATA
+          value: "/var/lib/pgsql/data/pgdata"
+        livenessProbe:
+          initialDelaySeconds: 120
+          tcpSocket:
+            port: 5432
+          timeoutSeconds: 10
+        readinessProbe:
+          exec:
+            command:
+            - "/bin/sh"
+            - "-c"
+            - exec /usr/bin/pg_isready -U $POSTGRESQL_USER -d $POSTGRESQL_DATABASE -h localhost
+              -p 5432
+          initialDelaySeconds: 5
+          timeoutSeconds: 1
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+          runAsNonRoot: true
+        terminationMessagePath: "/dev/termination-log"
+        volumeMounts:
+        - mountPath: "/var/lib/pgsql"
+          name: pgsql-home
+        - mountPath: "/var/lib/pgsql/data"
+          name: maestro-db-data
+        - mountPath: "/var/run/postgresql"
+          name: postgresql-run
+        - mountPath: "/tmp"
+          name: tmp
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                - amd64
+                - ppc64le
+                - s390x
+                - arm64
+{{- if .Values.global.pullSecret }}
+      imagePullSecrets:
+      - name: {{ .Values.global.pullSecret }}
+{{- end }}
+{{- with .Values.hubconfig.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+{{- end }}
+{{- with .Values.hubconfig.tolerations }}
+      tolerations:
+      {{- range . }}
+      - {{ if .Key }} key: {{ .Key }} {{- end }}
+        {{ if .Operator }} operator: {{ .Operator }} {{- end }}
+        {{ if .Value }} value: {{ .Value }} {{- end }}
+        {{ if .Effect }} effect: {{ .Effect }} {{- end }}
+        {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
+        {{- end }}
+{{- end }}
+      volumes:
+      - name: pgsql-home
+        emptyDir: {}
+      - name: postgresql-run
+        emptyDir: {}
+      - name: tmp
+        emptyDir: {}
+  volumeClaimTemplates:
+  - metadata:
+      name: maestro-db-data
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+{{- if hasKey .Values.global.templateOverrides "maestro_database_storage" }}
+          storage: {{ .Values.global.templateOverrides.maestro_database_storage | quote }}
+{{- else }}
+          storage: "1Gi"
+{{- end}}

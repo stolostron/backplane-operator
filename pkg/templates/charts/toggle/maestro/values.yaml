@@ -1,0 +1,21 @@
+# Default values for Maestro.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+global:
+  imageOverrides:
+    maestro: ""
+    postgresql_13: ""
+  # Available template overrides:
+  # maestro_database_storage: <storage-value>
+  templateOverrides: {}
+  pullSecret: null
+  pullPolicy: IfNotPresent
+  deployOnOCP: true
+hubconfig:
+  nodeSelector: null
+  tolerations: []
+  proxyConfigs: {}
+  replicaCount: 1
+  ocpVersion: 4.12.0
+org: open-cluster-management
