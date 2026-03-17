@@ -70,6 +70,7 @@ var offComponents = []string{
 	backplanev1.ClusterAPIProviderMetal,
 	backplanev1.ClusterAPIProviderOA,
 	backplanev1.ImageBasedInstallOperator,
+	backplanev1.MaestroPreview,
 }
 
 var nonOCPComponents = []string{
@@ -212,11 +213,11 @@ func GetTestImages() []string {
 		"cluster_api_controlplane_provider_openshift_assisted", "cluster_api_provider_agent", "cluster_api_provider_aws",
 		"cluster_api_provider_aws_rhel9", "cluster_api_provider_azure", "cluster_api_provider_azure_rhel9",
 		"cluster_api_provider_kubevirt", "cluster_api_provider_openshift_assisted_bootstrap",
-		"cluster_api_provider_openshift_assisted_control_plane", "cluster_curator_controller",
+		"cluster_api_provider_openshift_assisted_control_plane", "cloudevents_conductor", "cluster_curator_controller",
 		"cluster_image_set_controller", "cluster_permission", "cluster_proxy", "cluster_proxy_addon", "clusterclaims_controller",
 		"clusterlifecycle_state_metrics", "console_mce", "discovery_operator", "hypershift_addon_operator",
 		"hypershift_operator", "image_based_install_operator", "ip_address_manager", "kube_rbac_proxy_mce",
-		"managed_serviceaccount", "managedcluster_import_controller", "mce_capi_webhook_config_rhel9",
+		"maestro", "managed_serviceaccount", "managedcluster_import_controller", "mce_capi_webhook_config_rhel9",
 		"multicloud_manager", "openshift_hive", "ose_aws_cluster_api_controllers_rhel9",
 		"ose_baremetal_cluster_api_controllers_rhel9", "ose_cluster_api_rhel9", "postgresql_13",
 		"provider_credential_controller", "registration", "registration_operator", "work",
