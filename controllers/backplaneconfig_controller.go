@@ -2047,6 +2047,7 @@ func (r *MultiClusterEngineReconciler) ensureNoAllInternalEngineComponents(ctx c
 		backplanev1.ClusterAPIProviderOA,
 		backplanev1.ClusterLifecycle,
 		backplanev1.ClusterManager,
+		backplanev1.ClusterPermission,
 		backplanev1.ClusterProxyAddon,
 		backplanev1.ConsoleMCE,
 		backplanev1.Discovery,
