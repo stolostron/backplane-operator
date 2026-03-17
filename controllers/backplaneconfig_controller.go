@@ -994,6 +994,7 @@ func (r *MultiClusterEngineReconciler) fetchChartOrCRDPath(component string) str
 		backplanev1.ClusterAPIProviderOA:           clusterAPIOAChartLoc,
 		backplanev1.ClusterLifecycle:               toggle.ClusterLifecycleChartDir,
 		backplanev1.ClusterManager:                 toggle.ClusterManagerChartDir,
+		backplanev1.ClusterPermission:              toggle.ClusterPermissionChartDir,
 		backplanev1.ClusterProxyAddon:              toggle.ClusterProxyAddonDir,
 		backplanev1.ConsoleMCE:                     toggle.ConsoleMCEChartsDir,
 		backplanev1.Discovery:                      toggle.DiscoveryChartDir,
@@ -1229,6 +1230,28 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 		}
 	} else {
 		log.Info(messages.SkippingExternallyManaged, "component", backplanev1.ClusterManager)
+	}
+
+	if !r.isComponentExternallyManaged(backplaneConfig, backplanev1.ClusterPermission) {
+		if backplaneConfig.Enabled(backplanev1.ClusterPermission) {
+			result, err = r.ensureClusterPermission(ctx, backplaneConfig)
+			if result != (ctrl.Result{}) {
+				requeue = true
+			}
+			if err != nil {
+				errs[backplanev1.ClusterPermission] = err
+			}
+		} else {
+			result, err = r.ensureNoClusterPermission(ctx, backplaneConfig)
+			if result != (ctrl.Result{}) {
+				requeue = true
+			}
+			if err != nil {
+				errs[backplanev1.ClusterPermission] = err
+			}
+		}
+	} else {
+		log.Info(messages.SkippingExternallyManaged, "component", backplanev1.ClusterPermission)
 	}
 
 	if !r.isComponentExternallyManaged(backplaneConfig, backplanev1.ServerFoundation) {
@@ -2024,6 +2047,7 @@ func (r *MultiClusterEngineReconciler) ensureNoAllInternalEngineComponents(ctx c
 		backplanev1.ClusterAPIProviderOA,
 		backplanev1.ClusterLifecycle,
 		backplanev1.ClusterManager,
+		backplanev1.ClusterPermission,
 		backplanev1.ClusterProxyAddon,
 		backplanev1.ConsoleMCE,
 		backplanev1.Discovery,

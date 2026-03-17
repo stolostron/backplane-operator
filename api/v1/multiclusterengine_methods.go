@@ -37,6 +37,7 @@ const (
 	ClusterAPIProviderOAPreview      = "cluster-api-provider-openshift-assisted-preview"
 	ClusterLifecycle                 = "cluster-lifecycle"
 	ClusterManager                   = "cluster-manager"
+	ClusterPermission                = "cluster-permission"
 	ClusterProxyAddon                = "cluster-proxy-addon"
 	ConsoleMCE                       = "console-mce"
 	Discovery                        = "discovery"
@@ -64,6 +65,7 @@ const (
 	ClusterAPIProviderOAK8SCRDDir    = "cluster-api-provider-openshift-assisted-k8s"
 	ClusterLifecycleCRDDir           = "cluster-lifecycle"
 	ClusterManagerCRDDir             = "cluster-manager"
+	ClusterPermissionCRDDir          = "cluster-permission"
 	ClusterProxyAddonCRDDir          = "cluster-proxy-addon"
 	DiscoveryCRDDir                  = "discovery-operator"
 	HiveCRDDir                       = "hive-operator"
@@ -87,6 +89,7 @@ var AllComponents = []string{
 	ClusterAPIProviderOA,
 	ClusterLifecycle,
 	ClusterManager,
+	ClusterPermission,
 	ClusterProxyAddon,
 	ConsoleMCE,
 	Discovery,
@@ -113,6 +116,7 @@ var MCEComponents = []string{
 	ClusterAPIProviderOA,
 	ClusterLifecycle,
 	ClusterManager,
+	ClusterPermission,
 	ClusterProxyAddon,
 	ConsoleMCE,
 	Discovery,
