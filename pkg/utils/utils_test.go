@@ -420,6 +420,7 @@ func TestComponentCRDDirectories_AllComponents(t *testing.T) {
 		backplanev1.ClusterAPIProviderOAPreview,
 		backplanev1.ClusterLifecycle,
 		backplanev1.ClusterManager,
+		backplanev1.ClusterPermission,
 		backplanev1.ClusterProxyAddon,
 		backplanev1.Discovery,
 		backplanev1.Hive,
