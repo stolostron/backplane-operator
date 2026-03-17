@@ -2509,7 +2509,7 @@ func Test_ensureToggleableComponents_withExternallyManagedComponents(t *testing.
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-mce",
 					Annotations: map[string]string{
-						utils.AnnotationExternallyManaged: `["managedserviceaccount","image-based-install-operator","hypershift","console-mce","discovery","hive","assisted-service","cluster-lifecycle","cluster-manager","cluster-permission","server-foundation","cluster-proxy-addon","cluster-api","cluster-api-provider-aws","cluster-api-provider-metal3-preview","cluster-api-provider-openshift-assisted","local-cluster"]`,
+						utils.AnnotationExternallyManaged: `["managedserviceaccount","image-based-install-operator","hypershift","console-mce","discovery","hive","assisted-service","cluster-lifecycle","cluster-manager","cluster-permission","server-foundation","cluster-proxy-addon","cluster-api","cluster-api-provider-aws","cluster-api-provider-azure-preview","cluster-api-provider-metal3-preview","cluster-api-provider-openshift-assisted","local-cluster"]`,
 					},
 				},
 				Spec: backplanev1.MultiClusterEngineSpec{
