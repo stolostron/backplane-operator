@@ -1166,6 +1166,7 @@ spec:
           - config.openshift.io
           resources:
           - apiservers
+          - authentications
           - clusteroperators
           - clusterversions
           - dnses

@@ -46,6 +46,15 @@ rules:
   - watch
   apiGroups:
   - config.openshift.io
+  resources:
+  - authentications
+
+- verbs:
+  - list
+  - get
+  - watch
+  apiGroups:
+  - config.openshift.io
   - console.openshift.io
   - project.openshift.io
   - tower.ansible.com
