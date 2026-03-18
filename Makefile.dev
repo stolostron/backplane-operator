@@ -9,7 +9,27 @@ CONFIG ?= ""
 PIPELINE_REPO ?= backplane-pipeline
 PIPELINE_BRANCH ?= 2.9-integration
 
+# Bundle branch configuration
+# Derive current development version from COMPONENT_VERSION file
+COMPONENT_VERSION := $(shell cat COMPONENT_VERSION)
+BUNDLE_BRANCH_MAIN ?= backplane-$(shell echo $(COMPONENT_VERSION) | cut -d. -f1,2)
+
+# Default to current branch for local development
 BUNDLE_BRANCH ?= $(shell git branch --show-current)
+
+# Override for CI: map main to current development version
+ifdef GITHUB_BASE_REF
+  ifeq ($(GITHUB_BASE_REF),main)
+    BUNDLE_BRANCH := $(BUNDLE_BRANCH_MAIN)
+  else
+    BUNDLE_BRANCH := $(GITHUB_BASE_REF)
+  endif
+endif
+
+# For local development on main, also use current development version
+ifeq ($(BUNDLE_BRANCH),main)
+  BUNDLE_BRANCH := $(BUNDLE_BRANCH_MAIN)
+endif
 
 ##@ Dev. targets
 

@@ -17,44 +17,13 @@ jobs:
         with:
           python-version: '3.9'
 
-      - name: Determine bundle branch
-        id: bundle-branch
-        run: |
-          TARGET_BRANCH="${{ github.base_ref }}"
-          echo "PR target branch: $TARGET_BRANCH"
-
-          # Check if target branch exists in bundle repo
-          if git ls-remote --exit-code --heads https://github.com/stolostron/mce-operator-bundle.git "$TARGET_BRANCH" > /dev/null 2>&1; then
-            BUNDLE_BRANCH="$TARGET_BRANCH"
-            echo "Bundle branch found: $BUNDLE_BRANCH"
-          else
-            # Extract version from branch name (e.g., backplane-2.17 → 2.17)
-            if [[ "$TARGET_BRANCH" =~ backplane-([0-9]+\.[0-9]+) ]]; then
-              VERSION="${BASH_REMATCH[1]}"
-              # Try backplane-VERSION format in bundle repo
-              if git ls-remote --exit-code --heads https://github.com/stolostron/mce-operator-bundle.git "backplane-$VERSION" > /dev/null 2>&1; then
-                BUNDLE_BRANCH="backplane-$VERSION"
-                echo "Bundle branch found via version mapping: $BUNDLE_BRANCH"
-              else
-                echo "ERROR: No matching bundle branch found for backplane-operator branch '$TARGET_BRANCH'"
-                echo "Expected bundle branch 'backplane-$VERSION' or '$TARGET_BRANCH' not found"
-                exit 1
-              fi
-            else
-              echo "ERROR: Cannot determine bundle branch for target '$TARGET_BRANCH'"
-              echo "Expected branch format: backplane-X.Y or a branch that exists in mce-operator-bundle"
-              exit 1
-            fi
-          fi
-
-          echo "bundle-branch=$BUNDLE_BRANCH" >> $GITHUB_OUTPUT
-
       - name: Install dependencies
         run: |
           pip3 install -r hack/bundle-automation/requirements.txt
 
       - name: Validate image keys
         env:
-          BUNDLE_BRANCH: ${{ steps.bundle-branch.outputs.bundle-branch }}
+          # Pass PR target branch to Makefile, which maps 'main' to current dev version
+          GITHUB_BASE_REF: ${{ github.base_ref }}
         run: |
           make -f Makefile.dev validate-image-keys
