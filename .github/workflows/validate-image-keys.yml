@@ -1,0 +1,66 @@
+name: Validate Image Keys
+
+on:
+  pull_request:
+    paths:
+      - 'pkg/templates/charts/toggle/**/values.yaml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout backplane-operator
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      - name: Determine bundle branch
+        id: bundle-branch
+        run: |
+          # Try to match the target branch naming convention
+          TARGET_BRANCH="${{ github.base_ref }}"
+          echo "Target branch: $TARGET_BRANCH"
+
+          # Check if bundle branch exists
+          if git ls-remote --heads https://github.com/stolostron/mce-operator-bundle.git "$TARGET_BRANCH" | grep -q "$TARGET_BRANCH"; then
+            echo "Bundle branch $TARGET_BRANCH exists"
+            echo "branch=$TARGET_BRANCH" >> $GITHUB_OUTPUT
+          else
+            echo "Bundle branch $TARGET_BRANCH does not exist, using main"
+            echo "branch=main" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Checkout mce-operator-bundle
+        uses: actions/checkout@v4
+        with:
+          repository: stolostron/mce-operator-bundle
+          path: mce-operator-bundle
+          ref: ${{ steps.bundle-branch.outputs.branch }}
+
+      - name: Determine MCE version from bundle
+        id: mce-version
+        run: |
+          cd mce-operator-bundle/extras
+          # Find the latest version file (e.g., 2.17.0.json)
+          LATEST_VERSION=$(ls -1 *.json | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.json$' | sort -V | tail -1 | sed 's/\.json$//')
+          if [ -z "$LATEST_VERSION" ]; then
+            echo "Error: No version files found in mce-operator-bundle/extras"
+            exit 1
+          fi
+          echo "version=$LATEST_VERSION" >> $GITHUB_OUTPUT
+          echo "Detected MCE version from bundle: $LATEST_VERSION"
+          cd ../..
+
+      - name: Install dependencies
+        run: |
+          pip3 install -r hack/bundle-automation/requirements.txt
+
+      - name: Validate image keys
+        env:
+          BUNDLE_PATH: mce-operator-bundle
+          MCE_VERSION: ${{ steps.mce-version.outputs.version }}
+        run: |
+          make -f Makefile.dev validate-image-keys
