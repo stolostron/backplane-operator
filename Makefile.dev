@@ -80,10 +80,9 @@ validate-image-keys: install-requirements
 		rm -rf mce-operator-bundle; \
 	fi
 	@git clone https://github.com/stolostron/mce-operator-bundle.git mce-operator-bundle
-	@echo "Attempting to checkout branch: $(BUNDLE_BRANCH)"
-	@cd mce-operator-bundle && \
-		(git checkout $(BUNDLE_BRANCH) 2>/dev/null || git checkout main) && \
-		echo "Checked out branch: $$(git branch --show-current)"
+	@echo "Checking out bundle branch: $(BUNDLE_BRANCH)"
+	@cd mce-operator-bundle && git checkout $(BUNDLE_BRANCH)
+	@echo "Successfully checked out branch: $$(cd mce-operator-bundle && git branch --show-current)"
 	@echo "Auto-detecting MCE version from bundle..."
 	@MCE_VERSION=$$(cd mce-operator-bundle/extras && ls -1 *.json | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.json$$' | sort -V | tail -1 | sed 's/\.json$$//'); \
 	if [ -z "$$MCE_VERSION" ]; then \
