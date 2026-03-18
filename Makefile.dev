@@ -31,6 +31,9 @@ ifeq ($(BUNDLE_BRANCH),main)
   BUNDLE_BRANCH := $(BUNDLE_BRANCH_MAIN)
 endif
 
+# Bundle repo to validate against
+BUNDLE ?= mce-operator-bundle
+
 ##@ Dev. targets
 
 .PHONY: subscriptions
@@ -94,26 +97,18 @@ onboard-new-component: install-requirements
 ## Validate that all required image keys exist in the bundle
 .PHONY: validate-image-keys
 validate-image-keys: install-requirements
-	@echo "Cloning mce-operator-bundle..."
-	@if [ -d "mce-operator-bundle" ]; then \
-		echo "Removing existing mce-operator-bundle directory..."; \
-		rm -rf mce-operator-bundle; \
+	@echo "Cloning $(BUNDLE)..."
+	@if [ -d "$(BUNDLE)" ]; then \
+		echo "Removing existing $(BUNDLE) directory..."; \
+		rm -rf $(BUNDLE); \
 	fi
-	@git clone https://github.com/stolostron/mce-operator-bundle.git mce-operator-bundle
+	@git clone https://github.com/$(ORG)/$(BUNDLE).git $(BUNDLE)
 	@echo "Checking out bundle branch: $(BUNDLE_BRANCH)"
-	@cd mce-operator-bundle && git checkout $(BUNDLE_BRANCH)
-	@echo "Successfully checked out branch: $$(cd mce-operator-bundle && git branch --show-current)"
-	@echo "Auto-detecting MCE version from bundle..."
-	@MCE_VERSION=$$(cd mce-operator-bundle/extras && ls -1 *.json | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.json$$' | sort -V | tail -1 | sed 's/\.json$$//'); \
-	if [ -z "$$MCE_VERSION" ]; then \
-		echo "Error: No version files found in mce-operator-bundle/extras"; \
-		rm -rf mce-operator-bundle; \
-		exit 1; \
-	fi; \
-	echo "Detected MCE version: $$MCE_VERSION"; \
-	python3 ./hack/bundle-automation/generate-shell.py --validate-image-keys --org $(ORG) --repo $(REPO) --branch $(BRANCH) --bundle-path mce-operator-bundle --mce-version $$MCE_VERSION
+	@cd $(BUNDLE) && git checkout $(BUNDLE_BRANCH)
+	@echo "Successfully checked out branch: $$(cd $(BUNDLE) && git branch --show-current)"
+	@python3 ./hack/bundle-automation/generate-shell.py --validate-image-keys --org $(ORG) --repo $(REPO) --branch $(BRANCH) --bundle $(BUNDLE)
 	@echo "Cleaning up cloned bundle..."
-	@rm -rf mce-operator-bundle
+	@rm -rf $(BUNDLE)
 
 .PHONY: catalog-deploy
 catalog-deploy: ## Deploys backplane operator via subscription
