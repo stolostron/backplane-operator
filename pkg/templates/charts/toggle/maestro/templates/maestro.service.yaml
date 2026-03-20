@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: maestro
+  namespace: maestro
+spec:
+  ports:
+  - port: 8000
+    protocol: TCP
+    targetPort: 8000
+  selector:
+    app: maestro

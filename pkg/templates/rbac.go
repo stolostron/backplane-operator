@@ -26,7 +26,7 @@ const (
 )
 
 //+kubebuilder:rbac:groups="",resources=configmaps;serviceaccounts;services,verbs=create;get;list;update;watch;patch;delete
-//+kubebuilder:rbac:groups=apps,resources=deployments,verbs=create;get;list;update;watch;patch;delete
+//+kubebuilder:rbac:groups=apps,resources=deployments;statefulsets,verbs=create;get;list;update;watch;patch;delete
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterrolebindings;rolebindings,verbs=create;get;list;update;watch;patch;delete
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles;roles,verbs=create;get;list;update;watch;patch;delete;bind
 //+kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=create;get;list;update;watch;patch;delete
@@ -70,6 +70,7 @@ var resources = []string{
 	"Service",
 	"ServiceAccount",
 	"ServiceMonitor",
+	"StatefulSet",
 	"ValidatingWebhookConfiguration",
 	"Certificate",
 	"Issuer",

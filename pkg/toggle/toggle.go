@@ -41,6 +41,7 @@ const (
 	ImageBasedInstallOperatorChartDir  = "pkg/templates/charts/toggle/image-based-install-operator"
 	ManagedServiceAccountChartDir      = "pkg/templates/charts/toggle/managed-serviceaccount"
 	ServerFoundationChartDir           = "pkg/templates/charts/toggle/server-foundation"
+	MaestroChartDir                    = "pkg/templates/charts/toggle/maestro"
 )
 
 func EnabledStatus(namespacedName types.NamespacedName) status.StatusReporter {
