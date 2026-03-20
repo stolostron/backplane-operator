@@ -43,3 +43,4 @@ hack/bundle-automation/tmp/
 
 # Ignore partial workflow directory
 workflow/
+mce-operator-bundle/

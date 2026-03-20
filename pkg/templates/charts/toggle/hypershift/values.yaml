@@ -1,7 +1,6 @@
 global:
   imageOverrides:
     hypershift_addon_operator: ""
-    cluster_api: ""
     cluster_api_provider_agent: ""
     hypershift_operator: ""
     cluster_api_provider_kubevirt: ""
