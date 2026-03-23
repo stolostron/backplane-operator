@@ -431,6 +431,10 @@ var _ = Describe("BackplaneConfig controller", func() {
 									Enabled: true,
 								},
 								{
+									Name:    backplanev1.ClusterPermission,
+									Enabled: true,
+								},
+								{
 									Name:    backplanev1.ClusterProxyAddon,
 									Enabled: true,
 								},
@@ -619,6 +623,10 @@ var _ = Describe("BackplaneConfig controller", func() {
 								},
 								{
 									Name:    backplanev1.ClusterManager,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.ClusterPermission,
 									Enabled: false,
 								},
 								{
@@ -917,6 +925,10 @@ var _ = Describe("BackplaneConfig controller", func() {
 									Enabled: true,
 								},
 								{
+									Name:    backplanev1.ClusterPermission,
+									Enabled: true,
+								},
+								{
 									Name:    backplanev1.ClusterProxyAddon,
 									Enabled: true,
 								},
@@ -1038,6 +1050,10 @@ var _ = Describe("BackplaneConfig controller", func() {
 								},
 								{
 									Name:    backplanev1.ClusterManager,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.ClusterPermission,
 									Enabled: false,
 								},
 								{
@@ -2493,7 +2509,7 @@ func Test_ensureToggleableComponents_withExternallyManagedComponents(t *testing.
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-mce",
 					Annotations: map[string]string{
-						utils.AnnotationExternallyManaged: `["managedserviceaccount","image-based-install-operator","hypershift","console-mce","discovery","hive","assisted-service","cluster-lifecycle","cluster-manager","server-foundation","cluster-proxy-addon","cluster-api","cluster-api-provider-aws","cluster-api-provider-metal3-preview","cluster-api-provider-openshift-assisted","local-cluster"]`,
+						utils.AnnotationExternallyManaged: `["managedserviceaccount","image-based-install-operator","hypershift","console-mce","discovery","hive","assisted-service","cluster-lifecycle","cluster-manager","cluster-permission","server-foundation","cluster-proxy-addon","cluster-api","cluster-api-provider-aws","cluster-api-provider-azure-preview","cluster-api-provider-metal3-preview","cluster-api-provider-openshift-assisted","local-cluster"]`,
 					},
 				},
 				Spec: backplanev1.MultiClusterEngineSpec{
@@ -2510,6 +2526,7 @@ func Test_ensureToggleableComponents_withExternallyManagedComponents(t *testing.
 							{Name: backplanev1.AssistedService, Enabled: true},
 							{Name: backplanev1.ClusterLifecycle, Enabled: true},
 							{Name: backplanev1.ClusterManager, Enabled: true},
+							{Name: backplanev1.ClusterPermission, Enabled: true},
 							{Name: backplanev1.ServerFoundation, Enabled: true},
 							{Name: backplanev1.ClusterProxyAddon, Enabled: true},
 							{Name: backplanev1.ClusterAPI, Enabled: true},

@@ -37,6 +37,7 @@ const (
 	ClusterAPIProviderOAPreview      = "cluster-api-provider-openshift-assisted-preview"
 	ClusterLifecycle                 = "cluster-lifecycle"
 	ClusterManager                   = "cluster-manager"
+	ClusterPermission                = "cluster-permission"
 	ClusterProxyAddon                = "cluster-proxy-addon"
 	ConsoleMCE                       = "console-mce"
 	Discovery                        = "discovery"
@@ -50,6 +51,8 @@ const (
 	ManagedServiceAccount            = "managedserviceaccount"
 	ManagedServiceAccountPreview     = "managedserviceaccount-preview"
 	ServerFoundation                 = "server-foundation"
+	Maestro                          = "maestro"
+	MaestroPreview                   = "maestro-preview"
 
 	// CRD directory names
 	AssistedServiceCRDDir            = "assisted-service"
@@ -64,6 +67,7 @@ const (
 	ClusterAPIProviderOAK8SCRDDir    = "cluster-api-provider-openshift-assisted-k8s"
 	ClusterLifecycleCRDDir           = "cluster-lifecycle"
 	ClusterManagerCRDDir             = "cluster-manager"
+	ClusterPermissionCRDDir          = "cluster-permission"
 	ClusterProxyAddonCRDDir          = "cluster-proxy-addon"
 	DiscoveryCRDDir                  = "discovery-operator"
 	HiveCRDDir                       = "hive-operator"
@@ -87,6 +91,7 @@ var AllComponents = []string{
 	ClusterAPIProviderOA,
 	ClusterLifecycle,
 	ClusterManager,
+	ClusterPermission,
 	ClusterProxyAddon,
 	ConsoleMCE,
 	Discovery,
@@ -100,6 +105,8 @@ var AllComponents = []string{
 	ManagedServiceAccount,
 	ManagedServiceAccountPreview,
 	ServerFoundation,
+	// Maestro, Uncomment until stable release is available
+	MaestroPreview,
 }
 
 // MCEComponents is a slice containing component names specific to the "MCE" category.
@@ -113,6 +120,7 @@ var MCEComponents = []string{
 	ClusterAPIProviderOA,
 	ClusterLifecycle,
 	ClusterManager,
+	ClusterPermission,
 	ClusterProxyAddon,
 	ConsoleMCE,
 	Discovery,
@@ -122,6 +130,8 @@ var MCEComponents = []string{
 	ImageBasedInstallOperator,
 	ManagedServiceAccount,
 	ServerFoundation,
+	// Maestro, Uncomment until stable release is available
+	MaestroPreview,
 }
 
 /*
@@ -137,6 +147,7 @@ var PreviewComponents = []string{
 	HyperShiftPreview,
 	ImageBasedInstallOperatorPreview,
 	ManagedServiceAccountPreview,
+	// MaestroPreview, // Uncomment when stable release is available
 }
 
 /*
@@ -152,6 +163,7 @@ var PreviewToStable = map[string]string{
 	HyperShiftPreview:                HyperShift,                // Upgraded in ACM 2.8 / MCE 2.3
 	ImageBasedInstallOperatorPreview: ImageBasedInstallOperator, // Upgraded in ACM 2.12 / MCE 2.7
 	ManagedServiceAccountPreview:     ManagedServiceAccount,     // Upgraded in ACM 2.9 / MCE 2.4
+	// MaestroPreview:                   Maestro,                   // Upgraded in ACM 2.17 / MCE 2.12
 }
 
 /*

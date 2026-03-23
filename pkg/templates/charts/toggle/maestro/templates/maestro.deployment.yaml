@@ -1,0 +1,193 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: maestro
+    template: maestro
+  name: maestro
+  namespace: maestro
+spec:
+  replicas: {{ .Values.hubconfig.replicaCount }}
+  selector:
+    matchLabels:
+      app: maestro
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: maestro
+    spec:
+      hostIPC: false
+      hostNetwork: false
+      hostPID: false
+      securityContext:
+        runAsNonRoot: true
+{{- if .Values.global.deployOnOCP }}
+{{- if semverCompare ">=4.11.0" .Values.hubconfig.ocpVersion }}
+        seccompProfile:
+          type: RuntimeDefault
+{{- end }}
+{{- end }}
+      containers:
+      - command:
+        - "/usr/local/bin/maestro"
+        - server
+        - "--client-id=maestro-$(POD_NAME)"
+        - "--db-host-file=/secrets/rds/host"
+        - "--db-port-file=/secrets/rds/port"
+        - "--db-user-file=/secrets/rds/user"
+        - "--db-password-file=/secrets/rds/password"
+        - "--db-name-file=/secrets/rds/name"
+        - "--db-sslmode=disable"
+        - "--db-max-open-connections=50"
+        - "--server-hostname=0.0.0.0"
+        - "--http-server-bindport=8000"
+        - "--http-read-timeout=5s"
+        - "--http-write-timeout=30s"
+        - "--enable-grpc-server=true"
+        - "--grpc-server-bindport=8090"
+        - "--alsologtostderr"
+        - "--disable-message-broker=true"
+        - "-v=2"
+        env:
+        - name: AMS_ENV
+          value: development
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+{{- if .Values.hubconfig.proxyConfigs }}
+        - name: HTTP_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
+        - name: HTTPS_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.HTTPS_PROXY }}
+        - name: NO_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
+{{- end }}
+        image: {{ .Values.global.imageOverrides.maestro }}
+        imagePullPolicy: {{ .Values.global.pullPolicy }}
+        ports:
+        - name: http-port
+          containerPort: 8000
+        - name: grpc-port
+          containerPort: 8090
+        - name: readiness-port
+          containerPort: 8083
+        livenessProbe:
+          httpGet:
+            path: "/api/maestro"
+            port: http-port
+          initialDelaySeconds: 15
+          periodSeconds: 5
+        name: service
+        readinessProbe:
+          httpGet:
+            httpHeaders:
+            - name: User-Agent
+              value: Probe
+            path: "/healthcheck"
+            port: readiness-port
+          initialDelaySeconds: 20
+          periodSeconds: 10
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+          runAsNonRoot: true
+        volumeMounts:
+        - mountPath: "/secrets/rds"
+          name: maestro-db-config
+      initContainers:
+      - command:
+        - "/usr/local/bin/maestro"
+        - migration
+        - "--db-host-file=/secrets/rds/host"
+        - "--db-port-file=/secrets/rds/port"
+        - "--db-user-file=/secrets/rds/user"
+        - "--db-password-file=/secrets/rds/password"
+        - "--db-name-file=/secrets/rds/name"
+        - "--db-sslmode=disable"
+        - "--alsologtostderr"
+        - "-v=2"
+        image: {{ .Values.global.imageOverrides.maestro }}
+        imagePullPolicy: {{ .Values.global.pullPolicy }}
+        name: migration
+        resources:
+          requests:
+            cpu: 50m
+            memory: 128Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+          runAsNonRoot: true
+        volumeMounts:
+        - mountPath: "/secrets/rds"
+          name: maestro-db-config
+      serviceAccountName: maestro
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                - amd64
+                - ppc64le
+                - s390x
+                - arm64
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 70
+            podAffinityTerm:
+              topologyKey: topology.kubernetes.io/zone
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - maestro
+          - weight: 35
+            podAffinityTerm:
+              topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - maestro
+      volumes:
+      - name: maestro-db-config
+        secret:
+          secretName: maestro-db-config
+{{- if .Values.global.pullSecret }}
+      imagePullSecrets:
+      - name: {{ .Values.global.pullSecret }}
+{{- end }}
+{{- with .Values.hubconfig.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+{{- end }}
+{{- with .Values.hubconfig.tolerations }}
+      tolerations:
+      {{- range . }}
+      - {{ if .Key }} key: {{ .Key }} {{- end }}
+        {{ if .Operator }} operator: {{ .Operator }} {{- end }}
+        {{ if .Value }} value: {{ .Value }} {{- end }}
+        {{ if .Effect }} effect: {{ .Effect }} {{- end }}
+        {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
+        {{- end }}
+{{- end }}

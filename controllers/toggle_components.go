@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/Masterminds/goutils"
 	semver "github.com/Masterminds/semver"
 	configv1 "github.com/openshift/api/config/v1"
 
@@ -1348,6 +1349,82 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterManager(ctx context.Contex
 	return ctrl.Result{}, nil
 }
 
+func (r *MultiClusterEngineReconciler) ensureClusterPermission(ctx context.Context, mce *backplanev1.MultiClusterEngine) (
+	ctrl.Result, error) {
+
+	namespacedName := types.NamespacedName{Name: "cluster-permission", Namespace: mce.Spec.TargetNamespace}
+	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
+	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
+
+	// Ensure that the InternalHubComponent CR instance is created for component in MCE.
+	if result, err := r.ensureInternalEngineComponent(ctx, mce, backplanev1.ClusterPermission); err != nil {
+		return result, err
+	}
+
+	// Renders all templates from charts
+	chartPath := r.fetchChartOrCRDPath(backplanev1.ClusterPermission)
+	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
+
+	if len(errs) > 0 {
+		for _, err := range errs {
+			log.Info(err.Error())
+		}
+		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+	}
+
+	// Apply deployment config overrides
+	if result, err := r.applyComponentDeploymentOverrides(mce, templates, backplanev1.ClusterPermission); err != nil {
+		return result, err
+	}
+
+	// Applies all templates
+	for _, template := range templates {
+		applyReleaseVersionAnnotation(template)
+		result, err := r.applyTemplate(ctx, mce, template)
+		if err != nil {
+			return result, err
+		}
+	}
+
+	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterEngineReconciler) ensureNoClusterPermission(ctx context.Context, mce *backplanev1.MultiClusterEngine) (
+	ctrl.Result, error) {
+
+	namespacedName := types.NamespacedName{Name: "cluster-permission", Namespace: mce.Spec.TargetNamespace}
+
+	// Ensure that the InternalHubComponent CR instance is deleted for component in MCE.
+	if result, err := r.ensureNoInternalEngineComponent(ctx, mce,
+		backplanev1.ClusterPermission); (result != ctrl.Result{}) || err != nil {
+		return result, err
+	}
+
+	// Renders all templates from charts
+	chartPath := r.fetchChartOrCRDPath(backplanev1.ClusterPermission)
+	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
+
+	if len(errs) > 0 {
+		for _, err := range errs {
+			log.Info(err.Error())
+		}
+		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+	}
+
+	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
+	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
+
+	// Deletes all templates
+	for _, template := range templates {
+		result, err := r.deleteTemplate(ctx, mce, template)
+		if err != nil {
+			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
+			return result, err
+		}
+	}
+	return ctrl.Result{}, nil
+}
+
 func (r *MultiClusterEngineReconciler) ensureHyperShift(ctx context.Context, mce *backplanev1.MultiClusterEngine) (
 	ctrl.Result, error) {
 
@@ -1697,6 +1774,135 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterProxyAddon(ctx context.Con
 	return ctrl.Result{}, nil
 }
 
+func (r *MultiClusterEngineReconciler) ensureMaestro(ctx context.Context,
+	mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+	maestroName := "maestro"
+	ocmHubNS := "open-cluster-management-hub"
+
+	namespacedName := types.NamespacedName{Name: maestroName, Namespace: maestroName}
+	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
+	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
+
+	// Ensure the maestro namespace exists
+	maestroNS := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: maestroName}}
+	if err := r.Client.Get(ctx, types.NamespacedName{Name: maestroName}, maestroNS); err != nil {
+		if apierrors.IsNotFound(err) {
+			if err := r.Client.Create(ctx, maestroNS); err != nil && !apierrors.IsAlreadyExists(err) {
+				return ctrl.Result{}, errors.Wrapf(err, "failed to create %s namespace", maestroName)
+			}
+			log.Info("Created maestro namespace")
+		} else {
+			return ctrl.Result{}, errors.Wrapf(err, "failed to get %s namespace", maestroName)
+		}
+	}
+
+	// Ensure the maestro database secret exists with a generated password
+	dbPassword, err := r.ensureMaestroDatabaseSecret(ctx, mce, maestroName, "maestro-db-config")
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	// Ensure that the InternalHubComponent CR instance is created for component in MCE.
+	if result, err := r.ensureInternalEngineComponent(ctx, mce, backplanev1.MaestroPreview); err != nil {
+		return result, err
+	}
+
+	// Renders all templates from charts with maestro namespace
+	chartPath := r.fetchChartOrCRDPath(backplanev1.MaestroPreview)
+	templates, errs := renderer.RenderChartWithNamespace(chartPath, mce, r.CacheSpec.ImageOverrides,
+		r.CacheSpec.TemplateOverrides, maestroName)
+	if len(errs) > 0 {
+		for _, err := range errs {
+			log.Info("failed to render the maestro chart", "err", err)
+		}
+		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+	}
+
+	// Apply deployment config overrides
+	if result, err := r.applyComponentDeploymentOverrides(mce, templates, backplanev1.MaestroPreview); err != nil {
+		return result, errors.Wrapf(err, "failed to apply deployment config overrides for maestro")
+	}
+
+	// Applies all templates
+	for _, template := range templates {
+		applyReleaseVersionAnnotation(template)
+		result, err := r.applyTemplate(ctx, mce, template)
+		if err != nil {
+			return result, errors.Wrapf(err, "failed to apply maestro charts")
+		}
+	}
+
+	// Ensure the cluster-manager gRPC server (conductor) ConfigMap exists with the database password
+	if err := r.ensureClusterManagerGRPCServerConfigMap(ctx, mce, ocmHubNS, "grpc-server-config", dbPassword); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	// Ensure the cluster-manager gRPC server (conductor) Route exists
+	if err := r.ensureClusterManagerGRPCServerRoute(ctx, mce, ocmHubNS, "grpc-server"); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	// Enable the cluster-manager gRPC server (conductor)
+	if err := r.enableClusterManagerGRPCServer(ctx, mce); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterEngineReconciler) ensureNoMaestro(ctx context.Context,
+	mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+	namespacedName := types.NamespacedName{Name: "maestro", Namespace: "maestro"}
+	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
+	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
+
+	// Ensure that the InternalHubComponent CR instance is deleted for component in MCE.
+	if result, err := r.ensureNoInternalEngineComponent(ctx, mce,
+		backplanev1.MaestroPreview); (result != ctrl.Result{}) || err != nil {
+		return result, err
+	}
+
+	// Delete the cluster-manager gRPC server ConfigMap
+	configMap := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "grpc-server-config",
+			Namespace: "open-cluster-management-hub",
+		},
+	}
+	if err := r.Client.Delete(ctx, configMap); err != nil && !apierrors.IsNotFound(err) {
+		log.Error(err, "Failed to delete maestro conductor ConfigMap")
+		return ctrl.Result{}, err
+	}
+	log.Info("Removed cluster-manager gRPC server ConfigMap")
+
+	// Delete the cluster-manager gRPC server Route
+	route := &unstructured.Unstructured{}
+	route.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "route.openshift.io",
+		Version: "v1",
+		Kind:    "Route",
+	})
+	route.SetName("grpc-server")
+	route.SetNamespace("open-cluster-management-hub")
+	if err := r.Client.Delete(ctx, route); err != nil && !apierrors.IsNotFound(err) {
+		log.Error(err, "Failed to delete maestro conductor Route")
+		return ctrl.Result{}, err
+	}
+	log.Info("Removed cluster-manager gRPC server Route")
+
+	// Delete maestro namespace
+	if err := r.deleteMaestroNamespace(ctx); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	// Remove the cluster-manager configuration for gRPC server
+	if err := r.disableClusterManagerGRPCServer(ctx); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	return ctrl.Result{}, nil
+}
+
 // Checks if OCP Console is enabled and return true if so. If <OCP v4.12, always return true
 // Otherwise check in the EnabledCapabilities spec for OCP console
 func (r *MultiClusterEngineReconciler) CheckConsole(ctx context.Context) (bool, error) {
@@ -1995,4 +2201,383 @@ func applyReleaseVersionAnnotation(template *unstructured.Unstructured) {
 	}
 	annotations[utils.AnnotationReleaseVersion] = version.Version
 	template.SetAnnotations(annotations)
+}
+
+// ensureMaestroDatabaseSecret creates or retrieves the maestro database configuration secret.
+// If the secret doesn't exist, it generates a random 16-character password.
+// Returns the password string for use in other resources.
+func (r *MultiClusterEngineReconciler) ensureMaestroDatabaseSecret(ctx context.Context,
+	mce *backplanev1.MultiClusterEngine, namespace, name string) (string, error) {
+	secret := &corev1.Secret{}
+	err := r.Client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, secret)
+	if err == nil {
+		return string(secret.Data["password"]), nil
+	}
+
+	if !apierrors.IsNotFound(err) {
+		return "", errors.Wrapf(err, "failed to get maestro database secret")
+	}
+
+	// Secret doesn't exist, create it
+	password, err := goutils.CryptoRandomAlphaNumeric(16)
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to generate maestro database password")
+	}
+
+	secret = &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: "maestro",
+		},
+		StringData: map[string]string{
+			"host":     "maestro-db.maestro",
+			"port":     "5432",
+			"name":     "maestro",
+			"user":     "maestro",
+			"password": password,
+		},
+	}
+
+	if err := ctrl.SetControllerReference(mce, secret, r.Scheme); err != nil {
+		return "", errors.Wrapf(err, "failed to set controller reference on maestro database secret")
+	}
+
+	if err := r.Client.Create(ctx, secret); err != nil {
+		return "", errors.Wrapf(err, "failed to create maestro database secret")
+	}
+
+	log.Info("Created maestro database secret")
+
+	return password, nil
+}
+
+// ensureClusterManagerGRPCServerConfigMap creates the maestro conductor ConfigMap with the database password.
+func (r *MultiClusterEngineReconciler) ensureClusterManagerGRPCServerConfigMap(ctx context.Context,
+	mce *backplanev1.MultiClusterEngine, namespace, name, dbPassword string) error {
+	configData := fmt.Sprintf(`grpc_config:
+  tls_cert_file: /var/run/secrets/hub/grpc/serving-cert/tls.crt
+  tls_key_file: /var/run/secrets/hub/grpc/serving-cert/tls.key
+  client_ca_file: /var/run/secrets/hub/grpc/ca/ca-bundle.crt
+db_config:
+  host: maestro-db.maestro
+  port: 5432
+  name: maestro
+  username: maestro
+  password: %s
+  sslmode: disable`, dbPassword)
+
+	configMap := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+		Data: map[string]string{
+			"config.yaml": configData,
+		},
+	}
+
+	if err := ctrl.SetControllerReference(mce, configMap, r.Scheme); err != nil {
+		return errors.Wrapf(err, "failed to set controller reference on cluster-manager gRPC server ConfigMap")
+	}
+
+	// Check if ConfigMap exists
+	existingConfigMap := &corev1.ConfigMap{}
+	err := r.Client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, existingConfigMap)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			// Create the ConfigMap
+			if err := r.Client.Create(ctx, configMap); err != nil {
+				return errors.Wrapf(err, "failed to create cluster-manager gRPC server ConfigMap")
+			}
+			log.Info("Created cluster-manager gRPC server ConfigMap")
+			return nil
+		}
+
+		return errors.Wrapf(err, "failed to get cluster-manager gRPC server ConfigMap")
+	}
+
+	// Check if update is needed
+	if existingData, ok := existingConfigMap.Data["config.yaml"]; ok && existingData == configData {
+		log.Info("Cluster-manager gRPC server ConfigMap already up to date")
+		return nil
+	}
+
+	// Update the ConfigMap
+	if existingConfigMap.Data == nil {
+		existingConfigMap.Data = map[string]string{}
+	}
+	existingConfigMap.Data["config.yaml"] = configData
+	if err := r.Client.Update(ctx, existingConfigMap); err != nil {
+		return errors.Wrapf(err, "failed to update cluster-manager gRPC server ConfigMap")
+	}
+	log.Info("Updated cluster-manager gRPC server ConfigMap")
+
+	return nil
+}
+
+// ensureClusterManagerGRPCServerRoute creates the maestro conductor Route for external gRPC access.
+func (r *MultiClusterEngineReconciler) ensureClusterManagerGRPCServerRoute(ctx context.Context,
+	mce *backplanev1.MultiClusterEngine, namespace, name string) error {
+	route := &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"apiVersion": "route.openshift.io/v1",
+			"kind":       "Route",
+			"metadata": map[string]interface{}{
+				"name":      name,
+				"namespace": namespace,
+			},
+			"spec": map[string]interface{}{
+				"to": map[string]interface{}{
+					"kind": "Service",
+					"name": "cluster-manager-grpc-server",
+				},
+				"port": map[string]interface{}{
+					"targetPort": int64(8090),
+				},
+				"tls": map[string]interface{}{
+					"termination":                   "passthrough",
+					"insecureEdgeTerminationPolicy": "None",
+				},
+			},
+		},
+	}
+
+	if err := ctrl.SetControllerReference(mce, route, r.Scheme); err != nil {
+		return errors.Wrapf(err, "failed to set controller reference on cluster-manager gRPC server Route")
+	}
+
+	// Check if Route exists
+	existingRoute := &unstructured.Unstructured{}
+	existingRoute.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "route.openshift.io",
+		Version: "v1",
+		Kind:    "Route",
+	})
+	err := r.Client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, existingRoute)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			// Create the Route
+			if err := r.Client.Create(ctx, route); err != nil {
+				return errors.Wrapf(err, "failed to create cluster-manager gRPC server Route")
+			}
+			log.Info("Created cluster-manager gRPC server Route")
+			return nil
+		}
+		return errors.Wrapf(err, "failed to get cluster-manager gRPC server Route")
+	}
+
+	return nil
+}
+
+// enableClusterManagerGRPCServer configures the gRPC server for cloudevents conductor on ClusterManager.
+// It checks if the configuration already matches and only updates if needed to avoid unnecessary reconciliations.
+func (r *MultiClusterEngineReconciler) enableClusterManagerGRPCServer(ctx context.Context,
+	mce *backplanev1.MultiClusterEngine) error {
+	domain, err := r.getClusterIngressDomain(ctx, mce)
+	if err != nil {
+		return errors.Wrapf(err, "failed to get cluster ingress domain")
+	}
+	host := fmt.Sprintf("grpc-server-open-cluster-management-hub.%s", domain)
+
+	conductorImage, ok := r.CacheSpec.ImageOverrides["cloudevents_conductor"]
+	if !ok {
+		return fmt.Errorf("cloudevents_conductor image not found in image overrides")
+	}
+
+	clusterManager := &unstructured.Unstructured{}
+	clusterManager.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "operator.open-cluster-management.io",
+		Version: "v1",
+		Kind:    "ClusterManager",
+	})
+
+	// Get the ClusterManager
+	if err := r.Client.Get(ctx, types.NamespacedName{Name: "cluster-manager"}, clusterManager); err != nil {
+		return errors.Wrapf(err, "failed to get ClusterManager")
+	}
+
+	// Check if the configuration already matches
+	needsUpdate := false
+
+	// Check registrationConfiguration
+	registrationDrivers, _, _ := unstructured.NestedSlice(clusterManager.Object, "spec", "registrationConfiguration", "registrationDrivers")
+	expectedDrivers := []interface{}{
+		map[string]interface{}{"authType": "csr"},
+		map[string]interface{}{"authType": "grpc"},
+	}
+	if !driversMatch(registrationDrivers, expectedDrivers) {
+		needsUpdate = true
+	}
+
+	// Check serverConfiguration
+	serverImage, _, _ := unstructured.NestedString(clusterManager.Object, "spec", "serverConfiguration", "imagePullSpec")
+	if serverImage != conductorImage {
+		needsUpdate = true
+	}
+
+	// Check endpoints exposure hostname
+	endpointsExposure, found, _ := unstructured.NestedSlice(clusterManager.Object, "spec", "serverConfiguration", "endpointsExposure")
+	currentHost := ""
+	if found && len(endpointsExposure) > 0 {
+		if endpoint, ok := endpointsExposure[0].(map[string]interface{}); ok {
+			if grpcConfig, ok := endpoint["grpc"].(map[string]interface{}); ok {
+				if hostnameConfig, ok := grpcConfig["hostname"].(map[string]interface{}); ok {
+					if h, ok := hostnameConfig["host"].(string); ok {
+						currentHost = h
+					}
+				}
+			}
+		}
+	}
+
+	if currentHost != host {
+		needsUpdate = true
+	}
+
+	if !needsUpdate {
+		log.Info("ClusterManager gRPC configuration already up to date")
+		return nil
+	}
+
+	// Configuration doesn't match, update it
+	spec, found, err := unstructured.NestedMap(clusterManager.Object, "spec")
+	if err != nil || !found {
+		spec = make(map[string]interface{})
+	}
+
+	spec["registrationConfiguration"] = map[string]interface{}{
+		"registrationDrivers": expectedDrivers,
+	}
+	spec["serverConfiguration"] = map[string]interface{}{
+		"endpointsExposure": []interface{}{
+			map[string]interface{}{
+				"protocol": "grpc",
+				"grpc": map[string]interface{}{
+					"type": "hostname",
+					"hostname": map[string]interface{}{
+						"host": host,
+					},
+				},
+			},
+		},
+		"imagePullSpec": conductorImage,
+	}
+
+	if err := unstructured.SetNestedMap(clusterManager.Object, spec, "spec"); err != nil {
+		return errors.Wrapf(err, "failed to set spec on ClusterManager")
+	}
+
+	if err := r.Client.Update(ctx, clusterManager); err != nil {
+		return errors.Wrapf(err, "failed to update ClusterManager")
+	}
+
+	log.Info("Updated ClusterManager gRPC server configuration")
+	return nil
+}
+
+// driversMatch checks if two slices of registration drivers match
+func driversMatch(actual, expected []interface{}) bool {
+	if len(actual) != len(expected) {
+		return false
+	}
+
+	// Check if all expected drivers are present
+	for _, exp := range expected {
+		expMap, ok := exp.(map[string]interface{})
+		if !ok {
+			return false
+		}
+		expAuthType := expMap["authType"]
+
+		found := false
+		for _, act := range actual {
+			actMap, ok := act.(map[string]interface{})
+			if !ok {
+				continue
+			}
+			if actMap["authType"] == expAuthType {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+	return true
+}
+
+// deleteMaestroNamespace delete maestro namespace if it exists
+func (r *MultiClusterEngineReconciler) deleteMaestroNamespace(ctx context.Context) error {
+	maestroNS := &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "maestro",
+		},
+	}
+	if err := r.Client.Delete(ctx, maestroNS); err != nil && !apierrors.IsNotFound(err) {
+		return err
+	}
+
+	log.Info("Removed maestro namespace")
+
+	return nil
+}
+
+// disableClusterManagerGRPCServer removes the gRPC server configuration from ClusterManager.
+// It uses GET/UPDATE instead of Server-Side Apply because setting fields to nil causes validation errors.
+// Returns nil if ClusterManager doesn't exist (gracefully handles not found).
+func (r *MultiClusterEngineReconciler) disableClusterManagerGRPCServer(ctx context.Context) error {
+	clusterManager := &unstructured.Unstructured{}
+	clusterManager.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "operator.open-cluster-management.io",
+		Version: "v1",
+		Kind:    "ClusterManager",
+	})
+
+	// Get the ClusterManager
+	err := r.Client.Get(ctx, types.NamespacedName{Name: "cluster-manager"}, clusterManager)
+	if err != nil {
+		if apierrors.IsNotFound(err) || apimeta.IsNoMatchError(err) {
+			// ClusterManager doesn't exist, nothing to clean up
+			log.Info("ClusterManager not found, skipping gRPC server configuration removal")
+			return nil
+		}
+		return errors.Wrapf(err, "failed to get ClusterManager")
+	}
+
+	// Remove the fields from spec
+	spec, found, err := unstructured.NestedMap(clusterManager.Object, "spec")
+	if err != nil {
+		return errors.Wrapf(err, "failed to get spec from ClusterManager")
+	}
+	if !found {
+		// No spec, nothing to remove
+		return nil
+	}
+
+	// Remove the gRPC-related configurations
+	modified := false
+	if _, exists := spec["registrationConfiguration"]; exists {
+		delete(spec, "registrationConfiguration")
+		modified = true
+	}
+	if _, exists := spec["serverConfiguration"]; exists {
+		delete(spec, "serverConfiguration")
+		modified = true
+	}
+
+	// Only update if we actually removed something
+	if modified {
+		if err := unstructured.SetNestedMap(clusterManager.Object, spec, "spec"); err != nil {
+			return errors.Wrapf(err, "failed to set spec on ClusterManager")
+		}
+
+		if err := r.Client.Update(ctx, clusterManager); err != nil {
+			return errors.Wrapf(err, "failed to update ClusterManager")
+		}
+
+		log.Info("Removed gRPC server configuration from ClusterManager")
+	}
+
+	return nil
 }

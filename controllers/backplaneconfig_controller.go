@@ -249,6 +249,13 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 			if err := r.Client.Update(ctx, backplaneConfig); err != nil {
 				return ctrl.Result{}, err
 			}
+
+			// After the mce is deleted, clean up the maestro namespace if it exists and not externally managed
+			if !r.isComponentExternallyManaged(backplaneConfig, backplanev1.MaestroPreview) {
+				if err := r.deleteMaestroNamespace(ctx); err != nil {
+					return ctrl.Result{}, err
+				}
+			}
 		}
 
 		return ctrl.Result{}, nil // Object finalized successfully
@@ -994,6 +1001,7 @@ func (r *MultiClusterEngineReconciler) fetchChartOrCRDPath(component string) str
 		backplanev1.ClusterAPIProviderOA:           clusterAPIOAChartLoc,
 		backplanev1.ClusterLifecycle:               toggle.ClusterLifecycleChartDir,
 		backplanev1.ClusterManager:                 toggle.ClusterManagerChartDir,
+		backplanev1.ClusterPermission:              toggle.ClusterPermissionChartDir,
 		backplanev1.ClusterProxyAddon:              toggle.ClusterProxyAddonDir,
 		backplanev1.ConsoleMCE:                     toggle.ConsoleMCEChartsDir,
 		backplanev1.Discovery:                      toggle.DiscoveryChartDir,
@@ -1002,6 +1010,7 @@ func (r *MultiClusterEngineReconciler) fetchChartOrCRDPath(component string) str
 		backplanev1.ImageBasedInstallOperator:      toggle.ImageBasedInstallOperatorChartDir,
 		backplanev1.ManagedServiceAccount:          toggle.ManagedServiceAccountChartDir,
 		backplanev1.ServerFoundation:               toggle.ServerFoundationChartDir,
+		backplanev1.MaestroPreview:                 toggle.MaestroChartDir,
 	}
 
 	if dir, exists := chartDirs[component]; exists {
@@ -1231,6 +1240,28 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 		log.Info(messages.SkippingExternallyManaged, "component", backplanev1.ClusterManager)
 	}
 
+	if !r.isComponentExternallyManaged(backplaneConfig, backplanev1.ClusterPermission) {
+		if backplaneConfig.Enabled(backplanev1.ClusterPermission) {
+			result, err = r.ensureClusterPermission(ctx, backplaneConfig)
+			if result != (ctrl.Result{}) {
+				requeue = true
+			}
+			if err != nil {
+				errs[backplanev1.ClusterPermission] = err
+			}
+		} else {
+			result, err = r.ensureNoClusterPermission(ctx, backplaneConfig)
+			if result != (ctrl.Result{}) {
+				requeue = true
+			}
+			if err != nil {
+				errs[backplanev1.ClusterPermission] = err
+			}
+		}
+	} else {
+		log.Info(messages.SkippingExternallyManaged, "component", backplanev1.ClusterPermission)
+	}
+
 	if !r.isComponentExternallyManaged(backplaneConfig, backplanev1.ServerFoundation) {
 		if backplaneConfig.Enabled(backplanev1.ServerFoundation) {
 			result, err = r.ensureServerFoundation(ctx, backplaneConfig)
@@ -1385,6 +1416,38 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 	} else {
 		log.Info(messages.SkippingExternallyManaged, "component",
 			backplanev1.ClusterAPIProviderOA)
+	}
+
+	if utils.DeployOnOCP() {
+		if !r.isComponentExternallyManaged(backplaneConfig, backplanev1.MaestroPreview) &&
+			!r.isComponentExternallyManaged(backplaneConfig, backplanev1.ClusterManager) {
+			if backplaneConfig.Enabled(backplanev1.MaestroPreview) {
+				result, err = r.ensureMaestro(ctx, backplaneConfig)
+				if result != (ctrl.Result{}) {
+					requeue = true
+				}
+				if err != nil {
+					errs[backplanev1.MaestroPreview] = err
+				}
+			} else {
+				result, err = r.ensureNoMaestro(ctx, backplaneConfig)
+				if result != (ctrl.Result{}) {
+					requeue = true
+				}
+				if err != nil {
+					errs[backplanev1.MaestroPreview] = err
+				}
+			}
+		} else {
+			if r.isComponentExternallyManaged(backplaneConfig, backplanev1.MaestroPreview) {
+				log.Info(messages.SkippingExternallyManaged, "component",
+					backplanev1.MaestroPreview)
+			}
+			if r.isComponentExternallyManaged(backplaneConfig, backplanev1.ClusterManager) {
+				log.Info(messages.SkippingExternallyManaged, "component",
+					backplanev1.ClusterManager)
+			}
+		}
 	}
 
 	if backplaneConfig.Enabled(backplanev1.LocalCluster) {
@@ -2024,6 +2087,7 @@ func (r *MultiClusterEngineReconciler) ensureNoAllInternalEngineComponents(ctx c
 		backplanev1.ClusterAPIProviderOA,
 		backplanev1.ClusterLifecycle,
 		backplanev1.ClusterManager,
+		backplanev1.ClusterPermission,
 		backplanev1.ClusterProxyAddon,
 		backplanev1.ConsoleMCE,
 		backplanev1.Discovery,
@@ -2033,6 +2097,7 @@ func (r *MultiClusterEngineReconciler) ensureNoAllInternalEngineComponents(ctx c
 		backplanev1.LocalCluster,
 		backplanev1.ManagedServiceAccount,
 		backplanev1.ServerFoundation,
+		backplanev1.MaestroPreview,
 	}
 
 	for _, v := range components {
