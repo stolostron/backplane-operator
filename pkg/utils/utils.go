@@ -349,15 +349,6 @@ func DetectOpenShift(cl client.Client) error {
 	return nil
 }
 
-func ComponentOnNonOCP(name string) bool {
-	for _, component := range nonOCPComponents {
-		if name == component {
-			return true
-		}
-	}
-	return false
-}
-
 type ServingCertGetter struct {
 	caBundleConfigMapName, namespace string
 	kubeClient                       kubernetes.Interface

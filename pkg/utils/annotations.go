@@ -106,18 +106,6 @@ func IsAnnotationTrue(instance *backplanev1.MultiClusterEngine, annotationKey st
 	return value
 }
 
-/*
-AnnotationsMatch checks if all specified annotations in the 'old' map match the corresponding ones in the 'new' map.
-It returns true if all annotations match, otherwise false.
-*/
-func AnnotationsMatch(old, new map[string]string) bool {
-	return getAnnotationOrDefaultForMap(old, new, AnnotationMCEPause, DeprecatedAnnotationMCEPause) &&
-		getAnnotationOrDefaultForMap(old, new, AnnotationImageRepo, DeprecatedAnnotationImageRepo) &&
-		getAnnotationOrDefaultForMap(old, new, AnnotationImageOverridesCM, DeprecatedAnnotationImageOverridesCM) &&
-		getAnnotationOrDefaultForMap(old, new, AnnotationKubeconfig, DeprecatedAnnotationKubeconfig) &&
-		getAnnotationOrDefaultForMap(old, new, AnnotationTemplateOverridesCM, "")
-}
-
 // AnnotationPresent returns true if annotation is present on object
 func AnnotationPresent(annotation string, obj client.Object) bool {
 	if obj.GetAnnotations() == nil {
@@ -150,25 +138,6 @@ func getAnnotationOrDefault(instance *backplanev1.MultiClusterEngine, primaryKey
 	}
 
 	return getAnnotation(instance, deprecatedKey)
-}
-
-/*
-getAnnotationOrDefaultForMap checks if the annotation value from the 'old' map matches the one from the 'new' map,
-including deprecated annotations.
-*/
-func getAnnotationOrDefaultForMap(old, new map[string]string, primaryKey, deprecatedKey string) bool {
-	oldValue := old[primaryKey]
-
-	if oldValue == "" {
-		oldValue = old[deprecatedKey]
-	}
-
-	newValue := new[primaryKey]
-	if newValue == "" {
-		newValue = new[deprecatedKey]
-	}
-
-	return oldValue == newValue
 }
 
 /*
