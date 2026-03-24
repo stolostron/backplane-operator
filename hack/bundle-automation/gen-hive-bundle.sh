@@ -106,7 +106,7 @@ cd bundle
 # converted it to version2.sh. We maintain a local copy of the original Python version.
 echo "Copying version2.py compatibility layer..."
 cp "$start_cwd/hack/bundle-automation/version2.py" ../hive/hack/version2.py
-chmod +x ../hive/hack/version2.py
+chmod u+x ../hive/hack/version2.py
 
 echo "Running Hive bundle-gen tool ($gen_tool)."
 python3 ../hive/$gen_tool --hive-repo "$hive_repo_spot" --commit "$commit_ish" --dummy-bundle "$branch" \
