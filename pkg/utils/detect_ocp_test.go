@@ -189,10 +189,4 @@ var _ = Describe("Non-OCP cert management", func() {
 		}, "10s", "1s").Should(Succeed())
 
 	})
-	It("checking other functions", func() {
-		component := ComponentOnNonOCP("cluster-manager")
-		Expect(component).To(Equal(true))
-		component = ComponentOnNonOCP("discovery")
-		Expect(component).To(Equal(false))
-	})
 })

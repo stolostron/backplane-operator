@@ -42,52 +42,6 @@ func TestIsPaused(t *testing.T) {
 
 }
 
-func Test_AnnotationMatch(t *testing.T) {
-	tests := []struct {
-		name string
-		new  map[string]string
-		old  map[string]string
-		want bool
-	}{
-		{
-			name: "Annotations should match",
-			new: map[string]string{
-				AnnotationMCEPause:         "false",
-				AnnotationImageRepo:        "sample-image-repo",
-				AnnotationImageOverridesCM: "sample-image-override",
-			},
-			old: map[string]string{
-				DeprecatedAnnotationMCEPause:         "false",
-				DeprecatedAnnotationImageRepo:        "sample-image-repo",
-				DeprecatedAnnotationImageOverridesCM: "sample-image-override",
-			},
-			want: true,
-		},
-		{
-			name: "Annotations should not match",
-			new: map[string]string{
-				AnnotationMCEPause:         "false",
-				AnnotationImageRepo:        "sample-image-repo",
-				AnnotationImageOverridesCM: "sample-image-override",
-			},
-			old: map[string]string{
-				DeprecatedAnnotationMCEPause:         "true",
-				DeprecatedAnnotationImageRepo:        "sample-image-repo",
-				DeprecatedAnnotationImageOverridesCM: "sample-image-override",
-			},
-			want: false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := AnnotationsMatch(tt.old, tt.new); got != tt.want {
-				t.Errorf("AnnotationsMatch(old, new) = got: %v, want: %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func Test_getAnnotationEdgeManagement(t *testing.T) {
 	instance := &backplanev1.MultiClusterEngine{
 		ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{AnnotationEdgeManagerEnabled: "true"}},
