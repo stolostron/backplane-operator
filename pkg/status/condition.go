@@ -2,6 +2,7 @@
 package status
 
 import (
+	"sort"
 	"strings"
 
 	v1 "github.com/stolostron/backplane-operator/api/v1"
@@ -71,7 +72,14 @@ func setCondition(conditions []v1.MultiClusterEngineCondition, c v1.MultiCluster
 	}
 
 	newConditions := filterOutCondition(conditions, c.Type)
-	return append(newConditions, c)
+	newConditions = append(newConditions, c)
+
+	// Sort conditions by lastUpdateTime so the most recently updated is always last
+	sort.Slice(newConditions, func(i, j int) bool {
+		return newConditions[i].LastUpdateTime.Before(&newConditions[j].LastUpdateTime)
+	})
+
+	return newConditions
 }
 
 // GetCondition returns the condition you're looking for by type

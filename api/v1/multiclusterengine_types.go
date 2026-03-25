@@ -261,6 +261,7 @@ type MultiClusterEngineCondition struct {
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:printcolumn:name="CurrentVersion",type="string",JSONPath=".status.currentVersion",description="The current version of the MultiClusterEngine"
 // +kubebuilder:printcolumn:name="DesiredVersion",type="string",JSONPath=".status.desiredVersion",description="The desired version of the MultiClusterEngine"
+// +kubebuilder:printcolumn:name="Message",type="string",JSONPath=".status.conditions[-1:].message",description="Message from the most recent condition"
 // +operator-sdk:csv:customresourcedefinitions:displayName="MultiCluster Engine"
 type MultiClusterEngine struct {
 	metav1.TypeMeta   `json:",inline"`
