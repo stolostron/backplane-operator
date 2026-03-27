@@ -74,9 +74,9 @@ func setCondition(conditions []v1.MultiClusterEngineCondition, c v1.MultiCluster
 	newConditions := filterOutCondition(conditions, c.Type)
 	newConditions = append(newConditions, c)
 
-	// Sort conditions by lastUpdateTime so the most recently updated is always last
+	// Sort conditions by lastTransitionTime so the most recently transitioned is always last
 	sort.Slice(newConditions, func(i, j int) bool {
-		return newConditions[i].LastUpdateTime.Before(&newConditions[j].LastUpdateTime)
+		return newConditions[i].LastTransitionTime.Before(&newConditions[j].LastTransitionTime)
 	})
 
 	return newConditions
