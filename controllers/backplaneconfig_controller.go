@@ -1849,6 +1849,77 @@ func (r *MultiClusterEngineReconciler) ApplyControllerReference(backplaneConfig 
 	return nil
 }
 
+// ensureResourceOwnership checks if a resource should be managed by MCE and adds
+// backplaneconfig label to the template if adopting based on the resource adoption policy annotation.
+// existing: the current state in cluster (checked for labels)
+// template: the desired state (labels added here if adopting)
+// Returns true if the resource should be managed, false otherwise.
+func (r *MultiClusterEngineReconciler) ensureResourceOwnership(existing, template *unstructured.Unstructured, mce *backplanev1.MultiClusterEngine) bool {
+	existingLabels := existing.GetLabels()
+	if existingLabels == nil {
+		existingLabels = make(map[string]string)
+	}
+
+	// Check if existing resource already has backplaneconfig label
+	_, hasBackplaneConfigLabel := existingLabels["backplaneconfig.name"]
+
+	if hasBackplaneConfigLabel {
+		// Already labeled - manage it
+		return true
+	}
+
+	// No backplaneconfig label on existing resource - check adoption policy from MCE annotation
+	adoptionPolicy := r.getAdoptionPolicy(mce)
+
+	if adoptionPolicy == "Adopt" {
+		// Adopt the resource by adding backplaneconfig label to template (desired state)
+		templateLabels := template.GetLabels()
+		if templateLabels == nil {
+			templateLabels = make(map[string]string)
+		}
+		templateLabels["backplaneconfig.name"] = mce.GetName()
+		template.SetLabels(templateLabels)
+
+		r.Log.Info("Adopting resource by adding backplaneconfig label to desired state",
+			"Kind", existing.GetKind(),
+			"Name", existing.GetName(),
+			"Namespace", existing.GetNamespace(),
+			"Policy", adoptionPolicy)
+
+		return true
+	}
+
+	// Strict mode (default) - only manage resources with backplaneconfig label
+	return false
+}
+
+// getAdoptionPolicy retrieves the resource adoption policy from MCE annotations.
+// Valid values: "Strict" (default), "Adopt"
+func (r *MultiClusterEngineReconciler) getAdoptionPolicy(mce *backplanev1.MultiClusterEngine) string {
+	annotations := mce.GetAnnotations()
+	if annotations == nil {
+		return "Strict" // Default to strict mode
+	}
+
+	policy, exists := annotations[utils.AnnotationResourceAdoptionPolicy]
+	if !exists || policy == "" {
+		return "Strict" // Default to strict mode
+	}
+
+	// Validate policy value
+	switch policy {
+	case "Strict":
+		return "Strict"
+	case "Adopt":
+		return "Adopt"
+	default:
+		r.Log.Info("Invalid resource adoption policy, defaulting to Strict",
+			"ProvidedValue", policy,
+			"ValidValues", "Strict, Adopt")
+		return "Strict"
+	}
+}
+
 func (r *MultiClusterEngineReconciler) applyTemplate(ctx context.Context,
 	backplaneConfig *backplanev1.MultiClusterEngine, template *unstructured.Unstructured) (ctrl.Result, error) {
 
@@ -1913,6 +1984,15 @@ func (r *MultiClusterEngineReconciler) applyTemplate(ctx context.Context,
 				return r.logAndSetCondition(err, "failed to get resource", existing, backplaneConfig)
 			}
 		} else {
+			// Resource exists - ensure we should manage it (adds labels to template if adopting)
+			if !r.ensureResourceOwnership(existing, template, backplaneConfig) {
+				r.Log.Info("Skipping update of resource not managed by this operator",
+					"Kind", existing.GetKind(),
+					"Name", existing.GetName(),
+					"Namespace", existing.GetNamespace())
+				return ctrl.Result{}, nil
+			}
+
 			desiredVersion := os.Getenv("OPERATOR_VERSION")
 			if desiredVersion == "" {
 				log.Info("Warning: OPERATOR_VERSION environment variable is not set")
@@ -2000,6 +2080,16 @@ func (r *MultiClusterEngineReconciler) deleteTemplate(ctx context.Context,
 	if err != nil {
 		log.Error(err, "Odd error delete template")
 		return ctrl.Result{}, err
+	}
+
+	// Only delete resources managed by this MCE instance
+	// In deleteTemplate, template is both existing and desired state
+	if !r.ensureResourceOwnership(template, template, backplaneConfig) {
+		r.Log.Info("Skipping deletion of resource not managed by this operator",
+			"Kind", template.GetKind(),
+			"Name", template.GetName(),
+			"Namespace", template.GetNamespace())
+		return ctrl.Result{}, nil
 	}
 
 	err = r.Client.Delete(ctx, template)
