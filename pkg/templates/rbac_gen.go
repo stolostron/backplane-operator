@@ -393,6 +393,7 @@ package main
 //+kubebuilder:rbac:groups=config.open-cluster-management.io,resources=klusterletconfigs,verbs=get;list;watch;create;update;delete;patch
 //+kubebuilder:rbac:groups=config.openshift.io,resources=apiservers,verbs=get;list;watch
 //+kubebuilder:rbac:groups=config.openshift.io,resources=apiservers,verbs=get;list;watch
+//+kubebuilder:rbac:groups=config.openshift.io,resources=apiservers,verbs=get;list;watch
 //+kubebuilder:rbac:groups=config.openshift.io,resources=apiservers;authentications,verbs=list;get;watch
 //+kubebuilder:rbac:groups=config.openshift.io,resources=apiservers;proxies,verbs=get;list;watch
 //+kubebuilder:rbac:groups=config.openshift.io,resources=clusteroperators;clusterversions;dnses;infrastructures;proxies,verbs=get;list;watch
@@ -697,7 +698,7 @@ package main
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterrolebindings;rolebindings,verbs=create;get;list;update;watch;patch;delete
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles/finalizers,verbs=get;update
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles;clusterrolebindings,verbs=create;delete;get;list;patch;update;watch;bind;escalate
-//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles;clusterrolebindings,verbs=create;get;list;watch;delete
+//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles;clusterrolebindings,verbs=create;get;list;watch;update;delete
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles;clusterrolebindings,verbs=get;list;watch;create;update;delete;escalate;bind
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles;clusterrolebindings;roles;rolebindings,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles;roles,verbs=create;get;list;update;watch;patch;delete
