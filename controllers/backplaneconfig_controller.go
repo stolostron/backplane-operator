@@ -2479,6 +2479,37 @@ func (r *MultiClusterEngineReconciler) ensureUnstructuredResource(ctx context.Co
 	return ctrl.Result{}, nil
 }
 
+// defaultAnnotations defines annotations that should be set on all MCE instances
+// if not already present. Add new default annotations here.
+var defaultAnnotations = map[string]string{
+	utils.AnnotationResourceAdoptionPolicy: "Strict",
+	// Future default annotations can be added here
+}
+
+// setDefaultAnnotations applies default values for any missing annotations
+// Returns true if any annotations were added
+func setDefaultAnnotations(m *backplanev1.MultiClusterEngine) bool {
+	updated := false
+	annotations := m.GetAnnotations()
+	if annotations == nil {
+		annotations = make(map[string]string)
+	}
+
+	for key, defaultValue := range defaultAnnotations {
+		if _, exists := annotations[key]; !exists {
+			annotations[key] = defaultValue
+			updated = true
+			log.Info("Setting default annotation", "annotation", key, "value", defaultValue)
+		}
+	}
+
+	if updated {
+		m.SetAnnotations(annotations)
+	}
+
+	return updated
+}
+
 func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 
 	updateNecessary := false
@@ -2493,6 +2524,11 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 	}
 
 	if utils.SetDefaultComponents(m) {
+		updateNecessary = true
+	}
+
+	// Set default annotations if not specified
+	if setDefaultAnnotations(m) {
 		updateNecessary = true
 	}
 
