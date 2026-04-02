@@ -71,6 +71,9 @@ var reconciler MultiClusterEngineReconciler
 var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 
+	// Register common test schemes (shared with regular test functions)
+	registerScheme()
+
 	// SetupSignalHandler can only be called once, so we'll save the
 	// context it returns and reuse it each time we start a new
 	// manager.

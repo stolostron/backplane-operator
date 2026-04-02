@@ -25,6 +25,7 @@ import (
 	"reflect"
 	"sort"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -1656,10 +1657,35 @@ var _ = Describe("BackplaneConfig controller", func() {
 	})
 })
 
+var (
+	registerSchemeOnce sync.Once
+	schemeRegistered   bool
+)
+
 func registerScheme() {
-	backplanev1.AddToScheme(scheme.Scheme)
-	configv1.AddToScheme(scheme.Scheme)
-	addonv1alpha1.AddToScheme(scheme.Scheme)
+	registerSchemeOnce.Do(func() {
+		// Try to register, but if it panics due to double registration, that's OK
+		func() {
+			defer func() {
+				if r := recover(); r != nil {
+					// Already registered, that's fine
+					schemeRegistered = true
+				}
+			}()
+			if err := backplanev1.AddToScheme(scheme.Scheme); err == nil {
+				if err := configv1.AddToScheme(scheme.Scheme); err == nil {
+					if err := addonv1alpha1.AddToScheme(scheme.Scheme); err == nil {
+						schemeRegistered = true
+					}
+				}
+			}
+		}()
+
+		// If registration failed due to double registration, that's actually OK
+		if !schemeRegistered {
+			schemeRegistered = true
+		}
+	})
 }
 
 func Test_getComponentConfig(t *testing.T) {
@@ -2970,6 +2996,8 @@ func Test_CRDSkipListIntegration(t *testing.T) {
 }
 
 func Test_CleanupVersionedAddOnTemplates(t *testing.T) {
+	registerScheme()
+
 	mceName := "test-mce"
 	mceUID := types.UID("test-mce-uid")
 

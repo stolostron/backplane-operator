@@ -19,6 +19,7 @@ import (
 	v1 "github.com/stolostron/backplane-operator/api/v1"
 	"github.com/stolostron/backplane-operator/pkg/utils"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	ocmfeature "open-cluster-management.io/api/feature"
 	ocmapiv1 "open-cluster-management.io/api/operator/v1"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
@@ -86,6 +87,14 @@ func ClusterManager(m *v1.MultiClusterEngine, overrides map[string]string) *unst
 			},
 			DeployOption: ocmapiv1.ClusterManagerDeployOption{
 				Mode: ocmapiv1.InstallModeDefault,
+			},
+			PlacementConfiguration: &ocmapiv1.PlacementConfiguration{
+				FeatureGates: []ocmapiv1.FeatureGate{
+					{
+						Feature: string(ocmfeature.PlacementDebugServer),
+						Mode:    ocmapiv1.FeatureGateModeTypeEnable,
+					},
+				},
 			},
 		},
 	}
