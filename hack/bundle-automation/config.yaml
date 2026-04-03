@@ -43,7 +43,15 @@
     - readOnlyRootFilesystem
     imageMappings:
       registration-operator: registration_operator
+      managedcluster-import-controller: managedcluster_import_controller
     name: cluster-manager
+    patches:
+    - target: cluster-manager.yaml
+      path: ../patches/cluster-manager-tls-sidecar.yaml
+      type: strategic-merge
+    additional_templates:
+    - ../patches/cluster-manager-tls-sync-clusterrole.yaml
+    - ../patches/cluster-manager-tls-sync-clusterrolebinding.yaml
   repo_name: registration-operator
 
 - branch: backplane-2.17
