@@ -1,6 +1,7 @@
 global:
   deployOnOCP: true
   imageOverrides:
+    managedcluster_import_controller: ''
     registration_operator: ''
   namespace: default
   pullSecret: null

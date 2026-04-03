@@ -1,0 +1,39 @@
+# Strategic merge patch: adds tls-profile-sync sidecar to cluster-manager deployment.
+# The sidecar watches OpenShift APIServer.spec.tlsSecurityProfile and syncs it
+# to an ocm-tls-profile ConfigMap for OCM components to consume.
+#
+# This is a pure YAML patch applied before injectRequirements(). The placeholder
+# image 'managedcluster-import-controller' is converted to a Helm template variable
+# by fixImageReferences() via the imageMapping in config.yaml.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cluster-manager
+spec:
+  template:
+    spec:
+      containers:
+      - name: registration-operator
+      - name: tls-profile-sync
+        image: managedcluster-import-controller
+        command:
+        - /usr/local/bin/tls-profile-sync
+        env:
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            memory: 128Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
