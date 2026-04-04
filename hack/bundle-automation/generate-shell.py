@@ -129,13 +129,14 @@ def cleanup_scripts(script_dependencies):
                 dest.unlink(missing_ok=True)
                 logging.debug(f"Removed file {dest}")
 
-def prepare_and_execute(operation, operation_data, args):
+def prepare_and_execute(operation, operation_data, args, extra_args):
     """Prepares and executes the operation based on the provided operation data.
 
     Args:
         operation (_type_): _description_
         operation_data (_type_): _description_
         args (_type_): _description_
+        extra_args (_type_): _description_
     """
     logging.info(f"Executing operator: {operation}")
 
@@ -148,12 +149,16 @@ def prepare_and_execute(operation, operation_data, args):
         pipeline_branch=args.pipeline_branch,
         bundle=getattr(args, 'bundle', '../mce-operator-bundle')
     ) if "args" in operation_data else ""
-    
+
     if args.component:
         operations_args += " --component {}".format(args.component)
 
     if args.config:
         operations_args += " --config {}".format(args.config)
+
+    # Add any extra arguments passed through
+    if extra_args:
+        operations_args += " " + " ".join(extra_args)
 
     # Execute the script
     execute_script(script, operations_args)
@@ -183,11 +188,12 @@ def execute_script(script, args):
     finally:
         script_path.unlink(missing_ok=True)  # Clean up after execution
 
-def main(args):
+def main(args, extra_args):
     """_summary_
 
     Args:
         args (_type_): _description_
+        extra_args (_type_): _description_
     """
     logging.basicConfig(level=logging.INFO)
 
@@ -200,7 +206,7 @@ def main(args):
 
     for operation, operation_data in SUPPORTED_OPERATIONS.items():
         if getattr(args, operation.replace('-', '_'), False):
-            prepare_and_execute(operation, operation_data, args)
+            prepare_and_execute(operation, operation_data, args, extra_args)
             break
 
     end_time = time.time() # Record the end time and log the duration of the script execution
@@ -232,5 +238,6 @@ if __name__ == "__main__":
     parser.set_defaults(bundle=False, commit=False, lint=False)
 
     # Parse command-line arguments and call the main function
-    args = parser.parse_args()
-    main(args)
+    # Use parse_known_args to capture unknown arguments and pass them through
+    args, extra_args = parser.parse_known_args()
+    main(args, extra_args)
