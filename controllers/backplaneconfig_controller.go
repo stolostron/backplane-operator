@@ -1861,11 +1861,21 @@ func (r *MultiClusterEngineReconciler) ensureResourceOwnership(existing, templat
 	}
 
 	// Check if existing resource already has backplaneconfig label
-	_, hasBackplaneConfigLabel := existingLabels["backplaneconfig.name"]
+	owner := existingLabels["backplaneconfig.name"]
 
-	if hasBackplaneConfigLabel {
-		// Already labeled - manage it
+	switch {
+	case owner == mce.GetName():
+		// Resource is owned by this MCE - manage it
 		return true
+	case owner != "":
+		// Resource is owned by a different MCE - skip it
+		r.Log.Info("Skipping resource owned by another MultiClusterEngine",
+			"Kind", existing.GetKind(),
+			"Name", existing.GetName(),
+			"Namespace", existing.GetNamespace(),
+			"Owner", owner,
+			"CurrentMCE", mce.GetName())
+		return false
 	}
 
 	// No backplaneconfig label on existing resource - check adoption policy from MCE annotation

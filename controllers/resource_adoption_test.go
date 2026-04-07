@@ -107,14 +107,34 @@ func TestEnsureResourceOwnership(t *testing.T) {
 		wantTemplateLabels map[string]string
 	}{
 		{
-			name: "Resource with backplaneconfig label - should manage",
+			name: "Resource with matching backplaneconfig label - should manage",
 			existingLabels: map[string]string{
-				"backplaneconfig.name": "multicluster-engine",
+				"backplaneconfig.name": "test-mce",
 			},
 			templateLabels:     map[string]string{},
 			adoptionPolicy:     "Strict",
 			wantManage:         true,
 			wantTemplateLabels: map[string]string{}, // Template unchanged
+		},
+		{
+			name: "Resource owned by different MCE - should not manage",
+			existingLabels: map[string]string{
+				"backplaneconfig.name": "other-mce",
+			},
+			templateLabels:     map[string]string{},
+			adoptionPolicy:     "Strict",
+			wantManage:         false,
+			wantTemplateLabels: map[string]string{}, // Template unchanged
+		},
+		{
+			name: "Resource owned by different MCE, Adopt policy - should not manage",
+			existingLabels: map[string]string{
+				"backplaneconfig.name": "other-mce",
+			},
+			templateLabels:     map[string]string{},
+			adoptionPolicy:     "Adopt",
+			wantManage:         false,
+			wantTemplateLabels: map[string]string{}, // Template unchanged - don't adopt from other MCE
 		},
 		{
 			name:               "Resource without labels, Strict policy - should not manage",
