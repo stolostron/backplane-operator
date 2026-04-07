@@ -109,6 +109,7 @@ var (
 // +kubebuilder:rbac:groups="discovery.open-cluster-management.io",resources=discoveryconfigs,verbs=list
 // +kubebuilder:rbac:groups="discovery.open-cluster-management.io",resources=discoveryconfigs;discoveredclusters,verbs=create;get;list;watch;update;delete;deletecollection;patch;approve;escalate;bind
 // +kubebuilder:rbac:groups=config.openshift.io,resources=clusterversions,verbs=get;list;watch;
+// +kubebuilder:rbac:groups=config.openshift.io,resources=apiservers,verbs=get;list;watch;
 // +kubebuilder:rbac:groups=console.openshift.io,resources=consoleplugins;consolequickstarts,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=operator.openshift.io,resources=consoles,verbs=get;list;watch;update;patch
 
@@ -1949,6 +1950,14 @@ func (r *MultiClusterEngineReconciler) applyTemplate(ctx context.Context,
 					return ctrl.Result{}, nil
 				}
 				return ctrl.Result{}, err
+			}
+
+			// Ensure TLS profile ConfigMap exists in namespaces that require it
+			if renderer.NamespaceRequiresTLSProfile(template.GetNamespace()) {
+				if err := renderer.EnsureTLSProfileConfigMap(ctx, r.Client, backplaneConfig, template.GetNamespace(), r.Scheme); err != nil {
+					r.Log.Error(err, "Failed to ensure TLS profile ConfigMap", "Namespace", template.GetNamespace())
+					return ctrl.Result{}, err
+				}
 			}
 		}
 
