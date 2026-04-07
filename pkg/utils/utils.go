@@ -19,6 +19,7 @@ import (
 
 	"os"
 
+	configv1 "github.com/openshift/api/config/v1"
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -507,4 +508,93 @@ func ComponentCRDDirectories(component string) []string {
 	default:
 		return []string{}
 	}
+}
+
+// opensslToIANACipherMap maps OpenSSL cipher names to IANA cipher names.
+// TLS 1.3 ciphers are already in IANA format.
+var opensslToIANACipherMap = map[string]string{
+	// TLS 1.3 ciphers (already IANA format)
+	"TLS_AES_128_GCM_SHA256":       "TLS_AES_128_GCM_SHA256",
+	"TLS_AES_256_GCM_SHA384":       "TLS_AES_256_GCM_SHA384",
+	"TLS_CHACHA20_POLY1305_SHA256": "TLS_CHACHA20_POLY1305_SHA256",
+
+	// TLS 1.2 and below ciphers (OpenSSL -> IANA)
+	"ECDHE-ECDSA-AES128-GCM-SHA256": "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+	"ECDHE-RSA-AES128-GCM-SHA256":   "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+	"ECDHE-ECDSA-AES256-GCM-SHA384": "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+	"ECDHE-RSA-AES256-GCM-SHA384":   "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+	"ECDHE-ECDSA-CHACHA20-POLY1305": "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256",
+	"ECDHE-RSA-CHACHA20-POLY1305":   "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256",
+	"DHE-RSA-AES128-GCM-SHA256":     "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256",
+	"DHE-RSA-AES256-GCM-SHA384":     "TLS_DHE_RSA_WITH_AES_256_GCM_SHA384",
+	"DHE-RSA-CHACHA20-POLY1305":     "TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256",
+	"ECDHE-ECDSA-AES128-SHA256":     "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256",
+	"ECDHE-RSA-AES128-SHA256":       "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256",
+	"ECDHE-ECDSA-AES128-SHA":        "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA",
+	"ECDHE-RSA-AES128-SHA":          "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA",
+	"ECDHE-ECDSA-AES256-SHA384":     "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384",
+	"ECDHE-RSA-AES256-SHA384":       "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384",
+	"ECDHE-ECDSA-AES256-SHA":        "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA",
+	"ECDHE-RSA-AES256-SHA":          "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA",
+	"DHE-RSA-AES128-SHA256":         "TLS_DHE_RSA_WITH_AES_128_CBC_SHA256",
+	"DHE-RSA-AES256-SHA256":         "TLS_DHE_RSA_WITH_AES_256_CBC_SHA256",
+	"AES128-GCM-SHA256":             "TLS_RSA_WITH_AES_128_GCM_SHA256",
+	"AES256-GCM-SHA384":             "TLS_RSA_WITH_AES_256_GCM_SHA384",
+	"AES128-SHA256":                 "TLS_RSA_WITH_AES_128_CBC_SHA256",
+	"AES256-SHA256":                 "TLS_RSA_WITH_AES_256_CBC_SHA256",
+	"AES128-SHA":                    "TLS_RSA_WITH_AES_128_CBC_SHA",
+	"AES256-SHA":                    "TLS_RSA_WITH_AES_256_CBC_SHA",
+	"DES-CBC3-SHA":                  "TLS_RSA_WITH_3DES_EDE_CBC_SHA",
+}
+
+// GetAPIServerTLSProfile retrieves the TLS security profile from the OpenShift APIServer resource.
+// Returns the TLSProfileSpec containing ciphers and minTLSVersion.
+// If no profile is set, returns the default Intermediate profile.
+func GetAPIServerTLSProfile(ctx context.Context, cl client.Client) (*configv1.TLSProfileSpec, error) {
+	// If Unit test
+	if val, ok := os.LookupEnv(UnitTestEnvVar); ok && val == "true" {
+		return configv1.TLSProfiles[configv1.TLSProfileIntermediateType], nil
+	}
+
+	apiServer := &configv1.APIServer{}
+	err := cl.Get(ctx, types.NamespacedName{Name: "cluster"}, apiServer)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get APIServer resource: %w", err)
+	}
+
+	// If no TLS profile is set, use the default (Intermediate)
+	if apiServer.Spec.TLSSecurityProfile == nil {
+		return configv1.TLSProfiles[configv1.TLSProfileIntermediateType], nil
+	}
+
+	profile := apiServer.Spec.TLSSecurityProfile
+
+	// For predefined profiles (Old, Intermediate, Modern), use the map
+	if profileSpec, ok := configv1.TLSProfiles[profile.Type]; ok {
+		return profileSpec, nil
+	}
+
+	// For custom profile, return the inline spec
+	if profile.Type == configv1.TLSProfileCustomType && profile.Custom != nil {
+		return &profile.Custom.TLSProfileSpec, nil
+	}
+
+	// Fallback to Intermediate if something unexpected
+	return configv1.TLSProfiles[configv1.TLSProfileIntermediateType], nil
+}
+
+// ConvertCipherSuitesToIANA converts cipher suite names from OpenSSL format to IANA format.
+// Returns an error if any cipher is not found in the lookup table.
+func ConvertCipherSuitesToIANA(ciphers []string) ([]string, error) {
+	ianaCiphers := make([]string, 0, len(ciphers))
+
+	for _, cipher := range ciphers {
+		ianaCipher, ok := opensslToIANACipherMap[cipher]
+		if !ok {
+			return nil, fmt.Errorf("unknown cipher suite: %s", cipher)
+		}
+		ianaCiphers = append(ianaCiphers, ianaCipher)
+	}
+
+	return ianaCiphers, nil
 }
