@@ -1,3 +1,4 @@
+
 disallowedFields:
 - spec.apiservicedefinitions
 - spec.webhookdefinitions
@@ -31,3 +32,4 @@ requiredFields:
 - spec.install.spec.deployments
 optionalFields:
 - spec.install.spec.permissions
+- spec.install.spec.image
