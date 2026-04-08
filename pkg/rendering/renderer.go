@@ -35,13 +35,6 @@ const (
 	AlwaysChartsDir = "pkg/templates/charts/always"
 )
 
-// namespacesRequiringTLSProfile is a lookup table for namespaces that need the TLS profile ConfigMap.
-// The ConfigMap is required in namespaces where cluster-manager components are deployed.
-var namespacesRequiringTLSProfile = map[string]bool{
-	"open-cluster-management-hub":   true, // ClusterManager Default mode namespace
-	"open-cluster-management-agent": true, // Klusterlet agent namespace (for local-cluster)
-}
-
 type Values struct {
 	Global    Global    `json:"global" structs:"global"`
 	HubConfig HubConfig `json:"hubconfig" structs:"hubconfig"`
@@ -492,61 +485,60 @@ func injectValuesOverrides(values *Values, backplaneConfig *v1.MultiClusterEngin
 	}
 }
 
-// EnsureTLSProfileConfigMap creates or updates the TLS profile ConfigMap in the specified namespace.
+// EnsureTLSProfileConfigMaps creates or updates the TLS profile ConfigMap in the specified namespaces.
 // It reads the TLS security profile from the OpenShift APIServer resource and populates the ConfigMap
-// with minTLSVersion and cipherSuites.
-func EnsureTLSProfileConfigMap(
+// with minTLSVersion and cipherSuites in each namespace.
+func EnsureTLSProfileConfigMaps(
 	ctx context.Context,
 	cl client.Client,
 	mce *v1.MultiClusterEngine,
-	namespace string,
+	namespaces []string,
 	scheme *runtime.Scheme,
 ) error {
-	log := log.FromContext(ctx).WithValues("ConfigMap", "ocm-tls-profile", "Namespace", namespace)
-
-	// Get the TLS profile from the APIServer resource
+	// Get the TLS profile from the APIServer resource once
 	tlsProfile, err := utils.GetAPIServerTLSProfile(ctx, cl)
 	if err != nil {
 		return fmt.Errorf("failed to get APIServer TLS profile: %w", err)
 	}
 
-	configMap := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "ocm-tls-profile",
-			Namespace: namespace,
-		},
-	}
-
-	// Convert ciphers from OpenSSL format to IANA format before CreateOrUpdate
+	// Convert ciphers from OpenSSL format to IANA format once
 	ianaCiphers, err := utils.ConvertCipherSuitesToIANA(tlsProfile.Ciphers)
 	if err != nil {
 		return fmt.Errorf("failed to convert cipher suites to IANA format: %w", err)
 	}
 
-	_, err = controllerutil.CreateOrUpdate(ctx, cl, configMap, func() error {
-		// Set the data
-		configMap.Data = map[string]string{
-			"minTLSVersion": string(tlsProfile.MinTLSVersion),
-			"cipherSuites":  strings.Join(ianaCiphers, ","),
+	// Create or update ConfigMap in each namespace
+	for _, namespace := range namespaces {
+		log := log.FromContext(ctx).WithValues("ConfigMap", "ocm-tls-profile", "Namespace", namespace)
+
+		configMap := &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "ocm-tls-profile",
+				Namespace: namespace,
+			},
 		}
 
-		// Set controller reference
-		if err := ctrl.SetControllerReference(mce, configMap, scheme); err != nil {
-			return fmt.Errorf("failed to set controller reference: %w", err)
+		_, err = controllerutil.CreateOrUpdate(ctx, cl, configMap, func() error {
+			// Set the data
+			configMap.Data = map[string]string{
+				"minTLSVersion": string(tlsProfile.MinTLSVersion),
+				"cipherSuites":  strings.Join(ianaCiphers, ","),
+			}
+
+			// Set controller reference
+			if err := ctrl.SetControllerReference(mce, configMap, scheme); err != nil {
+				return fmt.Errorf("failed to set controller reference: %w", err)
+			}
+
+			return nil
+		})
+
+		if err != nil {
+			return fmt.Errorf("failed to create or update TLS profile ConfigMap in namespace %s: %w", namespace, err)
 		}
 
-		return nil
-	})
-
-	if err != nil {
-		return fmt.Errorf("failed to create or update TLS profile ConfigMap: %w", err)
+		log.Info("Ensured TLS profile ConfigMap")
 	}
 
-	log.Info("Ensured TLS profile ConfigMap")
 	return nil
-}
-
-// NamespaceRequiresTLSProfile checks if a namespace needs the TLS profile ConfigMap.
-func NamespaceRequiresTLSProfile(namespace string) bool {
-	return namespacesRequiringTLSProfile[namespace]
 }

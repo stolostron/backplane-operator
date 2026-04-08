@@ -856,7 +856,7 @@ func TestNamespaceRequiresTLSProfile(t *testing.T) {
 	}
 }
 
-func TestEnsureTLSProfileConfigMap(t *testing.T) {
+func TestEnsureTLSProfileConfigMaps(t *testing.T) {
 	// Note: This is a basic test that verifies the function doesn't panic
 	// and handles unit test mode correctly. Full integration testing would
 	// require a real Kubernetes client and APIServer resource.
@@ -870,6 +870,6 @@ func TestEnsureTLSProfileConfigMap(t *testing.T) {
 	t.Run("unit test mode doesn't panic", func(t *testing.T) {
 		// In a real test environment, you would set up a fake client here
 		// For now, we just verify the function exists and compiles
-		_ = EnsureTLSProfileConfigMap
+		_ = EnsureTLSProfileConfigMaps
 	})
 }
