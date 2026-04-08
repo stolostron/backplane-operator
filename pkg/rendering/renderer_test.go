@@ -665,55 +665,7 @@ func TestRenderCRDsSkipDirectories(t *testing.T) {
 	}
 }
 
-func TestNamespaceRequiresTLSProfile(t *testing.T) {
-	tests := []struct {
-		name      string
-		namespace string
-		want      bool
-	}{
-		{
-			name:      "open-cluster-management-hub requires TLS profile",
-			namespace: "open-cluster-management-hub",
-			want:      true,
-		},
-		{
-			name:      "open-cluster-management-agent requires TLS profile",
-			namespace: "open-cluster-management-agent",
-			want:      true,
-		},
-		{
-			name:      "multicluster-engine does not require TLS profile",
-			namespace: "multicluster-engine",
-			want:      false,
-		},
-		{
-			name:      "default namespace does not require TLS profile",
-			namespace: "default",
-			want:      false,
-		},
-		{
-			name:      "empty namespace does not require TLS profile",
-			namespace: "",
-			want:      false,
-		},
-		{
-			name:      "random namespace does not require TLS profile",
-			namespace: "random-namespace",
-			want:      false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := NamespaceRequiresTLSProfile(tt.namespace)
-			if got != tt.want {
-				t.Errorf("NamespaceRequiresTLSProfile(%q) = %v, want %v", tt.namespace, got, tt.want)
-			}
-		})
-	}
-}
-
-func TestEnsureTLSProfileConfigMap(t *testing.T) {
+func TestEnsureTLSProfileConfigMaps(t *testing.T) {
 	// Note: This is a basic test that verifies the function doesn't panic
 	// and handles unit test mode correctly. Full integration testing would
 	// require a real Kubernetes client and APIServer resource.
@@ -727,6 +679,6 @@ func TestEnsureTLSProfileConfigMap(t *testing.T) {
 	t.Run("unit test mode doesn't panic", func(t *testing.T) {
 		// In a real test environment, you would set up a fake client here
 		// For now, we just verify the function exists and compiles
-		_ = EnsureTLSProfileConfigMap
+		_ = EnsureTLSProfileConfigMaps
 	})
 }

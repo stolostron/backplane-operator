@@ -1951,14 +1951,6 @@ func (r *MultiClusterEngineReconciler) applyTemplate(ctx context.Context,
 				}
 				return ctrl.Result{}, err
 			}
-
-			// Ensure TLS profile ConfigMap exists in namespaces that require it
-			if renderer.NamespaceRequiresTLSProfile(template.GetNamespace()) {
-				if err := renderer.EnsureTLSProfileConfigMap(ctx, r.Client, backplaneConfig, template.GetNamespace(), r.Scheme); err != nil {
-					r.Log.Error(err, "Failed to ensure TLS profile ConfigMap", "Namespace", template.GetNamespace())
-					return ctrl.Result{}, err
-				}
-			}
 		}
 
 		existing := template.DeepCopy()
