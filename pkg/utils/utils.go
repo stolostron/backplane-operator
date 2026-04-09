@@ -219,7 +219,7 @@ func GetTestImages() []string {
 		"hypershift_operator", "image_based_install_operator", "ip_address_manager", "kube_rbac_proxy_mce",
 		"maestro", "managed_serviceaccount", "managedcluster_import_controller", "mce_capi_webhook_config_rhel9",
 		"multicloud_manager", "openshift_hive", "ose_aws_cluster_api_controllers_rhel9",
-		"ose_baremetal_cluster_api_controllers_rhel9", "ose_cluster_api_rhel9", "postgresql_13",
+		"ose_baremetal_cluster_api_controllers_rhel9", "ose_cluster_api_rhel9", "postgresql_13", "postgresql_15",
 		"provider_credential_controller", "registration", "registration_operator", "work",
 	}
 }
