@@ -1,0 +1,24 @@
+# See the OWNERS docs: https://git.k8s.io/community/contributors/guide/owners.md
+
+filters:
+  .*:
+    approvers:
+      - approvers
+    reviewers:
+      - approvers
+    emeritus_approvers:
+      - emeritus_approvers
+  ^Dockerfile\..*:
+    labels:
+      - downstream-change-needed
+      - kind/dependency-change
+  swagger.yaml:
+    labels:
+      - api-review
+  ^api/.*:
+    labels:
+      - api-review
+  ^docs/events.yaml:
+    labels:
+      - api-review
+# More specific ownership under cmd/agentbasedinstaller/
