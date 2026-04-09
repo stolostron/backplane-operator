@@ -1,0 +1,8 @@
+approvers:
+- deads2k
+- jnpacker
+- qiujian16
+# Temporary approvers added for Konflux migration to facilitate release repo prow configuration updates
+# These approvers will be removed after the migration is complete
+- xuezhaojun
+- zhujian7
