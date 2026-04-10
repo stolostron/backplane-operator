@@ -146,6 +146,8 @@ spec:
           value: {{ .Values.global.imageOverrides.registration }}
         - name: WORK_IMAGE
           value: {{ .Values.global.imageOverrides.work }}
+        - name: TLS_PROFILE_SYNC_IMAGE
+          value: {{ .Values.global.imageOverrides.managedcluster_import_controller }}
         - name: POD_NAMESPACE
           valueFrom:
             fieldRef:

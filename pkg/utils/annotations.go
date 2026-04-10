@@ -83,6 +83,13 @@ var (
 		Expected format: JSON array ["component1","component2","component3"]
 	*/
 	AnnotationExternallyManaged = "installer.openshift.io/externally-managed"
+
+	/*
+		AnnotationResourceAdoptionPolicy is an annotation used in multiclusterengine to control how the operator
+		handles existing resources without backplaneconfig labels.
+		Valid values: "Strict" (default) - only manage labeled resources, "Adopt" - adopt unlabeled resources.
+	*/
+	AnnotationResourceAdoptionPolicy = "installer.multicluster.openshift.io/resource-adoption-policy"
 )
 
 /*
