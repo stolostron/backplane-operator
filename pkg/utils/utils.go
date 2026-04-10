@@ -206,7 +206,7 @@ func GetTestImages() []string {
 		"HYPERSHIFT_ADDON_OPERATOR", "HYPERSHIFT_OPERATOR", "IMAGE_BASED_INSTALL_OPERATOR", "KUBE_RBAC_PROXY_MCE",
 		"MANAGEDCLUSTER_IMPORT_CONTROLLER", "MANAGED_SERVICEACCOUNT", "MCE_CAPI_WEBHOOK_CONFIG_RHEL9",
 		"MULTICLOUD_MANAGER", "OPENSHIFT_HIVE", "OSE_AWS_CLUSTER_API_CONTROLLERS_RHEL9", "OSE_CLUSTER_API_RHEL9",
-		"POSTGRESQL_13", "PROVIDER_CREDENTIAL_CONTROLLER", "REGISTRATION", "REGISTRATION_OPERATOR", "WORK",
+		"POSTGRESQL_15", "PROVIDER_CREDENTIAL_CONTROLLER", "REGISTRATION", "REGISTRATION_OPERATOR", "WORK",
 		"apiserver_network_proxy", "assisted_image_service", "assisted_installer", "assisted_installer_agent",
 		"assisted_installer_controller", "assisted_service_9", "aws_encryption_provider", "azure_service_operator_rhel9",
 		"cluster_api", "cluster_api_bootstrap_provider_openshift_assisted",
@@ -219,7 +219,7 @@ func GetTestImages() []string {
 		"hypershift_operator", "image_based_install_operator", "ip_address_manager", "kube_rbac_proxy_mce",
 		"maestro", "managed_serviceaccount", "managedcluster_import_controller", "mce_capi_webhook_config_rhel9",
 		"multicloud_manager", "openshift_hive", "ose_aws_cluster_api_controllers_rhel9",
-		"ose_baremetal_cluster_api_controllers_rhel9", "ose_cluster_api_rhel9", "postgresql_13",
+		"ose_baremetal_cluster_api_controllers_rhel9", "ose_cluster_api_rhel9", "postgresql_15",
 		"provider_credential_controller", "registration", "registration_operator", "work",
 	}
 }

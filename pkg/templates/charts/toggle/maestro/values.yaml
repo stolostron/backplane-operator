@@ -5,7 +5,7 @@
 global:
   imageOverrides:
     maestro: ""
-    postgresql_13: ""
+    postgresql_15: ""
   # Available template overrides:
   # maestro_database_storage: <storage-value>
   templateOverrides: {}
