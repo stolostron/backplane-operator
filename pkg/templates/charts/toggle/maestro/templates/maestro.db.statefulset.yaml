@@ -29,7 +29,7 @@ spec:
 {{- end }}
       containers:
       - name: postgresql
-        image: {{ .Values.global.imageOverrides.postgresql_13 }}
+        image: {{ .Values.global.imageOverrides.postgresql_15 }}
         imagePullPolicy: {{ .Values.global.pullPolicy }}
         ports:
         - containerPort: 5432
