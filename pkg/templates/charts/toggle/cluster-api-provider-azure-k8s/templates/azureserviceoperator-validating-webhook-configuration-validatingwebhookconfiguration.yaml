@@ -6899,6 +6899,69 @@ webhooks:
     service:
       name: azureserviceoperator-webhook-service
       namespace: '{{ .Values.global.namespace }}'
+      path: /validate-redhatopenshift-azure-com-v1api20251223preview-hcpopenshiftcluster
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20251223preview.hcpopenshiftclusters.redhatopenshift.azure.com
+  rules:
+  - apiGroups:
+    - redhatopenshift.azure.com
+    apiVersions:
+    - v1api20251223preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - hcpopenshiftclusters
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-redhatopenshift-azure-com-v1api20251223preview-hcpopenshiftclustersexternalauth
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20251223preview.hcpopenshiftclustersexternalauths.redhatopenshift.azure.com
+  rules:
+  - apiGroups:
+    - redhatopenshift.azure.com
+    apiVersions:
+    - v1api20251223preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - hcpopenshiftclustersexternalauths
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-redhatopenshift-azure-com-v1api20251223preview-hcpopenshiftclustersnodepool
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20251223preview.hcpopenshiftclustersnodepools.redhatopenshift.azure.com
+  rules:
+  - apiGroups:
+    - redhatopenshift.azure.com
+    apiVersions:
+    - v1api20251223preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - hcpopenshiftclustersnodepools
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
       path: /validate-resources-azure-com-v1api20200601-resourcegroup
   failurePolicy: Fail
   matchPolicy: Exact

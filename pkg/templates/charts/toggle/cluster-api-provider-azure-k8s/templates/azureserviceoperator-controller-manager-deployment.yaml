@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   labels:
     app.kubernetes.io/name: azure-service-operator
-    app.kubernetes.io/version: v2.13.0-hcpclusters.1
+    app.kubernetes.io/version: v2.13.0-hcpclusters.3
     control-plane: azureserviceoperator-controller-manager
   name: azureserviceoperator-controller-manager
 spec:
@@ -20,7 +20,7 @@ spec:
         kubectl.kubernetes.io/default-container: manager
       labels:
         app.kubernetes.io/name: azure-service-operator
-        app.kubernetes.io/version: v2.13.0-hcpclusters.1
+        app.kubernetes.io/version: v2.13.0-hcpclusters.3
         control-plane: azureserviceoperator-controller-manager
         ocm-antiaffinity-selector: azureserviceoperator-controller-manager
     spec:

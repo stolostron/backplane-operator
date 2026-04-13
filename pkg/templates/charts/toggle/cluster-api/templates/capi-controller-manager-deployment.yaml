@@ -45,7 +45,7 @@ spec:
         - --leader-elect
         - --diagnostics-address=:8443
         - --insecure-diagnostics=false
-        - --feature-gates=MachinePool=true,ClusterResourceSet=true,ClusterTopology=false,RuntimeSDK=false,MachineSetPreflightChecks=true,MachineWaitForVolumeDetachConsiderVolumeAttachments=true,PriorityQueue=false
+        - --feature-gates=MachinePool=true,ClusterTopology=false,RuntimeSDK=false,MachineSetPreflightChecks=true,MachineWaitForVolumeDetachConsiderVolumeAttachments=true,PriorityQueue=false,ReconcilerRateLimiting=false,InPlaceUpdates=false,MachineTaintPropagation=false
         command:
         - /manager
         env:

@@ -15,7 +15,7 @@ spec:
       clientConfig:
         service:
           name: mce-capm3-webhook-service
-          namespace: capm3-system
+          namespace: multicluster-engine
           path: /convert
       conversionReviewVersions:
       - v1
