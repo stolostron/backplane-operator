@@ -1886,7 +1886,6 @@ rules:
   - awsclusterstaticidentities
   - awsmachinetemplates
   - azuremachinetemplates
-  - azuremachinetemplates/status
   verbs:
   - get
   - list
@@ -1921,6 +1920,7 @@ rules:
   - awsmachines/status
   - awsmanagedclusters/status
   - awsmanagedmachinepools/status
+  - azuremachinetemplates/status
   verbs:
   - get
   - list

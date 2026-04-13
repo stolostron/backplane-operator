@@ -11,4 +11,4 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: mce-capm3-manager
-  namespace: '{{ default "capm3-system" .Values.global.namespace }}'
+  namespace: '{{ default "multicluster-engine" .Values.global.namespace }}'
