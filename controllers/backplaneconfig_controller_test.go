@@ -25,6 +25,7 @@ import (
 	"reflect"
 	"sort"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -1656,10 +1657,27 @@ var _ = Describe("BackplaneConfig controller", func() {
 	})
 })
 
+var schemeOnce sync.Once
+
+// registerScheme initializes the global test scheme with typed registrations once per test run.
+// Uses sync.Once to prevent duplicate registrations when called from multiple test functions.
+// Panic recovery handles conflicts with envtest's unstructured CRD registrations (see suite_test.go).
 func registerScheme() {
-	backplanev1.AddToScheme(scheme.Scheme)
-	configv1.AddToScheme(scheme.Scheme)
-	addonv1alpha1.AddToScheme(scheme.Scheme)
+	schemeOnce.Do(func() {
+		defer func() {
+			if r := recover(); r != nil {
+				errStr := fmt.Sprintf("%v", r)
+				if strings.Contains(errStr, "Double registration") {
+					return
+				}
+				panic(r)
+			}
+		}()
+
+		backplanev1.AddToScheme(scheme.Scheme)
+		configv1.AddToScheme(scheme.Scheme)
+		addonv1alpha1.AddToScheme(scheme.Scheme)
+	})
 }
 
 func Test_getComponentConfig(t *testing.T) {
@@ -3102,9 +3120,14 @@ func Test_CleanupVersionedAddOnTemplates(t *testing.T) {
 		},
 	}
 
-	registerScheme()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Create independent scheme for this test to avoid conflicts
+			testScheme := runtime.NewScheme()
+			backplanev1.AddToScheme(testScheme)
+			configv1.AddToScheme(testScheme)
+			addonv1alpha1.AddToScheme(testScheme)
+
 			// Create MCE instance
 			mce := &backplanev1.MultiClusterEngine{
 				ObjectMeta: metav1.ObjectMeta{
@@ -3144,13 +3167,13 @@ func Test_CleanupVersionedAddOnTemplates(t *testing.T) {
 
 			// Create fake client with test templates
 			fakeClient := fake.NewClientBuilder().
-				WithScheme(scheme.Scheme).
+				WithScheme(testScheme).
 				WithObjects(initObjs...).
 				Build()
 
 			reconciler := &MultiClusterEngineReconciler{
 				Client:        fakeClient,
-				Scheme:        scheme.Scheme,
+				Scheme:        testScheme,
 				StatusManager: &status.StatusTracker{Client: fakeClient},
 			}
 

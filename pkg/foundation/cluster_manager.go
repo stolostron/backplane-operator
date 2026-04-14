@@ -87,6 +87,14 @@ func ClusterManager(m *v1.MultiClusterEngine, overrides map[string]string) *unst
 			DeployOption: ocmapiv1.ClusterManagerDeployOption{
 				Mode: ocmapiv1.InstallModeDefault,
 			},
+			PlacementConfiguration: &ocmapiv1.PlacementConfiguration{
+				FeatureGates: []ocmapiv1.FeatureGate{
+					{
+						Feature: "PlacementDebugServer",
+						Mode:    ocmapiv1.FeatureGateModeTypeEnable,
+					},
+				},
+			},
 		},
 	}
 
