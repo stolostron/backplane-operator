@@ -1674,9 +1674,24 @@ func registerScheme() {
 			}
 		}()
 
-		backplanev1.AddToScheme(scheme.Scheme)
-		configv1.AddToScheme(scheme.Scheme)
-		addonv1alpha1.AddToScheme(scheme.Scheme)
+		if err := backplanev1.AddToScheme(scheme.Scheme); err != nil {
+			errStr := fmt.Sprintf("%v", err)
+			if !strings.Contains(errStr, "Double registration") {
+				panic(err)
+			}
+		}
+		if err := configv1.AddToScheme(scheme.Scheme); err != nil {
+			errStr := fmt.Sprintf("%v", err)
+			if !strings.Contains(errStr, "Double registration") {
+				panic(err)
+			}
+		}
+		if err := addonv1alpha1.AddToScheme(scheme.Scheme); err != nil {
+			errStr := fmt.Sprintf("%v", err)
+			if !strings.Contains(errStr, "Double registration") {
+				panic(err)
+			}
+		}
 	})
 }
 
@@ -3124,9 +3139,15 @@ func Test_CleanupVersionedAddOnTemplates(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create independent scheme for this test to avoid conflicts
 			testScheme := runtime.NewScheme()
-			backplanev1.AddToScheme(testScheme)
-			configv1.AddToScheme(testScheme)
-			addonv1alpha1.AddToScheme(testScheme)
+			if err := backplanev1.AddToScheme(testScheme); err != nil {
+				t.Fatalf("failed to add backplanev1 to scheme: %v", err)
+			}
+			if err := configv1.AddToScheme(testScheme); err != nil {
+				t.Fatalf("failed to add configv1 to scheme: %v", err)
+			}
+			if err := addonv1alpha1.AddToScheme(testScheme); err != nil {
+				t.Fatalf("failed to add addonv1alpha1 to scheme: %v", err)
+			}
 
 			// Create MCE instance
 			mce := &backplanev1.MultiClusterEngine{
