@@ -229,7 +229,7 @@ func main() {
 		setupLog.Error(err, "unable to detect if cluster is openShift")
 		os.Exit(1)
 	}
-	ctx := ctrl.SetupSignalHandler()
+	ctx = ctrl.SetupSignalHandler()
 	upgradeableCondition := &utils.OperatorCondition{}
 
 	if utils.DeployOnOCP() {
