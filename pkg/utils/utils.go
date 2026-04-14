@@ -5,6 +5,7 @@ package utils
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"path"
@@ -12,18 +13,17 @@ import (
 	"strconv"
 	"strings"
 
-	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes"
-
 	"os"
 
 	configv1 "github.com/openshift/api/config/v1"
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -510,6 +510,7 @@ func ComponentCRDDirectories(component string) []string {
 	}
 }
 
+<<<<<<< HEAD
 // opensslToIANACipherMap maps OpenSSL cipher names to IANA cipher names.
 // TLS 1.3 ciphers are already in IANA format.
 var opensslToIANACipherMap = map[string]string{
@@ -548,10 +549,10 @@ var opensslToIANACipherMap = map[string]string{
 }
 
 // GetAPIServerTLSProfile retrieves the TLS security profile from the OpenShift APIServer resource.
-// Returns the TLSProfileSpec containing ciphers and minTLSVersion.
+// Returns the TLSProfileSpec containing minTLSVersion and ciphers.
 // If no profile is set, returns the default Intermediate profile.
 func GetAPIServerTLSProfile(ctx context.Context, cl client.Client) (*configv1.TLSProfileSpec, error) {
-	// If Unit test
+	// If running in unit test mode, return default Intermediate profile
 	if val, ok := os.LookupEnv(UnitTestEnvVar); ok && val == "true" {
 		return configv1.TLSProfiles[configv1.TLSProfileIntermediateType], nil
 	}
@@ -597,4 +598,22 @@ func ConvertCipherSuitesToIANA(ciphers []string) ([]string, error) {
 	}
 
 	return ianaCiphers, nil
+}
+
+// ConvertTLSVersion converts OpenShift TLSProtocolVersion string to crypto/tls uint16 constant.
+// Returns tls.VersionTLS12 as default if the version string is not recognized.
+func ConvertTLSVersion(version configv1.TLSProtocolVersion) uint16 {
+	switch version {
+	case configv1.VersionTLS10:
+		return tls.VersionTLS10
+	case configv1.VersionTLS11:
+		return tls.VersionTLS11
+	case configv1.VersionTLS12:
+		return tls.VersionTLS12
+	case configv1.VersionTLS13:
+		return tls.VersionTLS13
+	default:
+		// Default to TLS 1.2 for safety
+		return tls.VersionTLS12
+	}
 }
