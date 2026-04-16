@@ -1152,6 +1152,33 @@ func TestGetAPIServerTLSProfile_UnitTest(t *testing.T) {
 	}
 }
 
+func TestGetAPIServerTLSProfile_NonOCP(t *testing.T) {
+	// Save original platform setting
+	originalPlatform := DeployOnOCP()
+	defer SetDeployOnOCP(originalPlatform)
+
+	// Set to non-OCP
+	SetDeployOnOCP(false)
+
+	ctx := context.Background()
+	got, err := GetAPIServerTLSProfile(ctx, nil)
+	if err != nil {
+		t.Errorf("GetAPIServerTLSProfile() on non-OCP cluster returned error: %v", err)
+		return
+	}
+
+	// On non-OCP clusters, should return default Intermediate profile
+	if got.MinTLSVersion != "VersionTLS12" {
+		t.Errorf("GetAPIServerTLSProfile() MinTLSVersion = %v, want VersionTLS12", got.MinTLSVersion)
+	}
+
+	// Check it has the expected number of ciphers for Intermediate profile
+	expectedCipherCount := 11
+	if len(got.Ciphers) != expectedCipherCount {
+		t.Errorf("GetAPIServerTLSProfile() returned %d ciphers, want %d for Intermediate profile", len(got.Ciphers), expectedCipherCount)
+	}
+}
+
 func TestConvertTLSVersion(t *testing.T) {
 	tests := []struct {
 		name    string

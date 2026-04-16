@@ -550,9 +550,16 @@ var opensslToIANACipherMap = map[string]string{
 // GetAPIServerTLSProfile retrieves the TLS security profile from the OpenShift APIServer resource.
 // Returns the TLSProfileSpec containing minTLSVersion and ciphers.
 // If no profile is set, returns the default Intermediate profile.
+// On non-OpenShift clusters, returns the default Intermediate profile.
 func GetAPIServerTLSProfile(ctx context.Context, cl client.Client) (*configv1.TLSProfileSpec, error) {
 	// If running in unit test mode, return default Intermediate profile
 	if val, ok := os.LookupEnv(UnitTestEnvVar); ok && val == "true" {
+		return configv1.TLSProfiles[configv1.TLSProfileIntermediateType], nil
+	}
+
+	// On non-OpenShift clusters, APIServer resource doesn't exist
+	// Return default Intermediate profile
+	if !DeployOnOCP() {
 		return configv1.TLSProfiles[configv1.TLSProfileIntermediateType], nil
 	}
 
