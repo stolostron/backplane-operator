@@ -683,9 +683,9 @@ func TestParseProbeConfigFromAnnotations(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test-mce",
 				Annotations: map[string]string{
-					"installer.open-cluster-management.io/probe-timeout-seconds":   "10",
-					"installer.open-cluster-management.io/probe-failure-threshold": "5",
-					"installer.open-cluster-management.io/probe-success-threshold": "2",
+					"installer.multicluster.openshift.io/probe-timeout-seconds":   "10",
+					"installer.multicluster.openshift.io/probe-failure-threshold": "5",
+					"installer.multicluster.openshift.io/probe-success-threshold": "2",
 				},
 			},
 		}
@@ -711,7 +711,7 @@ func TestParseProbeConfigFromAnnotations(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test-mce",
 				Annotations: map[string]string{
-					"installer.open-cluster-management.io/probe-timeout-seconds": "15",
+					"installer.multicluster.openshift.io/probe-timeout-seconds": "15",
 				},
 			},
 		}
@@ -737,8 +737,8 @@ func TestParseProbeConfigFromAnnotations(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test-mce",
 				Annotations: map[string]string{
-					"installer.open-cluster-management.io/probe-timeout-seconds":   "not-a-number",
-					"installer.open-cluster-management.io/probe-failure-threshold": "10",
+					"installer.multicluster.openshift.io/probe-timeout-seconds":   "not-a-number",
+					"installer.multicluster.openshift.io/probe-failure-threshold": "10",
 				},
 			},
 		}
@@ -761,9 +761,9 @@ func TestParseProbeConfigFromAnnotations(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test-mce",
 				Annotations: map[string]string{
-					"installer.open-cluster-management.io/probe-timeout-seconds":   "0",
-					"installer.open-cluster-management.io/probe-failure-threshold": "-5",
-					"installer.open-cluster-management.io/probe-success-threshold": "3",
+					"installer.multicluster.openshift.io/probe-timeout-seconds":   "0",
+					"installer.multicluster.openshift.io/probe-failure-threshold": "-5",
+					"installer.multicluster.openshift.io/probe-success-threshold": "3",
 				},
 			},
 		}
@@ -789,8 +789,8 @@ func TestParseProbeConfigFromAnnotations(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test-mce",
 				Annotations: map[string]string{
-					"installer.open-cluster-management.io/pause":                 "true",
-					"installer.open-cluster-management.io/probe-timeout-seconds": "20",
+					"installer.multicluster.openshift.io/pause":                 "true",
+					"installer.multicluster.openshift.io/probe-timeout-seconds": "20",
 					"some-other-annotation":                                      "value",
 				},
 			},
