@@ -791,7 +791,7 @@ func TestParseProbeConfigFromAnnotations(t *testing.T) {
 				Annotations: map[string]string{
 					"installer.multicluster.openshift.io/pause":                 "true",
 					"installer.multicluster.openshift.io/probe-timeout-seconds": "20",
-					"some-other-annotation":                                      "value",
+					"some-other-annotation":                                     "value",
 				},
 			},
 		}
