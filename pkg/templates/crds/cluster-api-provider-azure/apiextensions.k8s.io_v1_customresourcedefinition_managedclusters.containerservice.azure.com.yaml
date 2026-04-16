@@ -6,7 +6,7 @@ metadata:
     service.beta.openshift.io/inject-cabundle: "true"
   labels:
     app.kubernetes.io/name: azure-service-operator
-    app.kubernetes.io/version: v2.13.0-hcpclusters.3
+    app.kubernetes.io/version: v2.13.0-hcpclusters.7
     visualizer.cluster.x-k8s.io: ""
     visualizer.cluster.x-k8s.io/provider-type: infrastructure
   name: managedclusters.containerservice.azure.com

@@ -6,7 +6,7 @@ metadata:
     service.beta.openshift.io/inject-cabundle: "true"
   labels:
     app.kubernetes.io/name: azure-service-operator
-    app.kubernetes.io/version: v2.13.0-hcpclusters.3
+    app.kubernetes.io/version: v2.13.0-hcpclusters.7
   name: vaults.keyvault.azure.com
 spec:
   conversion:
