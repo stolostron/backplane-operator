@@ -813,7 +813,7 @@ func (r *MultiClusterEngineReconciler) createMetricsServiceMonitor(ctx context.C
 			Spec: monitorv1.ServiceMonitorSpec{
 				Endpoints: []monitorv1.Endpoint{
 					{
-						BearerTokenFile: "/var/run/secrets/kubernetes.io/serviceaccount/token",
+						BearerTokenFile: "/var/run/secrets/kubernetes.io/serviceaccount/token", // #nosec G101 -- Standard Kubernetes service account token path, not a hardcoded credential
 						BearerTokenSecret: &corev1.SecretKeySelector{
 							Key: "",
 						},

@@ -262,7 +262,7 @@ func RenderCRDs(crdDir string, backplaneConfig *v1.MultiClusterEngine, skipDirs 
 			}
 		}
 
-		bytesFile, e := os.ReadFile(filepath.Clean(filePath)) // #nosec G304 -- filePath from filepath.Walk
+		bytesFile, e := os.ReadFile(filepath.Clean(filePath)) // #nosec G304,G122 -- filePath from filepath.Walk within operator's own template directory
 		if e != nil {
 			errs = append(errs, fmt.Errorf("%s - error reading file: %v", info.Name(), err.Error()))
 		}
