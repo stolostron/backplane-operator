@@ -1,6 +1,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  annotations:
+    prometheus.io/path: /metrics
+    prometheus.io/port: ${CAPM3_DIAGNOSTICS_ADDRESS:=:8443}
+    prometheus.io/scrape: 'true'
   labels:
     cluster.x-k8s.io/provider: infrastructure-metal3
     control-plane: controller-manager
@@ -63,10 +67,6 @@ spec:
         - name: NO_PROXY
           value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
 {{- end }}
-        - name: POD_NAMESPACE
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.namespace
         envFrom:
         - configMapRef:
             name: mce-capm3-capm3fasttrack-configmap
