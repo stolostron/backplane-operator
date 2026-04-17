@@ -66,6 +66,17 @@ spec:
               -p 5432
           initialDelaySeconds: 5
           timeoutSeconds: 1
+{{- if .Values.hubconfig.probeConfig }}
+{{- if .Values.hubconfig.probeConfig.timeoutSeconds }}
+          timeoutSeconds: {{ .Values.hubconfig.probeConfig.timeoutSeconds }}
+{{- end }}
+{{- if .Values.hubconfig.probeConfig.failureThreshold }}
+          failureThreshold: {{ .Values.hubconfig.probeConfig.failureThreshold }}
+{{- end }}
+{{- if .Values.hubconfig.probeConfig.successThreshold }}
+          successThreshold: {{ .Values.hubconfig.probeConfig.successThreshold }}
+{{- end }}
+{{- end }}
         resources:
           requests:
             cpu: 100m
