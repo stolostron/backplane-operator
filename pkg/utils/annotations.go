@@ -90,6 +90,24 @@ var (
 		Valid values: "Strict" (default) - only manage labeled resources, "Adopt" - adopt unlabeled resources.
 	*/
 	AnnotationResourceAdoptionPolicy = "installer.multicluster.openshift.io/resource-adoption-policy"
+
+	/*
+		AnnotationProbeTimeoutSeconds is an annotation used to configure probe timeout in seconds for exec probes
+		in components deployed by multiclusterengine.
+	*/
+	AnnotationProbeTimeoutSeconds = "installer.multicluster.openshift.io/probe-timeout-seconds"
+
+	/*
+		AnnotationProbeFailureThreshold is an annotation used to configure probe failure threshold for exec probes
+		in components deployed by multiclusterengine.
+	*/
+	AnnotationProbeFailureThreshold = "installer.multicluster.openshift.io/probe-failure-threshold"
+
+	/*
+		AnnotationProbeSuccessThreshold is an annotation used to configure probe success threshold for exec probes
+		in components deployed by multiclusterengine.
+	*/
+	AnnotationProbeSuccessThreshold = "installer.multicluster.openshift.io/probe-success-threshold"
 )
 
 /*

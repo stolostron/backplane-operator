@@ -3,6 +3,7 @@ global:
   pullSecret: null
 hubconfig:
   nodeSelector: null
+  probeConfig: null
   proxyConfigs: {}
   replicaCount: 1
   tolerations: []

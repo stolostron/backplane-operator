@@ -5,6 +5,7 @@ global:
   namespace: default
 hubconfig:
   nodeSelector: {}
+  probeConfig: null
   proxyConfigs: {}
   replicaCount: 1
   tolerations: []
