@@ -1664,34 +1664,27 @@ var schemeOnce sync.Once
 // Panic recovery handles conflicts with envtest's unstructured CRD registrations (see suite_test.go).
 func registerScheme() {
 	schemeOnce.Do(func() {
-		defer func() {
-			if r := recover(); r != nil {
-				errStr := fmt.Sprintf("%v", r)
-				if strings.Contains(errStr, "Double registration") {
-					return
+		addSafe := func(fn func(*runtime.Scheme) error) {
+			func() {
+				defer func() {
+					if r := recover(); r != nil {
+						if !strings.Contains(fmt.Sprintf("%v", r), "Double registration") {
+							panic(r)
+						}
+					}
+				}()
+				if err := fn(scheme.Scheme); err != nil {
+					errStr := fmt.Sprintf("%v", err)
+					if !strings.Contains(errStr, "Double registration") {
+						panic(err)
+					}
 				}
-				panic(r)
-			}
-		}()
+			}()
+		}
 
-		if err := backplanev1.AddToScheme(scheme.Scheme); err != nil {
-			errStr := fmt.Sprintf("%v", err)
-			if !strings.Contains(errStr, "Double registration") {
-				panic(err)
-			}
-		}
-		if err := configv1.AddToScheme(scheme.Scheme); err != nil {
-			errStr := fmt.Sprintf("%v", err)
-			if !strings.Contains(errStr, "Double registration") {
-				panic(err)
-			}
-		}
-		if err := addonv1alpha1.AddToScheme(scheme.Scheme); err != nil {
-			errStr := fmt.Sprintf("%v", err)
-			if !strings.Contains(errStr, "Double registration") {
-				panic(err)
-			}
-		}
+		addSafe(backplanev1.AddToScheme)
+		addSafe(configv1.AddToScheme)
+		addSafe(addonv1alpha1.Install)
 	})
 }
 
@@ -3145,7 +3138,7 @@ func Test_CleanupVersionedAddOnTemplates(t *testing.T) {
 			if err := configv1.AddToScheme(testScheme); err != nil {
 				t.Fatalf("failed to add configv1 to scheme: %v", err)
 			}
-			if err := addonv1alpha1.AddToScheme(testScheme); err != nil {
+			if err := addonv1alpha1.Install(testScheme); err != nil {
 				t.Fatalf("failed to add addonv1alpha1 to scheme: %v", err)
 			}
 
