@@ -789,9 +789,9 @@ func TestParseProbeConfigFromAnnotations(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test-mce",
 				Annotations: map[string]string{
-					"installer.multicluster.openshift.io/pause":                 "true",
-					utils.AnnotationProbeTimeoutSeconds: "20",
-					"some-other-annotation":                                     "value",
+					"installer.multicluster.openshift.io/pause": "true",
+					utils.AnnotationProbeTimeoutSeconds:         "20",
+					"some-other-annotation":                     "value",
 				},
 			},
 		}
