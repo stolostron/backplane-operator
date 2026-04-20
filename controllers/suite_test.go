@@ -197,7 +197,7 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	err = olmv1.AddToScheme(mgrScheme)
 	Expect(err).NotTo(HaveOccurred())
-	err = addonv1alpha1.AddToScheme(mgrScheme)
+	err = addonv1alpha1.Install(mgrScheme)
 	Expect(err).NotTo(HaveOccurred())
 	// Register typed ClusterManager - this is critical for controller watches
 	err = clustermanager.AddToScheme(mgrScheme)

@@ -127,7 +127,7 @@ func GetAddons() ([]*unstructured.Unstructured, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer root.Close()
+	defer func() { _ = root.Close() }()
 
 	err = filepath.Walk(addonPath, func(filePath string, info os.FileInfo, err error) error {
 		if err != nil {
