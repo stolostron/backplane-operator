@@ -1809,6 +1809,7 @@ rules:
   - azuremanagedcontrolplanes
   - azuremanagedmachinepools
   - metal3clusters
+  - metal3clustertemplates
   - metal3dataclaims
   - metal3datas
   - metal3datatemplates

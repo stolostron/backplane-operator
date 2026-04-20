@@ -52,11 +52,18 @@ type HubConfig struct {
 	ProxyConfigs         map[string]string `json:"proxyConfigs" structs:"proxyConfigs"`
 	ReplicaCount         int               `json:"replicaCount" structs:"replicaCount"`
 	Tolerations          []Toleration      `json:"tolerations" structs:"tolerations"`
+	ProbeConfig          *ProbeConfig      `json:"probeConfig" structs:"probeConfig"`
 	OCPVersion           string            `json:"ocpVersion" structs:"ocpVersion"`
 	MCHNamespace         string            `json:"mCHNamespace" structs:"mCHNamespace"`
 	ClusterIngressDomain string            `json:"clusterIngressDomain" structs:"clusterIngressDomain"`
 	HubType              string            `json:"hubType" structs:"hubType"`
 	EnableFlightCtl      bool              `json:"enableFlightCtl" structs:"enableFlightCtl"`
+}
+
+type ProbeConfig struct {
+	TimeoutSeconds   *int32 `json:"timeoutSeconds,omitempty"`
+	FailureThreshold *int32 `json:"failureThreshold,omitempty"`
+	SuccessThreshold *int32 `json:"successThreshold,omitempty"`
 }
 
 type Toleration struct {
@@ -79,6 +86,62 @@ func convertTolerations(tols []corev1.Toleration) []Toleration {
 		})
 	}
 	return tolerations
+}
+
+// parseProbeConfigFromAnnotations reads probe config from MCE annotations
+func parseProbeConfigFromAnnotations(mce *v1.MultiClusterEngine) *ProbeConfig {
+	if mce.Annotations == nil {
+		return nil
+	}
+
+	log := log.Log.WithName("reconcile")
+	var config ProbeConfig
+	hasAny := false
+
+	if val, ok := mce.Annotations["installer.multicluster.openshift.io/probe-timeout-seconds"]; ok {
+		timeout, err := strconv.ParseInt(val, 10, 32)
+		if err != nil {
+			log.Info(fmt.Sprintf("Invalid probe-timeout-seconds annotation value %q: %v", val, err))
+		} else if timeout <= 0 {
+			log.Info(fmt.Sprintf("Invalid probe-timeout-seconds annotation value %q: must be positive", val))
+		} else {
+			timeout32 := int32(timeout)
+			config.TimeoutSeconds = &timeout32
+			hasAny = true
+		}
+	}
+
+	if val, ok := mce.Annotations["installer.multicluster.openshift.io/probe-failure-threshold"]; ok {
+		threshold, err := strconv.ParseInt(val, 10, 32)
+		if err != nil {
+			log.Info(fmt.Sprintf("Invalid probe-failure-threshold annotation value %q: %v", val, err))
+		} else if threshold <= 0 {
+			log.Info(fmt.Sprintf("Invalid probe-failure-threshold annotation value %q: must be positive", val))
+		} else {
+			threshold32 := int32(threshold)
+			config.FailureThreshold = &threshold32
+			hasAny = true
+		}
+	}
+
+	if val, ok := mce.Annotations["installer.multicluster.openshift.io/probe-success-threshold"]; ok {
+		threshold, err := strconv.ParseInt(val, 10, 32)
+		if err != nil {
+			log.Info(fmt.Sprintf("Invalid probe-success-threshold annotation value %q: %v", val, err))
+		} else if threshold <= 0 {
+			log.Info(fmt.Sprintf("Invalid probe-success-threshold annotation value %q: must be positive", val))
+		} else {
+			threshold32 := int32(threshold)
+			config.SuccessThreshold = &threshold32
+			hasAny = true
+		}
+	}
+
+	if !hasAny {
+		return nil
+	}
+
+	return &config
 }
 
 func (u *Toleration) MarshalJSON() ([]byte, error) {
@@ -387,6 +450,8 @@ func injectValuesOverrides(values *Values, backplaneConfig *v1.MultiClusterEngin
 	} else {
 		values.HubConfig.Tolerations = convertTolerations(utils.DefaultTolerations())
 	}
+
+	values.HubConfig.ProbeConfig = parseProbeConfigFromAnnotations(backplaneConfig)
 
 	values.Org = "open-cluster-management"
 

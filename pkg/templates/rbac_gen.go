@@ -201,8 +201,12 @@ package main
 //+kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=get;list;watch
 //+kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=get;list;watch
 //+kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=get;list;watch
+//+kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=get;list;watch
+//+kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=get;list;watch
 //+kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=list;watch
 //+kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions/status,verbs=update;patch
+//+kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions;customresourcedefinitions/status,verbs=patch;update
+//+kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions;customresourcedefinitions/status,verbs=patch;update
 //+kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions;customresourcedefinitions/status,verbs=patch;update
 //+kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions;customresourcedefinitions/status,verbs=patch;update
 //+kubebuilder:rbac:groups=apimanagement.azure.com,resources=apis/finalizers;apis/status;apiversionsets/finalizers;apiversionsets/status;authorizationproviders/finalizers;authorizationproviders/status;authorizationprovidersauthorizations/finalizers;authorizationprovidersauthorizations/status;authorizationprovidersauthorizationsaccesspolicies/finalizers;authorizationprovidersauthorizationsaccesspolicies/status;backends/finalizers;backends/status;namedvalues/finalizers;namedvalues/status;policies/finalizers;policies/status;policyfragments/finalizers;policyfragments/status;productapis/finalizers;productapis/status;productpolicies/finalizers;productpolicies/status;products/finalizers;products/status;services/finalizers;services/status;subscriptions/finalizers;subscriptions/status,verbs=get;patch;update
@@ -578,8 +582,8 @@ package main
 //+kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=azuremachinetemplates/status,verbs=get;list;patch;update;watch
 //+kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=metal3clusters/status;metal3dataclaims/status;metal3datas/status;metal3datatemplates/status;metal3machines/status;metal3remediations/status,verbs=get;patch;update
 //+kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=metal3clusters/status;metal3dataclaims/status;metal3datas/status;metal3datatemplates/status;metal3machines/status;metal3remediations/status,verbs=get;patch;update
-//+kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=metal3clusters;metal3dataclaims;metal3datas;metal3datatemplates;metal3machines;metal3machinetemplates;metal3remediations,verbs=create;delete;get;list;patch;update;watch
-//+kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=metal3clusters;metal3dataclaims;metal3datas;metal3datatemplates;metal3machines;metal3machinetemplates;metal3remediations,verbs=create;delete;get;list;patch;update;watch
+//+kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=metal3clusters;metal3clustertemplates;metal3dataclaims;metal3datas;metal3datatemplates;metal3machines;metal3machinetemplates;metal3remediations,verbs=create;delete;get;list;patch;update;watch
+//+kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=metal3clusters;metal3clustertemplates;metal3dataclaims;metal3datas;metal3datatemplates;metal3machines;metal3machinetemplates;metal3remediations,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=rosamachinepools/finalizers;rosanetworks/finalizers;rosaroleconfigs/finalizers,verbs=update
 //+kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=rosamachinepools/status,verbs=create;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=insights.azure.com,resources=actiongroups/finalizers;actiongroups/status;autoscalesettings/finalizers;autoscalesettings/status;components/finalizers;components/status;diagnosticsettings/finalizers;diagnosticsettings/status;metricalerts/finalizers;metricalerts/status;scheduledqueryrules/finalizers;scheduledqueryrules/status;webtests/finalizers;webtests/status,verbs=get;patch;update
