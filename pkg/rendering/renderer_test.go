@@ -683,9 +683,9 @@ func TestParseProbeConfigFromAnnotations(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test-mce",
 				Annotations: map[string]string{
-					"installer.multicluster.openshift.io/probe-timeout-seconds":   "10",
-					"installer.multicluster.openshift.io/probe-failure-threshold": "5",
-					"installer.multicluster.openshift.io/probe-success-threshold": "2",
+					utils.AnnotationProbeTimeoutSeconds:   "10",
+					utils.AnnotationProbeFailureThreshold: "5",
+					utils.AnnotationProbeSuccessThreshold: "2",
 				},
 			},
 		}
@@ -711,7 +711,7 @@ func TestParseProbeConfigFromAnnotations(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test-mce",
 				Annotations: map[string]string{
-					"installer.multicluster.openshift.io/probe-timeout-seconds": "15",
+					utils.AnnotationProbeTimeoutSeconds: "15",
 				},
 			},
 		}
@@ -737,8 +737,8 @@ func TestParseProbeConfigFromAnnotations(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test-mce",
 				Annotations: map[string]string{
-					"installer.multicluster.openshift.io/probe-timeout-seconds":   "not-a-number",
-					"installer.multicluster.openshift.io/probe-failure-threshold": "10",
+					utils.AnnotationProbeTimeoutSeconds:   "not-a-number",
+					utils.AnnotationProbeFailureThreshold: "10",
 				},
 			},
 		}
@@ -761,9 +761,9 @@ func TestParseProbeConfigFromAnnotations(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test-mce",
 				Annotations: map[string]string{
-					"installer.multicluster.openshift.io/probe-timeout-seconds":   "0",
-					"installer.multicluster.openshift.io/probe-failure-threshold": "-5",
-					"installer.multicluster.openshift.io/probe-success-threshold": "3",
+					utils.AnnotationProbeTimeoutSeconds:   "0",
+					utils.AnnotationProbeFailureThreshold: "-5",
+					utils.AnnotationProbeSuccessThreshold: "3",
 				},
 			},
 		}
@@ -789,9 +789,9 @@ func TestParseProbeConfigFromAnnotations(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test-mce",
 				Annotations: map[string]string{
-					"installer.multicluster.openshift.io/pause":                 "true",
-					"installer.multicluster.openshift.io/probe-timeout-seconds": "20",
-					"some-other-annotation":                                     "value",
+					"installer.multicluster.openshift.io/pause": "true",
+					utils.AnnotationProbeTimeoutSeconds:         "20",
+					"some-other-annotation":                     "value",
 				},
 			},
 		}

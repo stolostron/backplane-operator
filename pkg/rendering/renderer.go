@@ -98,7 +98,7 @@ func parseProbeConfigFromAnnotations(mce *v1.MultiClusterEngine) *ProbeConfig {
 	var config ProbeConfig
 	hasAny := false
 
-	if val, ok := mce.Annotations["installer.multicluster.openshift.io/probe-timeout-seconds"]; ok {
+	if val, ok := mce.Annotations[utils.AnnotationProbeTimeoutSeconds]; ok {
 		timeout, err := strconv.ParseInt(val, 10, 32)
 		if err != nil {
 			log.Info(fmt.Sprintf("Invalid probe-timeout-seconds annotation value %q: %v", val, err))
@@ -111,7 +111,7 @@ func parseProbeConfigFromAnnotations(mce *v1.MultiClusterEngine) *ProbeConfig {
 		}
 	}
 
-	if val, ok := mce.Annotations["installer.multicluster.openshift.io/probe-failure-threshold"]; ok {
+	if val, ok := mce.Annotations[utils.AnnotationProbeFailureThreshold]; ok {
 		threshold, err := strconv.ParseInt(val, 10, 32)
 		if err != nil {
 			log.Info(fmt.Sprintf("Invalid probe-failure-threshold annotation value %q: %v", val, err))
@@ -124,7 +124,7 @@ func parseProbeConfigFromAnnotations(mce *v1.MultiClusterEngine) *ProbeConfig {
 		}
 	}
 
-	if val, ok := mce.Annotations["installer.multicluster.openshift.io/probe-success-threshold"]; ok {
+	if val, ok := mce.Annotations[utils.AnnotationProbeSuccessThreshold]; ok {
 		threshold, err := strconv.ParseInt(val, 10, 32)
 		if err != nil {
 			log.Info(fmt.Sprintf("Invalid probe-success-threshold annotation value %q: %v", val, err))
