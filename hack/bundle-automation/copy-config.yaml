@@ -1,6 +1,6 @@
 - repo_name: "cluster-permission"
   github_ref: "https://github.com/stolostron/cluster-permission.git"
-  branch: "release-2.17"
+  branch: "backplane-2.17"
   charts:
     - name: "cluster-permission"
       chart-path: "chart/"
