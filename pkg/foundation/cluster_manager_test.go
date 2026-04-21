@@ -119,6 +119,27 @@ func TestClusterManager(t *testing.T) {
 			if mode != string(ocmapiv1.InstallModeDefault) {
 				t.Errorf("expected deploy mode %s, got %s", ocmapiv1.InstallModeDefault, mode)
 			}
+
+			// Verify PlacementDebugServer feature gate is enabled
+			featureGates, found, err := unstructured.NestedSlice(
+				c.Object, "spec", "placementConfiguration", "featureGates")
+			if err != nil || !found {
+				t.Errorf("expected placementConfiguration.featureGates not found")
+			}
+			if len(featureGates) != 1 {
+				t.Errorf("expected 1 placement feature gate, got %d", len(featureGates))
+			}
+
+			gate, ok := featureGates[0].(map[string]interface{})
+			if !ok {
+				t.Errorf("expected placement feature gate to be a map, got %T", featureGates[0])
+			}
+			if gate["feature"] != "PlacementDebugServer" {
+				t.Errorf("expected feature PlacementDebugServer, got %v", gate["feature"])
+			}
+			if gate["mode"] != string(ocmapiv1.FeatureGateModeTypeEnable) {
+				t.Errorf("expected mode %s, got %v", ocmapiv1.FeatureGateModeTypeEnable, gate["mode"])
+			}
 		})
 	}
 }

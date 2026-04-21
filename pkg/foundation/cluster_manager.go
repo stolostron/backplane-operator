@@ -4,6 +4,7 @@ package foundation
 
 import (
 	"context"
+	"io"
 	"os"
 	"path"
 	"path/filepath"
@@ -87,6 +88,14 @@ func ClusterManager(m *v1.MultiClusterEngine, overrides map[string]string) *unst
 			DeployOption: ocmapiv1.ClusterManagerDeployOption{
 				Mode: ocmapiv1.InstallModeDefault,
 			},
+			PlacementConfiguration: &ocmapiv1.PlacementConfiguration{
+				FeatureGates: []ocmapiv1.FeatureGate{
+					{
+						Feature: "PlacementDebugServer",
+						Mode:    ocmapiv1.FeatureGateModeTypeEnable,
+					},
+				},
+			},
 		},
 	}
 
@@ -114,18 +123,37 @@ func GetAddons() ([]*unstructured.Unstructured, error) {
 		addonPath = path.Join(val, addonPath)
 	}
 
-	err := filepath.Walk(addonPath, func(path string, info os.FileInfo, err error) error {
+	root, err := os.OpenRoot(addonPath)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = root.Close() }()
+
+	err = filepath.Walk(addonPath, func(filePath string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
-		addon := &unstructured.Unstructured{}
 		if info == nil || info.IsDir() {
 			return nil
 		}
-		bytesFile, e := os.ReadFile(path)
-		if e != nil {
+
+		relPath, err := filepath.Rel(addonPath, filePath)
+		if err != nil {
 			return err
 		}
+
+		f, err := root.Open(relPath)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+
+		bytesFile, err := io.ReadAll(f)
+		if err != nil {
+			return err
+		}
+
+		addon := &unstructured.Unstructured{}
 		if err = yaml.Unmarshal(bytesFile, addon); err != nil {
 			return err
 		}
@@ -133,5 +161,4 @@ func GetAddons() ([]*unstructured.Unstructured, error) {
 		return nil
 	})
 	return addons, err
-
 }
