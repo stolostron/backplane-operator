@@ -169,7 +169,6 @@ var (
 func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (retRes ctrl.Result, retErr error) {
 	r.Log = log
 	r.Log.Info("Reconciling MultiClusterEngine")
-	r.Log.Info("DEBUG: TLS profile ConfigMap code active")
 
 	// Fetch the BackplaneConfig instance
 	backplaneConfig, err := r.getBackplaneConfig(ctx, req)

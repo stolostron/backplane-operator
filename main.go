@@ -188,6 +188,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Detect if running on OpenShift before checking for OCP-specific resources
+	err = utils.DetectOpenShift(uncachedClient)
+	if err != nil {
+		setupLog.Error(err, "unable to detect if cluster is openShift")
+		os.Exit(1)
+	}
+
 	// Get TLS configuration from OpenShift APIServer profile
 	tlsProfile, err := utils.GetAPIServerTLSProfile(ctx, uncachedClient)
 	if err != nil {
@@ -242,11 +249,6 @@ func main() {
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), mgrOptions)
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
-		os.Exit(1)
-	}
-	err = utils.DetectOpenShift(uncachedClient)
-	if err != nil {
-		setupLog.Error(err, "unable to detect if cluster is openShift")
 		os.Exit(1)
 	}
 	ctx = ctrl.SetupSignalHandler()
