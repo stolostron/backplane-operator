@@ -108,7 +108,7 @@ var (
 // +kubebuilder:rbac:groups="discovery.open-cluster-management.io",resources=discoveryconfigs,verbs=get
 // +kubebuilder:rbac:groups="discovery.open-cluster-management.io",resources=discoveryconfigs,verbs=list
 // +kubebuilder:rbac:groups="discovery.open-cluster-management.io",resources=discoveryconfigs;discoveredclusters,verbs=create;get;list;watch;update;delete;deletecollection;patch;approve;escalate;bind
-// +kubebuilder:rbac:groups=config.openshift.io,resources=clusterversions,verbs=get;list;watch;
+// +kubebuilder:rbac:groups=config.openshift.io,resources=apiservers;clusterversions,verbs=get;list;watch;
 // +kubebuilder:rbac:groups=console.openshift.io,resources=consoleplugins;consolequickstarts,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=operator.openshift.io,resources=consoles,verbs=get;list;watch;update;patch
 
@@ -812,7 +812,7 @@ func (r *MultiClusterEngineReconciler) createMetricsServiceMonitor(ctx context.C
 			Spec: monitorv1.ServiceMonitorSpec{
 				Endpoints: []monitorv1.Endpoint{
 					{
-						BearerTokenFile: "/var/run/secrets/kubernetes.io/serviceaccount/token",
+						BearerTokenFile: "/var/run/secrets/kubernetes.io/serviceaccount/token", // #nosec G101 -- Standard Kubernetes service account token path, not a hardcoded credential
 						BearerTokenSecret: &corev1.SecretKeySelector{
 							Key: "",
 						},

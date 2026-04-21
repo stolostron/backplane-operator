@@ -4,9 +4,11 @@
 package renderer
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"reflect"
+	"strings"
 	"testing"
 
 	backplane "github.com/stolostron/backplane-operator/api/v1"
@@ -16,7 +18,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/kubernetes/scheme"
 	addonv1alpha1 "open-cluster-management.io/api/addon/v1alpha1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 const (
@@ -664,6 +670,7 @@ func TestRenderCRDsSkipDirectories(t *testing.T) {
 		})
 	}
 }
+
 func TestParseProbeConfigFromAnnotations(t *testing.T) {
 	t.Run("No annotations returns nil", func(t *testing.T) {
 		mce := &backplane.MultiClusterEngine{
@@ -805,4 +812,143 @@ func TestParseProbeConfigFromAnnotations(t *testing.T) {
 			t.Errorf("Expected TimeoutSeconds=20, got %v", result.TimeoutSeconds)
 		}
 	})
+}
+
+func TestEnsureTLSProfileConfigMaps(t *testing.T) {
+	os.Setenv("UNIT_TEST", "true")
+	defer os.Unsetenv("UNIT_TEST")
+
+	tests := []struct {
+		name       string
+		namespaces []string
+		wantErr    bool
+	}{
+		{
+			name:       "single namespace",
+			namespaces: []string{"test-namespace"},
+			wantErr:    false,
+		},
+		{
+			name:       "multiple namespaces",
+			namespaces: []string{"namespace1", "namespace2", "namespace3"},
+			wantErr:    false,
+		},
+		{
+			name:       "empty namespace list",
+			namespaces: []string{},
+			wantErr:    false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Set up scheme
+			s := runtime.NewScheme()
+			_ = scheme.AddToScheme(s)
+			_ = backplane.AddToScheme(s)
+
+			// Create test MCE object
+			mce := &backplane.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-mce",
+					UID:  "test-uid-12345",
+				},
+				Spec: backplane.MultiClusterEngineSpec{
+					TargetNamespace: "multicluster-engine",
+				},
+			}
+
+			// Create namespaces
+			var initObjs []client.Object
+			initObjs = append(initObjs, mce)
+			for _, ns := range tt.namespaces {
+				initObjs = append(initObjs, &corev1.Namespace{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: ns,
+					},
+				})
+			}
+
+			// Create fake client
+			fakeClient := fake.NewClientBuilder().
+				WithScheme(s).
+				WithObjects(initObjs...).
+				Build()
+
+			ctx := context.Background()
+
+			// Call function under test
+			err := EnsureTLSProfileConfigMaps(ctx, fakeClient, mce, tt.namespaces, s)
+
+			// Check error
+			if (err != nil) != tt.wantErr {
+				t.Errorf("EnsureTLSProfileConfigMaps() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			if err != nil {
+				return
+			}
+
+			// Verify ConfigMaps were created in each namespace
+			for _, ns := range tt.namespaces {
+				cm := &corev1.ConfigMap{}
+				err := fakeClient.Get(ctx, types.NamespacedName{
+					Name:      "ocm-tls-profile",
+					Namespace: ns,
+				}, cm)
+
+				if err != nil {
+					t.Errorf("Failed to get ConfigMap in namespace %s: %v", ns, err)
+					continue
+				}
+
+				// Verify ConfigMap data
+				if cm.Data == nil {
+					t.Errorf("ConfigMap in namespace %s has nil data", ns)
+					continue
+				}
+
+				minVersion, ok := cm.Data["minTLSVersion"]
+				if !ok {
+					t.Errorf("ConfigMap in namespace %s missing minTLSVersion key", ns)
+				}
+				if minVersion == "" {
+					t.Errorf("ConfigMap in namespace %s has empty minTLSVersion", ns)
+				}
+
+				ciphers, ok := cm.Data["cipherSuites"]
+				if !ok {
+					t.Errorf("ConfigMap in namespace %s missing cipherSuites key", ns)
+				}
+				// In unit test mode, we use Intermediate profile which has ciphers
+				if ciphers == "" {
+					t.Errorf("ConfigMap in namespace %s has empty cipherSuites", ns)
+				}
+
+				// Verify cipherSuites is comma-separated
+				cipherList := strings.Split(ciphers, ",")
+				if len(cipherList) == 0 {
+					t.Errorf("ConfigMap in namespace %s has no cipher suites", ns)
+				}
+
+				// Verify owner reference is set
+				if len(cm.OwnerReferences) == 0 {
+					t.Errorf("ConfigMap in namespace %s has no owner references", ns)
+					continue
+				}
+
+				ownerRef := cm.OwnerReferences[0]
+				if ownerRef.Kind != "MultiClusterEngine" {
+					t.Errorf("ConfigMap in namespace %s owner reference kind = %s, want MultiClusterEngine", ns, ownerRef.Kind)
+				}
+				if ownerRef.Name != mce.Name {
+					t.Errorf("ConfigMap in namespace %s owner reference name = %s, want %s", ns, ownerRef.Name, mce.Name)
+				}
+				if !*ownerRef.Controller {
+					t.Errorf("ConfigMap in namespace %s owner reference controller = false, want true", ns)
+				}
+			}
+		})
+	}
 }

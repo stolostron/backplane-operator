@@ -3,10 +3,13 @@
 package utils
 
 import (
+	"context"
+	"crypto/tls"
 	"os"
 	"strings"
 	"testing"
 
+	configv1 "github.com/openshift/api/config/v1"
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -1009,5 +1012,292 @@ func TestGetServingCertCABundle_NilGlobalGetter(t *testing.T) {
 	expectedErr := "GlobalServingCertCABundleGetter is nil"
 	if err.Error() != expectedErr {
 		t.Errorf("GetServingCertCABundle() error = %v, want %v", err, expectedErr)
+	}
+}
+
+func TestConvertCipherSuitesToIANA(t *testing.T) {
+	tests := []struct {
+		name        string
+		ciphers     []string
+		want        []string
+		expectError bool
+	}{
+		{
+			name: "TLS 1.3 ciphers (already IANA format)",
+			ciphers: []string{
+				"TLS_AES_128_GCM_SHA256",
+				"TLS_AES_256_GCM_SHA384",
+				"TLS_CHACHA20_POLY1305_SHA256",
+			},
+			want: []string{
+				"TLS_AES_128_GCM_SHA256",
+				"TLS_AES_256_GCM_SHA384",
+				"TLS_CHACHA20_POLY1305_SHA256",
+			},
+			expectError: false,
+		},
+		{
+			name: "TLS 1.2 OpenSSL ciphers",
+			ciphers: []string{
+				"ECDHE-RSA-AES128-GCM-SHA256",
+				"ECDHE-ECDSA-AES256-GCM-SHA384",
+				"DHE-RSA-AES128-GCM-SHA256",
+			},
+			want: []string{
+				"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+				"TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+				"TLS_DHE_RSA_WITH_AES_128_GCM_SHA256",
+			},
+			expectError: false,
+		},
+		{
+			name: "Mixed TLS 1.3 and 1.2 ciphers (Intermediate profile)",
+			ciphers: []string{
+				"TLS_AES_128_GCM_SHA256",
+				"TLS_AES_256_GCM_SHA384",
+				"TLS_CHACHA20_POLY1305_SHA256",
+				"ECDHE-ECDSA-AES128-GCM-SHA256",
+				"ECDHE-RSA-AES128-GCM-SHA256",
+			},
+			want: []string{
+				"TLS_AES_128_GCM_SHA256",
+				"TLS_AES_256_GCM_SHA384",
+				"TLS_CHACHA20_POLY1305_SHA256",
+				"TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+				"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+			},
+			expectError: false,
+		},
+		{
+			name: "Old profile ciphers with DES",
+			ciphers: []string{
+				"AES128-SHA",
+				"AES256-SHA",
+				"DES-CBC3-SHA",
+			},
+			want: []string{
+				"TLS_RSA_WITH_AES_128_CBC_SHA",
+				"TLS_RSA_WITH_AES_256_CBC_SHA",
+				"TLS_RSA_WITH_3DES_EDE_CBC_SHA",
+			},
+			expectError: false,
+		},
+		{
+			name: "Unknown cipher should error",
+			ciphers: []string{
+				"ECDHE-RSA-AES128-GCM-SHA256",
+				"UNKNOWN-CIPHER-SUITE",
+			},
+			want:        nil,
+			expectError: true,
+		},
+		{
+			name:        "Empty cipher list",
+			ciphers:     []string{},
+			want:        []string{},
+			expectError: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := ConvertCipherSuitesToIANA(tt.ciphers)
+			if tt.expectError {
+				if err == nil {
+					t.Errorf("ConvertCipherSuitesToIANA() expected error but got nil")
+				}
+				return
+			}
+
+			if err != nil {
+				t.Errorf("ConvertCipherSuitesToIANA() unexpected error: %v", err)
+				return
+			}
+
+			if len(got) != len(tt.want) {
+				t.Errorf("ConvertCipherSuitesToIANA() returned %d ciphers, want %d", len(got), len(tt.want))
+				return
+			}
+
+			for i := range got {
+				if got[i] != tt.want[i] {
+					t.Errorf("ConvertCipherSuitesToIANA()[%d] = %v, want %v", i, got[i], tt.want[i])
+				}
+			}
+		})
+	}
+}
+
+func TestGetAPIServerTLSProfile_UnitTest(t *testing.T) {
+	// Set unit test mode
+	os.Setenv("UNIT_TEST", "true")
+	defer os.Unsetenv("UNIT_TEST")
+
+	ctx := context.Background()
+	got, err := GetAPIServerTLSProfile(ctx, nil)
+	if err != nil {
+		t.Errorf("GetAPIServerTLSProfile() in unit test mode returned error: %v", err)
+		return
+	}
+
+	// In unit test mode, should return Intermediate profile
+	if got.MinTLSVersion != "VersionTLS12" {
+		t.Errorf("GetAPIServerTLSProfile() MinTLSVersion = %v, want VersionTLS12", got.MinTLSVersion)
+	}
+
+	// Check it has the expected number of ciphers for Intermediate profile
+	expectedCipherCount := 11
+	if len(got.Ciphers) != expectedCipherCount {
+		t.Errorf("GetAPIServerTLSProfile() returned %d ciphers, want %d for Intermediate profile", len(got.Ciphers), expectedCipherCount)
+	}
+}
+
+func TestGetAPIServerTLSProfile_NonOCP(t *testing.T) {
+	// Save original platform setting
+	originalPlatform := DeployOnOCP()
+	defer SetDeployOnOCP(originalPlatform)
+
+	// Set to non-OCP
+	SetDeployOnOCP(false)
+
+	ctx := context.Background()
+	got, err := GetAPIServerTLSProfile(ctx, nil)
+	if err != nil {
+		t.Errorf("GetAPIServerTLSProfile() on non-OCP cluster returned error: %v", err)
+		return
+	}
+
+	// On non-OCP clusters, should return default Intermediate profile
+	if got.MinTLSVersion != "VersionTLS12" {
+		t.Errorf("GetAPIServerTLSProfile() MinTLSVersion = %v, want VersionTLS12", got.MinTLSVersion)
+	}
+
+	// Check it has the expected number of ciphers for Intermediate profile
+	expectedCipherCount := 11
+	if len(got.Ciphers) != expectedCipherCount {
+		t.Errorf("GetAPIServerTLSProfile() returned %d ciphers, want %d for Intermediate profile", len(got.Ciphers), expectedCipherCount)
+	}
+}
+
+func TestConvertTLSVersion(t *testing.T) {
+	tests := []struct {
+		name    string
+		version configv1.TLSProtocolVersion
+		want    uint16
+	}{
+		{
+			name:    "TLS 1.0",
+			version: configv1.VersionTLS10,
+			want:    tls.VersionTLS10,
+		},
+		{
+			name:    "TLS 1.1",
+			version: configv1.VersionTLS11,
+			want:    tls.VersionTLS11,
+		},
+		{
+			name:    "TLS 1.2",
+			version: configv1.VersionTLS12,
+			want:    tls.VersionTLS12,
+		},
+		{
+			name:    "TLS 1.3",
+			version: configv1.VersionTLS13,
+			want:    tls.VersionTLS13,
+		},
+		{
+			name:    "Unknown version defaults to TLS 1.2",
+			version: configv1.TLSProtocolVersion("VersionTLS99"),
+			want:    tls.VersionTLS12,
+		},
+		{
+			name:    "Empty version defaults to TLS 1.2",
+			version: "",
+			want:    tls.VersionTLS12,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := ConvertTLSVersion(tt.version)
+			if got != tt.want {
+				t.Errorf("ConvertTLSVersion(%q) = %v, want %v", tt.version, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestConvertCipherSuites(t *testing.T) {
+	tests := []struct {
+		name   string
+		input  []string
+		want   []uint16
+		wantOk bool
+	}{
+		{
+			name:   "TLS 1.2 ECDHE-RSA ciphers",
+			input:  []string{"ECDHE-RSA-AES128-GCM-SHA256", "ECDHE-RSA-AES256-GCM-SHA384"},
+			want:   []uint16{tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256, tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384},
+			wantOk: true,
+		},
+		{
+			name:   "TLS 1.2 ECDHE-ECDSA ciphers",
+			input:  []string{"ECDHE-ECDSA-AES128-GCM-SHA256", "ECDHE-ECDSA-CHACHA20-POLY1305"},
+			want:   []uint16{tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256, tls.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256},
+			wantOk: true,
+		},
+		{
+			name:   "TLS 1.3 ciphers are filtered out",
+			input:  []string{"TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384", "ECDHE-RSA-AES128-GCM-SHA256"},
+			want:   []uint16{tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256},
+			wantOk: true,
+		},
+		{
+			name:   "All TLS 1.3 ciphers filtered",
+			input:  []string{"TLS_AES_128_GCM_SHA256", "TLS_CHACHA20_POLY1305_SHA256"},
+			want:   []uint16{},
+			wantOk: true,
+		},
+		{
+			name:   "Unknown cipher ignored",
+			input:  []string{"UNKNOWN-CIPHER", "ECDHE-RSA-AES128-GCM-SHA256"},
+			want:   []uint16{tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256},
+			wantOk: true,
+		},
+		{
+			name:   "Empty input",
+			input:  []string{},
+			want:   []uint16{},
+			wantOk: true,
+		},
+		{
+			name:   "CBC ciphers",
+			input:  []string{"ECDHE-RSA-AES128-SHA256", "AES128-SHA"},
+			want:   []uint16{tls.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256, tls.TLS_RSA_WITH_AES_128_CBC_SHA},
+			wantOk: true,
+		},
+		{
+			name:   "DHE ciphers not supported (ignored)",
+			input:  []string{"DHE-RSA-AES128-GCM-SHA256", "ECDHE-RSA-AES128-GCM-SHA256"},
+			want:   []uint16{tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256},
+			wantOk: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := ConvertCipherSuites(tt.input)
+
+			if len(got) != len(tt.want) {
+				t.Errorf("ConvertCipherSuites() returned %d ciphers, want %d", len(got), len(tt.want))
+				return
+			}
+
+			for i := range got {
+				if got[i] != tt.want[i] {
+					t.Errorf("ConvertCipherSuites()[%d] = %v, want %v", i, got[i], tt.want[i])
+				}
+			}
+		})
 	}
 }

@@ -166,14 +166,6 @@ func main() {
 		Metrics: metricsserver.Options{
 			BindAddress: metricsAddr,
 		},
-		WebhookServer: webhook.NewServer(webhook.Options{
-			Port: 9443,
-			TLSOpts: []func(*tls.Config){
-				func(config *tls.Config) {
-					config.MinVersion = tls.VersionTLS12
-				},
-			},
-		}),
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "797f9276.open-cluster-management.io",
@@ -185,6 +177,64 @@ func main() {
 		},
 		// LeaderElectionNamespace: "backplane-operator-system", // Ensure this is commented out. Uncomment only for running operator locally.
 	}
+
+	// Create uncached client early for TLS profile fetching and other setup tasks
+	ctx := context.Background()
+	uncachedClient, err := client.New(ctrl.GetConfigOrDie(), client.Options{
+		Scheme: scheme,
+	})
+	if err != nil {
+		setupLog.Error(err, "unable to create uncached client")
+		os.Exit(1)
+	}
+
+	// Detect if running on OpenShift before checking for OCP-specific resources
+	err = utils.DetectOpenShift(uncachedClient)
+	if err != nil {
+		setupLog.Error(err, "unable to detect if cluster is openShift")
+		os.Exit(1)
+	}
+
+	// Get TLS configuration from OpenShift APIServer profile
+	tlsProfile, err := utils.GetAPIServerTLSProfile(ctx, uncachedClient)
+	if err != nil {
+		setupLog.Error(err, "unable to get APIServer TLS profile, using default TLS 1.2")
+		// Continue with default if we can't get the profile
+		// Use Intermediate profile ciphers as secure default for TLS 1.2
+		tlsProfile = &configv1.TLSProfileSpec{
+			MinTLSVersion: configv1.VersionTLS12,
+			Ciphers: []string{
+				"TLS_AES_128_GCM_SHA256",
+				"TLS_AES_256_GCM_SHA384",
+				"TLS_CHACHA20_POLY1305_SHA256",
+				"ECDHE-ECDSA-AES128-GCM-SHA256",
+				"ECDHE-RSA-AES128-GCM-SHA256",
+				"ECDHE-ECDSA-AES256-GCM-SHA384",
+				"ECDHE-RSA-AES256-GCM-SHA384",
+				"ECDHE-ECDSA-CHACHA20-POLY1305",
+				"ECDHE-RSA-CHACHA20-POLY1305",
+				"DHE-RSA-AES128-GCM-SHA256",
+				"DHE-RSA-AES256-GCM-SHA384",
+			},
+		}
+	}
+
+	minTLSVersion := utils.ConvertTLSVersion(tlsProfile.MinTLSVersion)
+	cipherSuites := utils.ConvertCipherSuites(tlsProfile.Ciphers)
+	setupLog.Info("Configuring webhook server TLS", "minTLSVersion", tlsProfile.MinTLSVersion, "numericValue", minTLSVersion, "cipherCount", len(cipherSuites))
+
+	// Configure webhook server with dynamic TLS settings from OpenShift
+	mgrOptions.WebhookServer = webhook.NewServer(webhook.Options{
+		Port: 9443,
+		TLSOpts: []func(*tls.Config){func(config *tls.Config) {
+			config.MinVersion = minTLSVersion
+			// Only set CipherSuites for TLS ≤ 1.2
+			// TLS 1.3 cipher suites are managed automatically by Go
+			if minTLSVersion < tls.VersionTLS13 && len(cipherSuites) > 0 {
+				config.CipherSuites = cipherSuites
+			}
+		}},
+	})
 
 	setupLog.Info("Disabling Operator Client Cache for high-memory resources")
 	mgrOptions.Client.Cache.DisableFor = []client.Object{
@@ -201,21 +251,7 @@ func main() {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
-
-	// use uncached client for setup before manager starts
-	uncachedClient, err := client.New(ctrl.GetConfigOrDie(), client.Options{
-		Scheme: mgr.GetScheme(),
-	})
-	if err != nil {
-		setupLog.Error(err, "unable to create uncached client")
-		os.Exit(1)
-	}
-	err = utils.DetectOpenShift(uncachedClient)
-	if err != nil {
-		setupLog.Error(err, "unable to detect if cluster is openShift")
-		os.Exit(1)
-	}
-	ctx := ctrl.SetupSignalHandler()
+	ctx = ctrl.SetupSignalHandler()
 	upgradeableCondition := &utils.OperatorCondition{}
 
 	if utils.DeployOnOCP() {

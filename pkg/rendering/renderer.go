@@ -3,6 +3,7 @@
 package renderer
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"strconv"
+	"strings"
 
 	loader "helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/chartutil"
@@ -19,7 +21,12 @@ import (
 	"github.com/stolostron/backplane-operator/pkg/utils"
 	"helm.sh/helm/v3/pkg/engine"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/yaml"
 )
@@ -255,7 +262,7 @@ func RenderCRDs(crdDir string, backplaneConfig *v1.MultiClusterEngine, skipDirs 
 			}
 		}
 
-		bytesFile, e := os.ReadFile(filepath.Clean(filePath)) // #nosec G304 -- filePath from filepath.Walk
+		bytesFile, e := os.ReadFile(filepath.Clean(filePath)) // #nosec G304,G122 -- filePath from filepath.Walk within operator's own template directory
 		if e != nil {
 			errs = append(errs, fmt.Errorf("%s - error reading file: %v", info.Name(), err.Error()))
 		}
@@ -476,4 +483,62 @@ func injectValuesOverrides(values *Values, backplaneConfig *v1.MultiClusterEngin
 		proxyVar["NO_PROXY"] = os.Getenv("NO_PROXY")
 		values.HubConfig.ProxyConfigs = proxyVar
 	}
+}
+
+// EnsureTLSProfileConfigMaps creates or updates the TLS profile ConfigMap in the specified namespaces.
+// It reads the TLS security profile from the OpenShift APIServer resource and populates the ConfigMap
+// with minTLSVersion and cipherSuites in each namespace.
+func EnsureTLSProfileConfigMaps(
+	ctx context.Context,
+	cl client.Client,
+	mce *v1.MultiClusterEngine,
+	namespaces []string,
+	scheme *runtime.Scheme,
+) error {
+	// Get the TLS profile from the APIServer resource once
+	tlsProfile, err := utils.GetAPIServerTLSProfile(ctx, cl)
+	if err != nil {
+		return fmt.Errorf("failed to get APIServer TLS profile: %w", err)
+	}
+
+	// Convert ciphers from OpenSSL format to IANA format once
+	ianaCiphers, err := utils.ConvertCipherSuitesToIANA(tlsProfile.Ciphers)
+	if err != nil {
+		return fmt.Errorf("failed to convert cipher suites to IANA format: %w", err)
+	}
+
+	// Create or update ConfigMap in each namespace
+	for _, namespace := range namespaces {
+		log := log.FromContext(ctx).WithValues("ConfigMap", "ocm-tls-profile", "Namespace", namespace)
+
+		configMap := &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "ocm-tls-profile",
+				Namespace: namespace,
+			},
+		}
+
+		_, err = controllerutil.CreateOrUpdate(ctx, cl, configMap, func() error {
+			// Set the data
+			configMap.Data = map[string]string{
+				"minTLSVersion": string(tlsProfile.MinTLSVersion),
+				"cipherSuites":  strings.Join(ianaCiphers, ","),
+			}
+
+			// Set controller reference
+			if err := ctrl.SetControllerReference(mce, configMap, scheme); err != nil {
+				return fmt.Errorf("failed to set controller reference: %w", err)
+			}
+
+			return nil
+		})
+
+		if err != nil {
+			return fmt.Errorf("failed to create or update TLS profile ConfigMap in namespace %s: %w", namespace, err)
+		}
+
+		log.Info("Ensured TLS profile ConfigMap")
+	}
+
+	return nil
 }

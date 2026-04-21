@@ -1279,6 +1279,14 @@ func (r *MultiClusterEngineReconciler) ensureClusterManager(ctx context.Context,
 		return ctrl.Result{}, errors.Wrapf(err, "error applying object Name: %s Kind: %s", cmTemplate.GetName(), cmTemplate.GetKind())
 	}
 
+	// Ensure TLS profile ConfigMap exists in operator namespace where cluster-manager runs
+	clusterManagerNamespaces := []string{
+		mce.Spec.TargetNamespace, // Operator namespace (multicluster-engine)
+	}
+	if err := renderer.EnsureTLSProfileConfigMaps(ctx, r.Client, mce, clusterManagerNamespaces, r.Scheme); err != nil {
+		return ctrl.Result{}, err
+	}
+
 	return ctrl.Result{}, nil
 }
 
