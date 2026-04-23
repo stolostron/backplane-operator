@@ -91,6 +91,87 @@ spec:
                               ignored when updating existing clusters. Defaults to true.
                             type: boolean
                         type: object
+                      accessEntries:
+                        description: |-
+                          AccessEntries specifies the access entries for the cluster
+                          Access entries require AuthenticationMode to be either "api" or "api_and_config_map"
+                        items:
+                          description: AccessEntry represents an AWS EKS access entry
+                            for IAM principals
+                          properties:
+                            accessPolicies:
+                              description: |-
+                                AccessPolicies specifies the policies to associate with this access entry
+                                Cannot be specified if Type is "ec2_linux" or "ec2_windows"
+                              items:
+                                description: AccessPolicyReference represents a reference
+                                  to an AWS EKS access policy
+                                properties:
+                                  accessScope:
+                                    description: AccessScope specifies the scope for
+                                      the policy
+                                    properties:
+                                      namespaces:
+                                        description: |-
+                                          Namespaces are the namespaces for the access scope
+                                          Only valid when Type is namespace
+                                        items:
+                                          type: string
+                                        minItems: 1
+                                        type: array
+                                      type:
+                                        default: cluster
+                                        description: Type is the type of access scope.
+                                          Defaults to "cluster".
+                                        enum:
+                                        - cluster
+                                        - namespace
+                                        type: string
+                                    required:
+                                    - type
+                                    type: object
+                                  policyARN:
+                                    description: PolicyARN is the Amazon Resource
+                                      Name (ARN) of the access policy
+                                    type: string
+                                required:
+                                - accessScope
+                                - policyARN
+                                type: object
+                              maxItems: 20
+                              type: array
+                            kubernetesGroups:
+                              description: |-
+                                KubernetesGroups represents the Kubernetes groups for the access entry
+                                Cannot be specified if Type is "ec2_linux" or "ec2_windows"
+                              items:
+                                type: string
+                              type: array
+                            principalARN:
+                              description: PrincipalARN is the Amazon Resource Name
+                                (ARN) of the IAM principal
+                              type: string
+                            type:
+                              default: standard
+                              description: Type is the type of access entry. Defaults
+                                to standard if not specified.
+                              enum:
+                              - standard
+                              - ec2_linux
+                              - ec2_windows
+                              - fargate_linux
+                              - ec2
+                              - hybrid_linux
+                              - hyperpod_linux
+                              type: string
+                            username:
+                              description: Username is the username for the access
+                                entry
+                              type: string
+                          required:
+                          - principalARN
+                          type: object
+                        type: array
                       additionalTags:
                         additionalProperties:
                           type: string
@@ -153,6 +234,7 @@ spec:
                             description: |-
                               AllowedCIDRBlocks is a list of CIDR blocks allowed to access the bastion host.
                               They are set as ingress rules for the Bastion host's Security Group (defaults to 0.0.0.0/0).
+                              If the cluster has IPv6 enabled, defaults to ::/0 and 0.0.0.0/0.
                             items:
                               type: string
                             type: array
@@ -636,12 +718,11 @@ spec:
                                   description: |-
                                     IPv6CidrBlock is the IPv6 CIDR block to be used when the provider creates a managed VPC.
                                     A subnet can have an IPv4 and an IPv6 address.
-                                    IPv6 is only supported in managed clusters, this field cannot be set on AWSCluster object.
                                   type: string
                                 isIpv6:
-                                  description: |-
-                                    IsIPv6 defines the subnet as an IPv6 subnet. A subnet is IPv6 when it is associated with a VPC that has IPv6 enabled.
-                                    IPv6 is only supported in managed clusters, this field cannot be set on AWSCluster object.
+                                  description: IsIPv6 defines the subnet as an IPv6
+                                    subnet. A subnet is IPv6 when it is associated
+                                    with an IPv6 CIDR.
                                   type: boolean
                                 isPublic:
                                   description: IsPublic defines the subnet as a public
@@ -819,13 +900,13 @@ spec:
                                       The netmask length of the IPv4 CIDR you want to allocate to VPC from
                                       an Amazon VPC IP Address Manager (IPAM) pool.
                                       Defaults to /16 for IPv4 if not specified.
+                                      Defaults to /56 for IPv6 if not specified.
                                     format: int64
                                     type: integer
                                 type: object
                               ipv6:
-                                description: |-
-                                  IPv6 contains ipv6 specific settings for the network. Supported only in managed clusters.
-                                  This field cannot be set on AWSCluster object.
+                                description: IPv6 contains ipv6 specific settings
+                                  for the network.
                                 properties:
                                   cidrBlock:
                                     description: |-
@@ -856,6 +937,7 @@ spec:
                                           The netmask length of the IPv4 CIDR you want to allocate to VPC from
                                           an Amazon VPC IP Address Manager (IPAM) pool.
                                           Defaults to /16 for IPv4 if not specified.
+                                          Defaults to /56 for IPv6 if not specified.
                                         format: int64
                                         type: integer
                                     type: object
