@@ -738,6 +738,7 @@ rules:
   - bootstrap.cluster.x-k8s.io
   resources:
   - eksconfigs/status
+  - nodeadmconfigs/status
   verbs:
   - get
   - patch
@@ -745,6 +746,7 @@ rules:
 - apiGroups:
   - bootstrap.cluster.x-k8s.io
   resources:
+  - nodeadmconfigs
   - openshiftassistedconfigs
   verbs:
   - create

@@ -293,7 +293,8 @@ package main
 //+kubebuilder:rbac:groups=bootstrap.cluster.x-k8s.io,resources=*,verbs=get;list;watch
 //+kubebuilder:rbac:groups=bootstrap.cluster.x-k8s.io,resources=*,verbs=get;list;watch
 //+kubebuilder:rbac:groups=bootstrap.cluster.x-k8s.io,resources=eksconfigs,verbs=get;list;patch;update;watch
-//+kubebuilder:rbac:groups=bootstrap.cluster.x-k8s.io,resources=eksconfigs/status,verbs=get;patch;update
+//+kubebuilder:rbac:groups=bootstrap.cluster.x-k8s.io,resources=eksconfigs/status;nodeadmconfigs/status,verbs=get;patch;update
+//+kubebuilder:rbac:groups=bootstrap.cluster.x-k8s.io,resources=nodeadmconfigs,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=bootstrap.cluster.x-k8s.io,resources=openshiftassistedconfigs,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=bootstrap.cluster.x-k8s.io,resources=openshiftassistedconfigs,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=bootstrap.cluster.x-k8s.io;controlplane.cluster.x-k8s.io;infrastructure.cluster.x-k8s.io,resources=*,verbs=create;delete;get;list;patch;update;watch
