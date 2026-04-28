@@ -1003,6 +1003,7 @@ func (r *MultiClusterEngineReconciler) fetchChartOrCRDPath(component string) str
 		backplanev1.ClusterManager:                 toggle.ClusterManagerChartDir,
 		backplanev1.ClusterPermission:              toggle.ClusterPermissionChartDir,
 		backplanev1.ClusterProxyAddon:              toggle.ClusterProxyAddonDir,
+		backplanev1.ClusterProxy:                   toggle.ClusterProxyDir,
 		backplanev1.ConsoleMCE:                     toggle.ConsoleMCEChartsDir,
 		backplanev1.Discovery:                      toggle.DiscoveryChartDir,
 		backplanev1.Hive:                           toggle.HiveChartDir,

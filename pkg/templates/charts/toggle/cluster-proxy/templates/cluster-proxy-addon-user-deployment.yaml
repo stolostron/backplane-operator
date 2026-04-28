@@ -2,19 +2,19 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    component: cluster-proxy-manager
-  name: cluster-proxy-addon-manager
+    component: cluster-proxy-addon-user
+  name: cluster-proxy-addon-user
 spec:
   replicas: 1
   selector:
     matchLabels:
-      component: cluster-proxy-manager
+      component: cluster-proxy-addon-user
       open-cluster-management.io/addon: cluster-proxy
   template:
     metadata:
       labels:
-        component: cluster-proxy-manager
-        ocm-antiaffinity-selector: cluster-proxy-addon-manager
+        component: cluster-proxy-addon-user
+        ocm-antiaffinity-selector: cluster-proxy-addon-user
         open-cluster-management.io/addon: cluster-proxy
     spec:
       affinity:
@@ -26,7 +26,7 @@ spec:
                 - key: ocm-antiaffinity-selector
                   operator: In
                   values:
-                  - cluster-proxy-addon-manager
+                  - cluster-proxy-addon-user
               topologyKey: topology.kubernetes.io/zone
             weight: 70
           - podAffinityTerm:
@@ -35,19 +35,55 @@ spec:
                 - key: ocm-antiaffinity-selector
                   operator: In
                   values:
-                  - cluster-proxy-addon-manager
+                  - cluster-proxy-addon-user
               topologyKey: kubernetes.io/hostname
             weight: 35
       containers:
       - args:
-        - --leader-elect=true
+        - controllers
+        - --certificates-namespace={{ .Values.global.namespace }}
         - --signer-secret-namespace={{ .Values.global.namespace }}
-        - --enable-kube-api-proxy=true
-        - --enable-service-proxy=true
-        - --image-pull-policy=IfNotPresent
-        - --feature-gates=ClusterProfile=false
+        - --agent-image=quay.io/open-cluster-management/cluster-proxy:v5.0
         command:
-        - /manager
+        - /cluster-proxy
+        env:
+{{- if .Values.global.pullSecret }}
+        - name: AGENT_IMAGE_PULL_SECRET
+          value: {{ .Values.global.pullSecret }}
+{{- end }}
+{{- if .Values.hubconfig.proxyConfigs }}
+        - name: HTTP_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
+        - name: HTTPS_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.HTTPS_PROXY }}
+        - name: NO_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
+{{- end }}
+        image: '{{ .Values.global.imageOverrides.cluster_proxy }}'
+        imagePullPolicy: '{{ .Values.global.pullPolicy }}'
+        name: controllers
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+      - args:
+        - user-server
+        - --host=proxy-entrypoint.{{ .Values.global.namespace }}.svc
+        - --port=8090
+        - --proxy-ca-cert=/proxy-ca/ca.crt
+        - --proxy-cert=/proxy-client-tls/tls.crt
+        - --proxy-key=/proxy-client-tls/tls.key
+        - --server-port=9092
+        - --server-key=/user-tls/tls.key
+        - --server-cert=/user-tls/tls.crt
+        - --service-proxy-ca-cert=/proxy-ca/ca.crt
+        - --agent-install-namespace=open-cluster-management-agent-addon
+        command:
+        - /cluster-proxy
         env:
 {{- if .Values.global.pullSecret }}
         - name: AGENT_IMAGE_PULL_SECRET
@@ -67,7 +103,7 @@ spec:
               fieldPath: metadata.namespace
         image: '{{ .Values.global.imageOverrides.cluster_proxy }}'
         imagePullPolicy: '{{ .Values.global.pullPolicy }}'
-        name: manager
+        name: user-server
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -76,6 +112,16 @@ spec:
           privileged: false
           readOnlyRootFilesystem: true
           runAsNonRoot: true
+        volumeMounts:
+        - mountPath: /user-tls
+          name: user-tls-vol
+          readOnly: true
+        - mountPath: /proxy-ca
+          name: proxy-server-ca
+          readOnly: true
+        - mountPath: /proxy-client-tls
+          name: proxy-client-cert
+          readOnly: true
       hostIPC: false
       hostNetwork: false
       hostPID: false
@@ -106,3 +152,13 @@ spec:
         {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
         {{- end }}
 {{- end }}
+      volumes:
+      - name: user-tls-vol
+        secret:
+          secretName: cluster-proxy-user-serving-cert
+      - name: proxy-server-ca
+        secret:
+          secretName: proxy-server-ca
+      - name: proxy-client-cert
+        secret:
+          secretName: proxy-client
