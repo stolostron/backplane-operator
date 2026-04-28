@@ -1285,26 +1285,29 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 		log.Info(messages.SkippingExternallyManaged, "component", backplanev1.ServerFoundation)
 	}
 
-	if !r.isComponentExternallyManaged(backplaneConfig, backplanev1.ClusterProxyAddon) {
-		if backplaneConfig.Enabled(backplanev1.ClusterProxyAddon) && foundation.CanInstallAddons(ctx, r.Client) {
-			result, err = r.ensureClusterProxyAddon(ctx, backplaneConfig)
+	// Handle ClusterProxyAddon (deprecated) and ClusterProxy - both use same chart
+	if !r.isComponentExternallyManaged(backplaneConfig, backplanev1.ClusterProxyAddon) ||
+		!r.isComponentExternallyManaged(backplaneConfig, backplanev1.ClusterProxy) {
+		if (backplaneConfig.Enabled(backplanev1.ClusterProxyAddon) || backplaneConfig.Enabled(backplanev1.ClusterProxy)) &&
+			foundation.CanInstallAddons(ctx, r.Client) {
+			result, err = r.ensureClusterProxy(ctx, backplaneConfig)
 			if result != (ctrl.Result{}) {
 				requeue = true
 			}
 			if err != nil {
-				errs[backplanev1.ClusterProxyAddon] = err
+				errs[backplanev1.ClusterProxy] = err
 			}
 		} else {
-			result, err = r.ensureNoClusterProxyAddon(ctx, backplaneConfig)
+			result, err = r.ensureNoClusterProxy(ctx, backplaneConfig)
 			if result != (ctrl.Result{}) {
 				requeue = true
 			}
 			if err != nil {
-				errs[backplanev1.ClusterProxyAddon] = err
+				errs[backplanev1.ClusterProxy] = err
 			}
 		}
 	} else {
-		log.Info(messages.SkippingExternallyManaged, "component", backplanev1.ClusterProxyAddon)
+		log.Info(messages.SkippingExternallyManaged, "component", backplanev1.ClusterProxy)
 	}
 
 	if !r.isComponentExternallyManaged(backplaneConfig, backplanev1.ClusterAPI) {

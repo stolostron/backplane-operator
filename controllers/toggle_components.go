@@ -1686,7 +1686,7 @@ func (r *MultiClusterEngineReconciler) removeHypershiftLocalHosting(ctx context.
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterEngineReconciler) ensureClusterProxyAddon(ctx context.Context,
+func (r *MultiClusterEngineReconciler) ensureClusterProxy(ctx context.Context,
 	mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 
 	namespacedName := types.NamespacedName{Name: "cluster-proxy-addon-manager", Namespace: mce.Spec.TargetNamespace}
@@ -1700,12 +1700,12 @@ func (r *MultiClusterEngineReconciler) ensureClusterProxyAddon(ctx context.Conte
 	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 
 	// Ensure that the InternalHubComponent CR instance is created for component in MCE.
-	if result, err := r.ensureInternalEngineComponent(ctx, mce, backplanev1.ClusterProxyAddon); err != nil {
+	if result, err := r.ensureInternalEngineComponent(ctx, mce, backplanev1.ClusterProxy); err != nil {
 		return result, err
 	}
 
 	// Renders all templates from charts
-	chartPath := r.fetchChartOrCRDPath(backplanev1.ClusterProxyAddon)
+	chartPath := r.fetchChartOrCRDPath(backplanev1.ClusterProxy)
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
@@ -1716,7 +1716,7 @@ func (r *MultiClusterEngineReconciler) ensureClusterProxyAddon(ctx context.Conte
 	}
 
 	// Apply deployment config overrides
-	if result, err := r.applyComponentDeploymentOverrides(mce, templates, backplanev1.ClusterProxyAddon); err != nil {
+	if result, err := r.applyComponentDeploymentOverrides(mce, templates, backplanev1.ClusterProxy); err != nil {
 		return result, err
 	}
 
@@ -1741,7 +1741,7 @@ func (r *MultiClusterEngineReconciler) ensureClusterProxyAddon(ctx context.Conte
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterEngineReconciler) ensureNoClusterProxyAddon(ctx context.Context,
+func (r *MultiClusterEngineReconciler) ensureNoClusterProxy(ctx context.Context,
 	mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 
 	namespacedName := types.NamespacedName{Name: "cluster-proxy-addon-manager", Namespace: mce.Spec.TargetNamespace}
@@ -1756,12 +1756,12 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterProxyAddon(ctx context.Con
 
 	// Ensure that the InternalHubComponent CR instance is deleted for component in MCE.
 	if result, err := r.ensureNoInternalEngineComponent(ctx, mce,
-		backplanev1.ClusterProxyAddon); (result != ctrl.Result{}) || err != nil {
+		backplanev1.ClusterProxy); (result != ctrl.Result{}) || err != nil {
 		return result, err
 	}
 
 	// Renders all templates from charts
-	chartPath := r.fetchChartOrCRDPath(backplanev1.ClusterProxyAddon)
+	chartPath := r.fetchChartOrCRDPath(backplanev1.ClusterProxy)
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
