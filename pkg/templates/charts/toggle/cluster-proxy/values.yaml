@@ -1,0 +1,15 @@
+global:
+  deployOnOCP: true
+  imageOverrides:
+    cluster_proxy: ''
+  namespace: default
+  pullSecret: null
+  templateOverrides: {}
+hubconfig:
+  nodeSelector: null
+  ocpVersion: 4.12.0
+  probeConfig: null
+  proxyConfigs: {}
+  replicaCount: 1
+  tolerations: []
+org: open-cluster-management

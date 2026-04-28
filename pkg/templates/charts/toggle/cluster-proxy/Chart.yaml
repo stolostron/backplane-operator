@@ -1,0 +1,6 @@
+apiVersion: v2
+appVersion: 1.1.0
+description: A Helm chart for Cluster-Proxy OCM Addon
+name: cluster-proxy
+type: application
+version: '5.0'
