@@ -5,8 +5,8 @@ go 1.25.7
 require (
 	github.com/Masterminds/semver v1.5.0
 	github.com/go-logr/logr v1.4.3
-	github.com/onsi/ginkgo/v2 v2.26.0
-	github.com/onsi/gomega v1.38.2
+	github.com/onsi/ginkgo/v2 v2.28.2
+	github.com/onsi/gomega v1.39.0
 	github.com/openshift/api v0.0.0-20251013165757-fe48e8fd548b
 	github.com/openshift/hive/apis v0.0.0-20240402204308-5f27f3c5d23e
 	github.com/operator-framework/api v0.23.0
@@ -81,7 +81,6 @@ require (
 	github.com/spf13/cast v1.7.0 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
-	go.uber.org/automaxprocs v1.6.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.2 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
