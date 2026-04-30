@@ -1,6 +1,6 @@
 module github.com/stolostron/backplane-operator
 
-go 1.24.13
+go 1.25.0
 
 require (
 	github.com/Masterminds/semver v1.5.0
@@ -82,7 +82,7 @@ require (
 	golang.org/x/net v0.49.0 // indirect
 	golang.org/x/oauth2 v0.18.0 // indirect
 	golang.org/x/sync v0.19.0 // indirect
-	golang.org/x/sys v0.40.0 // indirect
+	golang.org/x/sys v0.43.0 // indirect
 	golang.org/x/term v0.39.0 // indirect
 	golang.org/x/text v0.33.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
