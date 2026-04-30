@@ -1040,6 +1040,13 @@ spec:
                       from the hosts discovered by this infra-env will also trust the
                       certificates in this bundle.
                     type: string
+                  bootstrapCommandSentinelDir:
+                    description: |-
+                      BootstrapCommandSentinelDir specifies the directory where CAPOA stores persistent run-once
+                      sentinel files for preBootstrapCommands and postBootstrapCommands. If empty, CAPOA uses
+                      /var/lib/capoa. Must be an absolute path using only safe characters.
+                    pattern: ^/[a-zA-Z0-9_./-]+$
+                    type: string
                   cpuArchitecture:
                     default: x86_64
                     description: CpuArchitecture specifies the target CPU architecture.
@@ -1146,6 +1153,33 @@ spec:
                       (i.e. OSImageVersion should equal to an OpenshiftVersion in OSImages list).
                       Note: OSImageVersion can't be specified along with ClusterRef.
                     type: string
+                  postBootstrapCommands:
+                    description: |-
+                      PostBootstrapCommands specifies extra commands to run after kubelet starts on first boot.
+                      Commands are executed as a shell script via a systemd oneshot unit ordered After=kubelet.service.
+                      They run exactly once; on failure, they are retried on the next reboot.
+                      Commands run as root; callers are responsible for input sanitization.
+                    items:
+                      type: string
+                    type: array
+                    x-kubernetes-list-type: atomic
+                  postBootstrapKubeconfigPath:
+                    description: |-
+                      PostBootstrapKubeconfigPath specifies the path to the kubeconfig file used by
+                      postBootstrapCommands to verify cluster readiness (API accessibility and node registration).
+                      If empty, CAPOA uses /var/lib/kubelet/kubeconfig. Must be an absolute path using only safe characters.
+                    pattern: ^/[a-zA-Z0-9_./-]+$
+                    type: string
+                  preBootstrapCommands:
+                    description: |-
+                      PreBootstrapCommands specifies extra commands to run before kubelet starts on first boot.
+                      Commands are executed as a shell script via a systemd oneshot unit ordered Before=kubelet.service.
+                      They run exactly once; on failure, they are retried on the next reboot.
+                      Commands run as root; callers are responsible for input sanitization.
+                    items:
+                      type: string
+                    type: array
+                    x-kubernetes-list-type: atomic
                   proxy:
                     description: |-
                       Proxy defines the proxy settings for agents and clusters that use the InfraEnv. If
