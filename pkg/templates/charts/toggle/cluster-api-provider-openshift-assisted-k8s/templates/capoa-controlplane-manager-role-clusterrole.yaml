@@ -82,6 +82,14 @@ rules:
   verbs:
   - list
 - apiGroups:
+  - config.openshift.io
+  resources:
+  - apiservers
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - controlplane.cluster.x-k8s.io
   resources:
   - openshiftassistedcontrolplanes
