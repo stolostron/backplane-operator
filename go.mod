@@ -6,8 +6,8 @@ require (
 	github.com/Masterminds/goutils v1.1.1
 	github.com/Masterminds/semver v1.5.0
 	github.com/go-logr/logr v1.4.3
-	github.com/onsi/ginkgo/v2 v2.27.2
-	github.com/onsi/gomega v1.38.2
+	github.com/onsi/ginkgo/v2 v2.28.3
+	github.com/onsi/gomega v1.40.0
 	github.com/openshift/api v0.0.0-20251013165757-fe48e8fd548b
 	github.com/openshift/hive/apis v0.0.0-20240402204308-5f27f3c5d23e
 	github.com/operator-framework/api v0.23.0
@@ -61,7 +61,7 @@ require (
 	github.com/google/btree v1.1.3 // indirect
 	github.com/google/gnostic-models v0.7.0 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
-	github.com/google/pprof v0.0.0-20260202012954-cb029daf43ef // indirect
+	github.com/google/pprof v0.0.0-20260402051712-545e8a4df936 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/huandu/xstrings v1.5.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
