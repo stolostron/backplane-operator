@@ -495,6 +495,8 @@ func ComponentCRDDirectories(component string) []string {
 		return []string{backplanev1.ClusterPermissionCRDDir}
 	case backplanev1.ClusterProxyAddon:
 		return []string{backplanev1.ClusterProxyAddonCRDDir}
+	case backplanev1.ClusterProxy:
+		return []string{backplanev1.ClusterProxyCRDDir}
 	case backplanev1.Discovery:
 		return []string{backplanev1.DiscoveryCRDDir}
 	case backplanev1.Hive:

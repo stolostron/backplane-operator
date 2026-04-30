@@ -39,6 +39,7 @@ const (
 	ClusterManager                   = "cluster-manager"
 	ClusterPermission                = "cluster-permission"
 	ClusterProxyAddon                = "cluster-proxy-addon"
+	ClusterProxy                     = "cluster-proxy"
 	ConsoleMCE                       = "console-mce"
 	Discovery                        = "discovery"
 	Hive                             = "hive"
@@ -68,7 +69,8 @@ const (
 	ClusterLifecycleCRDDir           = "cluster-lifecycle"
 	ClusterManagerCRDDir             = "cluster-manager"
 	ClusterPermissionCRDDir          = "cluster-permission"
-	ClusterProxyAddonCRDDir          = "cluster-proxy-addon"
+	ClusterProxyAddonCRDDir          = "cluster-proxy-addon" // Deprecated: Moved to ClusterProxy in MCE 2.11
+	ClusterProxyCRDDir               = "cluster-proxy"
 	DiscoveryCRDDir                  = "discovery-operator"
 	HiveCRDDir                       = "hive-operator"
 	ImageBasedInstallOperatorCRDDir  = "image-based-install-operator"

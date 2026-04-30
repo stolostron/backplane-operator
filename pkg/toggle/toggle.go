@@ -31,7 +31,8 @@ const (
 	ClusterLifecycleChartDir           = "pkg/templates/charts/toggle/cluster-lifecycle"
 	ClusterManagerChartDir             = "pkg/templates/charts/toggle/cluster-manager"
 	ClusterPermissionChartDir          = "pkg/templates/charts/toggle/cluster-permission"
-	ClusterProxyAddonDir               = "pkg/templates/charts/toggle/cluster-proxy-addon"
+	ClusterProxyAddonDir               = "pkg/templates/charts/toggle/cluster-proxy-addon" // Deprecated: Moved to ClusterProxyDir in MCE 2.11
+	ClusterProxyDir                    = "pkg/templates/charts/toggle/cluster-proxy"
 	ConsoleMCEChartsDir                = "pkg/templates/charts/toggle/console-mce"
 	DiscoveryChartDir                  = "pkg/templates/charts/toggle/discovery-operator"
 	HiveChartDir                       = "pkg/templates/charts/toggle/hive-operator"

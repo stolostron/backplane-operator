@@ -1,0 +1,16 @@
+# Enable service proxy to generate user-deployment and user-service
+enableServiceProxy: true
+
+# Number of replicas
+replicas: 1
+
+# Image registry
+registry: quay.io/open-cluster-management
+image: cluster-proxy
+tag:
+
+# Enable kube-api-proxy
+enableKubeApiProxy: true
+
+# Enable impersonation
+enableImpersonation: true
