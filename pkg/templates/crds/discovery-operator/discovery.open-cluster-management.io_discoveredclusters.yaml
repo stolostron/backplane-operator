@@ -149,9 +149,9 @@ spec:
                 description: OpenshiftVersion specifies the OpenShift version running
                   on the cluster.
                 type: string
-              owner:
-                description: Owner identifies the owner or organization responsible
-                  for the cluster.
+              provenance:
+                description: Provenance indicates how the cluster was discovered (e.g.,
+                  Telemetry, Manual).
                 type: string
               region:
                 description: Region specifies the geographical region where the cluster
@@ -165,9 +165,17 @@ spec:
                 description: Status represents the current state of the discovered
                   cluster (e.g Active, Stale).
                 type: string
+              supportLevel:
+                description: SupportLevel specifies the support tier for the cluster
+                  (e.g., Self-Support, L1-L3, Premium).
+                type: string
               type:
                 description: Type defines the type of cluster, such as OpenShift,
                   Kubernetes, or a specific managed service type.
+                type: string
+              usage:
+                description: Usage indicates the cluster's intended purpose (e.g.,
+                  Development/Test, Production).
                 type: string
             required:
             - apiUrl
@@ -180,29 +188,43 @@ spec:
             description: DiscoveredClusterStatus defines the observed state of DiscoveredCluster
             properties:
               conditions:
-                description: |-
-                  INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-                  Important: Run "make" to regenerate code after modifying this file
+                description: Conditions represent the latest available observations
+                  of the DiscoveredCluster's state
                 items:
+                  description: DiscoveredClusterCondition represents an observation
+                    of a DiscoveredCluster's state
                   properties:
                     lastTransitionTime:
-                      description: LastTransitionTime is the last time the condition
-                        changed from one status to another.
+                      description: Last time the condition transitioned from one status
+                        to another
                       format: date-time
                       type: string
-                    lastUpdateTime:
-                      description: The last time this condition was updated.
-                      format: date-time
+                    message:
+                      description: Human-readable message indicating details about
+                        the transition
+                      type: string
+                    observedGeneration:
+                      description: ObservedGeneration represents the .metadata.generation
+                        that the condition was set based upon
+                      format: int64
+                      type: integer
+                    reason:
+                      description: Programmatic identifier indicating the reason for
+                        the condition's last transition
                       type: string
                     status:
-                      description: Status is the status of the condition. One of True,
-                        False, Unknown.
+                      description: Status of the condition (True, False, Unknown)
                       type: string
                     type:
-                      description: Type is the type of the discovered cluster condition.
+                      description: Type of the condition
                       type: string
+                  required:
+                  - type
                   type: object
                 type: array
+                x-kubernetes-list-map-keys:
+                - type
+                x-kubernetes-list-type: map
             type: object
         type: object
     served: true
