@@ -64,6 +64,8 @@ spec:
           value: '1'
         - name: TMPDIR
           value: /data
+        - name: KUBE_FEATURE_WatchListClient
+          value: 'false'
         image: '{{ .Values.global.imageOverrides.image_based_install_operator }}'
         imagePullPolicy: '{{ .Values.global.pullPolicy }}'
         livenessProbe:
