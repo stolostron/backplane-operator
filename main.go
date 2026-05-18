@@ -118,6 +118,36 @@ func init() {
 	// +kubebuilder:scaffold:scheme
 }
 
+func detectOLMVersion(ctx context.Context, cl client.Client) (string, error) {
+	// Check for OLM v0 via environment variable (fastest check)
+	// OLM v0 injects OPERATOR_CONDITION_NAME into operator pods at deployment time
+	if os.Getenv("OPERATOR_CONDITION_NAME") != "" {
+		return "v0", nil
+	}
+
+	// Check for OLM v1 by looking for ClusterExtension CRD
+	// If this CRD exists, the cluster is running OLM v1
+	crd := &apixv1.CustomResourceDefinition{}
+	err := cl.Get(ctx, types.NamespacedName{
+		Name: "clusterextensions.olm.operatorframework.io",
+	}, crd)
+
+	switch {
+	case err == nil:
+		// ClusterExtension CRD exists - OLM v1 present
+		return "v1", nil
+
+	case errors.IsNotFound(err):
+		// CRD not found - no OLM on cluster (legitimate case for bare Kubernetes)
+		return "", nil
+
+	default:
+		// API error (timeout, permission, etc) - fail fast and let Kubernetes retry
+		// Kubernetes will restart the pod with exponential backoff
+		return "", fmt.Errorf("failed to check for OLM v1 CRD: %w", err)
+	}
+}
+
 func main() {
 	var metricsAddr string
 	var enableLeaderElection bool
@@ -254,8 +284,16 @@ func main() {
 	ctx = ctrl.SetupSignalHandler()
 	upgradeableCondition := &utils.OperatorCondition{}
 
-	if utils.DeployOnOCP() {
-		// Force OperatorCondition Upgradeable to False
+	// Detect OLM version to determine if OperatorCondition is needed
+	olmVersion, err := detectOLMVersion(ctx, uncachedClient)
+	if err != nil {
+		setupLog.Error(err, "Failed to detect OLM version")
+		os.Exit(1)
+	}
+	setupLog.Info("OLM version detected", "version", olmVersion)
+
+	if utils.DeployOnOCP() && olmVersion == "v0" {
+		// Force OperatorCondition Upgradeable to False (OLM v0 only)
 		//
 		// We have to at least default the condition to False or
 		// OLM will use the Readiness condition via our readiness probe instead:
@@ -275,6 +313,8 @@ func main() {
 			setupLog.Error(err, "unable to create set operator condition upgradable to false")
 			os.Exit(1)
 		}
+	} else if olmVersion == "v1" {
+		setupLog.Info("Skipping OperatorCondition (OLM v0 only)")
 	}
 
 	// Apply all component CRDs except cluster-api ones (which may be disabled)
@@ -314,6 +354,7 @@ func main() {
 		UncachedClient:  uncachedClient,
 		StatusManager:   &status.StatusTracker{Client: mgr.GetClient()},
 		UpgradeableCond: upgradeableCondition,
+		OLMVersion:      olmVersion,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "MultiClusterEngine")
 		os.Exit(1)
@@ -386,7 +427,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if len(multiclusterengineList.Items) == 0 {
+	if len(multiclusterengineList.Items) == 0 && olmVersion == "v0" {
 		err = upgradeableCondition.Set(ctx, metav1.ConditionTrue, utils.UpgradeableAllowReason, utils.UpgradeableAllowMessage)
 		if err != nil {
 			setupLog.Error(err, "Could not set Operator Condition")
