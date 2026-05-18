@@ -84,6 +84,7 @@ type MultiClusterEngineReconciler struct {
 	Log              logr.Logger
 	UpgradeableCond  utils.Condition
 	DeprecatedFields map[string]bool
+	OLMVersion       string
 }
 
 const (
@@ -581,8 +582,11 @@ func (r *MultiClusterEngineReconciler) setOperatorUpgradeableStatus(ctx context.
 	}
 	// This error should only occur if the operator condition does not exist for some reason
 	// We will return true so that we re-reconcile on the failed update of the operator condition
-	if err := r.UpgradeableCond.Set(ctx, status, reason, msg); err != nil {
-		return true, err
+	// Only set OperatorCondition for OLM v0
+	if r.OLMVersion == "v0" {
+		if err := r.UpgradeableCond.Set(ctx, status, reason, msg); err != nil {
+			return true, err
+		}
 	}
 
 	if !upgradeable {
