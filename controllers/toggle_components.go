@@ -79,6 +79,10 @@ func (r *MultiClusterEngineReconciler) ensureConsoleMCE(ctx context.Context, mce
 		}
 	}
 
+	if err := r.ensurePlacementDebugCABundle(ctx, mce); err != nil {
+		log.Error(err, "Failed to sync placement debug CA bundle")
+	}
+
 	// Check console-mce deployment health before adding plugin
 	consoleDeployment := &appsv1.Deployment{}
 	err := r.Client.Get(ctx, namespacedName, consoleDeployment)
@@ -145,6 +149,56 @@ func (r *MultiClusterEngineReconciler) ensureNoConsoleMCE(ctx context.Context, m
 		}
 	}
 	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterEngineReconciler) ensurePlacementDebugCABundle(
+	ctx context.Context, mce *backplanev1.MultiClusterEngine,
+) error {
+	sourceNS := "open-cluster-management-hub"
+	sourceName := "ca-bundle-configmap"
+	source := &corev1.ConfigMap{}
+	err := r.Client.Get(ctx, types.NamespacedName{Name: sourceName, Namespace: sourceNS}, source)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil
+		}
+		return errors.Wrapf(err, "failed to get OCM CA bundle ConfigMap")
+	}
+
+	caBundle, ok := source.Data["ca-bundle.crt"]
+	if !ok || caBundle == "" {
+		return nil
+	}
+
+	targetName := "placement-debug-ca-bundle"
+	target := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      targetName,
+			Namespace: mce.Spec.TargetNamespace,
+		},
+		Data: map[string]string{
+			"ca-bundle.crt": caBundle,
+		},
+	}
+
+	if err := ctrl.SetControllerReference(mce, target, r.Scheme); err != nil {
+		return errors.Wrapf(err, "failed to set controller reference on placement debug CA ConfigMap")
+	}
+
+	existing := &corev1.ConfigMap{}
+	err = r.Client.Get(ctx, types.NamespacedName{Name: targetName, Namespace: mce.Spec.TargetNamespace}, existing)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return r.Client.Create(ctx, target)
+		}
+		return errors.Wrapf(err, "failed to get placement debug CA ConfigMap")
+	}
+
+	if existing.Data["ca-bundle.crt"] != caBundle {
+		existing.Data = target.Data
+		return r.Client.Update(ctx, existing)
+	}
+	return nil
 }
 
 func (r *MultiClusterEngineReconciler) ensureManagedServiceAccount(ctx context.Context,
