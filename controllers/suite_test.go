@@ -44,6 +44,7 @@ import (
 	v1 "github.com/stolostron/backplane-operator/api/v1"
 	"github.com/stolostron/backplane-operator/pkg/status"
 	"github.com/stolostron/backplane-operator/pkg/utils"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -67,6 +68,24 @@ var testEnv *envtest.Environment
 var ctx context.Context
 var cancel context.CancelFunc
 var reconciler MultiClusterEngineReconciler
+
+// addToSchemeIgnoringDuplicate wraps scheme registration to handle conflicts between envtest's
+// unstructured CRD registrations and controller-runtime v0.23.1's typed admission API requirements.
+// When both register the same GVK, runtime.Scheme panics with "Double registration". We ignore this
+// specific panic because the manager uses a separate scheme (mgrScheme) with only typed registrations.
+func addToSchemeIgnoringDuplicate(addToScheme func(*runtime.Scheme) error, s *runtime.Scheme) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			errStr := fmt.Sprintf("%v", r)
+			if strings.Contains(errStr, "Double registration") {
+				err = nil
+				return
+			}
+			panic(r) // Re-panic if it's a different error
+		}
+	}()
+	return addToScheme(s)
+}
 
 var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
@@ -103,38 +122,38 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
 
-	err = v1.AddToScheme(scheme.Scheme)
+	err = addToSchemeIgnoringDuplicate(v1.AddToScheme, scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
-	err = scheme.AddToScheme(scheme.Scheme)
+	err = addToSchemeIgnoringDuplicate(scheme.AddToScheme, scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
-	err = apiregistrationv1.AddToScheme(scheme.Scheme)
+	err = addToSchemeIgnoringDuplicate(apiregistrationv1.AddToScheme, scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
-	Expect(operatorsapiv2.AddToScheme(scheme.Scheme)).Should(Succeed())
+	Expect(addToSchemeIgnoringDuplicate(operatorsapiv2.AddToScheme, scheme.Scheme)).Should(Succeed())
 
-	err = admissionregistration.AddToScheme(scheme.Scheme)
+	err = addToSchemeIgnoringDuplicate(admissionregistration.AddToScheme, scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
-	err = apixv1.AddToScheme(scheme.Scheme)
+	err = addToSchemeIgnoringDuplicate(apixv1.AddToScheme, scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
-	err = hiveconfig.AddToScheme(scheme.Scheme)
+	err = addToSchemeIgnoringDuplicate(hiveconfig.AddToScheme, scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
-	Expect(olmv1.AddToScheme(scheme.Scheme)).Should(Succeed())
+	Expect(addToSchemeIgnoringDuplicate(olmv1.AddToScheme, scheme.Scheme)).Should(Succeed())
 
-	err = clustermanager.AddToScheme(scheme.Scheme)
+	err = addToSchemeIgnoringDuplicate(clustermanager.AddToScheme, scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
-	err = monitoringv1.AddToScheme(scheme.Scheme)
+	err = addToSchemeIgnoringDuplicate(monitoringv1.AddToScheme, scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
-	err = configv1.AddToScheme(scheme.Scheme)
+	err = addToSchemeIgnoringDuplicate(configv1.AddToScheme, scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
-	err = operatorv1.AddToScheme(scheme.Scheme)
+	err = addToSchemeIgnoringDuplicate(operatorv1.AddToScheme, scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	err = os.Setenv("POD_NAMESPACE", "default")
