@@ -37,11 +37,13 @@ import (
 	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
+	addonv1alpha1 "open-cluster-management.io/api/addon/v1alpha1"
 	clustermanager "open-cluster-management.io/api/operator/v1"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	v1 "github.com/stolostron/backplane-operator/api/v1"
+	"github.com/stolostron/backplane-operator/pkg/overrides"
 	"github.com/stolostron/backplane-operator/pkg/status"
 	"github.com/stolostron/backplane-operator/pkg/utils"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -176,8 +178,39 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
 
+	// Create a fresh scheme for the manager with typed registrations only
+	// This avoids conflicts with unstructured CRD registrations from envtest
+	mgrScheme := runtime.NewScheme()
+	err = v1.AddToScheme(mgrScheme)
+	Expect(err).NotTo(HaveOccurred())
+	err = scheme.AddToScheme(mgrScheme)
+	Expect(err).NotTo(HaveOccurred())
+	err = apiregistrationv1.AddToScheme(mgrScheme)
+	Expect(err).NotTo(HaveOccurred())
+	err = operatorsapiv2.AddToScheme(mgrScheme)
+	Expect(err).NotTo(HaveOccurred())
+	err = admissionregistration.AddToScheme(mgrScheme)
+	Expect(err).NotTo(HaveOccurred())
+	err = apixv1.AddToScheme(mgrScheme)
+	Expect(err).NotTo(HaveOccurred())
+	err = hiveconfig.AddToScheme(mgrScheme)
+	Expect(err).NotTo(HaveOccurred())
+	err = olmv1.AddToScheme(mgrScheme)
+	Expect(err).NotTo(HaveOccurred())
+	err = addonv1alpha1.Install(mgrScheme)
+	Expect(err).NotTo(HaveOccurred())
+	// Register typed ClusterManager - this is critical for controller watches
+	err = clustermanager.AddToScheme(mgrScheme)
+	Expect(err).NotTo(HaveOccurred())
+	err = monitoringv1.AddToScheme(mgrScheme)
+	Expect(err).NotTo(HaveOccurred())
+	err = configv1.AddToScheme(mgrScheme)
+	Expect(err).NotTo(HaveOccurred())
+	err = operatorv1.AddToScheme(mgrScheme)
+	Expect(err).NotTo(HaveOccurred())
+
 	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
-		Scheme: scheme.Scheme,
+		Scheme: mgrScheme,
 		Metrics: metricsserver.Options{
 			BindAddress: "0",
 		},
@@ -193,6 +226,14 @@ var _ = BeforeSuite(func() {
 		StatusManager:   &status.StatusTracker{Client: k8sManager.GetClient()},
 		UpgradeableCond: upgradeableCondition,
 	}
+
+	// Initialize CacheSpec with image overrides from environment variables
+	imageOverrides := overrides.GetOverridesFromEnv(overrides.OperandImagePrefix)
+	if len(imageOverrides) == 0 {
+		imageOverrides = overrides.GetOverridesFromEnv(overrides.OSBSImagePrefix)
+	}
+	reconciler.CacheSpec.ImageOverrides = imageOverrides
+
 	err = (reconciler).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 
