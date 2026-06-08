@@ -18,10 +18,6 @@ limitations under the License.
 
 package v1
 
-import (
-	"fmt"
-)
-
 const (
 	// Component names
 	AssistedService                  = "assisted-service"
@@ -167,26 +163,6 @@ var PreviewToStable = map[string]string{
 }
 
 /*
-LegacyConfigKind is a slice of strings that represents the legacy resource kinds
-supported by the Operator SDK and Prometheus. These kinds include "PrometheusRule", "Service",
-and "ServiceMonitor".
-*/
-var LegacyConfigKind = []string{"PrometheusRule", "ServiceMonitor"}
-
-// MCELegacyPrometheusRules is a map that associates certain component names with their corresponding prometheus rules.
-var MCELegacyPrometheusRules = map[string]string{
-	ConsoleMCE: "acm-console-prometheus-rules",
-	// Add other components here when PrometheusRules is required.
-}
-
-// MCELegacyServiceMonitors is a map that associates certain component names with their corresponding service monitors.
-var MCELegacyServiceMonitors = map[string]string{
-	ClusterLifecycle: "clusterlifecycle-state-metrics-v2",
-	ConsoleMCE:       "console-mce-monitor",
-	// Add other components here when ServiceMonitors is required.
-}
-
-/*
 ComponentPresent checks if a component with the given name is present in the MultiClusterEngine's Overrides.
 Returns true if the component is present, otherwise false.
 */
@@ -311,32 +287,6 @@ func IsInHostedMode(mce *MultiClusterEngine) bool {
 		return true
 	}
 	return false
-}
-
-/*
-GetLegacyConfigKind returns a list of legacy kind resources that are required to be removed before updating to
-MCE 2.4 and later.
-*/
-func GetLegacyConfigKind() []string {
-	return LegacyConfigKind
-}
-
-// GetLegacyPrometheusRulesName returns the name of the PrometheusRules based on the provided component name.
-func GetLegacyPrometheusRulesName(component string) (string, error) {
-	if val, ok := MCELegacyPrometheusRules[component]; !ok {
-		return val, fmt.Errorf("failed to find PrometheusRules name for: %s component", component)
-	} else {
-		return val, nil
-	}
-}
-
-// GetLegacyServiceMonitorName returns the name of the ServiceMonitors based on the provided component name.
-func GetLegacyServiceMonitorName(component string) (string, error) {
-	if val, ok := MCELegacyServiceMonitors[component]; !ok {
-		return val, fmt.Errorf("failed to find ServiceMonitors name for: %s component", component)
-	} else {
-		return val, nil
-	}
 }
 
 // IsACMManaged returns true if operator is managed by ACM
