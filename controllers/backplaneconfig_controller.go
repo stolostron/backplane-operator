@@ -377,7 +377,7 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 
 	// Apply image repository override from annotation if present.
 	if imageRepo := utils.GetImageRepository(backplaneConfig); imageRepo != "" {
-		r.Log.Info(fmt.Sprintf("Overriding Image Repository from annotation 'imageRepository': %s", imageRepo))
+		r.Log.Info("Overriding Image Repository from annotation 'imageRepository'")
 		imageOverrides = utils.OverrideImageRepository(imageOverrides, imageRepo)
 	}
 
