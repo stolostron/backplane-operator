@@ -377,7 +377,7 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 
 	// Apply image repository override from annotation if present.
 	if imageRepo := utils.GetImageRepository(backplaneConfig); imageRepo != "" {
-		r.Log.Info(fmt.Sprintf("Overriding Image Repository from annotation 'imageRepository': %s", imageRepo))
+		r.Log.Info("Overriding Image Repository from annotation 'imageRepository'")
 		imageOverrides = utils.OverrideImageRepository(imageOverrides, imageRepo)
 	}
 
@@ -503,12 +503,6 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		)
 		r.StatusManager.AddCondition(cond)
 		return result, err
-	}
-
-	if utils.DeployOnOCP() {
-		for _, kind := range backplanev1.GetLegacyConfigKind() {
-			_ = r.removeLegacyPrometheusConfigurations(ctx, "openshift-monitoring", kind)
-		}
 	}
 
 	result, err = r.ensureToggleableComponents(ctx, backplaneConfig)

@@ -5,11 +5,9 @@ package controllers
 
 import (
 	"context"
-	"fmt"
 
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 	"github.com/stolostron/backplane-operator/pkg/toggle"
-	apimeta "k8s.io/apimachinery/pkg/api/meta"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -122,64 +120,4 @@ func (r *MultiClusterEngineReconciler) uninstall(backplaneConfig *backplanev1.Mu
 		return false, err
 	}
 	return false, nil
-}
-
-/*
-removeLegacyPrometheusConfigurations will remove the specified kind of configuration
-(PrometheusRule or ServiceMonitor) in the target namespace. This configuration should be in the controller namespace
-instead.
-*/
-func (r *MultiClusterEngineReconciler) removeLegacyPrometheusConfigurations(ctx context.Context,
-	targetNamespace string, kind string) error {
-
-	obj := &unstructured.Unstructured{}
-	obj.SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   "monitoring.coreos.com",
-		Kind:    kind,
-		Version: "v1",
-	})
-
-	var configType string
-	switch kind {
-	case "PrometheusRule":
-		configType = "PrometheusRule"
-
-	case "ServiceMonitor":
-		configType = "ServiceMonitor"
-
-	default:
-		return fmt.Errorf("Unsupported kind detected when trying to remove legacy configuration: %s", kind)
-	}
-
-	for _, c := range backplanev1.MCEComponents {
-		res, err := func() (string, error) {
-			if configType == "PrometheusRule" {
-				return backplanev1.GetLegacyPrometheusRulesName(c)
-			}
-			return backplanev1.GetLegacyServiceMonitorName(c)
-		}()
-
-		if err != nil {
-			continue
-		}
-
-		obj.SetName(res)
-		obj.SetNamespace(targetNamespace)
-
-		err = r.Client.Delete(ctx, obj)
-		if err != nil {
-			if !errors.IsNotFound(err) && !apimeta.IsNoMatchError(err) {
-				log.Error(
-					err,
-					fmt.Sprintf("Error while deleting the legacy %s configuration", configType),
-					"kind", kind,
-					"name", obj.GetName(),
-				)
-				return err
-			}
-		} else {
-			log.Info(fmt.Sprintf("Deleted the legacy %s configuration: %s", configType, obj.GetName()))
-		}
-	}
-	return nil
 }

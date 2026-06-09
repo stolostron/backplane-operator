@@ -1,11 +1,8 @@
 package v1_test
 
 import (
-	"testing"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"k8s.io/utils/strings/slices"
 
 	api "github.com/stolostron/backplane-operator/api/v1"
 )
@@ -72,102 +69,3 @@ var _ = Describe("V1 API Methods", func() {
 		})
 	})
 })
-
-func TestGetLegacyPrometheusKind(t *testing.T) {
-	tests := []struct {
-		name  string
-		kind  string
-		want  int
-		want2 []string
-	}{
-		{
-			name:  "legacy Prometheus Configuration Kind",
-			kind:  "PrometheusRule",
-			want:  2,
-			want2: api.LegacyConfigKind,
-		},
-		{
-			name:  "legacy Prometheus Configuration Kind",
-			kind:  "ServiceMonitor",
-			want:  2,
-			want2: api.LegacyConfigKind,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := api.GetLegacyConfigKind()
-			if len(got) == 0 {
-				t.Errorf("GetLegacyPrometheusKind() = %v, want: %v", len(got), tt.want)
-			}
-
-			if ok := slices.Contains(got, tt.kind); !ok {
-				t.Errorf("GetLegacyPrometheusKind() = %v, want: %v", got, tt.want2)
-			}
-		})
-	}
-}
-
-func TestGetLegacyPrometheusRulesName(t *testing.T) {
-	tests := []struct {
-		name      string
-		component string
-		want      string
-	}{
-		{
-			name:      "console PrometheusRule",
-			component: api.ConsoleMCE,
-			want:      api.MCELegacyPrometheusRules[api.ConsoleMCE],
-		},
-		{
-			name:      "unknown PrometheusRule",
-			component: "unknown",
-			want:      api.MCELegacyPrometheusRules["unknown"],
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := api.GetLegacyPrometheusRulesName(tt.component)
-			if err != nil && tt.component != "unknown" {
-				t.Errorf("GetLegacyPrometheusRulesName(%v) = %v, want: %v", tt.component, err.Error(), tt.want)
-			}
-
-			if got != tt.want {
-				t.Errorf("GetLegacyPrometheusRulesName(%v) = %v, want: %v", tt.component, got, tt.want)
-			}
-		})
-	}
-}
-
-func TestGetLegacyServiceMonitorName(t *testing.T) {
-	tests := []struct {
-		name      string
-		component string
-		want      string
-	}{
-		{
-			name:      "console ServiceMonitor",
-			component: api.ConsoleMCE,
-			want:      api.MCELegacyServiceMonitors[api.ConsoleMCE],
-		},
-		{
-			name:      "unknown ServiceMonitor",
-			component: "unknown",
-			want:      api.MCELegacyServiceMonitors["unknown"],
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := api.GetLegacyServiceMonitorName(tt.component)
-			if err != nil && tt.component != "unknown" {
-				t.Errorf("GetLegacyServiceMonitorName(%v) = %v, want: %v", tt.component, err.Error(), tt.want)
-			}
-
-			if got != tt.want {
-				t.Errorf("GetLegacyServiceMonitorName(%v) = %v, want: %v", tt.component, got, tt.want)
-			}
-		})
-	}
-}
