@@ -78,12 +78,15 @@ import (
 const (
 	crdName = "multiclusterengines.multicluster.openshift.io"
 	crdsDir = "pkg/templates/crds"
+
+	// cacheDuration defines how long to cache client connections and metadata
+	// in the controller manager. Cached data is refreshed every 5 minutes.
+	cacheDuration = 5 * time.Minute
 )
 
 var (
-	cacheDuration time.Duration = time.Minute * 5
-	scheme                      = runtime.NewScheme()
-	setupLog                    = ctrl.Log.WithName("setup")
+	scheme   = runtime.NewScheme()
+	setupLog = ctrl.Log.WithName("setup")
 )
 
 func init() {
