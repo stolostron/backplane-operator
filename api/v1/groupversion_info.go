@@ -16,7 +16,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package v1 contains API Schema definitions for the multiclusterengine v1 API group
+// Package v1 defines the MultiClusterEngine v1 API.
+//
+// This package contains the CRD definitions, validation logic, and webhooks
+// for the multicluster.openshift.io/v1 API group, including the
+// MultiClusterEngine custom resource.
+//
 // +kubebuilder:object:generate=true
 // +groupName=multicluster.openshift.io
 package v1
