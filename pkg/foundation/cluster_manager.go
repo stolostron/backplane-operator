@@ -1,5 +1,10 @@
 // Copyright Contributors to the Open Cluster Management project
 
+// Package foundation manages foundation components for MCE.
+//
+// This package handles ClusterManager CR creation and lifecycle management,
+// which provides the foundation services for Open Cluster Management.
+package foundation
 package foundation
 
 import (

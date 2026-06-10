@@ -1,5 +1,10 @@
 // Copyright Contributors to the Open Cluster Management project
 
+// Package toggle manages component enable/disable functionality.
+//
+// This package controls which MCE components are deployed based on
+// configuration and cluster capabilities.
+package toggle
 package toggle
 
 import (
