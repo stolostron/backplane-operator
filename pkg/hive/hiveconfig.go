@@ -5,7 +5,6 @@
 // This package handles HiveConfig CR creation and configuration
 // for OpenShift cluster provisioning capabilities.
 package hive
-package hive
 
 import (
 	v1 "github.com/stolostron/backplane-operator/api/v1"

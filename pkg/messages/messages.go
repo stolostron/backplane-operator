@@ -5,7 +5,6 @@
 // This package contains constant message strings used in status conditions
 // and events for the MultiClusterEngine operator.
 package messages
-package messages
 
 const (
 	// SkippingExternallyManaged is logged when a component is skipped due to external management

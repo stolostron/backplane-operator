@@ -5,7 +5,6 @@
 // This package handles ClusterManager CR creation and lifecycle management,
 // which provides the foundation services for Open Cluster Management.
 package foundation
-package foundation
 
 import (
 	"context"
