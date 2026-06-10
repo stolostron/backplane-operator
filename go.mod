@@ -15,13 +15,12 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.76.0
 	go.uber.org/zap v1.27.0
-	helm.sh/helm/v3 v3.18.5
+	helm.sh/helm/v3 v3.20.2
 	k8s.io/api v0.35.2
-	k8s.io/apiextensions-apiserver v0.35.0
+	k8s.io/apiextensions-apiserver v0.35.1
 	k8s.io/apimachinery v0.35.2
 	k8s.io/client-go v0.35.2
 	k8s.io/kube-aggregator v0.35.2
-	k8s.io/utils v0.0.0-20260319190234-28399d86e0b5
 	open-cluster-management.io/api v1.2.1-0.20260401094502-0bf966f2e990
 	open-cluster-management.io/sdk-go v0.13.1-0.20240607073142-990fcdba50a6
 	sigs.k8s.io/controller-runtime v0.23.1
@@ -30,12 +29,12 @@ require (
 
 require (
 	dario.cat/mergo v1.0.2 // indirect
-	github.com/BurntSushi/toml v1.5.0 // indirect
+	github.com/BurntSushi/toml v1.6.0 // indirect
 	github.com/Masterminds/semver/v3 v3.4.0 // indirect
 	github.com/Masterminds/sprig/v3 v3.3.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
-	github.com/cyphar/filepath-securejoin v0.5.0 // indirect
+	github.com/cyphar/filepath-securejoin v0.6.1 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/emicklei/go-restful/v3 v3.13.0 // indirect
 	github.com/evanphx/json-patch/v5 v5.9.11 // indirect
@@ -102,6 +101,7 @@ require (
 	k8s.io/apiserver v0.35.2 // indirect
 	k8s.io/klog/v2 v2.140.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20250910181357-589584f1c912 // indirect
+	k8s.io/utils v0.0.0-20260319190234-28399d86e0b5 // indirect
 	sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730 // indirect
 	sigs.k8s.io/randfill v1.0.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v6 v6.3.2-0.20260122202528-d9cc6641c482 // indirect
