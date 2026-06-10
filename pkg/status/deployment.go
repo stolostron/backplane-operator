@@ -7,7 +7,6 @@
 //   - Component status aggregation
 //   - Condition management
 package status
-package status
 
 import (
 	"context"

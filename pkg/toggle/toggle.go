@@ -5,7 +5,6 @@
 // This package controls which MCE components are deployed based on
 // configuration and cluster capabilities.
 package toggle
-package toggle
 
 import (
 	"context"

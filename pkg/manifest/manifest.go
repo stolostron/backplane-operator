@@ -8,7 +8,6 @@
 //   - Resource application and updates
 //   - Manifest templating
 package manifest
-package manifest
 
 // ManifestImage contains details for a specific image version
 type ManifestImage struct {
