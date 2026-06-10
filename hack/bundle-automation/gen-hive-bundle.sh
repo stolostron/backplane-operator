@@ -121,9 +121,9 @@ fi
 # Check that an output directory was created, and copy the results into
 # the output directory specified to us.
 
-generated_bundle_dir="$PWD/hive-operator-bundle-*"
+generated_bundle_dir_prefix="$PWD/hive-operator-bundle-"
 
-if ! ls "${generated_bundle_dir}" > /dev/null 2>&1; then
+if ! ls "${generated_bundle_dir_prefix}"* > /dev/null 2>&1; then
    >&2 echo "Error: Hive's bundle_gen script didn't generate expected output directory."
    exit 3
 fi
@@ -131,7 +131,7 @@ fi
 cd "$start_cwd" || exit 3
 mkdir -p "$output_dir"
 echo "Copying generated bundle manifests to output directory."
-cp -p "${generated_bundle_dir}"/**/* "${output_dir}"
+cp -p "${generated_bundle_dir_prefix}"*/**/* "${output_dir}"
 
 rc=$?
 if [[ $rc -ne 0 ]]; then
