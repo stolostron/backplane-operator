@@ -38,9 +38,8 @@ cleanup() {
 
 # Define a temporary directory
 me=$(basename "$0")
-
-tmp_dir=$(mktemp -td "$me.XXXXXXXX")
-echo -e "Temporary directory created: $tmp_dir"
+tmp_dir=$(mktemp -d "${TMPDIR:-/tmp}/${me}.XXXXXXXX")
+echo -e "Temporary directory created: ${tmp_dir}"
 
 # Trap for cleanup on exit or Ctrl+C (SIGINT)
 trap 'cleanup' EXIT
@@ -61,7 +60,7 @@ gen_tool="hack/bundle-gen.py"  # Path within Hive's repo.
 start_cwd="$PWD"
 rm -rf "$output_dir"
 
-cd "$tmp_dir"
+cd "$tmp_dir" || exit 3
 
 # Clone the Hive operator repo at specified commit/branch.
 
@@ -78,16 +77,15 @@ if [[ $rc -ne 0 ]]; then
    exit 3
 fi
 
-cd hive
-git fetch origin $branch
-git checkout $branch
-git -c advice.detachedHead=false checkout "$commit_ish"
+GIT="git -C ${tmp_dir}/hive"
+${GIT} fetch origin "${branch}"
+${GIT} checkout "${branch}"
+${GIT} -c advice.detachedHead=false checkout "$commit_ish"
 rc=$?
 if [[ $rc -ne 0 ]]; then
    >&2 echo "Error: Could not checkout branch/commit $commit_ish (rc: $rc)."
    exit 3
 fi
-cd ..
 
 # Run Hive's bundle generation tool.  It puts its output in a subdirectory of $PWD
 # named with pattern "hive-operator-bundle-*" so run it from a clean directory so
@@ -99,7 +97,7 @@ if [[ ! -f "./hive/$gen_tool" ]]; then
 fi
 
 mkdir bundle
-cd bundle
+cd bundle || exit 3
 
 # Copy the original version2.py from before Hive removed it (commit f1bc37a1b).
 # This is needed because bundle-gen.py still expects to import version2, but Hive
@@ -123,17 +121,17 @@ fi
 # Check that an output directory was created, and copy the results into
 # the output directory specified to us.
 
-generated_bundle_dir="$PWD/hive-operator-bundle-*"
+generated_bundle_dir_prefix="$PWD/hive-operator-bundle-"
 
-if ! ls $generated_bundle_dir > /dev/null 2>&1; then
+if ! ls "${generated_bundle_dir_prefix}"* > /dev/null 2>&1; then
    >&2 echo "Error: Hive's bundle_gen script didn't generate expected output directory."
    exit 3
 fi
 
-cd "$start_cwd"
+cd "$start_cwd" || exit 3
 mkdir -p "$output_dir"
 echo "Copying generated bundle manifests to output directory."
-cp -p $generated_bundle_dir/**/* $output_dir
+cp -p "${generated_bundle_dir_prefix}"*/**/* "${output_dir}"
 
 rc=$?
 if [[ $rc -ne 0 ]]; then

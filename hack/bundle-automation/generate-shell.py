@@ -64,6 +64,14 @@ SUPPORTED_OPERATIONS = {
     },
 }
 
+class ScriptExecutionError(Exception):
+    """Raised when a bundled script exits with a non-zero status."""
+
+    def __init__(self, script_name, returncode):
+        self.script_name = script_name
+        self.returncode = returncode
+        super().__init__(f"Script {script_name} failed with exit code {returncode}")
+
 def clone_repository(git_url, repo_path, branch):
     """Clones a Git repository to a specific path.
 
@@ -166,10 +174,10 @@ def prepare_and_execute(operation, operation_data, args, extra_args):
     if extra_args:
         operations_args += " " + " ".join(extra_args)
 
-    # Execute the script
-    execute_script(script_file, operations_args)
-
-    cleanup_script_dependencies(copied_files)
+    try:
+        execute_script(script_file, operations_args)
+    finally:
+        cleanup_script_dependencies(copied_files)
 
 def execute_script(script_path, args):
     """Executes a Python script with arguments.
@@ -180,7 +188,7 @@ def execute_script(script_path, args):
     """
     if not script_path.exists():
         logging.error(f"Script {script_path} not found.")
-        sys.exit(1)
+        raise ScriptExecutionError(script_path.name, 1)
 
     # Set PYTHONPATH to include the bundle-automation directory so imports work
     env = os.environ.copy()
@@ -191,7 +199,7 @@ def execute_script(script_path, args):
         subprocess.run(command, check=True, env=env)
     except subprocess.CalledProcessError as e:
         logging.error(f"Script {script_path.name} failed with exit code {e.returncode}")
-        sys.exit(e.returncode)
+        raise ScriptExecutionError(script_path.name, e.returncode) from e
 
 def main(args, extra_args):
     """_summary_
@@ -205,17 +213,38 @@ def main(args, extra_args):
     start_time = time.time()  # Record start time
     logging.info("🔄 Initiating the generate-shell script for operator bundle management and updates.")
 
+    failures = []
+
     # Clone the installer-dev-tools repository
     git_url = f"https://github.com/{args.org}/{args.repo}.git"
-    clone_repository(git_url, TMP_DIR, args.branch)
+    try:
+        clone_repository(git_url, TMP_DIR, args.branch)
+    except Exception as e:
+        failures.append(e)
 
-    for operation, operation_data in SUPPORTED_OPERATIONS.items():
-        if getattr(args, operation.replace('-', '_'), False):
-            prepare_and_execute(operation, operation_data, args, extra_args)
-            break
+    if not failures:
+        for operation, operation_data in SUPPORTED_OPERATIONS.items():
+            if getattr(args, operation.replace('-', '_'), False):
+                try:
+                    prepare_and_execute(operation, operation_data, args, extra_args)
+                except ScriptExecutionError as e:
+                    failures.append(e)
+                break
 
     end_time = time.time() # Record the end time and log the duration of the script execution
     logging.info(f"Script execution took {end_time - start_time:.2f} seconds.")
+
+    if failures:
+        for failure in failures:
+            if isinstance(failure, ScriptExecutionError):
+                logging.error(str(failure))
+            else:
+                logging.error(f"Operation failed: {failure}")
+        exit_code = next(
+            (failure.returncode for failure in failures if isinstance(failure, ScriptExecutionError)),
+            1,
+        )
+        sys.exit(exit_code)
 
 if __name__ == "__main__":
     # Set up argument parsing for command-line execution
