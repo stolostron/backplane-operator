@@ -2,7 +2,7 @@
 
 name: Regenerate Operator Bundles
 
-# Controls when the action will run. 
+# Controls when the action will run.
 on:
   # Runs every six hours
   schedule:
@@ -12,14 +12,14 @@ on:
   workflow_dispatch:
     inputs:
       branch_arg:
-        description: 'BRANCH agrument for the make command'
+        description: "BRANCH argument for the make command"
         required: false
-        default: 'main'
+        default: "main"
         type: string
       org_arg:
-        description: 'ORG argument for the make command'
+        description: "ORG argument for the make command"
         required: false
-        default: 'stolostron'
+        default: "stolostron"
         type: string
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
@@ -32,7 +32,17 @@ jobs:
       fail-fast: false # If one jobs fail, we still want the other jobs to run.
       matrix:
         python-version: [3.9]
-        branch: ['main', 'backplane-2.6', 'backplane-2.7', 'backplane-2.8', 'backplane-2.9', 'backplane-2.10', 'backplane-2.11', 'backplane-2.17']
+        branch:
+          [
+            "main",
+            "backplane-2.6",
+            "backplane-2.7",
+            "backplane-2.8",
+            "backplane-2.9",
+            "backplane-2.10",
+            "backplane-2.11",
+            "backplane-2.17",
+          ]
         include:
           - branch: backplane-2.6
             go-version: "1.24"
@@ -94,7 +104,7 @@ jobs:
         run: |
           echo "Running go generate..."
           go generate
-  
+
       - name: Generate Manifests
         run: |
           echo "Generating manifests..."
@@ -113,9 +123,24 @@ jobs:
           curl -X POST -H "Content-type: application/json" --data "{
             \"text\": \"$SLACK_MESSAGE\"
           }" $SLACK_WEBHOOK_URL
-      
+
+      - name: Detect Changes in Charts
+        id: changes
+        if: ${{ always() }}
+        run: |
+          changes=false
+          if [[ -n "$(git status --porcelain)" ]]; then
+            echo "* Files Changed:"
+            git status --short
+            changes=true
+          else
+            echo "* No file changes detected."
+          fi
+          echo "changes=${changes}" >> $GITHUB_OUTPUT
+
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v3
+        if: ${{ always() && steps.changes.outputs.changes == 'true' }}
         with:
           signoff: true
           branch: "regenerate-operator-bundles-${{ matrix.branch }}"
