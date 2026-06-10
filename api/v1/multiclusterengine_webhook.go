@@ -25,14 +25,13 @@ import (
 	admissionregistration "k8s.io/api/admissionregistration/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/discovery"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	cl "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
@@ -136,36 +135,37 @@ func ValidatingWebhook(namespace string) *admissionregistration.ValidatingWebhoo
 
 func (r *MultiClusterEngine) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	Client = mgr.GetClient()
-	return ctrl.NewWebhookManagedBy(mgr).
-		For(r).
+	return builder.WebhookManagedBy(mgr, r).
+		WithDefaulter(r).
+		WithValidator(r).
 		Complete()
 }
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-var _ webhook.Defaulter = &MultiClusterEngine{}
+var _ admission.Defaulter[*MultiClusterEngine] = &MultiClusterEngine{}
 
-// Default implements webhook.Defaulter so a webhook will be registered for the type
-func (r *MultiClusterEngine) Default() {
-	backplaneconfiglog.Info("default", "name", r.Name)
-	if r.Spec.TargetNamespace == "" {
-		r.Spec.TargetNamespace = DefaultTargetNamespace
+// Default implements admission.Defaulter so a webhook will be registered for the type
+func (r *MultiClusterEngine) Default(ctx context.Context, obj *MultiClusterEngine) error {
+	backplaneconfiglog.Info("default", "name", obj.Name)
+	if obj.Spec.TargetNamespace == "" {
+		obj.Spec.TargetNamespace = DefaultTargetNamespace
 	}
+	return nil
 }
 
-var _ webhook.Validator = &MultiClusterEngine{}
+var _ admission.Validator[*MultiClusterEngine] = &MultiClusterEngine{}
 
-// ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *MultiClusterEngine) ValidateCreate() (admission.Warnings, error) {
-	ctx := context.Background()
-	backplaneconfiglog.Info("validate create", "Kind", r.Kind, "Name", r.GetName())
+// ValidateCreate implements admission.Validator so a webhook will be registered for the type
+func (r *MultiClusterEngine) ValidateCreate(ctx context.Context, obj *MultiClusterEngine) (admission.Warnings, error) {
+	backplaneconfiglog.Info("validate create", "Kind", obj.Kind, "Name", obj.GetName())
 
-	if (r.Spec.AvailabilityConfig != HABasic) && (r.Spec.AvailabilityConfig != HAHigh) && (r.Spec.AvailabilityConfig != "") {
+	if (obj.Spec.AvailabilityConfig != HABasic) && (obj.Spec.AvailabilityConfig != HAHigh) && (obj.Spec.AvailabilityConfig != "") {
 		return nil, ErrInvalidAvailability
 	}
 
 	// Validate components
-	if r.Spec.Overrides != nil {
-		for _, c := range r.Spec.Overrides.Components {
+	if obj.Spec.Overrides != nil {
+		for _, c := range obj.Spec.Overrides.Components {
 			if !validComponent(c) {
 				return nil, fmt.Errorf("%w: %s is not a known component", ErrInvalidComponent, c.Name)
 			}
@@ -177,7 +177,7 @@ func (r *MultiClusterEngine) ValidateCreate() (admission.Warnings, error) {
 		return nil, fmt.Errorf("unable to list BackplaneConfigs: %s", err)
 	}
 
-	targetNS := r.Spec.TargetNamespace
+	targetNS := obj.Spec.TargetNamespace
 	if targetNS == "" {
 		targetNS = DefaultTargetNamespace
 	}
@@ -188,7 +188,7 @@ func (r *MultiClusterEngine) ValidateCreate() (admission.Warnings, error) {
 			return nil, fmt.Errorf("%w: MultiClusterEngine with targetNamespace already exists: '%s'",
 				ErrInvalidNamespace, mce.Name)
 		}
-		if !IsInHostedMode(r) && !IsInHostedMode(&mce) {
+		if !IsInHostedMode(obj) && !IsInHostedMode(&mce) {
 			return nil, fmt.Errorf("%w: MultiClusterEngine in Standalone mode already exists: `%s`. "+
 				"Only one resource may exist in Standalone mode.", ErrInvalidDeployMode, mce.Name)
 		}
@@ -197,36 +197,35 @@ func (r *MultiClusterEngine) ValidateCreate() (admission.Warnings, error) {
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *MultiClusterEngine) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
-	backplaneconfiglog.Info("validate update", "Kind", r.Kind, "Name", r.GetName())
+func (r *MultiClusterEngine) ValidateUpdate(ctx context.Context, oldObj, newObj *MultiClusterEngine) (admission.Warnings, error) {
+	backplaneconfiglog.Info("validate update", "Kind", newObj.Kind, "Name", newObj.GetName())
 
-	oldMCE := old.(*MultiClusterEngine)
-	backplaneconfiglog.Info(oldMCE.Spec.TargetNamespace)
-	if (r.Spec.TargetNamespace != oldMCE.Spec.TargetNamespace) && (oldMCE.Spec.TargetNamespace != "") {
+	backplaneconfiglog.Info("validating update", "oldTargetNamespace", oldObj.Spec.TargetNamespace)
+	if (newObj.Spec.TargetNamespace != oldObj.Spec.TargetNamespace) && (oldObj.Spec.TargetNamespace != "") {
 		return nil, fmt.Errorf("%w: changes cannot be made to target namespace", ErrInvalidNamespace)
 	}
-	if IsInHostedMode(r) != IsInHostedMode(oldMCE) {
+	if IsInHostedMode(newObj) != IsInHostedMode(oldObj) {
 		return nil, fmt.Errorf("%w: changes cannot be made to DeploymentMode", ErrInvalidDeployMode)
 	}
 
 	oldNS, newNS := "", ""
-	if oldMCE.Spec.Overrides != nil {
-		oldNS = oldMCE.Spec.Overrides.InfrastructureCustomNamespace
+	if oldObj.Spec.Overrides != nil {
+		oldNS = oldObj.Spec.Overrides.InfrastructureCustomNamespace
 	}
-	if r.Spec.Overrides != nil {
-		newNS = r.Spec.Overrides.InfrastructureCustomNamespace
+	if newObj.Spec.Overrides != nil {
+		newNS = newObj.Spec.Overrides.InfrastructureCustomNamespace
 	}
 	if oldNS != newNS {
 		return nil, fmt.Errorf("%w: changes cannot be made to InfrastructureCustomNamespace", ErrInvalidInfraNS)
 	}
 
-	if (r.Spec.AvailabilityConfig != HABasic) && (r.Spec.AvailabilityConfig != HAHigh) && (r.Spec.AvailabilityConfig != "") {
+	if (newObj.Spec.AvailabilityConfig != HABasic) && (newObj.Spec.AvailabilityConfig != HAHigh) && (newObj.Spec.AvailabilityConfig != "") {
 		return nil, ErrInvalidAvailability
 	}
 
 	// Validate components
-	if r.Spec.Overrides != nil {
-		for _, c := range r.Spec.Overrides.Components {
+	if newObj.Spec.Overrides != nil {
+		for _, c := range newObj.Spec.Overrides.Components {
 			if !validComponent(c) {
 				return nil, fmt.Errorf("%w: %s is not a known component", ErrInvalidComponent, c.Name)
 			}
@@ -234,7 +233,7 @@ func (r *MultiClusterEngine) ValidateUpdate(old runtime.Object) (admission.Warni
 	}
 
 	// Block disable if relevant resources present
-	if r.ComponentPresent(Discovery) && !r.Enabled(Discovery) {
+	if newObj.ComponentPresent(Discovery) && !newObj.Enabled(Discovery) {
 		cfg, err := config.GetConfig()
 		if err != nil {
 			return nil, err
@@ -267,10 +266,9 @@ func (r *MultiClusterEngine) ValidateUpdate(old runtime.Object) (admission.Warni
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *MultiClusterEngine) ValidateDelete() (admission.Warnings, error) {
+func (r *MultiClusterEngine) ValidateDelete(ctx context.Context, obj *MultiClusterEngine) (admission.Warnings, error) {
 	// TODO(user): fill in your validation logic upon object deletion.
-	backplaneconfiglog.Info("validate delete", "Kind", r.Kind, "Name", r.GetName())
-	ctx := context.Background()
+	backplaneconfiglog.Info("validate delete", "Kind", obj.Kind, "Name", obj.GetName())
 
 	cfg, err := config.GetConfig()
 	if err != nil {
