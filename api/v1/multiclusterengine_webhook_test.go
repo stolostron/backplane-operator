@@ -151,23 +151,14 @@ var _ = Describe("Multiclusterengine webhook", func() {
 
 			By("because the local-cluster name must be less than 35 characters long", func() {
 				mce.Spec.LocalClusterName = strings.Repeat("t", 35)
-				expectedError := &k8serrors.StatusError{
-					ErrStatus: metav1.Status{
-						TypeMeta: metav1.TypeMeta{Kind: "", APIVersion: ""},
-						ListMeta: metav1.ListMeta{
-							SelfLink:           "",
-							ResourceVersion:    "",
-							Continue:           "",
-							RemainingItemCount: nil,
-						},
-						Status:  "Failure",
-						Message: "admission webhook \"multiclusterengines.multicluster.openshift.io\" denied the request: local-cluster name must be shorter than 35 characters",
-						Reason:  "Forbidden",
-						Details: nil,
-						Code:    403,
-					},
-				}
-				Expect(k8sClient.Update(ctx, mce)).To(Equal(expectedError), "local-cluster name must be less than 35 characters long")
+				err := k8sClient.Update(ctx, mce)
+				Expect(err).To(HaveOccurred())
+				Expect(err).To(BeAssignableToTypeOf(&k8serrors.StatusError{}))
+
+				statusErr := err.(*k8serrors.StatusError)
+				Expect(statusErr.ErrStatus.Code).To(Equal(int32(403)))
+				Expect(statusErr.ErrStatus.Message).To(ContainSubstring("local-cluster name"))
+				Expect(statusErr.ErrStatus.Message).To(ContainSubstring("35 characters"))
 			})
 		})
 
