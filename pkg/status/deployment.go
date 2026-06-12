@@ -1,4 +1,11 @@
 // Copyright Contributors to the Open Cluster Management project
+
+// Package status tracks deployment and component status for MCE.
+//
+// This package provides:
+//   - Deployment readiness checking
+//   - Component status aggregation
+//   - Condition management
 package status
 
 import (

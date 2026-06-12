@@ -1,7 +1,7 @@
 // Copyright Contributors to the Open Cluster Management project
 
 /*
-Copyright 2021.
+Copyright 2026.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -78,12 +78,15 @@ import (
 const (
 	crdName = "multiclusterengines.multicluster.openshift.io"
 	crdsDir = "pkg/templates/crds"
+
+	// cacheDuration defines how long to cache client connections and metadata
+	// in the controller manager. Cached data is refreshed every 5 minutes.
+	cacheDuration = 5 * time.Minute
 )
 
 var (
-	cacheDuration time.Duration = time.Minute * 5
-	scheme                      = runtime.NewScheme()
-	setupLog                    = ctrl.Log.WithName("setup")
+	scheme   = runtime.NewScheme()
+	setupLog = ctrl.Log.WithName("setup")
 )
 
 func init() {

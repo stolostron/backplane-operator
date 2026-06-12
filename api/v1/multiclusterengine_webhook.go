@@ -1,6 +1,6 @@
 // Copyright Contributors to the Open Cluster Management project
 /*
-Copyright 2021.
+Copyright 2026.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -39,6 +39,14 @@ import (
 
 const (
 	DefaultTargetNamespace = "multicluster-engine"
+
+	// maxLocalClusterNameLength is the maximum allowed length for Spec.LocalClusterName.
+	//
+	// This limit exists because LocalClusterName is used as a prefix for various Kubernetes
+	// resources (e.g., "local-cluster-cluster-manager"), and Kubernetes resource names are
+	// limited to 63 characters. We limit LocalClusterName to 35 characters to leave room
+	// for suffixes like "-cluster-manager" (18 chars) and hash values (10 chars).
+	maxLocalClusterNameLength = 35
 )
 
 type BlockDeletionResource struct {
@@ -211,8 +219,13 @@ func (r *MultiClusterEngine) ValidateCreate(ctx context.Context, obj *MultiClust
 }
 
 func validateLocalClusterNameLength(name string) (err error) {
-	if len(name) >= 35 {
-		return fmt.Errorf("local-cluster name must be shorter than 35 characters")
+	if len(name) >= maxLocalClusterNameLength {
+		return fmt.Errorf(
+			"local-cluster name must be shorter than %d characters (currently %d). "+
+				"This limit ensures generated resource names stay within Kubernetes 63-character limit.",
+			maxLocalClusterNameLength,
+			len(name),
+		)
 	}
 	return nil
 }

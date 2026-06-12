@@ -1,5 +1,9 @@
 // Copyright Contributors to the Open Cluster Management project
 
+// Package messages defines user-facing status messages and conditions.
+//
+// This package contains constant message strings used in status conditions
+// and events for the MultiClusterEngine operator.
 package messages
 
 const (

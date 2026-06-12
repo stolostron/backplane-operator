@@ -1,3 +1,8 @@
+// Package mcewebhook manages webhook certificate rotation for MCE.
+//
+// This package provides a controller that monitors webhook configurations
+// and ensures certificates are valid and up-to-date for the MultiClusterEngine
+// validating and mutating webhooks.
 package mcewebhook
 
 import (

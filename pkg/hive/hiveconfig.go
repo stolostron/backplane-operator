@@ -1,5 +1,9 @@
 // Copyright Contributors to the Open Cluster Management project
 
+// Package hive manages Hive integration for cluster provisioning.
+//
+// This package handles HiveConfig CR creation and configuration
+// for OpenShift cluster provisioning capabilities.
 package hive
 
 import (
