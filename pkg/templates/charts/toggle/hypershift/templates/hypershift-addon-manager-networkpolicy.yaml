@@ -1,0 +1,12 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: hypershift-addon-manager-network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app: hypershift-addon-manager
+  policyTypes:
+  - Egress
+  egress:
+  - {}

@@ -415,7 +415,7 @@ func renderTemplates(chartPath string, backplaneConfig *v1.MultiClusterEngine, i
 
 		// Add namespace to namespaced resources
 		switch kind {
-		case "Deployment", "ServiceAccount", "Role", "RoleBinding", "Service", "ConfigMap", "Route":
+		case "Deployment", "ServiceAccount", "Role", "RoleBinding", "Service", "ConfigMap", "Route", "NetworkPolicy":
 			unstructured.SetNamespace(backplaneConfig.Spec.TargetNamespace)
 		}
 
