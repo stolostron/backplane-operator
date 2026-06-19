@@ -31,7 +31,7 @@ func TestRender(t *testing.T) {
 	defer os.Unsetenv("DIRECTORY_OVERRIDE")
 
 	availabilityList := []string{"clusterclaims-controller", "cluster-curator-controller", "managedcluster-import-controller-v2", "ocm-controller", "ocm-proxyserver", "ocm-webhook"}
-	backplaneNodeSelector := map[string]string{"select": "test"}
+	backplaneNodeSelector := map[string]string{"select": "test", "select2": "test2"}
 	backplaneImagePullSecret := "test"
 	backplaneNamespace := "default"
 	backplaneAvailability := backplane.HAHigh
@@ -281,7 +281,7 @@ func TestNonOCPRender(t *testing.T) {
 	defer os.Unsetenv("DIRECTORY_OVERRIDE")
 	utils.SetDeployOnOCP(false)
 	availabilityList := []string{"clusterclaims-controller", "cluster-curator-controller", "managedcluster-import-controller-v2", "ocm-controller", "ocm-proxyserver", "ocm-webhook"}
-	backplaneNodeSelector := map[string]string{"select": "test"}
+	backplaneNodeSelector := map[string]string{"select": "test", "select2": "test2"}
 	backplaneImagePullSecret := "test"
 	backplaneNamespace := "default"
 	backplaneAvailability := backplane.HAHigh
