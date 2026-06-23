@@ -135,7 +135,6 @@ spec:
         ports:
         - containerPort: 3000
           protocol: TCP
-        {{- if not (eq (index .Values.global.templateOverrides "console_mce_deployment_container_readiness_probe_disabled" | default "false") "true") }}
         readinessProbe:
           httpGet:
             path: /readinessProbe
@@ -158,8 +157,6 @@ spec:
           {{- if hasKey .Values.global.templateOverrides "console_mce_deployment_container_readiness_probe_failure_threshold" }}
           failureThreshold: {{ .Values.global.templateOverrides.console_mce_deployment_container_readiness_probe_failure_threshold }}
           {{- end }}
-        {{- end }}
-        {{- if not (eq (index .Values.global.templateOverrides "console_mce_deployment_container_liveness_probe_disabled" | default "false") "true") }}
         livenessProbe:
           httpGet:
             path: /livenessProbe
@@ -184,7 +181,6 @@ spec:
           {{- if hasKey .Values.global.templateOverrides "console_mce_deployment_container_liveness_probe_failure_threshold" }}
           failureThreshold: {{ .Values.global.templateOverrides.console_mce_deployment_container_liveness_probe_failure_threshold }}
           {{- end }}
-        {{- end }}
       {{- if .Values.global.pullSecret }}
       imagePullSecrets:
       - name: {{ .Values.global.pullSecret }}
