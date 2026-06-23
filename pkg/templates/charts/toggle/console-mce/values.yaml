@@ -13,6 +13,22 @@ global:
   # console_mce_deployment_container_memory_limit: <memory-value>
   # console_mce_deployment_container_cpu_request: <cpu-value>
   # console_mce_deployment_container_cpu_limit: <cpu-value>
+  #
+  # Readiness probe overrides:
+  # console_mce_deployment_container_readiness_probe_disabled: "true"  (omits the entire readiness probe)
+  # console_mce_deployment_container_readiness_probe_timeout_seconds: <seconds>
+  # console_mce_deployment_container_readiness_probe_initial_delay_seconds: <seconds>
+  # console_mce_deployment_container_readiness_probe_period_seconds: <seconds>
+  # console_mce_deployment_container_readiness_probe_success_threshold: <count>
+  # console_mce_deployment_container_readiness_probe_failure_threshold: <count>
+  #
+  # Liveness probe overrides:
+  # console_mce_deployment_container_liveness_probe_disabled: "true"  (omits the entire liveness probe)
+  # console_mce_deployment_container_liveness_probe_timeout_seconds: <seconds>
+  # console_mce_deployment_container_liveness_probe_initial_delay_seconds: <seconds>
+  # console_mce_deployment_container_liveness_probe_period_seconds: <seconds>
+  # console_mce_deployment_container_liveness_probe_success_threshold: <count>
+  # console_mce_deployment_container_liveness_probe_failure_threshold: <count>
   pullPolicy: Always
   namespace: default
   pullSecret: null
