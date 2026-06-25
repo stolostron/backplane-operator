@@ -29,7 +29,7 @@ jobs:
           token: ${{ secrets.BACKPLANE_TOKEN }}
           ref: backplane-2.7
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
 
