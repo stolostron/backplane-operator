@@ -33,7 +33,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           
       - name: Install Helm
-        uses: azure/setup-helm@v1
+        uses: azure/setup-helm@v4
         with:
           version: v3.4.0
 
