@@ -1,0 +1,26 @@
+---
+external-images:
+- name: assisted-image-service
+  search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-image-service-rhel9:latest"
+  replace: "registry.redhat.io/multicluster-engine/assisted-image-service-rhel9@sha256:48305470fa7e55e78165734d094022a14ac9d083573974036c1f40021c362ba1"
+- name: assisted-installer
+  search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-installer-rhel9:latest"
+  replace: "registry.redhat.io/multicluster-engine/assisted-installer-rhel9@sha256:4dd8f3992fcc23dc8f1e14dbfe4e3c3e447b592d88152fbf5d92ccd469653377"
+- name: assisted-installer-agent
+  search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-installer-agent-rhel9:latest"
+  replace: "registry.redhat.io/multicluster-engine/assisted-installer-agent-rhel9@sha256:72427b669fe6feb4b46bcabf100bbd633ffd13bd0d3583b2e544f5709f680b73"
+- name: assisted-installer-controller
+  search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-installer-controller-rhel9:latest"
+  replace: "registry.redhat.io/multicluster-engine/assisted-installer-controller-rhel9@sha256:b3d2b3c7c5bef17dfea7985eb854a6fe77720dfc185a968adc2db831081546ee"
+- name: assisted-service
+  search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-service-9-rhel9:latest"
+  replace: "registry.redhat.io/multicluster-engine/assisted-service-9-rhel9@sha256:eb11d23849d00fc2ec07284054335921158f00f6dd7e4347c54fd606e80c8a2e"
+- name: ose-cluster-api
+  search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/ose-cluster-api-rhel9:latest"
+  replace: "registry.redhat.io/openshift4/ose-cluster-api-rhel9:v4.21"
+- name: ose-baremetal-cluster-api-controllers
+  search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/ose-baremetal-cluster-api-controllers-rhel9:latest"
+  replace: "registry.redhat.io/openshift4/ose-baremetal-cluster-api-controllers-rhel9:v4.21"
+- name: postgresql-13
+  search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/postgresql-13:latest"
+  replace: "registry.redhat.io/rhel9/postgresql-13:9.7-1778634764"
