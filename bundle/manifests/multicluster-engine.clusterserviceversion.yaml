@@ -14,8 +14,8 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    createdAt: "2026-02-05T19:18:08Z"
-    operators.operatorframework.io/builder: operator-sdk-v1.41.1
+    createdAt: "2026-06-26T16:39:22Z"
+    operators.operatorframework.io/builder: operator-sdk-v1.42.2
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
   name: multicluster-engine.v0.0.1
   namespace: placeholder
@@ -818,6 +818,7 @@ spec:
           - bootstrap.cluster.x-k8s.io
           resources:
           - eksconfigs/status
+          - nodeadmconfigs/status
           verbs:
           - get
           - patch
@@ -825,6 +826,7 @@ spec:
         - apiGroups:
           - bootstrap.cluster.x-k8s.io
           resources:
+          - nodeadmconfigs
           - openshiftassistedconfigs
           verbs:
           - create
@@ -1889,6 +1891,7 @@ spec:
           - azuremanagedcontrolplanes
           - azuremanagedmachinepools
           - metal3clusters
+          - metal3clustertemplates
           - metal3dataclaims
           - metal3datas
           - metal3datatemplates
@@ -1966,7 +1969,6 @@ spec:
           - awsclusterstaticidentities
           - awsmachinetemplates
           - azuremachinetemplates
-          - azuremachinetemplates/status
           verbs:
           - get
           - list
@@ -2001,6 +2003,7 @@ spec:
           - awsmachines/status
           - awsmanagedclusters/status
           - awsmanagedmachinepools/status
+          - azuremachinetemplates/status
           verbs:
           - get
           - list
@@ -2636,6 +2639,7 @@ spec:
           verbs:
           - create
           - get
+          - patch
           - update
         - apiGroups:
           - notificationhubs.azure.com
@@ -2844,6 +2848,31 @@ spec:
           - rbac.open-cluster-management.io
           resources:
           - clusterpermissions
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - rbac.open-cluster-management.io
+          resources:
+          - clusterpermissions/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - rbac.open-cluster-management.io
+          resources:
+          - clusterpermissions/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - rbac.open-cluster-management.io
+          resources:
           - multiclusterroleassignments
           verbs:
           - get
