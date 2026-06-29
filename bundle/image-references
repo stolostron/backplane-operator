@@ -1,0 +1,161 @@
+---
+kind: ImageStream
+apiVersion: image.openshift.io/v1
+spec:
+  tags:
+  - name: addon-manager-rhel9
+    from:
+      kind: DockerImage
+      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/addon-manager-rhel9:latest
+  - name: azure-service-operator-rhel9
+    from:
+      kind: DockerImage
+      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/azure-service-operator-rhel9:latest
+  - name: backplane-must-gather-rhel9
+    from:
+      kind: DockerImage
+      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/backplane-must-gather-rhel9:latest
+  - name: capoa-bootstrap-rhel9
+    from:
+      kind: DockerImage
+      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/capoa-bootstrap-rhel9:latest
+  - name: capoa-control-plane-rhel9
+    from:
+      kind: DockerImage
+      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/capoa-control-plane-rhel9:latest
+  - name: cluster-api-provider-agent-rhel9
+    from:
+      kind: DockerImage
+      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/cluster-api-provider-agent-rhel9:latest
+  - name: cluster-api-provider-aws-rhel9
+    from:
+      kind: DockerImage
+      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/cluster-api-provider-aws-rhel9:latest
+  - name: cluster-api-provider-azure-rhel9
+    from:
+      kind: DockerImage
+      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/cluster-api-provider-azure-rhel9:latest
+  - name: cluster-api-provider-kubevirt-rhel9
+    from:
+      kind: DockerImage
+      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/cluster-api-provider-kubevirt-rhel9:latest
+  - name: cluster-api-webhook-config-rhel9
+    from:
+      kind: DockerImage
+      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/cluster-api-webhook-config-rhel9:latest
+  - name: cluster-curator-controller-rhel9
+    from:
+      kind: DockerImage
+      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/cluster-curator-controller-rhel9:latest
+  - name: cluster-image-set-controller-rhel9
+    from:
+      kind: DockerImage
+      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/cluster-image-set-controller-rhel9:latest
+  - name: cluster-proxy-rhel9
+    from:
+      kind: DockerImage
+      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/cluster-proxy-rhel9:latest
+  - name: clusterclaims-controller-rhel9
+    from:
+      kind: DockerImage
+      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/clusterclaims-controller-rhel9:latest
+  - name: clusterlifecycle-state-metrics-rhel9
+    from:
+      kind: DockerImage
+      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/clusterlifecycle-state-metrics-rhel9:latest
+  - name: console-mce-rhel9
+    from:
+      kind: DockerImage
+      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/console-mce-rhel9:latest
+  - name: discovery-operator-rhel9
+    from:
+      kind: DockerImage
+      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/discovery-operator-rhel9:latest
+  - name: hive-rhel9
+    from:
+      kind: DockerImage
+      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/hive-rhel9:latest
+  - name: hypershift-addon-operator-rhel9
+    from:
+      kind: DockerImage
+      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/hypershift-addon-operator-rhel9:latest
+  - name: hypershift-cli-rhel9
+    from:
+      kind: DockerImage
+      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/hypershift-cli-rhel9:latest
+  - name: hypershift-release-rhel9
+    from:
+      kind: DockerImage
+      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/hypershift-release-rhel9:latest
+  - name: image-based-install-operator-rhel9
+    from:
+      kind: DockerImage
+      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/image-based-install-operator-rhel9:latest
+  - name: kube-rbac-proxy-rhel9
+    from:
+      kind: DockerImage
+      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/kube-rbac-proxy-rhel9:latest
+  - name: managed-serviceaccount-rhel9
+    from:
+      kind: DockerImage
+      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/managed-serviceaccount-rhel9:latest
+  - name: managedcluster-import-controller-rhel9
+    from:
+      kind: DockerImage
+      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/managedcluster-import-controller-rhel9:latest
+  - name: multicloud-manager-rhel9
+    from:
+      kind: DockerImage
+      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/multicloud-manager-rhel9:latest
+  - name: placement-rhel9
+    from:
+      kind: DockerImage
+      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/placement-rhel9:latest
+  - name: provider-credential-controller-rhel9
+    from:
+      kind: DockerImage
+      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/provider-credential-controller-rhel9:latest
+  - name: registration-operator-rhel9
+    from:
+      kind: DockerImage
+      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/registration-operator-rhel9:latest
+  - name: registration-rhel9
+    from:
+      kind: DockerImage
+      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/registration-rhel9:latest
+  - name: work-rhel9
+    from:
+      kind: DockerImage
+      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/work-rhel9:latest
+  - name: assisted-image-service
+    from:
+      kind: DockerImage
+      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-image-service-rhel9:latest
+  - name: assisted-installer
+    from:
+      kind: DockerImage
+      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-installer-rhel9:latest
+  - name: assisted-installer-agent
+    from:
+      kind: DockerImage
+      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-installer-agent-rhel9:latest
+  - name: assisted-installer-controller
+    from:
+      kind: DockerImage
+      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-installer-controller-rhel9:latest
+  - name: assisted-service
+    from:
+      kind: DockerImage
+      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-service-9-rhel9:latest
+  - name: ose-cluster-api
+    from:
+      kind: DockerImage
+      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/ose-cluster-api-rhel9:latest
+  - name: ose-baremetal-cluster-api-controllers
+    from:
+      kind: DockerImage
+      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/ose-baremetal-cluster-api-controllers-rhel9:latest
+  - name: postgresql-13
+    from:
+      kind: DockerImage
+      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/postgresql-13:latest
