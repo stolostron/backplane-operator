@@ -14,7 +14,7 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    createdAt: "2026-06-26T16:39:22Z"
+    createdAt: "2026-06-29T16:31:16Z"
     operators.operatorframework.io/builder: operator-sdk-v1.42.2
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
   name: multicluster-engine.v0.0.1
@@ -2638,6 +2638,7 @@ spec:
           - networkpolicies
           verbs:
           - create
+          - delete
           - get
           - patch
           - update
