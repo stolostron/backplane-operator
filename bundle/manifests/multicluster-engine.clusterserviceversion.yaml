@@ -27,9 +27,9 @@ metadata:
     features.operators.openshift.io/token-auth-azure: 'false'
     features.operators.openshift.io/token-auth-gcp: 'false'
     olm.properties: '[{"type": "olm.maxOpenShiftVersion", "value": "4.22"}]'
-    olm.skipRange: '>=2.10.0 <2.11.0'
+    olm.skipRange: '>=2.10.0 <2.11.4'
     operators.openshift.io/must-gather-image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/backplane-must-gather-rhel9:latest
-  name: multicluster-engine.v2.11.0
+  name: multicluster-engine.v2.11.4
   namespace: placeholder
   labels:
     operatorframework.io/arch.amd64: supported
@@ -3603,7 +3603,8 @@ spec:
         serviceAccountName: multicluster-engine-operator
     strategy: deployment
   displayName: multicluster engine for Kubernetes
-  version: 2.11.0
+  replaces: multicluster-engine.v2.11.3
+  version: 2.11.4
   provider:
     name: Red Hat
   maintainers:
