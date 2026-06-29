@@ -2559,6 +2559,7 @@ rules:
   verbs:
   - create
   - get
+  - patch
   - update
 - apiGroups:
   - notificationhubs.azure.com
