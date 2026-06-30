@@ -56,7 +56,7 @@ if [[ -z "$output_dir" ]]; then
 fi
 
 hive_repo="https://github.com/openshift/hive.git"
-gen_tool="hack/bundle-gen.py"  # Path within Hive's repo.
+gen_tool="hack/bundle-gen.sh"  # Path within Hive's repo.
 
 start_cwd="$PWD"
 rm -rf "$output_dir"
@@ -101,16 +101,9 @@ fi
 mkdir bundle
 cd bundle
 
-# Copy the original version2.py from before Hive removed it (commit f1bc37a1b).
-# This is needed because bundle-gen.py still expects to import version2, but Hive
-# converted it to version2.sh. We maintain a local copy of the original Python version.
-echo "Copying version2.py compatibility layer..."
-cp "$start_cwd/hack/bundle-automation/version2.py" ../hive/hack/version2.py
-chmod u+x ../hive/hack/version2.py
-
 echo "Running Hive bundle-gen tool ($gen_tool)."
-python3 ../hive/$gen_tool --hive-repo "$hive_repo_spot" --commit "$commit_ish" --dummy-bundle "$branch" \
-   --image-repo dummy.io/disable-image-validation/hive --skip-release-config
+bash ../hive/$gen_tool --hive-repo "$hive_repo_spot" --commit "$commit_ish" --dummy-bundle \
+   --image-repo dummy.io/disable-image-validation/hive --skip-release-config --skip-image-validation
 
 # Note: We point the bundle-gen tool at the local repo we already checked out
 # since we know that it contains the Git SHA we are using for input.
