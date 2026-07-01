@@ -140,14 +140,47 @@ spec:
             path: /readinessProbe
             port: 3000
             scheme: HTTPS
+          {{- if hasKey .Values.global.templateOverrides "console_mce_deployment_container_readiness_probe_timeout_seconds" }}
+          timeoutSeconds: {{ .Values.global.templateOverrides.console_mce_deployment_container_readiness_probe_timeout_seconds }}
+          {{- else }}
           timeoutSeconds: 10
+          {{- end }}
+          {{- if hasKey .Values.global.templateOverrides "console_mce_deployment_container_readiness_probe_initial_delay_seconds" }}
+          initialDelaySeconds: {{ .Values.global.templateOverrides.console_mce_deployment_container_readiness_probe_initial_delay_seconds }}
+          {{- end }}
+          {{- if hasKey .Values.global.templateOverrides "console_mce_deployment_container_readiness_probe_period_seconds" }}
+          periodSeconds: {{ .Values.global.templateOverrides.console_mce_deployment_container_readiness_probe_period_seconds }}
+          {{- end }}
+          {{- if hasKey .Values.global.templateOverrides "console_mce_deployment_container_readiness_probe_success_threshold" }}
+          successThreshold: {{ .Values.global.templateOverrides.console_mce_deployment_container_readiness_probe_success_threshold }}
+          {{- end }}
+          {{- if hasKey .Values.global.templateOverrides "console_mce_deployment_container_readiness_probe_failure_threshold" }}
+          failureThreshold: {{ .Values.global.templateOverrides.console_mce_deployment_container_readiness_probe_failure_threshold }}
+          {{- end }}
         livenessProbe:
           httpGet:
             path: /livenessProbe
             port: 3000
             scheme: HTTPS
+          {{- if hasKey .Values.global.templateOverrides "console_mce_deployment_container_liveness_probe_timeout_seconds" }}
+          timeoutSeconds: {{ .Values.global.templateOverrides.console_mce_deployment_container_liveness_probe_timeout_seconds }}
+          {{- else }}
           timeoutSeconds: 10
+          {{- end }}
+          {{- if hasKey .Values.global.templateOverrides "console_mce_deployment_container_liveness_probe_initial_delay_seconds" }}
+          initialDelaySeconds: {{ .Values.global.templateOverrides.console_mce_deployment_container_liveness_probe_initial_delay_seconds }}
+          {{- else }}
           initialDelaySeconds: 10
+          {{- end }}
+          {{- if hasKey .Values.global.templateOverrides "console_mce_deployment_container_liveness_probe_period_seconds" }}
+          periodSeconds: {{ .Values.global.templateOverrides.console_mce_deployment_container_liveness_probe_period_seconds }}
+          {{- end }}
+          {{- if hasKey .Values.global.templateOverrides "console_mce_deployment_container_liveness_probe_success_threshold" }}
+          successThreshold: {{ .Values.global.templateOverrides.console_mce_deployment_container_liveness_probe_success_threshold }}
+          {{- end }}
+          {{- if hasKey .Values.global.templateOverrides "console_mce_deployment_container_liveness_probe_failure_threshold" }}
+          failureThreshold: {{ .Values.global.templateOverrides.console_mce_deployment_container_liveness_probe_failure_threshold }}
+          {{- end }}
       {{- if .Values.global.pullSecret }}
       imagePullSecrets:
       - name: {{ .Values.global.pullSecret }}

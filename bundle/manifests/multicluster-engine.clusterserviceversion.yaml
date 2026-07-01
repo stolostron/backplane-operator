@@ -2,23 +2,41 @@ apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
   annotations:
-    alm-examples: |-
-      [
-        {
-          "apiVersion": "multicluster.openshift.io/v1",
-          "kind": "MultiClusterEngine",
-          "metadata": {
-            "name": "multiclusterengine"
-          },
-          "spec": {}
-        }
-      ]
-    capabilities: Basic Install
-    createdAt: "2026-02-05T19:18:08Z"
-    operators.operatorframework.io/builder: operator-sdk-v1.41.1
-    operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
-  name: multicluster-engine.v0.0.1
+    alm-examples: '[{"apiVersion": "multicluster.openshift.io/v1", "kind": "MultiClusterEngine",
+      "metadata": {"name": "multiclusterengine"}, "spec": {}}]'
+    capabilities: Seamless Upgrades
+    categories: Integration & Delivery
+    certified: 'true'
+    support: Red Hat
+    createdAt: '2026-06-26T00:00:00Z'
+    description: Foundational components for central management of multiple OpenShift Container Platform and Kubernetes clusters
+    operatorframework.io/suggested-namespace: multicluster-engine
+    operatorframework.io/initialization-resource: '{"apiVersion":"multicluster.openshift.io/v1",
+      "kind":"MultiClusterEngine","metadata":{"name":"multiclusterengine"},"spec": {}}'
+    operators.openshift.io/valid-subscription: '["OpenShift Kubernetes Engine", "OpenShift Container Platform", "OpenShift Platform Plus"]'
+    operators.openshift.io/infrastructure-features: '["disconnected", "proxy-aware", "fips"]'
+    repository: https://github.com/open-cluster-management/backplane-operator
+    features.operators.openshift.io/cnf: 'false'
+    features.operators.openshift.io/cni: 'false'
+    features.operators.openshift.io/csi: 'false'
+    features.operators.openshift.io/disconnected: 'true'
+    features.operators.openshift.io/proxy-aware: 'true'
+    features.operators.openshift.io/fips-compliant: 'true'
+    features.operators.openshift.io/tls-profiles: 'false'
+    features.operators.openshift.io/token-auth-aws: 'false'
+    features.operators.openshift.io/token-auth-azure: 'false'
+    features.operators.openshift.io/token-auth-gcp: 'false'
+    olm.properties: '[{"type": "olm.maxOpenShiftVersion", "value": "4.22"}]'
+    olm.skipRange: '>=2.10.0 <2.11.4'
+    operators.openshift.io/must-gather-image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/backplane-must-gather-rhel9:latest
+  name: multicluster-engine.v2.11.4
   namespace: placeholder
+  labels:
+    operatorframework.io/arch.amd64: supported
+    operatorframework.io/arch.ppc64le: supported
+    operatorframework.io/arch.s390x: supported
+    operatorframework.io/arch.arm64: supported
+    operatorframework.io/os.linux: supported
 spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
@@ -3427,7 +3445,85 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: metadata.namespace
-                image: quay.io/stolostron/backplane-operator:latest
+                - name: OPERAND_IMAGE_ADDON_MANAGER
+                  value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/addon-manager-rhel9:latest
+                - name: OPERAND_IMAGE_AZURE_SERVICE_OPERATOR_RHEL9
+                  value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/azure-service-operator-rhel9:latest
+                - name: OPERAND_IMAGE_BACKPLANE_MUST_GATHER
+                  value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/backplane-must-gather-rhel9:latest
+                - name: OPERAND_IMAGE_CLUSTER_API_PROVIDER_AGENT
+                  value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/cluster-api-provider-agent-rhel9:latest
+                - name: OPERAND_IMAGE_CLUSTER_API_PROVIDER_AWS_RHEL9
+                  value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/cluster-api-provider-aws-rhel9:latest
+                - name: OPERAND_IMAGE_CLUSTER_API_PROVIDER_AZURE_RHEL9
+                  value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/cluster-api-provider-azure-rhel9:latest
+                - name: OPERAND_IMAGE_CLUSTER_API_PROVIDER_KUBEVIRT
+                  value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/cluster-api-provider-kubevirt-rhel9:latest
+                - name: OPERAND_IMAGE_CLUSTER_API_PROVIDER_OPENSHIFT_ASSISTED_BOOTSTRAP
+                  value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/capoa-bootstrap-rhel9:latest
+                - name: OPERAND_IMAGE_CLUSTER_API_PROVIDER_OPENSHIFT_ASSISTED_CONTROL_PLANE
+                  value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/capoa-control-plane-rhel9:latest
+                - name: OPERAND_IMAGE_MCE_CAPI_WEBHOOK_CONFIG_RHEL9
+                  value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/cluster-api-webhook-config-rhel9:latest
+                - name: OPERAND_IMAGE_CLUSTERCLAIMS_CONTROLLER
+                  value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/clusterclaims-controller-rhel9:latest
+                - name: OPERAND_IMAGE_CLUSTER_CURATOR_CONTROLLER
+                  value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/cluster-curator-controller-rhel9:latest
+                - name: OPERAND_IMAGE_CLUSTER_IMAGE_SET_CONTROLLER
+                  value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/cluster-image-set-controller-rhel9:latest
+                - name: OPERAND_IMAGE_CLUSTERLIFECYCLE_STATE_METRICS
+                  value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/clusterlifecycle-state-metrics-rhel9:latest
+                - name: OPERAND_IMAGE_CLUSTER_PROXY
+                  value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/cluster-proxy-rhel9:latest
+                - name: OPERAND_IMAGE_CONSOLE_MCE
+                  value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/console-mce-rhel9:latest
+                - name: OPERAND_IMAGE_DISCOVERY_OPERATOR
+                  value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/discovery-operator-rhel9:latest
+                - name: OPERAND_IMAGE_OPENSHIFT_HIVE
+                  value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/hive-rhel9:latest
+                - name: OPERAND_IMAGE_HYPERSHIFT_ADDON_OPERATOR
+                  value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/hypershift-addon-operator-rhel9:latest
+                - name: OPERAND_IMAGE_HYPERSHIFT_CLI
+                  value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/hypershift-cli-rhel9:latest
+                - name: OPERAND_IMAGE_HYPERSHIFT_OPERATOR
+                  value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/hypershift-release-rhel9:latest
+                - name: OPERAND_IMAGE_IMAGE_BASED_INSTALL_OPERATOR
+                  value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/image-based-install-operator-rhel9:latest
+                - name: OPERAND_IMAGE_KUBE_RBAC_PROXY_MCE
+                  value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/kube-rbac-proxy-rhel9:latest
+                - name: OPERAND_IMAGE_MANAGEDCLUSTER_IMPORT_CONTROLLER
+                  value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/managedcluster-import-controller-rhel9:latest
+                - name: OPERAND_IMAGE_MANAGED_SERVICEACCOUNT
+                  value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/managed-serviceaccount-rhel9:latest
+                - name: OPERAND_IMAGE_MULTICLOUD_MANAGER
+                  value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/multicloud-manager-rhel9:latest
+                - name: OPERAND_IMAGE_PROVIDER_CREDENTIAL_CONTROLLER
+                  value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/provider-credential-controller-rhel9:latest
+                - name: OPERAND_IMAGE_PLACEMENT
+                  value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/placement-rhel9:latest
+                - name: OPERAND_IMAGE_REGISTRATION
+                  value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/registration-rhel9:latest
+                - name: OPERAND_IMAGE_REGISTRATION_OPERATOR
+                  value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/registration-operator-rhel9:latest
+                - name: OPERAND_IMAGE_WORK
+                  value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/work-rhel9:latest
+                - name: OPERAND_IMAGE_ASSISTED_IMAGE_SERVICE
+                  value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-image-service-rhel9:latest
+                - name: OPERAND_IMAGE_ASSISTED_INSTALLER
+                  value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-installer-rhel9:latest
+                - name: OPERAND_IMAGE_ASSISTED_INSTALLER_AGENT
+                  value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-installer-agent-rhel9:latest
+                - name: OPERAND_IMAGE_ASSISTED_INSTALLER_CONTROLLER
+                  value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-installer-controller-rhel9:latest
+                - name: OPERAND_IMAGE_ASSISTED_SERVICE_9
+                  value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-service-9-rhel9:latest
+                - name: OPERAND_IMAGE_OSE_CLUSTER_API_RHEL9
+                  value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/ose-cluster-api-rhel9:latest
+                - name: OPERAND_IMAGE_OSE_BAREMETAL_CLUSTER_API_CONTROLLERS_RHEL9
+                  value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/ose-baremetal-cluster-api-controllers-rhel9:latest
+                - name: OPERAND_IMAGE_POSTGRESQL_13
+                  value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/postgresql-13:latest
+                image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/backplane-operator-rhel9:latest
                 imagePullPolicy: IfNotPresent
                 livenessProbe:
                   httpGet:
@@ -3506,25 +3602,124 @@ spec:
           - patch
         serviceAccountName: multicluster-engine-operator
     strategy: deployment
+  displayName: multicluster engine for Kubernetes
+  replaces: multicluster-engine.v2.11.3
+  version: 2.11.4
+  provider:
+    name: Red Hat
+  maintainers:
+  - email: acm-contact@redhat.com
+    name: Red Hat
+  maturity: stable
+  description: "Multicluster engine for Kubernetes provides the foundational components\
+    \ that are necessary for the centralized management of multiple Kubernetes-based clusters across\
+    \ data centers, public clouds, and private clouds. You can use the engine to create Red Hat OpenShift\
+    \ Container Platform clusters on selected providers, or import existing Kubernetes-based clusters.\
+    \ After the clusters are managed, you can use the APIs that are provided by the engine to distribute\
+    \ configuration based on placement policy.\n\n## Installing\n\nInstall the multicluster engine for\
+    \ Kubernetes operator by following instructions that display when you click the `Install` button.\
+    \ After installing the operator, create an instance of the `MultiClusterEngine` resource to install\
+    \ the engine components that provide the management APIs.\n\nYou can find additional installation\
+    \ guidance in the [documentation](https://access.redhat.com/documentation/en-us/red_hat_advanced_cluster_management_for_kubernetes/2.11/html/clusters/cluster_mce_overview#mce-install-intro)."
+  icon:
+  - base64data: PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA3MjEuMTUgNzIxLjE1Ij48ZGVmcz48c3R5bGU+LmNscy0xe2ZpbGw6I2RiMzkyNzt9LmNscy0ye2ZpbGw6I2NiMzYyODt9LmNscy0ze2ZpbGw6I2ZmZjt9LmNscy00e2ZpbGw6I2UzZTNlMjt9PC9zdHlsZT48L2RlZnM+PHRpdGxlPlByb2R1Y3RfSWNvbi1SZWRfSGF0QWR2YW5jZWRfQ2x1c3Rlcl9NYW5hZ2VtZW50X2Zvcl9LdWJlcm5ldGVzLVJHQjwvdGl0bGU+PGcgaWQ9IkxheWVyXzEiIGRhdGEtbmFtZT0iTGF5ZXIgMSI+PGNpcmNsZSBjbGFzcz0iY2xzLTEiIGN4PSIzNjAuNTciIGN5PSIzNjAuNTciIHI9IjM1OC41OCIvPjxwYXRoIGNsYXNzPSJjbHMtMiIgZD0iTTYxNC4xMywxMDcsMTA3LDYxNC4xM2MxNDAsMTQwLDM2Ny4wNywxNDAsNTA3LjExLDBTNzU0LjE2LDI0Ny4wNiw2MTQuMTMsMTA3WiIvPjxyZWN0IGNsYXNzPSJjbHMtMyIgeD0iMzMwLjg3IiB5PSIyODAuNiIgd2lkdGg9IjIwMy4xNyIgaGVpZ2h0PSIyMCIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoLTc4LjkgMzkwLjUyKSByb3RhdGUoLTQ0Ljk2KSIvPjxyZWN0IGNsYXNzPSJjbHMtMyIgeD0iMzA2LjYzIiB5PSIxNjcuODMiIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMDQuNDciIHRyYW5zZm9ybT0idHJhbnNsYXRlKC04NS4zMyAxNjIuMjcpIHJvdGF0ZSgtMjUuNDUpIi8+PHJlY3QgY2xhc3M9ImNscy0zIiB4PSIxNjIuOTgiIHk9IjM2NC4xIiB3aWR0aD0iMTk4LjI4IiBoZWlnaHQ9IjIwIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtNDIuMzkgMzMuNjEpIHJvdGF0ZSgtNi43OSkiLz48cmVjdCBjbGFzcz0iY2xzLTMiIHg9IjI0NS4xIiB5PSI0NTEuNTQiIHdpZHRoPSIyMDAuNjIiIGhlaWdodD0iMjAiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC0xNjMuMDEgNzMzLjI2KSByb3RhdGUoLTgxLjMxKSIvPjxyZWN0IGNsYXNzPSJjbHMtMyIgeD0iNDQzLjg1IiB5PSIzMDMuNzYiIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMDcuMDQiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC0xMDkuOTcgNjM5LjU4KSByb3RhdGUoLTY0LjMpIi8+PGNpcmNsZSBjbGFzcz0iY2xzLTMiIGN4PSI1MDQuMzQiIGN5PSIyMTguODMiIHI9IjQ0LjA4Ii8+PGNpcmNsZSBjbGFzcz0iY2xzLTMiIGN4PSIyNzIuNyIgY3k9IjE3Ny43NSIgcj0iNDQuMDgiLz48Y2lyY2xlIGNsYXNzPSJjbHMtMyIgY3g9IjU0Ny4xMiIgY3k9IjQ1Mi4xNyIgcj0iNDQuMDgiLz48Y2lyY2xlIGNsYXNzPSJjbHMtMyIgY3g9IjE2My42OCIgY3k9IjM4NS44MiIgcj0iNDQuMDgiLz48Y2lyY2xlIGNsYXNzPSJjbHMtMyIgY3g9IjMzMC4yNiIgY3k9IjU2MC43IiByPSI0NC4wOCIvPjxwYXRoIGNsYXNzPSJjbHMtNCIgZD0iTTQ0NC45NCwyNzkuOTIsMjc2LjE5LDQ0OC42N0ExMTkuMzIsMTE5LjMyLDAsMCwwLDQ0NC45NCwyNzkuOTJaIi8+PHBhdGggY2xhc3M9ImNscy0zIiBkPSJNMzc1LjY4LDI0NS43NmExMTkuMzMsMTE5LjMzLDAsMCwwLTk5LjQ5LDIwMi45MUw0NDQuOTQsMjc5LjkyQTExOC44OSwxMTguODksMCwwLDAsMzc1LjY4LDI0NS43NloiLz48L2c+PC9zdmc+
+    mediatype: image/svg+xml
+  keywords:
+  - multiclusterengine
+  - mce
+  labels:
+    app: multicluster-engine
+  links:
+  - name: Documentation
+    url: https://access.redhat.com/documentation/en-us/red_hat_advanced_cluster_management_for_kubernetes/2.11/html/clusters/index
+  selector:
+    matchLabels:
+      app: multicluster-engine
   installModes:
   - supported: true
     type: OwnNamespace
-  - supported: true
+  - supported: false
     type: SingleNamespace
   - supported: false
     type: MultiNamespace
   - supported: true
     type: AllNamespaces
-  keywords:
-  - multiclusterengine
-  links:
-  - name: Multicluster Engine
-    url: https://multicluster-engine.domain
-  maintainers:
-  - email: acm-contact@redhat.com
-    name: Red Hat
-  maturity: alpha
-  provider:
-    name: Red Hat
-    url: https://multicluster-engine.domain
-  version: 0.0.1
+  relatedImages:
+  - name: addon_manager
+    image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/addon-manager-rhel9:latest
+  - name: azure_service_operator_rhel9
+    image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/azure-service-operator-rhel9:latest
+  - name: backplane_must_gather
+    image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/backplane-must-gather-rhel9:latest
+  - name: cluster_api_provider_agent
+    image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/cluster-api-provider-agent-rhel9:latest
+  - name: cluster_api_provider_aws_rhel9
+    image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/cluster-api-provider-aws-rhel9:latest
+  - name: cluster_api_provider_azure_rhel9
+    image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/cluster-api-provider-azure-rhel9:latest
+  - name: cluster_api_provider_kubevirt
+    image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/cluster-api-provider-kubevirt-rhel9:latest
+  - name: cluster_api_provider_openshift_assisted_bootstrap
+    image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/capoa-bootstrap-rhel9:latest
+  - name: cluster_api_provider_openshift_assisted_control_plane
+    image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/capoa-control-plane-rhel9:latest
+  - name: mce_capi_webhook_config_rhel9
+    image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/cluster-api-webhook-config-rhel9:latest
+  - name: clusterclaims_controller
+    image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/clusterclaims-controller-rhel9:latest
+  - name: cluster_curator_controller
+    image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/cluster-curator-controller-rhel9:latest
+  - name: cluster_image_set_controller
+    image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/cluster-image-set-controller-rhel9:latest
+  - name: clusterlifecycle_state_metrics
+    image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/clusterlifecycle-state-metrics-rhel9:latest
+  - name: cluster_proxy
+    image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/cluster-proxy-rhel9:latest
+  - name: console_mce
+    image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/console-mce-rhel9:latest
+  - name: discovery_operator
+    image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/discovery-operator-rhel9:latest
+  - name: openshift_hive
+    image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/hive-rhel9:latest
+  - name: hypershift_addon_operator
+    image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/hypershift-addon-operator-rhel9:latest
+  - name: hypershift_cli
+    image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/hypershift-cli-rhel9:latest
+  - name: hypershift_operator
+    image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/hypershift-release-rhel9:latest
+  - name: image_based_install_operator
+    image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/image-based-install-operator-rhel9:latest
+  - name: kube_rbac_proxy_mce
+    image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/kube-rbac-proxy-rhel9:latest
+  - name: managedcluster_import_controller
+    image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/managedcluster-import-controller-rhel9:latest
+  - name: managed_serviceaccount
+    image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/managed-serviceaccount-rhel9:latest
+  - name: multicloud_manager
+    image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/multicloud-manager-rhel9:latest
+  - name: provider_credential_controller
+    image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/provider-credential-controller-rhel9:latest
+  - name: placement
+    image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/placement-rhel9:latest
+  - name: registration
+    image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/registration-rhel9:latest
+  - name: registration_operator
+    image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/registration-operator-rhel9:latest
+  - name: work
+    image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/work-rhel9:latest
+  - name: assisted_image_service
+    image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-image-service-rhel9:latest
+  - name: assisted_installer
+    image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-installer-rhel9:latest
+  - name: assisted_installer_agent
+    image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-installer-agent-rhel9:latest
+  - name: assisted_installer_controller
+    image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-installer-controller-rhel9:latest
+  - name: assisted_service_9
+    image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-service-9-rhel9:latest
+  - name: ose_cluster_api_rhel9
+    image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/ose-cluster-api-rhel9:latest
+  - name: ose_baremetal_cluster_api_controllers_rhel9
+    image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/ose-baremetal-cluster-api-controllers-rhel9:latest
+  - name: postgresql_13
+    image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/postgresql-13:latest
