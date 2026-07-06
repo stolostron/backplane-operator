@@ -9,6 +9,8 @@ global:
   # Available template overrides:
   # maestro_database_storage: <storage-value>
   templateOverrides: {}
+  networkPolicies:
+    enabled: true
   pullSecret: null
   pullPolicy: IfNotPresent
   deployOnOCP: true

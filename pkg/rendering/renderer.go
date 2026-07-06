@@ -54,16 +54,21 @@ type Values struct {
 }
 
 type Global struct {
-	ImageOverrides      map[string]string `json:"imageOverrides" structs:"imageOverrides"`
-	Upgrading           bool              `json:"upgrading" structs:"upgrading"`
-	EusUpgrading        bool              `json:"eusUpgrading" structs:"eusUpgrading"`
-	TemplateOverrides   map[string]string `json:"templateOverrides" structs:"templateOverrides"`
-	PullPolicy          string            `json:"pullPolicy" structs:"pullPolicy"`
-	PullSecret          string            `json:"pullSecret" structs:"pullSecret"`
-	Namespace           string            `json:"namespace" structs:"namespace"`
-	ConfigSecret        string            `json:"configSecret" structs:"configSecret"`
-	DeployOnOCP         bool              `json:"deployOnOCP" structs:"deployOnOCP"`
-	ServingCertCABundle string            `json:"servingCertCABundle" structs:"servingCertCABundle"`
+	ImageOverrides      map[string]string    `json:"imageOverrides" structs:"imageOverrides"`
+	Upgrading           bool                 `json:"upgrading" structs:"upgrading"`
+	EusUpgrading        bool                 `json:"eusUpgrading" structs:"eusUpgrading"`
+	TemplateOverrides   map[string]string    `json:"templateOverrides" structs:"templateOverrides"`
+	PullPolicy          string               `json:"pullPolicy" structs:"pullPolicy"`
+	PullSecret          string               `json:"pullSecret" structs:"pullSecret"`
+	Namespace           string               `json:"namespace" structs:"namespace"`
+	ConfigSecret        string               `json:"configSecret" structs:"configSecret"`
+	DeployOnOCP         bool                 `json:"deployOnOCP" structs:"deployOnOCP"`
+	ServingCertCABundle string               `json:"servingCertCABundle" structs:"servingCertCABundle"`
+	NetworkPolicies     NetworkPoliciesValue `json:"networkPolicies" structs:"networkPolicies"`
+}
+
+type NetworkPoliciesValue struct {
+	Enabled bool `json:"enabled" structs:"enabled"`
 }
 
 type HubConfig struct {
@@ -458,6 +463,16 @@ func injectValuesOverrides(values *Values, backplaneConfig *v1.MultiClusterEngin
 			values.Global.ConfigSecret = secretNN.Name
 		}
 	}
+
+	// Inject NetworkPolicies configuration
+	networkPoliciesEnabled := true
+	if backplaneConfig.Spec.NetworkPolicies != nil {
+		networkPoliciesEnabled = backplaneConfig.Spec.NetworkPolicies.Enabled
+	}
+	values.Global.NetworkPolicies = NetworkPoliciesValue{
+		Enabled: networkPoliciesEnabled,
+	}
+
 	values.HubConfig.ReplicaCount = utils.DefaultReplicaCount(backplaneConfig)
 
 	values.HubConfig.MCHNamespace = utils.GetMCHNamespace(backplaneConfig)

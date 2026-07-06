@@ -522,6 +522,19 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return result, err
 	}
 
+	/*
+		Ensure NetworkPolicies for MCE components. This implements a create-once pattern where
+		MCE creates initial NetworkPolicy resources. Operand teams then adopt and manage these
+		policies. MCE does not continuously reconcile after creation.
+	*/
+	result, err = r.ensureNetworkPolicies(ctx, backplaneConfig)
+	if result != (ctrl.Result{}) || err != nil {
+		if err != nil {
+			r.Log.Error(err, "Failed to ensure NetworkPolicies")
+		}
+		return result, err
+	}
+
 	result, err = r.createTrustBundleConfigmap(ctx, backplaneConfig)
 	if err != nil {
 		return result, err

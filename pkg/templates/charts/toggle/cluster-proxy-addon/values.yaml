@@ -5,6 +5,8 @@ global:
   imageOverrides:
     cluster_proxy: ""
   templateOverrides: {}
+  networkPolicies:
+    enabled: true
 hubconfig:
   nodeSelector: null
   replicaCount: 1

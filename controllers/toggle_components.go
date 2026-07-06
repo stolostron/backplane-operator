@@ -72,6 +72,11 @@ func (r *MultiClusterEngineReconciler) ensureConsoleMCE(ctx context.Context, mce
 
 	// Applies all templates
 	for _, template := range templates {
+		// Skip NetworkPolicy resources - they are managed by ensureNetworkPolicies with create-once pattern
+		if template.GetKind() == "NetworkPolicy" {
+			continue
+		}
+
 		applyReleaseVersionAnnotation(template)
 		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
@@ -136,6 +141,11 @@ func (r *MultiClusterEngineReconciler) ensureNoConsoleMCE(ctx context.Context, m
 
 	// Deletes all templates
 	for _, template := range templates {
+		// Skip NetworkPolicy resources - they are managed by ensureNetworkPolicies with create-once pattern
+		if template.GetKind() == "NetworkPolicy" {
+			continue
+		}
+
 		result, err := r.deleteTemplate(ctx, mce, template)
 		if err != nil {
 			log.Error(err, fmt.Sprintf("Failed to delete Console MCE template: %s || %s || %s", template.GetName(),
@@ -228,6 +238,11 @@ func (r *MultiClusterEngineReconciler) ensureNoManagedServiceAccount(ctx context
 
 	// Deletes all templates
 	for _, template := range templates {
+		// Skip NetworkPolicy resources - they are managed by ensureNetworkPolicies with create-once pattern
+		if template.GetKind() == "NetworkPolicy" {
+			continue
+		}
+
 		if template.GetKind() == foundation.ClusterManagementAddonKind && !foundation.CanInstallAddons(ctx, r.Client) {
 			// Can't delete ClusterManagementAddon if Kind doesn't exists
 			continue
@@ -338,6 +353,11 @@ func (r *MultiClusterEngineReconciler) ensureDiscovery(ctx context.Context, mce 
 
 	// Applies all templates
 	for _, template := range templates {
+		// Skip NetworkPolicy resources - they are managed by ensureNetworkPolicies with create-once pattern
+		if template.GetKind() == "NetworkPolicy" {
+			continue
+		}
+
 		applyReleaseVersionAnnotation(template)
 		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
@@ -374,6 +394,11 @@ func (r *MultiClusterEngineReconciler) ensureNoDiscovery(ctx context.Context,
 
 	// Deletes all templates
 	for _, template := range templates {
+		// Skip NetworkPolicy resources - they are managed by ensureNetworkPolicies with create-once pattern
+		if template.GetKind() == "NetworkPolicy" {
+			continue
+		}
+
 		result, err := r.deleteTemplate(ctx, mce, template)
 		if err != nil {
 			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
@@ -413,6 +438,11 @@ func (r *MultiClusterEngineReconciler) ensureClusterAPI(ctx context.Context, mce
 
 	// Applies all templates
 	for _, template := range templates {
+		// Skip NetworkPolicy resources - they are managed by ensureNetworkPolicies with create-once pattern
+		if template.GetKind() == "NetworkPolicy" {
+			continue
+		}
+
 		applyReleaseVersionAnnotation(template)
 		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
@@ -449,6 +479,11 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterAPI(ctx context.Context,
 
 	// Deletes all templates
 	for _, template := range templates {
+		// Skip NetworkPolicy resources - they are managed by ensureNetworkPolicies with create-once pattern
+		if template.GetKind() == "NetworkPolicy" {
+			continue
+		}
+
 		result, err := r.deleteTemplate(ctx, mce, template)
 		if err != nil {
 			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
@@ -489,6 +524,11 @@ func (r *MultiClusterEngineReconciler) ensureClusterAPIProviderAWS(ctx context.C
 
 	// Applies all templates
 	for _, template := range templates {
+		// Skip NetworkPolicy resources - they are managed by ensureNetworkPolicies with create-once pattern
+		if template.GetKind() == "NetworkPolicy" {
+			continue
+		}
+
 		applyReleaseVersionAnnotation(template)
 		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
@@ -525,6 +565,11 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterAPIProviderAWS(ctx context
 
 	// Deletes all templates
 	for _, template := range templates {
+		// Skip NetworkPolicy resources - they are managed by ensureNetworkPolicies with create-once pattern
+		if template.GetKind() == "NetworkPolicy" {
+			continue
+		}
+
 		result, err := r.deleteTemplate(ctx, mce, template)
 		if err != nil {
 			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
@@ -569,6 +614,11 @@ func (r *MultiClusterEngineReconciler) ensureClusterAPIProviderAzure(ctx context
 
 	// Applies all templates
 	for _, template := range templates {
+		// Skip NetworkPolicy resources - they are managed by ensureNetworkPolicies with create-once pattern
+		if template.GetKind() == "NetworkPolicy" {
+			continue
+		}
+
 		applyReleaseVersionAnnotation(template)
 		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
@@ -613,6 +663,11 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterAPIProviderAzure(ctx conte
 
 	// Deletes all templates
 	for _, template := range templates {
+		// Skip NetworkPolicy resources - they are managed by ensureNetworkPolicies with create-once pattern
+		if template.GetKind() == "NetworkPolicy" {
+			continue
+		}
+
 		result, err := r.deleteTemplate(ctx, mce, template)
 		if err != nil {
 			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
@@ -653,6 +708,11 @@ func (r *MultiClusterEngineReconciler) ensureClusterAPIProviderMetal(ctx context
 
 	// Applies all templates
 	for _, template := range templates {
+		// Skip NetworkPolicy resources - they are managed by ensureNetworkPolicies with create-once pattern
+		if template.GetKind() == "NetworkPolicy" {
+			continue
+		}
+
 		applyReleaseVersionAnnotation(template)
 		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
@@ -689,6 +749,11 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterAPIProviderMetal(ctx conte
 
 	// Deletes all templates
 	for _, template := range templates {
+		// Skip NetworkPolicy resources - they are managed by ensureNetworkPolicies with create-once pattern
+		if template.GetKind() == "NetworkPolicy" {
+			continue
+		}
+
 		result, err := r.deleteTemplate(ctx, mce, template)
 		if err != nil {
 			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
@@ -731,6 +796,11 @@ func (r *MultiClusterEngineReconciler) ensureClusterAPIProviderOA(ctx context.Co
 
 	// Applies all templates
 	for _, template := range templates {
+		// Skip NetworkPolicy resources - they are managed by ensureNetworkPolicies with create-once pattern
+		if template.GetKind() == "NetworkPolicy" {
+			continue
+		}
+
 		applyReleaseVersionAnnotation(template)
 		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
@@ -769,6 +839,11 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterAPIProviderOA(ctx context.
 
 	// Deletes all templates
 	for _, template := range templates {
+		// Skip NetworkPolicy resources - they are managed by ensureNetworkPolicies with create-once pattern
+		if template.GetKind() == "NetworkPolicy" {
+			continue
+		}
+
 		result, err := r.deleteTemplate(ctx, mce, template)
 		if err != nil {
 			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
@@ -808,6 +883,11 @@ func (r *MultiClusterEngineReconciler) ensureHive(ctx context.Context, mce *back
 
 	// Applies all templates
 	for _, template := range templates {
+		// Skip NetworkPolicy resources - they are managed by ensureNetworkPolicies with create-once pattern
+		if template.GetKind() == "NetworkPolicy" {
+			continue
+		}
+
 		applyReleaseVersionAnnotation(template)
 		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
@@ -859,6 +939,11 @@ func (r *MultiClusterEngineReconciler) ensureNoHive(ctx context.Context, mce *ba
 
 	// Deletes all templates
 	for _, template := range templates {
+		// Skip NetworkPolicy resources - they are managed by ensureNetworkPolicies with create-once pattern
+		if template.GetKind() == "NetworkPolicy" {
+			continue
+		}
+
 		result, err := r.deleteTemplate(ctx, mce, template)
 		if err != nil {
 			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
@@ -904,6 +989,11 @@ func (r *MultiClusterEngineReconciler) ensureAssistedService(ctx context.Context
 
 	// Applies all templates
 	for _, template := range templates {
+		// Skip NetworkPolicy resources - they are managed by ensureNetworkPolicies with create-once pattern
+		if template.GetKind() == "NetworkPolicy" {
+			continue
+		}
+
 		applyReleaseVersionAnnotation(template)
 		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
@@ -946,6 +1036,11 @@ func (r *MultiClusterEngineReconciler) ensureNoAssistedService(ctx context.Conte
 
 	// Deletes all templates
 	for _, template := range templates {
+		// Skip NetworkPolicy resources - they are managed by ensureNetworkPolicies with create-once pattern
+		if template.GetKind() == "NetworkPolicy" {
+			continue
+		}
+
 		result, err := r.deleteTemplate(ctx, mce, template)
 		if err != nil {
 			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
@@ -994,6 +1089,11 @@ func (r *MultiClusterEngineReconciler) ensureServerFoundation(ctx context.Contex
 
 	// Applies all templates
 	for _, template := range templates {
+		// Skip NetworkPolicy resources - they are managed by ensureNetworkPolicies with create-once pattern
+		if template.GetKind() == "NetworkPolicy" {
+			continue
+		}
+
 		applyReleaseVersionAnnotation(template)
 		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
@@ -1040,6 +1140,11 @@ func (r *MultiClusterEngineReconciler) ensureNoServerFoundation(ctx context.Cont
 
 	// Deletes all templates
 	for _, template := range templates {
+		// Skip NetworkPolicy resources - they are managed by ensureNetworkPolicies with create-once pattern
+		if template.GetKind() == "NetworkPolicy" {
+			continue
+		}
+
 		result, err := r.deleteTemplate(ctx, mce, template)
 		if err != nil {
 			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
@@ -1080,6 +1185,11 @@ func (r *MultiClusterEngineReconciler) ensureImageBasedInstallOperator(ctx conte
 
 	// Applies all templates
 	for _, template := range templates {
+		// Skip NetworkPolicy resources - they are managed by ensureNetworkPolicies with create-once pattern
+		if template.GetKind() == "NetworkPolicy" {
+			continue
+		}
+
 		applyReleaseVersionAnnotation(template)
 		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
@@ -1118,6 +1228,11 @@ func (r *MultiClusterEngineReconciler) ensureNoImageBasedInstallOperator(ctx con
 
 	// Deletes all templates
 	for _, template := range templates {
+		// Skip NetworkPolicy resources - they are managed by ensureNetworkPolicies with create-once pattern
+		if template.GetKind() == "NetworkPolicy" {
+			continue
+		}
+
 		result, err := r.deleteTemplate(ctx, mce, template)
 		if err != nil {
 			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
@@ -1172,6 +1287,11 @@ func (r *MultiClusterEngineReconciler) ensureClusterLifecycle(ctx context.Contex
 
 	// Applies all templates
 	for _, template := range templates {
+		// Skip NetworkPolicy resources - they are managed by ensureNetworkPolicies with create-once pattern
+		if template.GetKind() == "NetworkPolicy" {
+			continue
+		}
+
 		applyReleaseVersionAnnotation(template)
 		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
@@ -1219,6 +1339,11 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterLifecycle(ctx context.Cont
 
 	// Deletes all templates
 	for _, template := range templates {
+		// Skip NetworkPolicy resources - they are managed by ensureNetworkPolicies with create-once pattern
+		if template.GetKind() == "NetworkPolicy" {
+			continue
+		}
+
 		result, err := r.deleteTemplate(ctx, mce, template)
 		if err != nil {
 			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
@@ -1261,6 +1386,11 @@ func (r *MultiClusterEngineReconciler) ensureClusterManager(ctx context.Context,
 
 	// Applies all templates
 	for _, template := range templates {
+		// Skip NetworkPolicy resources - they are managed by ensureNetworkPolicies with create-once pattern
+		if template.GetKind() == "NetworkPolicy" {
+			continue
+		}
+
 		applyReleaseVersionAnnotation(template)
 		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
@@ -1348,6 +1478,11 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterManager(ctx context.Contex
 
 	// Deletes all templates
 	for _, template := range templates {
+		// Skip NetworkPolicy resources - they are managed by ensureNetworkPolicies with create-once pattern
+		if template.GetKind() == "NetworkPolicy" {
+			continue
+		}
+
 		result, err := r.deleteTemplate(ctx, mce, template)
 		if err != nil {
 			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
@@ -1387,6 +1522,11 @@ func (r *MultiClusterEngineReconciler) ensureClusterPermission(ctx context.Conte
 
 	// Applies all templates
 	for _, template := range templates {
+		// Skip NetworkPolicy resources - they are managed by ensureNetworkPolicies with create-once pattern
+		if template.GetKind() == "NetworkPolicy" {
+			continue
+		}
+
 		applyReleaseVersionAnnotation(template)
 		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
@@ -1424,6 +1564,11 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterPermission(ctx context.Con
 
 	// Deletes all templates
 	for _, template := range templates {
+		// Skip NetworkPolicy resources - they are managed by ensureNetworkPolicies with create-once pattern
+		if template.GetKind() == "NetworkPolicy" {
+			continue
+		}
+
 		result, err := r.deleteTemplate(ctx, mce, template)
 		if err != nil {
 			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
@@ -1544,6 +1689,11 @@ func (r *MultiClusterEngineReconciler) ensureNoHyperShift(ctx context.Context,
 
 	// Deletes all templates
 	for _, template := range templates {
+		// Skip NetworkPolicy resources - they are managed by ensureNetworkPolicies with create-once pattern
+		if template.GetKind() == "NetworkPolicy" {
+			continue
+		}
+
 		result, err := r.deleteTemplate(ctx, mce, template)
 		if err != nil {
 			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
@@ -1773,6 +1923,11 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterProxyAddon(ctx context.Con
 
 	// Deletes all templates
 	for _, template := range templates {
+		// Skip NetworkPolicy resources - they are managed by ensureNetworkPolicies with create-once pattern
+		if template.GetKind() == "NetworkPolicy" {
+			continue
+		}
+
 		result, err := r.deleteTemplate(ctx, mce, template)
 		if err != nil {
 			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
