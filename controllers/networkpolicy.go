@@ -42,9 +42,9 @@ func (r *MultiClusterEngineReconciler) ensureNetworkPolicies(ctx context.Context
 	// If globally disabled, delete all MCE-created NetworkPolicies
 	if !networkPoliciesEnabled {
 		npList := &networkingv1.NetworkPolicyList{}
-		if err := r.Client.List(ctx, npList, client.InNamespace(mce.Namespace), client.MatchingLabels{
+		if err := r.Client.List(ctx, npList, client.InNamespace(mce.Spec.TargetNamespace), client.MatchingLabels{
 			"installer.name":      mce.Name,
-			"installer.namespace": mce.Namespace,
+			"installer.namespace": mce.Spec.TargetNamespace,
 		}); err != nil {
 			return ctrl.Result{}, fmt.Errorf("failed to list NetworkPolicies: %w", err)
 		}
@@ -63,6 +63,12 @@ func (r *MultiClusterEngineReconciler) ensureNetworkPolicies(ctx context.Context
 		componentEnabled := mce.Enabled(component)
 		if !componentEnabled {
 			// Component disabled - nothing to create or delete (rely on global deletion above if needed)
+			continue
+		}
+
+		// Skip externally managed components
+		if r.isComponentExternallyManaged(mce, component) {
+			log.V(2).Info("Skipping externally managed component", "component", component)
 			continue
 		}
 
@@ -99,6 +105,7 @@ func (r *MultiClusterEngineReconciler) ensureNetworkPolicies(ctx context.Context
 
 			if errors.IsNotFound(err) {
 				// Create NetworkPolicy - create-once pattern
+				applyReleaseVersionAnnotation(npTemplate)
 				if err := r.Client.Create(ctx, npTemplate); err != nil {
 					return ctrl.Result{}, fmt.Errorf("failed to create NetworkPolicy %s/%s: %w", npTemplate.GetNamespace(), npTemplate.GetName(), err)
 				}
