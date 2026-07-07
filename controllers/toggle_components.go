@@ -1610,6 +1610,11 @@ func (r *MultiClusterEngineReconciler) ensureHyperShift(ctx context.Context, mce
 	// Applies all templates
 	missingCRDErrorOccured := false
 	for _, template := range templates {
+		// Skip NetworkPolicy resources - they are managed by ensureNetworkPolicies with create-once pattern
+		if template.GetKind() == "NetworkPolicy" {
+			continue
+		}
+
 		applyReleaseVersionAnnotation(template)
 		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
