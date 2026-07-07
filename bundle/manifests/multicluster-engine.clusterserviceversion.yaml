@@ -14,7 +14,7 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    createdAt: "2026-06-29T16:31:16Z"
+    createdAt: "2026-07-07T16:09:21Z"
     operators.operatorframework.io/builder: operator-sdk-v1.42.2
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
   name: multicluster-engine.v0.0.1
@@ -51,6 +51,11 @@ spec:
         path: localClusterName
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:text
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: NetworkPolicies configures NetworkPolicy deployment for MCE components
+        displayName: NetworkPolicies Configuration
+        path: networkPolicies
+        x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
       - description: Developer Overrides
         displayName: Developer Overrides
@@ -2640,6 +2645,7 @@ spec:
           - create
           - delete
           - get
+          - list
           - patch
           - update
         - apiGroups:

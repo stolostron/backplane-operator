@@ -2560,6 +2560,7 @@ rules:
   - create
   - delete
   - get
+  - list
   - patch
   - update
 - apiGroups:
