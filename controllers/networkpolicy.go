@@ -30,7 +30,10 @@ import (
 // ensureNetworkPolicies implements the create-once NetworkPolicy pattern:
 // - component enabled + networkPolicies enabled → CREATE (if missing), SKIP (if exists)
 // - component disabled OR networkPolicies disabled → DELETE (if MCE-created)
-func (r *MultiClusterEngineReconciler) ensureNetworkPolicies(ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+func (r *MultiClusterEngineReconciler) ensureNetworkPolicies(
+	ctx context.Context,
+	mce *backplanev1.MultiClusterEngine,
+) (ctrl.Result, error) {
 	log := r.Log.WithValues("MultiClusterEngine", mce.Name, "Namespace", mce.Namespace)
 
 	// Default enabled to true if not explicitly set
@@ -112,12 +115,27 @@ func (r *MultiClusterEngineReconciler) ensureNetworkPolicies(ctx context.Context
 				// Create NetworkPolicy - create-once pattern
 				applyReleaseVersionAnnotation(npTemplate)
 				if err := r.Client.Create(ctx, npTemplate); err != nil {
-					return ctrl.Result{}, fmt.Errorf("failed to create NetworkPolicy %s/%s: %w", npTemplate.GetNamespace(), npTemplate.GetName(), err)
+					return ctrl.Result{}, fmt.Errorf(
+						"failed to create NetworkPolicy %s/%s: %w",
+						npTemplate.GetNamespace(),
+						npTemplate.GetName(),
+						err,
+					)
 				}
-				log.Info("Created NetworkPolicy", "name", npTemplate.GetName(), "namespace", npTemplate.GetNamespace(), "component", component)
+				log.Info(
+					"Created NetworkPolicy",
+					"name", npTemplate.GetName(),
+					"namespace", npTemplate.GetNamespace(),
+					"component", component,
+				)
 			} else if err == nil {
 				// NetworkPolicy exists - SKIP (no reconcile, operand owns it now)
-				log.V(2).Info("NetworkPolicy exists, skipping", "name", np.Name, "namespace", np.Namespace, "component", component)
+				log.V(2).Info(
+					"NetworkPolicy exists, skipping",
+					"name", np.Name,
+					"namespace", np.Namespace,
+					"component", component,
+				)
 			} else {
 				return ctrl.Result{}, fmt.Errorf("failed to get NetworkPolicy %s: %w", npTemplate.GetName(), err)
 			}
