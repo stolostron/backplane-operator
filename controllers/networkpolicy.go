@@ -74,6 +74,11 @@ func (r *MultiClusterEngineReconciler) ensureNetworkPolicies(ctx context.Context
 
 		// Render NetworkPolicy from Helm template
 		chartPath := r.fetchChartOrCRDPath(component)
+		if chartPath == "" {
+			log.V(2).Info("No chart path for component", "component", component)
+			continue
+		}
+
 		templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 		if len(errs) > 0 {

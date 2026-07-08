@@ -378,7 +378,7 @@ func renderTemplates(chartPath string, backplaneConfig *v1.MultiClusterEngine, i
 
 	chart, err := loader.Load(chartPath)
 	if err != nil {
-		log.Info(fmt.Sprintf("error loading chart: %s", chart.Name()))
+		log.Info(fmt.Sprintf("error loading chart from path: %s", chartPath))
 		return nil, append(errs, err)
 	}
 
