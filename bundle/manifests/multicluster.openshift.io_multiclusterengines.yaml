@@ -226,6 +226,8 @@ spec:
                       type: string
                   type: object
                 type: array
+            required:
+            - networkPolicies
             type: object
           status:
             description: MultiClusterEngineStatus defines the observed state of MultiClusterEngine
@@ -290,6 +292,11 @@ spec:
                     type:
                       description: Type is the type of the cluster condition.
                       type: string
+                  required:
+                  - message
+                  - reason
+                  - status
+                  - type
                   type: object
                 type: array
               currentVersion:
