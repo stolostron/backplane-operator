@@ -16,8 +16,8 @@ import (
 
 var _ = Describe("NetworkPolicy Controller", func() {
 	const (
-		mceName        = "test-mce"
-		targetNS       = "multicluster-engine"
+		mceName           = "test-mce"
+		targetNS          = "multicluster-engine"
 		networkPolicyName = "test-networkpolicy"
 	)
 
