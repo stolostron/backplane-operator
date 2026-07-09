@@ -8,6 +8,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
+	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -27,6 +28,16 @@ var _ = Describe("NetworkPolicy Controller", func() {
 	)
 
 	BeforeEach(func() {
+		ctx := context.Background()
+
+		// Create target namespace
+		ns := &corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: targetNS,
+			},
+		}
+		Expect(k8sClient.Create(ctx, ns)).To(Succeed())
+
 		mce = &backplanev1.MultiClusterEngine{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: mceName,
@@ -55,6 +66,25 @@ var _ = Describe("NetworkPolicy Controller", func() {
 				},
 			},
 		}
+	})
+
+	AfterEach(func() {
+		ctx := context.Background()
+
+		// Delete all NetworkPolicies in namespace
+		npList := &networkingv1.NetworkPolicyList{}
+		_ = k8sClient.List(ctx, npList, client.InNamespace(targetNS))
+		for i := range npList.Items {
+			_ = k8sClient.Delete(ctx, &npList.Items[i])
+		}
+
+		// Delete namespace
+		ns := &corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: targetNS,
+			},
+		}
+		_ = k8sClient.Delete(ctx, ns)
 	})
 
 	Context("when NetworkPolicies are disabled", func() {
