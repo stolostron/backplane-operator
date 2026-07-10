@@ -3523,7 +3523,7 @@ spec:
                   value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/ose-baremetal-cluster-api-controllers-rhel9:latest
                 - name: OPERAND_IMAGE_POSTGRESQL_13
                   value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/postgresql-13:latest
-                image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/backplane-operator-rhel9:latest
+                image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/backplane-operator:latest
                 imagePullPolicy: IfNotPresent
                 livenessProbe:
                   httpGet:
