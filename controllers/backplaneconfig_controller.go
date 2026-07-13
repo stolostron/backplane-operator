@@ -2609,8 +2609,8 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 		consoleURL, err := r.getConsoleURL(ctx)
 		if err != nil {
 			log.Info("Failed to detect console URL, fleet-navigation link may be empty", "error", err)
-		} else {
-			os.Setenv("ACM_HUB_CONSOLE_URL", consoleURL)
+		} else if err := os.Setenv("ACM_HUB_CONSOLE_URL", consoleURL); err != nil {
+			return ctrl.Result{}, pkgerrors.Wrapf(err, "failed to set ACM_HUB_CONSOLE_URL")
 		}
 
 		// If OCP 4.10+ then set then enable the MCE console. Else ensure it is disabled
@@ -2834,6 +2834,9 @@ func (r *MultiClusterEngineReconciler) getConsoleURL(ctx context.Context) (strin
 		return "", err
 	}
 
+	if console.Status.ConsoleURL == "" {
+		return "", fmt.Errorf("consoleURL not found or empty in Console config")
+	}
 	return console.Status.ConsoleURL, nil
 }
 
