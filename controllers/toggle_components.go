@@ -244,10 +244,10 @@ func (r *MultiClusterEngineReconciler) ensureNoManagedServiceAccount(ctx context
 func (r *MultiClusterEngineReconciler) ensureFleetNavigation(ctx context.Context,
 	mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 
-	r.StatusManager.RemoveComponent(toggle.DisabledStatus(types.NamespacedName{Name: "fleet-navigation",
+	r.StatusManager.RemoveComponent(toggle.DisabledStatus(types.NamespacedName{Name: backplanev1.FleetNavigation,
 		Namespace: mce.Spec.TargetNamespace}, []*unstructured.Unstructured{}))
 
-	r.StatusManager.AddComponent(status.NewPresentStatus(types.NamespacedName{Name: "fleet-navigation"},
+	r.StatusManager.AddComponent(status.NewPresentStatus(types.NamespacedName{Name: backplanev1.FleetNavigation},
 		clusterManagementAddOnGVK))
 
 	if result, err := r.ensureInternalEngineComponent(ctx, mce, backplanev1.FleetNavigation); err != nil {
@@ -272,7 +272,7 @@ func (r *MultiClusterEngineReconciler) ensureFleetNavigation(ctx context.Context
 			if apimeta.IsNoMatchError(errors.Unwrap(err)) || apierrors.IsNotFound(err) {
 				log.Info("Couldn't apply template for fleet-navigation due to missing CRD", "error is", err.Error())
 				missingCRDErrorOccured = true
-				r.StatusManager.AddComponent(clusterManagementAddOnNotFoundStatus("fleet-navigation",
+				r.StatusManager.AddComponent(clusterManagementAddOnNotFoundStatus(backplanev1.FleetNavigation,
 					mce.Spec.TargetNamespace))
 			} else {
 				return result, err
@@ -303,7 +303,7 @@ func (r *MultiClusterEngineReconciler) ensureNoFleetNavigation(ctx context.Conte
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
 
-	r.StatusManager.AddComponent(toggle.DisabledStatus(types.NamespacedName{Name: "fleet-navigation",
+	r.StatusManager.AddComponent(toggle.DisabledStatus(types.NamespacedName{Name: backplanev1.FleetNavigation,
 		Namespace: mce.Spec.TargetNamespace}, []*unstructured.Unstructured{}))
 
 	for _, template := range templates {
