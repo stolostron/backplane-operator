@@ -1472,54 +1472,91 @@ func Test_ensureFleetNavigation(t *testing.T) {
 	os.Setenv("DIRECTORY_OVERRIDE", "../")
 	defer os.Unsetenv("DIRECTORY_OVERRIDE")
 
-	ctx := context.TODO()
-	ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "test-ns"}}
-	r := newFleetNavReconciler(ns)
-	mce := fleetNavMCE()
+	t.Run("creates InternalEngineComponent and renders templates", func(t *testing.T) {
+		ctx := context.TODO()
+		ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "test-ns"}}
+		r := newFleetNavReconciler(ns)
+		mce := fleetNavMCE()
 
-	result, err := r.ensureFleetNavigation(ctx, mce)
-	if err != nil {
-		t.Fatalf("ensureFleetNavigation() returned error: %v", err)
-	}
-	if result != (ctrl.Result{}) {
-		t.Fatalf("ensureFleetNavigation() returned non-zero result: %v", result)
-	}
+		result, err := r.ensureFleetNavigation(ctx, mce)
+		if err != nil {
+			t.Fatalf("ensureFleetNavigation() returned error: %v", err)
+		}
+		if result != (ctrl.Result{}) {
+			t.Fatalf("ensureFleetNavigation() returned non-zero result: %v", result)
+		}
 
-	iec := &backplanev1.InternalEngineComponent{}
-	if err := r.Client.Get(ctx, types.NamespacedName{
-		Name: backplanev1.FleetNavigation, Namespace: "test-ns",
-	}, iec); err != nil {
-		t.Errorf("expected InternalEngineComponent to exist: %v", err)
-	}
+		iec := &backplanev1.InternalEngineComponent{}
+		if err := r.Client.Get(ctx, types.NamespacedName{
+			Name: backplanev1.FleetNavigation, Namespace: "test-ns",
+		}, iec); err != nil {
+			t.Errorf("expected InternalEngineComponent to exist: %v", err)
+		}
+	})
+
+	t.Run("is idempotent on second call", func(t *testing.T) {
+		ctx := context.TODO()
+		ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "test-ns"}}
+		r := newFleetNavReconciler(ns)
+		mce := fleetNavMCE()
+
+		if _, err := r.ensureFleetNavigation(ctx, mce); err != nil {
+			t.Fatalf("first call failed: %v", err)
+		}
+		result, err := r.ensureFleetNavigation(ctx, mce)
+		if err != nil {
+			t.Fatalf("second call returned error: %v", err)
+		}
+		if result != (ctrl.Result{}) {
+			t.Fatalf("second call returned non-zero result: %v", result)
+		}
+	})
+
 }
 
 func Test_ensureNoFleetNavigation(t *testing.T) {
 	os.Setenv("DIRECTORY_OVERRIDE", "../")
 	defer os.Unsetenv("DIRECTORY_OVERRIDE")
 
-	ctx := context.TODO()
-	ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "test-ns"}}
-	r := newFleetNavReconciler(ns)
-	mce := fleetNavMCE()
+	t.Run("deletes InternalEngineComponent and templates", func(t *testing.T) {
+		ctx := context.TODO()
+		ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "test-ns"}}
+		r := newFleetNavReconciler(ns)
+		mce := fleetNavMCE()
 
-	// First ensure, so there is something to delete.
-	if _, err := r.ensureFleetNavigation(ctx, mce); err != nil {
-		t.Fatalf("setup ensureFleetNavigation() failed: %v", err)
-	}
+		if _, err := r.ensureFleetNavigation(ctx, mce); err != nil {
+			t.Fatalf("setup ensureFleetNavigation() failed: %v", err)
+		}
 
-	result, err := r.ensureNoFleetNavigation(ctx, mce)
-	if err != nil {
-		t.Fatalf("ensureNoFleetNavigation() returned error: %v", err)
-	}
-	if result != (ctrl.Result{}) {
-		t.Fatalf("ensureNoFleetNavigation() returned non-zero result: %v", result)
-	}
+		result, err := r.ensureNoFleetNavigation(ctx, mce)
+		if err != nil {
+			t.Fatalf("ensureNoFleetNavigation() returned error: %v", err)
+		}
+		if result != (ctrl.Result{}) {
+			t.Fatalf("ensureNoFleetNavigation() returned non-zero result: %v", result)
+		}
 
-	iec := &backplanev1.InternalEngineComponent{}
-	err = r.Client.Get(ctx, types.NamespacedName{
-		Name: backplanev1.FleetNavigation, Namespace: "test-ns",
-	}, iec)
-	if !apierrors.IsNotFound(err) {
-		t.Errorf("expected InternalEngineComponent to be deleted, got: %v", err)
-	}
+		iec := &backplanev1.InternalEngineComponent{}
+		err = r.Client.Get(ctx, types.NamespacedName{
+			Name: backplanev1.FleetNavigation, Namespace: "test-ns",
+		}, iec)
+		if !apierrors.IsNotFound(err) {
+			t.Errorf("expected InternalEngineComponent to be deleted, got: %v", err)
+		}
+	})
+
+	t.Run("succeeds when nothing to delete", func(t *testing.T) {
+		ctx := context.TODO()
+		ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "test-ns"}}
+		r := newFleetNavReconciler(ns)
+		mce := fleetNavMCE()
+
+		result, err := r.ensureNoFleetNavigation(ctx, mce)
+		if err != nil {
+			t.Fatalf("ensureNoFleetNavigation() returned error: %v", err)
+		}
+		if result != (ctrl.Result{}) {
+			t.Fatalf("ensureNoFleetNavigation() returned non-zero result: %v", result)
+		}
+	})
 }
