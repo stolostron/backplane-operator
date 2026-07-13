@@ -24,10 +24,15 @@ spec:
   - name: LINK_TEXT
     value: Go to the hub cluster console
   nodePlacement:
+    {{- if .Values.hubconfig.nodeSelector }}
     nodeSelector:
       {{- range $key, $val := .Values.hubconfig.nodeSelector }}
       {{ $key }}: {{ $val | quote }}
       {{- end }}
+    {{- else }}
+    nodeSelector: {}
+    {{- end }}
+    {{- if .Values.hubconfig.tolerations }}
     tolerations:
       {{- range .Values.hubconfig.tolerations }}
       - {{ if .Key }}key: {{ .Key }}{{- end }}
@@ -36,3 +41,6 @@ spec:
         {{ if .Effect }}effect: {{ .Effect }}{{- end }}
         {{ if .TolerationSeconds }}tolerationSeconds: {{ .TolerationSeconds }}{{- end }}
       {{- end }}
+    {{- else }}
+    tolerations: []
+    {{- end }}
