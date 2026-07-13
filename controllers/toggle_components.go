@@ -241,6 +241,84 @@ func (r *MultiClusterEngineReconciler) ensureNoManagedServiceAccount(ctx context
 	return ctrl.Result{}, nil
 }
 
+func (r *MultiClusterEngineReconciler) ensureFleetNavigation(ctx context.Context,
+	mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+
+	r.StatusManager.RemoveComponent(toggle.DisabledStatus(types.NamespacedName{Name: "fleet-navigation",
+		Namespace: mce.Spec.TargetNamespace}, []*unstructured.Unstructured{}))
+
+	r.StatusManager.AddComponent(status.NewPresentStatus(types.NamespacedName{Name: "fleet-navigation"},
+		clusterManagementAddOnGVK))
+
+	if result, err := r.ensureInternalEngineComponent(ctx, mce, backplanev1.FleetNavigation); err != nil {
+		return result, err
+	}
+
+	chartPath := r.fetchChartOrCRDPath(backplanev1.FleetNavigation)
+	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
+
+	if len(errs) > 0 {
+		for _, err := range errs {
+			log.Info(err.Error())
+		}
+		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+	}
+
+	missingCRDErrorOccured := false
+	for _, template := range templates {
+		applyReleaseVersionAnnotation(template)
+		result, err := r.applyTemplate(ctx, mce, template)
+		if err != nil {
+			if apimeta.IsNoMatchError(errors.Unwrap(err)) || apierrors.IsNotFound(err) {
+				log.Info("Couldn't apply template for fleet-navigation due to missing CRD", "error is", err.Error())
+				missingCRDErrorOccured = true
+				r.StatusManager.AddComponent(clusterManagementAddOnNotFoundStatus("fleet-navigation",
+					mce.Spec.TargetNamespace))
+			} else {
+				return result, err
+			}
+		}
+	}
+
+	if missingCRDErrorOccured {
+		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+	}
+	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterEngineReconciler) ensureNoFleetNavigation(ctx context.Context,
+	mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+
+	if result, err := r.ensureNoInternalEngineComponent(ctx, mce,
+		backplanev1.FleetNavigation); (result != ctrl.Result{}) || err != nil {
+		return result, err
+	}
+
+	chartPath := r.fetchChartOrCRDPath(backplanev1.FleetNavigation)
+	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
+	if len(errs) > 0 {
+		for _, err := range errs {
+			log.Info(err.Error())
+		}
+		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+	}
+
+	r.StatusManager.AddComponent(toggle.DisabledStatus(types.NamespacedName{Name: "fleet-navigation",
+		Namespace: mce.Spec.TargetNamespace}, []*unstructured.Unstructured{}))
+
+	for _, template := range templates {
+		if template.GetKind() == foundation.ClusterManagementAddonKind && !foundation.CanInstallAddons(ctx, r.Client) {
+			continue
+		}
+		result, err := r.deleteTemplate(ctx, mce, template)
+		if err != nil {
+			log.Error(err, "Failed to delete fleet-navigation template")
+			return result, err
+		}
+	}
+	return ctrl.Result{}, nil
+}
+
 // addPluginToConsoleResource ...
 func (r *MultiClusterEngineReconciler) addPluginToConsoleResource(ctx context.Context) (ctrl.Result, error) {
 	console := &operatorv1.Console{}

@@ -1,0 +1,28 @@
+apiVersion: cluster.open-cluster-management.io/v1beta1
+kind: Placement
+metadata:
+  name: fleet-navigation
+  namespace: open-cluster-management-global-set
+spec:
+  clusterSets:
+  - global
+  predicates:
+  - requiredClusterSelector:
+      labelSelector:
+        matchExpressions:
+        - key: vendor
+          operator: In
+          values:
+          - OpenShift
+        - key: fleet-navigation
+          operator: NotIn
+          values:
+          - disabled
+        - key: name
+          operator: NotIn
+          values:
+{{- if .Values.hubconfig.localClusterName }}
+          - {{ .Values.hubconfig.localClusterName }}
+{{- else }}
+          - local-cluster
+{{- end }}

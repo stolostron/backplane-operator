@@ -2469,7 +2469,7 @@ func Test_ensureToggleableComponents_withExternallyManagedComponents(t *testing.
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-mce",
 					Annotations: map[string]string{
-						utils.AnnotationExternallyManaged: `["managedserviceaccount","image-based-install-operator","hypershift","console-mce","discovery","hive","assisted-service","cluster-lifecycle","cluster-manager","cluster-permission","server-foundation","cluster-proxy-addon","cluster-api","cluster-api-provider-aws","cluster-api-provider-azure-preview","cluster-api-provider-metal3-preview","cluster-api-provider-openshift-assisted","local-cluster"]`,
+						utils.AnnotationExternallyManaged: `["managedserviceaccount","image-based-install-operator","hypershift","console-mce","discovery","fleet-navigation","hive","assisted-service","cluster-lifecycle","cluster-manager","cluster-permission","server-foundation","cluster-proxy-addon","cluster-api","cluster-api-provider-aws","cluster-api-provider-azure-preview","cluster-api-provider-metal3-preview","cluster-api-provider-openshift-assisted","local-cluster"]`,
 					},
 				},
 				Spec: backplanev1.MultiClusterEngineSpec{
@@ -2482,6 +2482,7 @@ func Test_ensureToggleableComponents_withExternallyManagedComponents(t *testing.
 							{Name: backplanev1.HyperShift, Enabled: true},
 							{Name: backplanev1.ConsoleMCE, Enabled: true},
 							{Name: backplanev1.Discovery, Enabled: true},
+							{Name: backplanev1.FleetNavigation, Enabled: true},
 							{Name: backplanev1.Hive, Enabled: true},
 							{Name: backplanev1.AssistedService, Enabled: true},
 							{Name: backplanev1.ClusterLifecycle, Enabled: true},

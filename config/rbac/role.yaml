@@ -925,6 +925,7 @@ rules:
   - managedclusters/status
   - managedclustersets
   - placementdecisions
+  - placements
   verbs:
   - create
   - delete
@@ -941,7 +942,6 @@ rules:
   - managedclustersets/bind
   - managedclustersets/finalizers
   - managedclustersets/join
-  - placements
   - placements/finalizers
   verbs:
   - create
@@ -1091,6 +1091,7 @@ rules:
   - authentications
   - clusteroperators
   - clusterversions
+  - consoles
   - dnses
   - ingresses
   - proxies

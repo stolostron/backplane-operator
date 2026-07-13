@@ -1,0 +1,40 @@
+apiVersion: addon.open-cluster-management.io/v1alpha1
+kind: AddOnTemplate
+metadata:
+  name: fleet-navigation
+spec:
+  addonName: fleet-navigation
+  agentSpec:
+    workload:
+      manifests:
+      - apiVersion: rbac.authorization.k8s.io/v1
+        kind: ClusterRole
+        metadata:
+          labels:
+            open-cluster-management.io/aggregate-to-work: 'true'
+          name: open-cluster-management:fleet-navigation:agent
+        rules:
+        - apiGroups:
+          - console.openshift.io
+          resources:
+          - consolenotifications
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+      - apiVersion: console.openshift.io/v1
+        kind: ConsoleNotification
+        metadata:
+          name: fleet-navigation-{{ `{{CLUSTER_NAME}}` }}
+        spec:
+          backgroundColor: '{{ `{{BACKGROUND_COLOR}}` }}'
+          color: '{{ `{{COLOR}}` }}'
+          link:
+            href: '{{ `{{LINK_HREF}}` }}'
+            text: '{{ `{{LINK_TEXT}}` }}'
+          location: '{{ `{{LOCATION}}` }}'
+          text: '{{ `{{TEXT_PREFIX}}` }}{{ `{{CLUSTER_NAME}}` }}{{ `{{TEXT_POSTFIX}}` }}'

@@ -54,6 +54,7 @@ var onComponents = []string{
 	backplanev1.ClusterManager,
 	backplanev1.ClusterPermission,
 	backplanev1.Discovery,
+	backplanev1.FleetNavigation,
 	backplanev1.Hive,
 	backplanev1.ServerFoundation,
 	backplanev1.ClusterProxyAddon,

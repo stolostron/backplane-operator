@@ -37,6 +37,7 @@ const (
 	ClusterProxyAddon                = "cluster-proxy-addon"
 	ConsoleMCE                       = "console-mce"
 	Discovery                        = "discovery"
+	FleetNavigation                  = "fleet-navigation"
 	Hive                             = "hive"
 	HyperShift                       = "hypershift"
 	HypershiftLocalHosting           = "hypershift-local-hosting"
@@ -91,6 +92,7 @@ var AllComponents = []string{
 	ClusterProxyAddon,
 	ConsoleMCE,
 	Discovery,
+	FleetNavigation,
 	Hive,
 	HyperShift,
 	HypershiftLocalHosting,
@@ -120,6 +122,7 @@ var MCEComponents = []string{
 	ClusterProxyAddon,
 	ConsoleMCE,
 	Discovery,
+	FleetNavigation,
 	Hive,
 	HyperShift,
 	HypershiftLocalHosting,
