@@ -449,6 +449,10 @@ var _ = Describe("BackplaneConfig controller", func() {
 									Enabled: true,
 								},
 								{
+									Name:    backplanev1.FleetNavigation,
+									Enabled: true,
+								},
+								{
 									Name:    backplanev1.Hive,
 									Enabled: true,
 								},
@@ -641,6 +645,10 @@ var _ = Describe("BackplaneConfig controller", func() {
 								},
 								{
 									Name:    backplanev1.Discovery,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.FleetNavigation,
 									Enabled: false,
 								},
 								{
@@ -943,6 +951,10 @@ var _ = Describe("BackplaneConfig controller", func() {
 									Enabled: true,
 								},
 								{
+									Name:    backplanev1.FleetNavigation,
+									Enabled: true,
+								},
+								{
 									Name:    backplanev1.Hive,
 									Enabled: true,
 								},
@@ -1068,6 +1080,10 @@ var _ = Describe("BackplaneConfig controller", func() {
 								},
 								{
 									Name:    backplanev1.Discovery,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.FleetNavigation,
 									Enabled: false,
 								},
 								{

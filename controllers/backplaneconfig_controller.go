@@ -2225,6 +2225,7 @@ func (r *MultiClusterEngineReconciler) ensureNoAllInternalEngineComponents(ctx c
 		backplanev1.ClusterProxyAddon,
 		backplanev1.ConsoleMCE,
 		backplanev1.Discovery,
+		backplanev1.FleetNavigation,
 		backplanev1.Hive,
 		backplanev1.HyperShift,
 		backplanev1.ImageBasedInstallOperator,
