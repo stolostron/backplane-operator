@@ -1948,33 +1948,40 @@ func (r *MultiClusterEngineReconciler) ensureNoMaestro(ctx context.Context,
 		return result, err
 	}
 
-	// Delete the cluster-manager gRPC server ConfigMap
-	configMap := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "grpc-server-config",
-			Namespace: "open-cluster-management-hub",
-		},
-	}
-	if err := r.Client.Delete(ctx, configMap); err != nil && !apierrors.IsNotFound(err) {
-		log.Error(err, "Failed to delete maestro conductor ConfigMap")
+	// Delete the cluster-manager gRPC server ConfigMap if it exists
+	configMap := &corev1.ConfigMap{}
+	configMapKey := types.NamespacedName{Name: "grpc-server-config", Namespace: "open-cluster-management-hub"}
+
+	if err := r.Client.Get(ctx, configMapKey, configMap); err == nil {
+		if err := r.Client.Delete(ctx, configMap); err != nil && !apierrors.IsNotFound(err) {
+			log.Error(err, "Failed to delete maestro conductor ConfigMap")
+			return ctrl.Result{}, err
+		}
+		log.Info("Removed cluster-manager gRPC server ConfigMap")
+
+	} else if !apierrors.IsNotFound(err) {
 		return ctrl.Result{}, err
 	}
-	log.Info("Removed cluster-manager gRPC server ConfigMap")
 
-	// Delete the cluster-manager gRPC server Route
+	// Delete the cluster-manager gRPC server Route if it exists
 	route := &unstructured.Unstructured{}
 	route.SetGroupVersionKind(schema.GroupVersionKind{
 		Group:   "route.openshift.io",
 		Version: "v1",
 		Kind:    "Route",
 	})
-	route.SetName("grpc-server")
-	route.SetNamespace("open-cluster-management-hub")
-	if err := r.Client.Delete(ctx, route); err != nil && !apierrors.IsNotFound(err) {
-		log.Error(err, "Failed to delete maestro conductor Route")
+
+	routeKey := types.NamespacedName{Name: "grpc-server", Namespace: "open-cluster-management-hub"}
+	if err := r.Client.Get(ctx, routeKey, route); err == nil {
+		if err := r.Client.Delete(ctx, route); err != nil && !apierrors.IsNotFound(err) {
+			log.Error(err, "Failed to delete maestro conductor Route")
+			return ctrl.Result{}, err
+		}
+		log.Info("Removed cluster-manager gRPC server Route")
+
+	} else if !apierrors.IsNotFound(err) {
 		return ctrl.Result{}, err
 	}
-	log.Info("Removed cluster-manager gRPC server Route")
 
 	// Delete maestro namespace
 	if err := r.deleteMaestroNamespace(ctx); err != nil {
@@ -2595,17 +2602,19 @@ func driversMatch(actual, expected []interface{}) bool {
 
 // deleteMaestroNamespace delete maestro namespace if it exists
 func (r *MultiClusterEngineReconciler) deleteMaestroNamespace(ctx context.Context) error {
-	maestroNS := &corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "maestro",
-		},
+	maestroNS := &corev1.Namespace{}
+	if err := r.Client.Get(ctx, types.NamespacedName{Name: "maestro"}, maestroNS); err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil
+		}
+		return err
 	}
+
 	if err := r.Client.Delete(ctx, maestroNS); err != nil && !apierrors.IsNotFound(err) {
 		return err
 	}
 
 	log.Info("Removed maestro namespace")
-
 	return nil
 }
 
