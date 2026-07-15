@@ -17,6 +17,7 @@ spec:
       labels:
         control-plane: hive-operator
         controller-tools.k8s.io: '1.0'
+        hive.openshift.io/component: hive-operator
         ocm-antiaffinity-selector: hive-operator
     spec:
       affinity:
