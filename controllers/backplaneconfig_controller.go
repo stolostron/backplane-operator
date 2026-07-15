@@ -2956,6 +2956,26 @@ func (r *MultiClusterEngineReconciler) GetDeprecatedResources(m *backplanev1.Mul
 			TypeMeta:   metav1.TypeMeta{Kind: "ClusterRole"},
 			ObjectMeta: metav1.ObjectMeta{Name: "open-cluster-management:hypershift-preview:hypershift-addon-manager"},
 		},
+		// Deprecated: cluster-proxy RBAC resources renamed from cluster-proxy-addon to cluster-proxy
+		// to align with upstream (open-cluster-management-io/cluster-proxy). Old resources must be
+		// explicitly cleaned up on upgrade as the operator creates new-named resources and never
+		// touches the old ones.
+		&rbacv1.ClusterRole{
+			TypeMeta:   metav1.TypeMeta{Kind: "ClusterRole"},
+			ObjectMeta: metav1.ObjectMeta{Name: "open-cluster-management:cluster-proxy-addon:addon-manager"},
+		},
+		&rbacv1.ClusterRoleBinding{
+			TypeMeta:   metav1.TypeMeta{Kind: "ClusterRoleBinding"},
+			ObjectMeta: metav1.ObjectMeta{Name: "open-cluster-management:cluster-proxy-addon:addon-manager"},
+		},
+		&rbacv1.Role{
+			TypeMeta:   metav1.TypeMeta{Kind: "Role"},
+			ObjectMeta: metav1.ObjectMeta{Name: "open-cluster-management:cluster-proxy-addon:addon-manager", Namespace: m.Spec.TargetNamespace},
+		},
+		&rbacv1.RoleBinding{
+			TypeMeta:   metav1.TypeMeta{Kind: "RoleBinding"},
+			ObjectMeta: metav1.ObjectMeta{Name: "open-cluster-management:cluster-proxy-addon:addon-manager", Namespace: m.Spec.TargetNamespace},
+		},
 	}
 }
 
