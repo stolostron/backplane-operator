@@ -12,10 +12,6 @@ defaults:
 jobs:
   rbac-check:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        go:
-          - '1.25.11'
     name: Generate role permissions
     steps:
     - name: Checkout backplane
@@ -23,11 +19,11 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Set up Go - ${{ matrix.go }}
+    - name: Set up Go
       uses: actions/setup-go@v2
       id: go
       with:
-        go-version: ${{ matrix.go }}
+        go-version-file: go.mod
 
     - name: Verify modules
       run: |
