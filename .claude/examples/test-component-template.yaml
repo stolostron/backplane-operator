@@ -1,0 +1,43 @@
+# Test Component Onboarding Template
+# A simple component for testing the onboarding skill
+
+metadata:
+  name: "test-component"
+  displayName: "Test Component"
+  description: "A test component for validating the onboarding automation skill"
+
+component:
+  isPreview: false
+  deploymentName: "test-component-manager"
+  hasPlatformVariants: false
+
+source:
+  type: "helm-chart"
+
+  repository:
+    url: "https://github.com/stolostron/test-component.git"
+    branch: "backplane-5.0"
+
+  helmChart:
+    path: "charts/test-component"
+
+  imageMappings:
+    test-component-controller: "test_component_controller"
+
+  inclusions:
+    - "pullSecretOverride"
+
+  escapeTemplateVariables:
+    - "CLUSTER_NAME"
+    - "INSTALL_NAMESPACE"
+
+  skipRBACOverrides: true
+  updateChartVersion: true
+  autoInstallForAllClusters: false
+
+integration:
+  supportsExternalManagement: true
+  exclusions: []
+  ignoreWebhookDefinitions: false
+  preserveFiles: []
+  webhookPaths: []
