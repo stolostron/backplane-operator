@@ -42,11 +42,7 @@ rules:
       - managedproxyconfigurations
       - managedproxyconfigurations/status
       - managedproxyconfigurations/finalizers
-      # ACM: managedproxyserviceresolvers kept pending investigation of downstream consumers.
-      # Upstream removed these in commit 3eb1cef7 (2026-03-16). Do not remove until confirmed safe.
-      - managedproxyserviceresolvers
-      - managedproxyserviceresolvers/status
-      - managedproxyserviceresolvers/finalizers
+
     verbs:
       - '*'
   - apiGroups:
