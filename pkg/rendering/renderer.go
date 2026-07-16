@@ -51,6 +51,15 @@ type Values struct {
 	Global    Global    `json:"global" structs:"global"`
 	HubConfig HubConfig `json:"hubconfig" structs:"hubconfig"`
 	Org       string    `json:"org" structs:"org"`
+	// EnableServiceProxy: upstream default false. ACM sets true (commit efb29e7b, Nov 2025).
+	// Used by user-deployment.yaml and user-service.yaml conditionals AND --enable-service-proxy arg.
+	EnableServiceProxy bool `json:"enableServiceProxy" structs:"enableServiceProxy"`
+	// EnableKubeApiProxy: upstream default true. ACM sets false (commit bc36de88, Jan 2023).
+	// Used by --enable-kube-api-proxy arg in manager-deployment.yaml.
+	EnableKubeApiProxy bool `json:"enableKubeApiProxy" structs:"enableKubeApiProxy"`
+	// EnableImpersonation: upstream default true. ACM always enables.
+	// Used by {{- if .Values.enableImpersonation }} conditional in clusterrole.yaml.
+	EnableImpersonation bool `json:"enableImpersonation" structs:"enableImpersonation"`
 }
 
 type Global struct {
@@ -512,6 +521,15 @@ func injectValuesOverrides(values *Values, backplaneConfig *v1.MultiClusterEngin
 		proxyVar["NO_PROXY"] = os.Getenv("NO_PROXY")
 		values.HubConfig.ProxyConfigs = proxyVar
 	}
+
+	// cluster-proxy ACM overrides -- see pkg/templates/charts/toggle/cluster-proxy-addon/
+	// for comments in templates explaining each override vs upstream default.
+	// Upstream default: false. ACM enables service proxy (commit efb29e7b, Nov 2025).
+	values.EnableServiceProxy = true
+	// Upstream default: true. ACM disables kube-api proxy (commit bc36de88, Jan 2023).
+	values.EnableKubeApiProxy = false
+	// Upstream default: true. ACM always enables impersonation.
+	values.EnableImpersonation = true
 }
 
 // EnsureTLSProfileConfigMaps creates or updates the TLS profile ConfigMap in the specified namespaces.
