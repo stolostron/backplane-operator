@@ -55,6 +55,9 @@ type Values struct {
 	// Used by user-deployment.yaml and user-service.yaml conditionals AND --enable-service-proxy arg.
 	EnableServiceProxy bool `json:"enableServiceProxy" structs:"enableServiceProxy"`
 	// EnableKubeApiProxy: upstream default true. ACM sets false (commit bc36de88, Jan 2023).
+	// ACM accesses managed cluster kube-apiserver through the service proxy (user-server Route,
+	// EnableServiceProxy=true) rather than the kube-api proxy (ExternalName Service on managed
+	// clusters). See ACM docs: cluster_proxy_addon_use.adoc.
 	// Used by --enable-kube-api-proxy arg in manager-deployment.yaml.
 	EnableKubeApiProxy bool `json:"enableKubeApiProxy" structs:"enableKubeApiProxy"`
 	// EnableImpersonation: upstream default true. ACM always enables.

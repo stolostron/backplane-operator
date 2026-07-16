@@ -39,7 +39,9 @@ spec:
       hostPID: false
       hostIPC: false
       # ACM override: upstream always sets seccompProfile unconditionally.
-      # ACM gates on OCP version because OCP <4.11 does not support seccompProfile.
+      # ACM gates on OCP version because all backplane-operator charts follow this convention.
+      # To align with upstream this conditional should be removed across all charts when
+      # OCP <4.11 support is officially dropped operator-wide.
       securityContext:
         runAsNonRoot: true
       {{- if .Values.global.deployOnOCP }}

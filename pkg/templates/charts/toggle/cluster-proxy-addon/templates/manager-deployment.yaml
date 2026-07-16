@@ -38,7 +38,9 @@ spec:
       hostPID: false
       hostIPC: false
       # ACM override: upstream always sets seccompProfile unconditionally.
-      # ACM gates on OCP version because OCP <4.11 does not support seccompProfile.
+      # ACM gates on OCP version because all backplane-operator charts follow this convention.
+      # To align with upstream this conditional should be removed across all charts when
+      # OCP <4.11 support is officially dropped operator-wide.
       securityContext:
         runAsNonRoot: true
       {{- if .Values.global.deployOnOCP }}
@@ -98,7 +100,11 @@ spec:
             - --agent-image-name={{ .Values.global.imageOverrides.cluster_proxy }}
             # ACM override: upstream uses  <spokeAddonNamespace>  (default "open-cluster-management-cluster-proxy").
             - --agent-install-namespace=open-cluster-management-agent-addon
-            # ACM override: upstream default true. ACM sets false via EnableKubeApiProxy in renderer.go (commit bc36de88, Jan 2023).
+            # ACM override: upstream default true. ACM sets false via EnableKubeApiProxy in renderer.go
+            # because ACM accesses managed cluster kube-apiserver through the service proxy
+            # (user-server Route, --enable-service-proxy=true) rather than the kube-api proxy
+            # (ExternalName Service on managed clusters). See ACM docs: cluster_proxy_addon_use.adoc.
+            # (commit bc36de88, Jan 2023)
             - --enable-kube-api-proxy={{ .Values.enableKubeApiProxy }}
             # ACM override: upstream default false. ACM sets true via EnableServiceProxy in renderer.go (commit efb29e7b, Nov 2025).
             - --enable-service-proxy={{ .Values.enableServiceProxy }}
@@ -107,11 +113,6 @@ spec:
             # ClusterProfile not enabled in ACM. Re-add when needed
             # (requires Go struct field for <featureGates> in renderer.go).
           env:
-            # ACM addition: POD_NAME for logging/debugging. Not in upstream.
-            - name: POD_NAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
             - name: POD_NAMESPACE
               valueFrom:
                 fieldRef:
