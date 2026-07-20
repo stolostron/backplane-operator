@@ -34,6 +34,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 
+	"github.com/go-logr/logr"
 	configv1 "github.com/openshift/api/config/v1"
 
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
@@ -448,6 +449,10 @@ var _ = Describe("BackplaneConfig controller", func() {
 									Enabled: true,
 								},
 								{
+									Name:    backplanev1.FleetNavigation,
+									Enabled: true,
+								},
+								{
 									Name:    backplanev1.Hive,
 									Enabled: true,
 								},
@@ -640,6 +645,10 @@ var _ = Describe("BackplaneConfig controller", func() {
 								},
 								{
 									Name:    backplanev1.Discovery,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.FleetNavigation,
 									Enabled: false,
 								},
 								{
@@ -942,6 +951,10 @@ var _ = Describe("BackplaneConfig controller", func() {
 									Enabled: true,
 								},
 								{
+									Name:    backplanev1.FleetNavigation,
+									Enabled: true,
+								},
+								{
 									Name:    backplanev1.Hive,
 									Enabled: true,
 								},
@@ -1067,6 +1080,10 @@ var _ = Describe("BackplaneConfig controller", func() {
 								},
 								{
 									Name:    backplanev1.Discovery,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.FleetNavigation,
 									Enabled: false,
 								},
 								{
@@ -2469,7 +2486,15 @@ func Test_ensureToggleableComponents_withExternallyManagedComponents(t *testing.
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-mce",
 					Annotations: map[string]string{
-						utils.AnnotationExternallyManaged: `["managedserviceaccount","image-based-install-operator","hypershift","console-mce","discovery","hive","assisted-service","cluster-lifecycle","cluster-manager","cluster-permission","server-foundation","cluster-proxy-addon","cluster-api","cluster-api-provider-aws","cluster-api-provider-azure-preview","cluster-api-provider-metal3-preview","cluster-api-provider-openshift-assisted","local-cluster"]`,
+						utils.AnnotationExternallyManaged: `[` +
+							`"managedserviceaccount","image-based-install-operator",` +
+							`"hypershift","console-mce","discovery","fleet-navigation",` +
+							`"hive","assisted-service","cluster-lifecycle","cluster-manager",` +
+							`"cluster-permission","server-foundation","cluster-proxy-addon",` +
+							`"cluster-api","cluster-api-provider-aws",` +
+							`"cluster-api-provider-azure-preview",` +
+							`"cluster-api-provider-metal3-preview",` +
+							`"cluster-api-provider-openshift-assisted","local-cluster"]`,
 					},
 				},
 				Spec: backplanev1.MultiClusterEngineSpec{
@@ -2482,6 +2507,7 @@ func Test_ensureToggleableComponents_withExternallyManagedComponents(t *testing.
 							{Name: backplanev1.HyperShift, Enabled: true},
 							{Name: backplanev1.ConsoleMCE, Enabled: true},
 							{Name: backplanev1.Discovery, Enabled: true},
+							{Name: backplanev1.FleetNavigation, Enabled: true},
 							{Name: backplanev1.Hive, Enabled: true},
 							{Name: backplanev1.AssistedService, Enabled: true},
 							{Name: backplanev1.ClusterLifecycle, Enabled: true},
@@ -2544,6 +2570,78 @@ func Test_ensureToggleableComponents_withExternallyManagedComponents(t *testing.
 			_, err := recon.ensureToggleableComponents(context.TODO(), tt.mce)
 			if err != tt.want {
 				t.Errorf("ensureToggleableComponents() error = %v, want %v", err, tt.want)
+			}
+		})
+	}
+}
+
+func Test_getConsoleURL(t *testing.T) {
+	tests := []struct {
+		name      string
+		unitTest  string
+		console   *configv1.Console
+		wantURL   string
+		wantError bool
+	}{
+		{
+			name:     "returns test URL when UNIT_TEST is set",
+			unitTest: "true",
+			wantURL:  "https://console-openshift-console.apps.installer-test-cluster.dev00.red-chesterfield.com",
+		},
+		{
+			name: "returns console URL from cluster resource",
+			console: &configv1.Console{
+				ObjectMeta: metav1.ObjectMeta{Name: "cluster"},
+				Status:     configv1.ConsoleStatus{ConsoleURL: "https://console.example.com"},
+			},
+			wantURL: "https://console.example.com",
+		},
+		{
+			name: "returns error when console URL is empty",
+			console: &configv1.Console{
+				ObjectMeta: metav1.ObjectMeta{Name: "cluster"},
+			},
+			wantError: true,
+		},
+		{
+			name:      "returns error when console resource does not exist",
+			wantError: true,
+		},
+	}
+
+	registerScheme()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.unitTest != "" {
+				t.Setenv("UNIT_TEST", tt.unitTest)
+			} else if _, ok := os.LookupEnv("UNIT_TEST"); ok {
+				t.Setenv("UNIT_TEST", "")
+				os.Unsetenv("UNIT_TEST")
+			}
+
+			objs := []client.Object{}
+			if tt.console != nil {
+				objs = append(objs, tt.console)
+			}
+			cl := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(objs...).WithStatusSubresource(objs...).Build()
+			r := &MultiClusterEngineReconciler{
+				Client: cl,
+				Scheme: scheme.Scheme,
+				Log:    logr.Discard(),
+			}
+
+			url, err := r.getConsoleURL(context.TODO())
+			if tt.wantError {
+				if err == nil {
+					t.Errorf("expected error, got nil")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if url != tt.wantURL {
+				t.Errorf("got URL %q, want %q", url, tt.wantURL)
 			}
 		})
 	}

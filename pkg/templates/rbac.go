@@ -40,7 +40,8 @@ const (
 //+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=clustermanagementaddons,verbs=create;get;list;update;patch;watch;delete
 //+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=addondeploymentconfigs,verbs=create;get;list;update;patch;watch;delete
 //+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=addontemplates,verbs=create;get;list;update;patch;watch;delete
-//+kubebuilder:rbac:groups=console.openshift.io,resources=consoleplugins;consolequickstarts,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=placements,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=console.openshift.io,resources=consolenotifications;consoleplugins;consolequickstarts,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=monitoring.coreos.com,resources=servicemonitors,verbs=get;create;update;list;watch;delete;patch
 //+kubebuilder:rbac:groups=cert-manager.io,resources=certificates,verbs=get;create;update;list;watch;delete;patch
 //+kubebuilder:rbac:groups=cert-manager.io,resources=issuers,verbs=get;create;update;list;watch;delete;patch
@@ -57,6 +58,7 @@ var resources = []string{
 	"ClusterRole",
 	"ClusterRoleBinding",
 	"ConfigMap",
+	"ConsoleNotification",
 	"ConsolePlugin",
 	"ConsoleQuickStart",
 	"CustomResourceDefinition",
@@ -66,6 +68,7 @@ var resources = []string{
 	"MutatingWebhookConfiguration",
 	"Namespace",
 	"NetworkPolicy",
+	"Placement",
 	"PodDisruptionBudget",
 	"PrometheusRule",
 	"Role",

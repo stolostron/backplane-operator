@@ -38,6 +38,7 @@ const (
 	ClusterProxyAddonDir               = "pkg/templates/charts/toggle/cluster-proxy-addon"
 	ConsoleMCEChartsDir                = "pkg/templates/charts/toggle/console-mce"
 	DiscoveryChartDir                  = "pkg/templates/charts/toggle/discovery-operator"
+	FleetNavigationChartDir            = "pkg/templates/charts/toggle/fleet-navigation"
 	HiveChartDir                       = "pkg/templates/charts/toggle/hive-operator"
 	HostedImportChartDir               = "pkg/templates/charts/hosted/server-foundation"
 	HostingImportChartDir              = "pkg/templates/charts/hosting/server-foundation"

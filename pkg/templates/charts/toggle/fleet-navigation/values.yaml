@@ -1,0 +1,10 @@
+global:
+  deployOnOCP: true
+  namespace: default
+  pullSecret: null
+  templateOverrides: {}
+hubconfig:
+  clusterIngressDomain: ''
+  consoleURL: ''
+  localClusterName: ''
+org: open-cluster-management
