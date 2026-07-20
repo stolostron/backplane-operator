@@ -738,7 +738,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 						Name: BackplaneConfigName,
 					},
 					Spec: backplanev1.MultiClusterEngineSpec{
-						TargetNamespace:  "test-n2",
+						TargetNamespace: "test-n2",
 						NetworkPolicies: backplanev1.NetworkPoliciesConfig{Enabled: true},
 					},
 				}
