@@ -15,7 +15,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var _ = Describe("NetworkPolicy Controller", func() {
+var _ = Describe("NetworkPolicy Controller", Ordered, func() {
 	const (
 		mceName           = "test-mce"
 		targetNS          = "multicluster-engine"
@@ -100,7 +100,7 @@ var _ = Describe("NetworkPolicy Controller", func() {
 			// Run ensureNetworkPolicies
 			result, err := reconciler.ensureNetworkPolicies(ctx, mce)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(result.Requeue).To(BeFalse())
+			Expect(result.RequeueAfter).To(BeZero())
 
 			// Verify NetworkPolicy was deleted
 			Eventually(func() bool {
@@ -128,7 +128,7 @@ var _ = Describe("NetworkPolicy Controller", func() {
 			// Run ensureNetworkPolicies
 			result, err := reconciler.ensureNetworkPolicies(ctx, mce)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(result.Requeue).To(BeFalse())
+			Expect(result.RequeueAfter).To(BeZero())
 
 			// Verify both NetworkPolicies were deleted
 			Eventually(func() int {
@@ -163,7 +163,7 @@ var _ = Describe("NetworkPolicy Controller", func() {
 			// Run ensureNetworkPolicies
 			result, err := reconciler.ensureNetworkPolicies(ctx, mce)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(result.Requeue).To(BeFalse())
+			Expect(result.RequeueAfter).To(BeZero())
 
 			// Verify only this MCE's NetworkPolicy was deleted
 			Eventually(func() error {
@@ -189,7 +189,7 @@ var _ = Describe("NetworkPolicy Controller", func() {
 			// Run ensureNetworkPolicies
 			result, err := reconciler.ensureNetworkPolicies(ctx, mce)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(result.Requeue).To(BeFalse())
+			Expect(result.RequeueAfter).To(BeZero())
 		})
 	})
 
@@ -206,7 +206,7 @@ var _ = Describe("NetworkPolicy Controller", func() {
 			// Run ensureNetworkPolicies (will skip creation since no chart templates in test)
 			result, err := reconciler.ensureNetworkPolicies(ctx, mce)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(result.Requeue).To(BeFalse())
+			Expect(result.RequeueAfter).To(BeZero())
 
 			// Verify NetworkPolicy still exists
 			Expect(k8sClient.Get(ctx, types.NamespacedName{
