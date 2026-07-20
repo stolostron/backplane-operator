@@ -83,6 +83,7 @@ func TestRender(t *testing.T) {
 			ImagePullSecret:    backplaneImagePullSecret,
 			Tolerations:        backplaneTolerations,
 			TargetNamespace:    backplaneNamespace,
+			NetworkPolicies:    backplane.NetworkPoliciesConfig{Enabled: true},
 		},
 		Status: backplane.MultiClusterEngineStatus{
 			Phase: "",
@@ -333,6 +334,7 @@ func TestNonOCPRender(t *testing.T) {
 			ImagePullSecret:    backplaneImagePullSecret,
 			Tolerations:        backplaneTolerations,
 			TargetNamespace:    backplaneNamespace,
+			NetworkPolicies:    backplane.NetworkPoliciesConfig{Enabled: true},
 		},
 		Status: backplane.MultiClusterEngineStatus{
 			Phase: "",
