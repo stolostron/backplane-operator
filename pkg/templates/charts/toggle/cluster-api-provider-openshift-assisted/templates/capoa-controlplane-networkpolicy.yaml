@@ -1,0 +1,65 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: capoa-controlplane-controller-manager
+  labels:
+    control-plane: capoa-controlplane-controller-manager
+spec:
+  podSelector:
+    matchLabels:
+      control-plane: capoa-controlplane-controller-manager
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Same-namespace traffic
+    - from:
+        - podSelector: {}
+    # Monitoring
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              network.openshift.io/policy-group: monitoring
+      ports:
+        - protocol: TCP
+          port: 8080
+    # Webhook calls from kube-apiserver (conversion)
+    - ports:
+        - protocol: TCP
+          port: 9443
+  egress:
+    # DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-dns
+      ports:
+        - protocol: UDP
+          port: 5353
+        - protocol: TCP
+          port: 5353
+    # Kubernetes API
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              component: apiserver
+      ports:
+        - protocol: TCP
+          port: 6443
+    # Spoke/workload cluster API servers (dynamic IPs)
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 6443
+    # HTTPS egress (container registries for release image manifests)
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 169.254.169.254/32
+      ports:
+        - protocol: TCP
+          port: 443
