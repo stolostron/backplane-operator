@@ -3,9 +3,6 @@
     "addLabels": [
         "ok-to-test"
     ],
-    "baseBranchPatterns": [
-        "/(^main$)|(^backplane-(2\\.(6|7|8|9|[1-9][0-9]+)|[3-9]\\.\\d+)$)/"
-    ],
     "rebaseWhen": "behind-base-branch",
     "recreateWhen": "never",
     "schedule": [
