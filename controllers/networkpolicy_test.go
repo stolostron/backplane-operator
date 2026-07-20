@@ -27,17 +27,16 @@ var _ = Describe("NetworkPolicy Controller", func() {
 		np  *networkingv1.NetworkPolicy
 	)
 
-	BeforeEach(func() {
-		ctx := context.Background()
-
-		// Create target namespace
+	BeforeAll(func() {
 		ns := &corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: targetNS,
 			},
 		}
-		Expect(k8sClient.Create(ctx, ns)).To(Succeed())
+		Expect(k8sClient.Create(context.Background(), ns)).To(Succeed())
+	})
 
+	BeforeEach(func() {
 		mce = &backplanev1.MultiClusterEngine{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: mceName,
@@ -77,14 +76,6 @@ var _ = Describe("NetworkPolicy Controller", func() {
 		for i := range npList.Items {
 			_ = k8sClient.Delete(ctx, &npList.Items[i])
 		}
-
-		// Delete namespace
-		ns := &corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: targetNS,
-			},
-		}
-		_ = k8sClient.Delete(ctx, ns)
 	})
 
 	Context("when NetworkPolicies are disabled", func() {
