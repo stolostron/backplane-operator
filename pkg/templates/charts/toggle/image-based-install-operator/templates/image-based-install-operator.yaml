@@ -113,6 +113,8 @@ spec:
           value: /certs/tls.crt
         - name: PORT
           value: '8000'
+        - name: TMPDIR
+          value: /data
         image: '{{ .Values.global.imageOverrides.image_based_install_operator }}'
         imagePullPolicy: '{{ .Values.global.pullPolicy }}'
         name: server
