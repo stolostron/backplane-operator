@@ -6,6 +6,8 @@ global:
     cluster_api_provider_kubevirt: ""
     kube_rbac_proxy_mce: "registry.redhat.io/openshift4/ose-kube-rbac-proxy:v4.10"
   templateOverrides: {}
+  networkPolicies:
+    enabled: true
   namespace: default
   pullSecret: null
   deployOnOCP: ""
