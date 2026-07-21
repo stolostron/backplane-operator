@@ -1171,6 +1171,7 @@ spec:
           - authentications
           - clusteroperators
           - clusterversions
+          - consoles
           - dnses
           - ingresses
           - proxies
