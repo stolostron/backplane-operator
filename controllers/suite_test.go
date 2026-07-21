@@ -32,6 +32,7 @@ import (
 
 	operatorsapiv2 "github.com/operator-framework/api/pkg/operators/v2"
 	admissionregistration "k8s.io/api/admissionregistration/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 
 	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
@@ -138,6 +139,9 @@ var _ = BeforeSuite(func() {
 	err = addToSchemeIgnoringDuplicate(admissionregistration.AddToScheme, scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
+	err = addToSchemeIgnoringDuplicate(networkingv1.AddToScheme, scheme.Scheme)
+	Expect(err).NotTo(HaveOccurred())
+
 	err = addToSchemeIgnoringDuplicate(apixv1.AddToScheme, scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
@@ -190,6 +194,8 @@ var _ = BeforeSuite(func() {
 	err = operatorsapiv2.AddToScheme(mgrScheme)
 	Expect(err).NotTo(HaveOccurred())
 	err = admissionregistration.AddToScheme(mgrScheme)
+	Expect(err).NotTo(HaveOccurred())
+	err = networkingv1.AddToScheme(mgrScheme)
 	Expect(err).NotTo(HaveOccurred())
 	err = apixv1.AddToScheme(mgrScheme)
 	Expect(err).NotTo(HaveOccurred())

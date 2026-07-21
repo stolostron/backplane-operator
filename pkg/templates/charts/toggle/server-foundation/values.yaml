@@ -2,6 +2,8 @@ global:
   imageOverrides:
     multicloud_manager: quay.io/test/test:test
   templateOverrides: {}
+  networkPolicies:
+    enabled: true
   pullSecret: ""
   namespace: default
   deployOnOCP: ""

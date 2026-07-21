@@ -1,6 +1,8 @@
 global:
   hubSize: Small
   templateOverrides: {}
+  networkPolicies:
+    enabled: true
   imageOverrides:
     cluster_permission: ''
   namespace: open-cluster-management

@@ -54,16 +54,21 @@ type Values struct {
 }
 
 type Global struct {
-	ImageOverrides      map[string]string `json:"imageOverrides" structs:"imageOverrides"`
-	Upgrading           bool              `json:"upgrading" structs:"upgrading"`
-	EusUpgrading        bool              `json:"eusUpgrading" structs:"eusUpgrading"`
-	TemplateOverrides   map[string]string `json:"templateOverrides" structs:"templateOverrides"`
-	PullPolicy          string            `json:"pullPolicy" structs:"pullPolicy"`
-	PullSecret          string            `json:"pullSecret" structs:"pullSecret"`
-	Namespace           string            `json:"namespace" structs:"namespace"`
-	ConfigSecret        string            `json:"configSecret" structs:"configSecret"`
-	DeployOnOCP         bool              `json:"deployOnOCP" structs:"deployOnOCP"`
-	ServingCertCABundle string            `json:"servingCertCABundle" structs:"servingCertCABundle"`
+	ImageOverrides      map[string]string    `json:"imageOverrides" structs:"imageOverrides"`
+	Upgrading           bool                 `json:"upgrading" structs:"upgrading"`
+	EusUpgrading        bool                 `json:"eusUpgrading" structs:"eusUpgrading"`
+	TemplateOverrides   map[string]string    `json:"templateOverrides" structs:"templateOverrides"`
+	PullPolicy          string               `json:"pullPolicy" structs:"pullPolicy"`
+	PullSecret          string               `json:"pullSecret" structs:"pullSecret"`
+	Namespace           string               `json:"namespace" structs:"namespace"`
+	ConfigSecret        string               `json:"configSecret" structs:"configSecret"`
+	DeployOnOCP         bool                 `json:"deployOnOCP" structs:"deployOnOCP"`
+	ServingCertCABundle string               `json:"servingCertCABundle" structs:"servingCertCABundle"`
+	NetworkPolicies     NetworkPoliciesValue `json:"networkPolicies" structs:"networkPolicies"`
+}
+
+type NetworkPoliciesValue struct {
+	Enabled bool `json:"enabled" structs:"enabled"`
 }
 
 type HubConfig struct {
@@ -375,7 +380,7 @@ func renderTemplates(chartPath string, backplaneConfig *v1.MultiClusterEngine, i
 
 	chart, err := loader.Load(chartPath)
 	if err != nil {
-		log.Info(fmt.Sprintf("error loading chart: %s", chart.Name()))
+		log.Info(fmt.Sprintf("error loading chart from path: %s", chartPath))
 		return nil, append(errs, err)
 	}
 
@@ -460,6 +465,12 @@ func injectValuesOverrides(values *Values, backplaneConfig *v1.MultiClusterEngin
 			values.Global.ConfigSecret = secretNN.Name
 		}
 	}
+
+	// Inject NetworkPolicies configuration
+	values.Global.NetworkPolicies = NetworkPoliciesValue{
+		Enabled: backplaneConfig.Spec.NetworkPolicies.Enabled,
+	}
+
 	values.HubConfig.ReplicaCount = utils.DefaultReplicaCount(backplaneConfig)
 
 	values.HubConfig.MCHNamespace = utils.GetMCHNamespace(backplaneConfig)

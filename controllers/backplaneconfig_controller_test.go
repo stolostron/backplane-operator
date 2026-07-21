@@ -397,6 +397,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 					},
 					Spec: backplanev1.MultiClusterEngineSpec{
 						TargetNamespace: DestinationNamespace,
+						NetworkPolicies: backplanev1.NetworkPoliciesConfig{Enabled: true},
 						ImagePullSecret: "testsecret",
 						Overrides: &backplanev1.Overrides{
 							Components: []backplanev1.ComponentConfig{
@@ -596,6 +597,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 					},
 					Spec: backplanev1.MultiClusterEngineSpec{
 						TargetNamespace: DestinationNamespace,
+						NetworkPolicies: backplanev1.NetworkPoliciesConfig{Enabled: true},
 						ImagePullSecret: "testsecret",
 						Overrides: &backplanev1.Overrides{
 							Components: []backplanev1.ComponentConfig{
@@ -727,6 +729,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 					},
 					Spec: backplanev1.MultiClusterEngineSpec{
 						TargetNamespace: DestinationNamespace,
+						NetworkPolicies: backplanev1.NetworkPoliciesConfig{Enabled: true},
 						ImagePullSecret: "testsecret",
 					},
 				}
@@ -745,6 +748,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 					},
 					Spec: backplanev1.MultiClusterEngineSpec{
 						TargetNamespace: "test-n2",
+						NetworkPolicies: backplanev1.NetworkPoliciesConfig{Enabled: true},
 					},
 				}
 
@@ -864,6 +868,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 					},
 					Spec: backplanev1.MultiClusterEngineSpec{
 						TargetNamespace: DestinationNamespace,
+						NetworkPolicies: backplanev1.NetworkPoliciesConfig{Enabled: true},
 						ImagePullSecret: "testsecret",
 					},
 				}
@@ -897,6 +902,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 					},
 					Spec: backplanev1.MultiClusterEngineSpec{
 						TargetNamespace: DestinationNamespace,
+						NetworkPolicies: backplanev1.NetworkPoliciesConfig{Enabled: true},
 						ImagePullSecret: "testsecret",
 						Overrides: &backplanev1.Overrides{
 							Components: []backplanev1.ComponentConfig{
@@ -1031,6 +1037,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 					},
 					Spec: backplanev1.MultiClusterEngineSpec{
 						TargetNamespace: DestinationNamespace,
+						NetworkPolicies: backplanev1.NetworkPoliciesConfig{Enabled: true},
 						ImagePullSecret: "testsecret",
 						Overrides: &backplanev1.Overrides{
 							Components: []backplanev1.ComponentConfig{
@@ -1160,6 +1167,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 					},
 					Spec: backplanev1.MultiClusterEngineSpec{
 						TargetNamespace: DestinationNamespace,
+						NetworkPolicies: backplanev1.NetworkPoliciesConfig{Enabled: true},
 						ImagePullSecret: "testsecret",
 						Overrides: &backplanev1.Overrides{
 							Components: []backplanev1.ComponentConfig{
@@ -1223,6 +1231,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 					},
 					Spec: backplanev1.MultiClusterEngineSpec{
 						TargetNamespace: DestinationNamespace,
+						NetworkPolicies: backplanev1.NetworkPoliciesConfig{Enabled: true},
 						ImagePullSecret: "testsecret",
 						Overrides: &backplanev1.Overrides{
 							ImagePullPolicy: corev1.PullAlways,
@@ -1291,6 +1300,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 					},
 					Spec: backplanev1.MultiClusterEngineSpec{
 						TargetNamespace: DestinationNamespace,
+						NetworkPolicies: backplanev1.NetworkPoliciesConfig{Enabled: true},
 						ImagePullSecret: "testsecret",
 						Overrides: &backplanev1.Overrides{
 							Components: []backplanev1.ComponentConfig{},
@@ -1431,6 +1441,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 					},
 					Spec: backplanev1.MultiClusterEngineSpec{
 						TargetNamespace: DestinationNamespace,
+						NetworkPolicies: backplanev1.NetworkPoliciesConfig{Enabled: true},
 						ImagePullSecret: "testsecret",
 					},
 				}
@@ -1499,6 +1510,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 					},
 					Spec: backplanev1.MultiClusterEngineSpec{
 						TargetNamespace: DestinationNamespace,
+						NetworkPolicies: backplanev1.NetworkPoliciesConfig{Enabled: true},
 						ImagePullSecret: "testsecret",
 					},
 				}
@@ -1567,6 +1579,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 					},
 					Spec: backplanev1.MultiClusterEngineSpec{
 						TargetNamespace: DestinationNamespace,
+						NetworkPolicies: backplanev1.NetworkPoliciesConfig{Enabled: true},
 						ImagePullSecret: "testsecret",
 					},
 				}
@@ -1907,6 +1920,7 @@ func Test_ensureInternalEngineComponent(t *testing.T) {
 						},
 					},
 					TargetNamespace: "test-ns",
+					NetworkPolicies: backplanev1.NetworkPoliciesConfig{Enabled: true},
 				},
 			},
 			ns: &corev1.Namespace{
@@ -1970,6 +1984,7 @@ func Test_ensureNoInternalEngineComponent(t *testing.T) {
 						},
 					},
 					TargetNamespace: "test-ns",
+					NetworkPolicies: backplanev1.NetworkPoliciesConfig{Enabled: true},
 				},
 			},
 			ns: &corev1.Namespace{
@@ -2059,6 +2074,7 @@ func Test_ensureNoAllInternalEngineComponents(t *testing.T) {
 				},
 				Spec: backplanev1.MultiClusterEngineSpec{
 					TargetNamespace: "test-ns",
+					NetworkPolicies: backplanev1.NetworkPoliciesConfig{Enabled: true},
 				},
 			},
 			want: false,
@@ -2105,6 +2121,7 @@ func Test_finalizeBackplaneConfig(t *testing.T) {
 				Spec: backplanev1.MultiClusterEngineSpec{
 					LocalClusterName: "local-cluster",
 					TargetNamespace:  "test-ns",
+					NetworkPolicies:  backplanev1.NetworkPoliciesConfig{Enabled: true},
 				},
 			},
 			mceNS: &corev1.Namespace{
@@ -2295,6 +2312,7 @@ func Test_EnsureDeprecatedResourceCleanup(t *testing.T) {
 				},
 				Spec: backplanev1.MultiClusterEngineSpec{
 					TargetNamespace: "test-ns",
+					NetworkPolicies: backplanev1.NetworkPoliciesConfig{Enabled: true},
 				},
 			},
 			name: "should ensure deprecated resources are cleaned up",
@@ -2500,6 +2518,7 @@ func Test_ensureToggleableComponents_withExternallyManagedComponents(t *testing.
 				Spec: backplanev1.MultiClusterEngineSpec{
 					LocalClusterName: "local-cluster",
 					TargetNamespace:  "test-ns",
+					NetworkPolicies:  backplanev1.NetworkPoliciesConfig{Enabled: true},
 					Overrides: &backplanev1.Overrides{
 						Components: []backplanev1.ComponentConfig{
 							{Name: backplanev1.ManagedServiceAccount, Enabled: true},
