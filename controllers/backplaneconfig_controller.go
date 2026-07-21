@@ -151,6 +151,7 @@ var (
 // +kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=clustermanagementaddons;clustermanagementaddons/finalizers;managedclusteraddons;managedclusteraddons/finalizers;managedclusteraddons/status,verbs=create;get;list;update;patch;watch;delete;deletecollection
 // +kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=addondeploymentconfigs,verbs=get;list;watch;
 // +kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=addontemplates,verbs=get;list;delete
+// +kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=placements,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=addonplacementscores,verbs=create;get;list;update;patch;watch;delete;deletecollection
 // +kubebuilder:rbac:groups=proxy.open-cluster-management.io,resources=managedproxyconfigurations,verbs=create;get;list;update;patch;watch;delete;deletecollection
 // +kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclustersetbindings,verbs=create;get;list;update;patch;watch;delete;deletecollection
@@ -1015,6 +1016,7 @@ func (r *MultiClusterEngineReconciler) fetchChartOrCRDPath(component string) str
 		backplanev1.ClusterProxyAddon:              toggle.ClusterProxyAddonDir,
 		backplanev1.ConsoleMCE:                     toggle.ConsoleMCEChartsDir,
 		backplanev1.Discovery:                      toggle.DiscoveryChartDir,
+		backplanev1.FleetNavigation:                toggle.FleetNavigationChartDir,
 		backplanev1.Hive:                           toggle.HiveChartDir,
 		backplanev1.HyperShift:                     toggle.HyperShiftChartDir,
 		backplanev1.ImageBasedInstallOperator:      toggle.ImageBasedInstallOperatorChartDir,
@@ -1057,6 +1059,28 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 		}
 	} else {
 		log.Info(messages.SkippingExternallyManaged, "component", backplanev1.ManagedServiceAccount)
+	}
+
+	if !r.isComponentExternallyManaged(backplaneConfig, backplanev1.FleetNavigation) {
+		if backplaneConfig.Enabled(backplanev1.FleetNavigation) && foundation.CanInstallAddons(ctx, r.Client) {
+			result, err := r.ensureFleetNavigation(ctx, backplaneConfig)
+			if result != (ctrl.Result{}) {
+				requeue = true
+			}
+			if err != nil {
+				errs[backplanev1.FleetNavigation] = err
+			}
+		} else {
+			result, err := r.ensureNoFleetNavigation(ctx, backplaneConfig)
+			if result != (ctrl.Result{}) {
+				requeue = true
+			}
+			if err != nil {
+				errs[backplanev1.FleetNavigation] = err
+			}
+		}
+	} else {
+		log.Info(messages.SkippingExternallyManaged, "component", backplanev1.FleetNavigation)
 	}
 
 	if !r.isComponentExternallyManaged(backplaneConfig, backplanev1.ImageBasedInstallOperator) {
@@ -2201,6 +2225,7 @@ func (r *MultiClusterEngineReconciler) ensureNoAllInternalEngineComponents(ctx c
 		backplanev1.ClusterProxyAddon,
 		backplanev1.ConsoleMCE,
 		backplanev1.Discovery,
+		backplanev1.FleetNavigation,
 		backplanev1.Hive,
 		backplanev1.HyperShift,
 		backplanev1.ImageBasedInstallOperator,
@@ -2582,6 +2607,13 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 		// Set OCP version as env var, so that charts can render this value
 		os.Setenv("ACM_CLUSTER_INGRESS_DOMAIN", clusterIngressDomain)
 
+		consoleURL, err := r.getConsoleURL(ctx)
+		if err != nil {
+			log.Info("Failed to detect console URL, fleet-navigation link may be empty", "error", err)
+		} else if err := os.Setenv("ACM_HUB_CONSOLE_URL", consoleURL); err != nil {
+			return ctrl.Result{}, pkgerrors.Wrapf(err, "failed to set ACM_HUB_CONSOLE_URL")
+		}
+
 		// If OCP 4.10+ then set then enable the MCE console. Else ensure it is disabled
 		currentClusterVersion, err := r.getClusterVersion(ctx)
 		if err != nil {
@@ -2790,6 +2822,24 @@ func (r *MultiClusterEngineReconciler) getClusterVersion(ctx context.Context) (s
 }
 
 // +kubebuilder:rbac:groups="config.openshift.io",resources="ingresses",verbs=get;list;watch
+
+func (r *MultiClusterEngineReconciler) getConsoleURL(ctx context.Context) (string, error) {
+	if val, ok := os.LookupEnv("UNIT_TEST"); ok && val == "true" {
+		return "https://console-openshift-console.apps.installer-test-cluster.dev00.red-chesterfield.com", nil
+	}
+
+	console := &configv1.Console{}
+	err := r.Client.Get(ctx, types.NamespacedName{Name: "cluster"}, console)
+	if err != nil {
+		r.Log.Error(err, "Failed to get console config")
+		return "", err
+	}
+
+	if console.Status.ConsoleURL == "" {
+		return "", fmt.Errorf("consoleURL not found or empty in Console config")
+	}
+	return console.Status.ConsoleURL, nil
+}
 
 func (r *MultiClusterEngineReconciler) getClusterIngressDomain(ctx context.Context, mce *backplanev1.MultiClusterEngine) (string, error) {
 	// If Unit test

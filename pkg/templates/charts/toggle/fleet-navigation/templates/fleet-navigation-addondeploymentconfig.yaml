@@ -1,0 +1,46 @@
+apiVersion: addon.open-cluster-management.io/v1alpha1
+kind: AddOnDeploymentConfig
+metadata:
+  name: fleet-navigation
+  namespace: {{ .Values.global.namespace }}
+spec:
+  customizedVariables:
+  - name: TEXT_PREFIX
+    value: 'Cluster '
+  - name: TEXT_POSTFIX
+{{- if .Values.hubconfig.localClusterName }}
+    value: ' is managed by {{ .Values.hubconfig.localClusterName }}.'
+{{- else }}
+    value: ' is managed by a hub cluster.'
+{{- end }}
+  - name: LOCATION
+    value: BannerTop
+  - name: COLOR
+    value: 'var(--pf-v6-c-banner--Color, var(--pf-v5-global--Color--light-100))'
+  - name: BACKGROUND_COLOR
+    value: 'var(--pf-v6-c-banner--BackgroundColor, var(--pf-v5-global--BackgroundColor--dark-400))'
+  - name: LINK_HREF
+    value: '{{ .Values.hubconfig.consoleURL }}'
+  - name: LINK_TEXT
+    value: Go to the hub cluster console
+  nodePlacement:
+    {{- if .Values.hubconfig.nodeSelector }}
+    nodeSelector:
+      {{- range $key, $val := .Values.hubconfig.nodeSelector }}
+      {{ $key }}: {{ $val | quote }}
+      {{- end }}
+    {{- else }}
+    nodeSelector: {}
+    {{- end }}
+    {{- if .Values.hubconfig.tolerations }}
+    tolerations:
+      {{- range .Values.hubconfig.tolerations }}
+      - {{ if .Key }}key: {{ .Key }}{{- end }}
+        {{ if .Operator }}operator: {{ .Operator }}{{- end }}
+        {{ if .Value }}value: {{ .Value }}{{- end }}
+        {{ if .Effect }}effect: {{ .Effect }}{{- end }}
+        {{ if .TolerationSeconds }}tolerationSeconds: {{ .TolerationSeconds }}{{- end }}
+      {{- end }}
+    {{- else }}
+    tolerations: []
+    {{- end }}

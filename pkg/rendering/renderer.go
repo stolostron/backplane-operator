@@ -77,6 +77,8 @@ type HubConfig struct {
 	ClusterIngressDomain string            `json:"clusterIngressDomain" structs:"clusterIngressDomain"`
 	HubType              string            `json:"hubType" structs:"hubType"`
 	EnableFlightCtl      bool              `json:"enableFlightCtl" structs:"enableFlightCtl"`
+	ConsoleURL           string            `json:"consoleURL" structs:"consoleURL"`
+	LocalClusterName     string            `json:"localClusterName" structs:"localClusterName"`
 }
 
 type ProbeConfig struct {
@@ -477,6 +479,10 @@ func injectValuesOverrides(values *Values, backplaneConfig *v1.MultiClusterEngin
 	values.HubConfig.OCPVersion = os.Getenv("ACM_HUB_OCP_VERSION")
 
 	values.HubConfig.ClusterIngressDomain = os.Getenv("ACM_CLUSTER_INGRESS_DOMAIN")
+
+	values.HubConfig.ConsoleURL = os.Getenv("ACM_HUB_CONSOLE_URL")
+
+	values.HubConfig.LocalClusterName = backplaneConfig.Spec.LocalClusterName
 
 	values.HubConfig.HubType = utils.GetHubType(backplaneConfig)
 

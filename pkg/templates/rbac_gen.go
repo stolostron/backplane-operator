@@ -404,6 +404,7 @@ package main
 //+kubebuilder:rbac:groups=config.openshift.io,resources=apiservers,verbs=get;list;watch
 //+kubebuilder:rbac:groups=config.openshift.io,resources=apiservers,verbs=get;list;watch
 //+kubebuilder:rbac:groups=config.openshift.io,resources=apiservers,verbs=get;list;watch
+//+kubebuilder:rbac:groups=config.openshift.io,resources=apiservers,verbs=get;list;watch
 //+kubebuilder:rbac:groups=config.openshift.io,resources=apiservers;authentications,verbs=list;get;watch
 //+kubebuilder:rbac:groups=config.openshift.io,resources=apiservers;proxies,verbs=get;list;watch
 //+kubebuilder:rbac:groups=config.openshift.io,resources=clusteroperators;clusterversions;dnses;infrastructures;proxies,verbs=get;list;watch
@@ -688,6 +689,7 @@ package main
 //+kubebuilder:rbac:groups=network.frontdoor.azure.com,resources=webapplicationfirewallpolicies/finalizers;webapplicationfirewallpolicies/status,verbs=get;patch;update
 //+kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=networking.k8s.io,resources=networkpolicies,verbs=create;get;update
+//+kubebuilder:rbac:groups=networking.k8s.io,resources=networkpolicies,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=notificationhubs.azure.com,resources=namespaces/finalizers;namespaces/status;namespacesauthorizationrules/finalizers;namespacesauthorizationrules/status;notificationhubs/finalizers;notificationhubs/status;notificationhubsauthorizationrules/finalizers;notificationhubsauthorizationrules/status,verbs=get;patch;update
 //+kubebuilder:rbac:groups=notificationhubs.azure.com,resources=namespaces/finalizers;namespaces/status;namespacesauthorizationrules/finalizers;namespacesauthorizationrules/status;notificationhubs/finalizers;notificationhubs/status;notificationhubsauthorizationrules/finalizers;notificationhubsauthorizationrules/status,verbs=get;patch;update
 //+kubebuilder:rbac:groups=notificationhubs.azure.com,resources=namespaces;namespacesauthorizationrules;notificationhubs;notificationhubsauthorizationrules,verbs=create;delete;get;list;patch;update;watch
