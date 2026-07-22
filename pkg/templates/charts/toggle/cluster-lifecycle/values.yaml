@@ -10,6 +10,7 @@ global:
     enabled: true
   pullSecret: ""
   namespace: default
+  olmVersion: v0
   deployOnOCP: ""
 hubconfig:
   nodeSelector: {}

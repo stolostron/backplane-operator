@@ -1,8 +1,11 @@
 global:
   deployOnOCP: true
   namespace: default
+  olmVersion: v0
   pullSecret: null
   templateOverrides: {}
+  networkPolicies:
+    enabled: true
 hubconfig:
   clusterIngressDomain: ''
   consoleURL: ''

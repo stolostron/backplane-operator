@@ -4,6 +4,7 @@ global:
     azure_service_operator_rhel9: ''
     cluster_api_provider_azure_rhel9: ''
   namespace: default
+  olmVersion: v0
   pullSecret: null
   templateOverrides: {}
   networkPolicies:

@@ -3,6 +3,7 @@ global:
   imageOverrides:
     discovery_operator: ''
   namespace: default
+  olmVersion: v0
   pullSecret: null
   templateOverrides: {}
   networkPolicies:

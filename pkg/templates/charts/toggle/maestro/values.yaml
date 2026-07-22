@@ -11,6 +11,7 @@ global:
   templateOverrides: {}
   networkPolicies:
     enabled: true
+  olmVersion: v0
   pullSecret: null
   pullPolicy: IfNotPresent
   deployOnOCP: true

@@ -6,6 +6,7 @@ global:
     enabled: true
   pullSecret: ""
   namespace: default
+  olmVersion: v0
   deployOnOCP: ""
   servingCertCABundle: ""
   upgrading: false

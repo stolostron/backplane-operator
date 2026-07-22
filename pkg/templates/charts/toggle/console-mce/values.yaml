@@ -31,6 +31,7 @@ global:
   # console_mce_deployment_container_liveness_probe_failure_threshold: <count>
   pullPolicy: Always
   namespace: default
+  olmVersion: v0
   pullSecret: null
 hubconfig:
   nodeSelector: null
