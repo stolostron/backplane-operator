@@ -51,19 +51,36 @@ type Values struct {
 	Global    Global    `json:"global" structs:"global"`
 	HubConfig HubConfig `json:"hubconfig" structs:"hubconfig"`
 	Org       string    `json:"org" structs:"org"`
+	// EnableServiceProxy: upstream default false. ACM sets true (commit efb29e7b, Nov 2025).
+	// Used by user-deployment.yaml and user-service.yaml conditionals AND --enable-service-proxy arg.
+	EnableServiceProxy bool `json:"enableServiceProxy" structs:"enableServiceProxy"`
+	// EnableKubeApiProxy: upstream default true. ACM sets false (commit bc36de88, Jan 2023).
+	// ACM accesses managed cluster kube-apiserver through the service proxy (user-server Route,
+	// EnableServiceProxy=true) rather than the kube-api proxy (ExternalName Service on managed
+	// clusters). See ACM docs: cluster_proxy_addon_use.adoc.
+	// Used by --enable-kube-api-proxy arg in manager-deployment.yaml.
+	EnableKubeApiProxy bool `json:"enableKubeApiProxy" structs:"enableKubeApiProxy"`
+	// EnableImpersonation: upstream default true. ACM always enables.
+	// Used by {{- if .Values.enableImpersonation }} conditional in clusterrole.yaml.
+	EnableImpersonation bool `json:"enableImpersonation" structs:"enableImpersonation"`
 }
 
 type Global struct {
-	ImageOverrides      map[string]string `json:"imageOverrides" structs:"imageOverrides"`
-	Upgrading           bool              `json:"upgrading" structs:"upgrading"`
-	EusUpgrading        bool              `json:"eusUpgrading" structs:"eusUpgrading"`
-	TemplateOverrides   map[string]string `json:"templateOverrides" structs:"templateOverrides"`
-	PullPolicy          string            `json:"pullPolicy" structs:"pullPolicy"`
-	PullSecret          string            `json:"pullSecret" structs:"pullSecret"`
-	Namespace           string            `json:"namespace" structs:"namespace"`
-	ConfigSecret        string            `json:"configSecret" structs:"configSecret"`
-	DeployOnOCP         bool              `json:"deployOnOCP" structs:"deployOnOCP"`
-	ServingCertCABundle string            `json:"servingCertCABundle" structs:"servingCertCABundle"`
+	ImageOverrides      map[string]string    `json:"imageOverrides" structs:"imageOverrides"`
+	Upgrading           bool                 `json:"upgrading" structs:"upgrading"`
+	EusUpgrading        bool                 `json:"eusUpgrading" structs:"eusUpgrading"`
+	TemplateOverrides   map[string]string    `json:"templateOverrides" structs:"templateOverrides"`
+	PullPolicy          string               `json:"pullPolicy" structs:"pullPolicy"`
+	PullSecret          string               `json:"pullSecret" structs:"pullSecret"`
+	Namespace           string               `json:"namespace" structs:"namespace"`
+	ConfigSecret        string               `json:"configSecret" structs:"configSecret"`
+	DeployOnOCP         bool                 `json:"deployOnOCP" structs:"deployOnOCP"`
+	ServingCertCABundle string               `json:"servingCertCABundle" structs:"servingCertCABundle"`
+	NetworkPolicies     NetworkPoliciesValue `json:"networkPolicies" structs:"networkPolicies"`
+}
+
+type NetworkPoliciesValue struct {
+	Enabled bool `json:"enabled" structs:"enabled"`
 }
 
 type HubConfig struct {
@@ -375,7 +392,7 @@ func renderTemplates(chartPath string, backplaneConfig *v1.MultiClusterEngine, i
 
 	chart, err := loader.Load(chartPath)
 	if err != nil {
-		log.Info(fmt.Sprintf("error loading chart: %s", chart.Name()))
+		log.Info(fmt.Sprintf("error loading chart from path: %s", chartPath))
 		return nil, append(errs, err)
 	}
 
@@ -460,6 +477,12 @@ func injectValuesOverrides(values *Values, backplaneConfig *v1.MultiClusterEngin
 			values.Global.ConfigSecret = secretNN.Name
 		}
 	}
+
+	// Inject NetworkPolicies configuration
+	values.Global.NetworkPolicies = NetworkPoliciesValue{
+		Enabled: backplaneConfig.Spec.NetworkPolicies.Enabled,
+	}
+
 	values.HubConfig.ReplicaCount = utils.DefaultReplicaCount(backplaneConfig)
 
 	values.HubConfig.MCHNamespace = utils.GetMCHNamespace(backplaneConfig)
@@ -501,6 +524,15 @@ func injectValuesOverrides(values *Values, backplaneConfig *v1.MultiClusterEngin
 		proxyVar["NO_PROXY"] = os.Getenv("NO_PROXY")
 		values.HubConfig.ProxyConfigs = proxyVar
 	}
+
+	// cluster-proxy ACM overrides -- see pkg/templates/charts/toggle/cluster-proxy-addon/
+	// for comments in templates explaining each override vs upstream default.
+	// Upstream default: false. ACM enables service proxy (commit efb29e7b, Nov 2025).
+	values.EnableServiceProxy = true
+	// Upstream default: true. ACM disables kube-api proxy (commit bc36de88, Jan 2023).
+	values.EnableKubeApiProxy = false
+	// Upstream default: true. ACM always enables impersonation.
+	values.EnableImpersonation = true
 }
 
 // EnsureTLSProfileConfigMaps creates or updates the TLS profile ConfigMap in the specified namespaces.

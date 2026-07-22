@@ -3,6 +3,9 @@ global:
   imageOverrides:
     openshift_hive: ''
   namespace: default
+  networkPolicies:
+    enabled: true
+  olmVersion: v0
   pullSecret: null
   templateOverrides: {}
 hubconfig:

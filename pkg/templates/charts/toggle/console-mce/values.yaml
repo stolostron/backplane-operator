@@ -8,6 +8,8 @@ global:
   imageOverrides:
     console_mce: ""
   templateOverrides: {}
+  networkPolicies:
+    enabled: true
   # Available template overrides:
   # console_mce_deployment_container_memory_request: <memory-value>
   # console_mce_deployment_container_memory_limit: <memory-value>
@@ -29,6 +31,7 @@ global:
   # console_mce_deployment_container_liveness_probe_failure_threshold: <count>
   pullPolicy: Always
   namespace: default
+  olmVersion: v0
   pullSecret: null
 hubconfig:
   nodeSelector: null

@@ -8,6 +8,9 @@ global:
     assisted_service_9: ''
     postgresql_16: ''
   namespace: default
+  networkPolicies:
+    enabled: true
+  olmVersion: v0
   pullSecret: null
   templateOverrides: {}
 hubconfig:

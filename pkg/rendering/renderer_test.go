@@ -83,6 +83,7 @@ func TestRender(t *testing.T) {
 			ImagePullSecret:    backplaneImagePullSecret,
 			Tolerations:        backplaneTolerations,
 			TargetNamespace:    backplaneNamespace,
+			NetworkPolicies:    backplane.NetworkPoliciesConfig{Enabled: true},
 		},
 		Status: backplane.MultiClusterEngineStatus{
 			Phase: "",
@@ -333,6 +334,7 @@ func TestNonOCPRender(t *testing.T) {
 			ImagePullSecret:    backplaneImagePullSecret,
 			Tolerations:        backplaneTolerations,
 			TargetNamespace:    backplaneNamespace,
+			NetworkPolicies:    backplane.NetworkPoliciesConfig{Enabled: true},
 		},
 		Status: backplane.MultiClusterEngineStatus{
 			Phase: "",
@@ -668,6 +670,86 @@ func TestRenderCRDsSkipDirectories(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestNetworkPoliciesValueInjection(t *testing.T) {
+	os.Setenv("DIRECTORY_OVERRIDE", "../../")
+	defer os.Unsetenv("DIRECTORY_OVERRIDE")
+	os.Setenv("POD_NAMESPACE", "default")
+	defer os.Unsetenv("POD_NAMESPACE")
+	os.Setenv("ACM_HUB_OCP_VERSION", "4.12.0")
+	defer os.Unsetenv("ACM_HUB_OCP_VERSION")
+
+	testImages := map[string]string{}
+	for _, v := range utils.GetTestImages() {
+		testImages[v] = "quay.io/test/test:Test"
+	}
+
+	t.Run("NetworkPolicies enabled renders NP template", func(t *testing.T) {
+		mce := &backplane.MultiClusterEngine{
+			ObjectMeta: metav1.ObjectMeta{Name: "test-mce"},
+			Spec: backplane.MultiClusterEngineSpec{
+				TargetNamespace: "default",
+				NetworkPolicies: backplane.NetworkPoliciesConfig{Enabled: true},
+			},
+		}
+
+		templates, errs := RenderChart("pkg/templates/charts/toggle/hypershift", mce, testImages, map[string]string{})
+		if len(errs) > 0 {
+			t.Fatalf("RenderChart failed: %v", errs)
+		}
+
+		foundNP := false
+		for _, tmpl := range templates {
+			if tmpl.GetKind() == "NetworkPolicy" {
+				foundNP = true
+				if tmpl.GetName() != "hypershift-addon-manager-network-policy" {
+					t.Errorf("unexpected NetworkPolicy name: %s", tmpl.GetName())
+				}
+			}
+		}
+		if !foundNP {
+			t.Error("expected NetworkPolicy template when networkPolicies.enabled=true")
+		}
+	})
+
+	t.Run("NetworkPolicies disabled excludes NP template", func(t *testing.T) {
+		mce := &backplane.MultiClusterEngine{
+			ObjectMeta: metav1.ObjectMeta{Name: "test-mce"},
+			Spec: backplane.MultiClusterEngineSpec{
+				TargetNamespace: "default",
+				NetworkPolicies: backplane.NetworkPoliciesConfig{Enabled: false},
+			},
+		}
+
+		templates, errs := RenderChart("pkg/templates/charts/toggle/hypershift", mce, testImages, map[string]string{})
+		if len(errs) > 0 {
+			t.Fatalf("RenderChart failed: %v", errs)
+		}
+
+		for _, tmpl := range templates {
+			if tmpl.GetKind() == "NetworkPolicy" {
+				t.Error("NetworkPolicy should not be rendered when networkPolicies.enabled=false")
+			}
+		}
+	})
+}
+
+func TestRenderChartInvalidPath(t *testing.T) {
+	os.Setenv("DIRECTORY_OVERRIDE", "../../")
+	defer os.Unsetenv("DIRECTORY_OVERRIDE")
+
+	mce := &backplane.MultiClusterEngine{
+		ObjectMeta: metav1.ObjectMeta{Name: "test-mce"},
+		Spec: backplane.MultiClusterEngineSpec{
+			TargetNamespace: "default",
+		},
+	}
+
+	_, errs := RenderChart("pkg/templates/charts/toggle/nonexistent", mce, map[string]string{}, map[string]string{})
+	if len(errs) == 0 {
+		t.Error("expected error for invalid chart path")
 	}
 }
 

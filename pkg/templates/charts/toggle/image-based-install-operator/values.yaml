@@ -3,6 +3,9 @@ global:
   imageOverrides:
     image_based_install_operator: ''
   namespace: default
+  networkPolicies:
+    enabled: true
+  olmVersion: v0
   pullSecret: null
   templateOverrides: {}
 hubconfig:

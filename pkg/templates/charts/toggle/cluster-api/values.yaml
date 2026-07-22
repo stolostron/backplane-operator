@@ -4,8 +4,11 @@ global:
     mce_capi_webhook_config_rhel9: ''
     ose_cluster_api_rhel9: ''
   namespace: default
+  olmVersion: v0
   pullSecret: null
   templateOverrides: {}
+  networkPolicies:
+    enabled: true
 hubconfig:
   nodeSelector: null
   ocpVersion: 4.12.0

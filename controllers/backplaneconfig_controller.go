@@ -139,7 +139,7 @@ var (
 // +kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions/status,verbs=update;patch
 // +kubebuilder:rbac:groups=apiregistration.k8s.io,resources=apiservices,verbs=create;get;list;update;watch;patch;delete
 // +kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=validatingwebhookconfigurations;mutatingwebhookconfigurations,verbs=create;get;list;update;watch;patch;delete
-// +kubebuilder:rbac:groups=networking.k8s.io,resources=networkpolicies,verbs=create;get;patch;update;delete
+// +kubebuilder:rbac:groups=networking.k8s.io,resources=networkpolicies,verbs=create;get;list;patch;update;delete
 // +kubebuilder:rbac:groups=operator.open-cluster-management.io,resources=clustermanagers,verbs=create;get;list;watch;update;delete;patch
 // +kubebuilder:rbac:groups=operator.open-cluster-management.io,resources=clustermanagers/status,verbs=update;patch
 // +kubebuilder:rbac:groups=imageregistry.open-cluster-management.io,resources=managedclusterimageregistries;managedclusterimageregistries/status,verbs=approve;bind;create;delete;deletecollection;escalate;get;list;patch;update;watch
@@ -520,6 +520,19 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 
 	result, err = r.ensureToggleableComponents(ctx, backplaneConfig)
 	if err != nil {
+		return result, err
+	}
+
+	/*
+		Ensure NetworkPolicies for MCE components. This implements a create-once pattern where
+		MCE creates initial NetworkPolicy resources. Operand teams then adopt and manage these
+		policies. MCE does not continuously reconcile after creation.
+	*/
+	result, err = r.ensureNetworkPolicies(ctx, backplaneConfig)
+	if result != (ctrl.Result{}) || err != nil {
+		if err != nil {
+			r.Log.Error(err, "Failed to ensure NetworkPolicies")
+		}
 		return result, err
 	}
 
@@ -2942,6 +2955,26 @@ func (r *MultiClusterEngineReconciler) GetDeprecatedResources(m *backplanev1.Mul
 		&rbacv1.ClusterRole{
 			TypeMeta:   metav1.TypeMeta{Kind: "ClusterRole"},
 			ObjectMeta: metav1.ObjectMeta{Name: "open-cluster-management:hypershift-preview:hypershift-addon-manager"},
+		},
+		// Deprecated: cluster-proxy RBAC resources renamed from cluster-proxy-addon to cluster-proxy
+		// to align with upstream (open-cluster-management-io/cluster-proxy). Old resources must be
+		// explicitly cleaned up on upgrade as the operator creates new-named resources and never
+		// touches the old ones.
+		&rbacv1.ClusterRole{
+			TypeMeta:   metav1.TypeMeta{Kind: "ClusterRole"},
+			ObjectMeta: metav1.ObjectMeta{Name: "open-cluster-management:cluster-proxy-addon:addon-manager"},
+		},
+		&rbacv1.ClusterRoleBinding{
+			TypeMeta:   metav1.TypeMeta{Kind: "ClusterRoleBinding"},
+			ObjectMeta: metav1.ObjectMeta{Name: "open-cluster-management:cluster-proxy-addon:addon-manager"},
+		},
+		&rbacv1.Role{
+			TypeMeta:   metav1.TypeMeta{Kind: "Role"},
+			ObjectMeta: metav1.ObjectMeta{Name: "open-cluster-management:cluster-proxy-addon:addon-manager", Namespace: m.Spec.TargetNamespace},
+		},
+		&rbacv1.RoleBinding{
+			TypeMeta:   metav1.TypeMeta{Kind: "RoleBinding"},
+			ObjectMeta: metav1.ObjectMeta{Name: "open-cluster-management:cluster-proxy-addon:addon-manager", Namespace: m.Spec.TargetNamespace},
 		},
 	}
 }

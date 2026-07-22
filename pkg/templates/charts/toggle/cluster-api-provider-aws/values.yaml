@@ -3,8 +3,11 @@ global:
   imageOverrides:
     cluster_api_provider_aws_rhel9: ''
   namespace: default
+  olmVersion: v0
   pullSecret: null
   templateOverrides: {}
+  networkPolicies:
+    enabled: true
 hubconfig:
   nodeSelector: null
   ocpVersion: 4.12.0

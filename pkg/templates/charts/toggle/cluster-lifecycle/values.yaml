@@ -6,8 +6,11 @@ global:
     clusterlifecycle_state_metrics: quay.io/test/test:test
     provider_credential_controller: quay.io/test/test:test
   templateOverrides: {}
+  networkPolicies:
+    enabled: true
   pullSecret: ""
   namespace: default
+  olmVersion: v0
   deployOnOCP: ""
 hubconfig:
   nodeSelector: {}
