@@ -3,11 +3,11 @@ global:
   imageOverrides:
     discovery_operator: ''
   namespace: default
+  networkPolicies:
+    enabled: true
   olmVersion: v0
   pullSecret: null
   templateOverrides: {}
-  networkPolicies:
-    enabled: true
 hubconfig:
   nodeSelector: null
   ocpVersion: 4.12.0
