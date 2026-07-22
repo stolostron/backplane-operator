@@ -2724,14 +2724,6 @@ rules:
   resources:
   - managedproxyconfigurations/finalizers
   - managedproxyconfigurations/status
-  - managedproxyserviceresolvers/finalizers
-  - managedproxyserviceresolvers/status
-  verbs:
-  - '*'
-- apiGroups:
-  - proxy.open-cluster-management.io
-  resources:
-  - managedproxyserviceresolvers
   verbs:
   - '*'
 - apiGroups:

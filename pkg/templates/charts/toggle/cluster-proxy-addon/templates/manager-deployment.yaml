@@ -1,28 +1,46 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  # ACM override: upstream uses  .Release.Namespace . Backplane rendering engine
+  # injects namespace from MCE spec.targetNamespace via Go Values struct.
   namespace: '{{ .Values.global.namespace }}'
   name: cluster-proxy-addon-manager
   labels:
-    chart: cluster-proxy-addon-2.1.0
+    # ACM override: upstream uses component: cluster-proxy-manager.
+    # ACM uses cluster-proxy-addon-manager to match historical naming.
     component: cluster-proxy-addon-manager
+    # ACM addition: chart label for resource identification. Not in upstream.
+    chart: cluster-proxy-addon-2.1.0
 spec:
+  # ACM override: upstream uses <replicas> .
+  # Controlled by MCE spec.availabilityConfig via Go Values struct.
   replicas: {{ .Values.hubconfig.replicaCount }}
   selector:
     matchLabels:
-      chart: cluster-proxy-addon-2.1.0
       component: cluster-proxy-addon-manager
+      # ACM addition: chart label preserved in matchLabels -- Deployment selectors are immutable
+      # after creation. Removing this would break upgrades on existing clusters.
+      chart: cluster-proxy-addon-2.1.0
   template:
     metadata:
       labels:
-        chart: cluster-proxy-addon-2.1.0
+        # Upstream label preserved for addon framework identification.
+        open-cluster-management.io/addon: cluster-proxy
         component: cluster-proxy-addon-manager
+        # ACM addition: used by podAntiAffinity below. Not in upstream.
         ocm-antiaffinity-selector: cluster-proxy-addon-manager
+        # ACM addition: chart label for resource identification. Not in upstream.
+        chart: cluster-proxy-addon-2.1.0
     spec:
       serviceAccount: cluster-proxy
+      # ACM addition: explicitly deny host-level namespace sharing. Not in upstream.
       hostNetwork: false
       hostPID: false
       hostIPC: false
+      # ACM override: upstream always sets seccompProfile unconditionally.
+      # ACM gates on OCP version because all backplane-operator charts follow this convention.
+      # To align with upstream this conditional should be removed across all charts when
+      # OCP <4.11 support is officially dropped operator-wide.
       securityContext:
         runAsNonRoot: true
       {{- if .Values.global.deployOnOCP }}
@@ -31,6 +49,7 @@ spec:
           type: RuntimeDefault
       {{- end }}
       {{- end }}
+      # ACM addition: multi-arch node affinity + pod anti-affinity for HA. Not in upstream.
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -65,34 +84,49 @@ spec:
                   - cluster-proxy-addon-manager
       containers:
         - name: manager
+          # ACM override: upstream uses the cluster-proxy-common.clusterProxyImage helper template.
+          # Backplane uses a single pre-composed image ref from RELATED_IMAGE_cluster_proxy env var.
           image: '{{ .Values.global.imageOverrides.cluster_proxy }}'
+          # ACM override: upstream hardcodes IfNotPresent.
+          # Backplane controls pull policy via MCE spec.overrides.imagePullPolicy.
           imagePullPolicy: '{{ .Values.global.pullPolicy }}'
           command:
             - /manager
-          env:
-          - name: POD_NAME
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.name
-          - name: POD_NAMESPACE
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.namespace
-          {{- if .Values.hubconfig.proxyConfigs }}
-          - name: HTTP_PROXY
-            value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
-          - name: HTTPS_PROXY
-            value: {{ .Values.hubconfig.proxyConfigs.HTTPS_PROXY }}
-          - name: NO_PROXY
-            value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
-          {{- end }}
           args:
             - --leader-elect=true
+            # ACM override: upstream uses  .Release.Namespace .
             - --signer-secret-namespace={{ .Values.global.namespace }}
+            # ACM addition: pass image name to addon manager for agent deployment. Not in upstream.
             - --agent-image-name={{ .Values.global.imageOverrides.cluster_proxy }}
+            # ACM override: upstream uses  <spokeAddonNamespace>  (default "open-cluster-management-cluster-proxy").
             - --agent-install-namespace=open-cluster-management-agent-addon
-            - --enable-kube-api-proxy=false
-            - --enable-service-proxy=true
+            # ACM override: upstream default true. ACM sets false via EnableKubeApiProxy in renderer.go
+            # because ACM accesses managed cluster kube-apiserver through the service proxy
+            # (user-server Route, --enable-service-proxy=true) rather than the kube-api proxy
+            # (ExternalName Service on managed clusters). See ACM docs: cluster_proxy_addon_use.adoc.
+            # (commit bc36de88, Jan 2023)
+            - --enable-kube-api-proxy={{ .Values.enableKubeApiProxy }}
+            # ACM override: upstream default false. ACM sets true via EnableServiceProxy in renderer.go (commit efb29e7b, Nov 2025).
+            - --enable-service-proxy={{ .Values.enableServiceProxy }}
+            # ACM: upstream --image-pull-policy= <proxyServer.imagePullPolicy>  arg removed. Not needed in ACM.
+            # ACM: upstream --feature-gates=ClusterProfile=... conditional removed.
+            # ClusterProfile not enabled in ACM. Re-add when needed
+            # (requires Go struct field for <featureGates> in renderer.go).
+          env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            # ACM addition: HTTP proxy support for clusters with egress proxy. Not in upstream.
+            {{- if .Values.hubconfig.proxyConfigs }}
+            - name: HTTP_PROXY
+              value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
+            - name: HTTPS_PROXY
+              value: {{ .Values.hubconfig.proxyConfigs.HTTPS_PROXY }}
+            - name: NO_PROXY
+              value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
+            {{- end }}
+          # ACM addition: resource requests for QoS. Not in upstream.
           resources:
             requests:
               cpu: 25m
@@ -101,18 +135,21 @@ spec:
             allowPrivilegeEscalation: false
             capabilities:
               drop:
-                - ALL
+              - ALL
             privileged: false
             runAsNonRoot: true
             readOnlyRootFilesystem: true
-        {{- if .Values.global.pullSecret }}
+      # ACM addition: image pull secret support. Not in upstream.
+      {{- if .Values.global.pullSecret }}
       imagePullSecrets:
       - name: {{ .Values.global.pullSecret }}
       {{- end }}
+      # ACM addition: node selector for scheduling control. Not in upstream.
       {{- with .Values.hubconfig.nodeSelector }}
       nodeSelector:
 {{ toYaml . | indent 8 }}
       {{- end }}
+      # ACM addition: tolerations for scheduling on infra nodes. Not in upstream.
       {{- with .Values.hubconfig.tolerations }}
       tolerations:
       {{- range . }}

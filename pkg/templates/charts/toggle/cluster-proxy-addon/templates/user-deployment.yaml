@@ -1,28 +1,47 @@
+{{- if .Values.enableServiceProxy }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  # ACM override: upstream uses  .Release.Namespace . Backplane rendering engine
+  # injects namespace from MCE spec.targetNamespace via Go Values struct.
   namespace: '{{ .Values.global.namespace }}'
   name: cluster-proxy-addon-user
   labels:
     component: cluster-proxy-addon-user
+    # ACM addition: chart label for resource identification. Not in upstream.
     chart: cluster-proxy-addon-2.1.0
 spec:
+  # ACM override: upstream uses <replicas> .
+  # Controlled by MCE spec.availabilityConfig via Go Values struct.
   replicas: {{ .Values.hubconfig.replicaCount }}
   selector:
     matchLabels:
       component: cluster-proxy-addon-user
+      # ACM addition: chart label preserved in matchLabels -- Deployment selectors are immutable
+      # after creation. Removing this would break upgrades on existing clusters.
       chart: cluster-proxy-addon-2.1.0
   template:
     metadata:
       labels:
+        # Upstream label preserved for addon framework identification.
+        open-cluster-management.io/addon: cluster-proxy
         component: cluster-proxy-addon-user
-        chart: cluster-proxy-addon-2.1.0
+        # ACM addition: used by podAntiAffinity below. Not in upstream.
         ocm-antiaffinity-selector: cluster-proxy-addon-user
+        # ACM addition: chart label for resource identification. Not in upstream.
+        chart: cluster-proxy-addon-2.1.0
     spec:
+      # ACM override: upstream uses deprecated serviceAccount field.
+      # ACM uses the current serviceAccountName field.
       serviceAccountName: cluster-proxy
+      # ACM addition: explicitly deny host-level namespace sharing. Not in upstream.
       hostNetwork: false
       hostPID: false
       hostIPC: false
+      # ACM override: upstream always sets seccompProfile unconditionally.
+      # ACM gates on OCP version because all backplane-operator charts follow this convention.
+      # To align with upstream this conditional should be removed across all charts when
+      # OCP <4.11 support is officially dropped operator-wide.
       securityContext:
         runAsNonRoot: true
       {{- if .Values.global.deployOnOCP }}
@@ -31,6 +50,7 @@ spec:
           type: RuntimeDefault
       {{- end }}
       {{- end }}
+      # ACM addition: multi-arch node affinity + pod anti-affinity for HA. Not in upstream.
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -64,100 +84,118 @@ spec:
                   values:
                   - cluster-proxy-addon-user
       containers:
-      - name: controllers
-        image: {{ .Values.global.imageOverrides.cluster_proxy }}
-        imagePullPolicy: {{ .Values.global.pullPolicy }}
-        command:
-          - "/cluster-proxy"
-        args:
-          - "controllers"
-          - "--certificates-namespace={{ .Values.global.namespace }}" # keep the same with the values in manager-deployment.yaml
-          - "--signer-secret-namespace={{ .Values.global.namespace }}"
-          - "--agent-image={{ .Values.global.imageOverrides.cluster_proxy }}"
-        env:
-        - name: POD_NAMESPACE
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.namespace
-        {{- if .Values.hubconfig.proxyConfigs }}
-        - name: HTTP_PROXY
-          value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
-        - name: HTTPS_PROXY
-          value: {{ .Values.hubconfig.proxyConfigs.HTTPS_PROXY }}
-        - name: NO_PROXY
-          value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
-        {{- end }}
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-            - ALL
-          privileged: false
-          readOnlyRootFilesystem: true
-          runAsNonRoot: true
-      - name: user-server
-        image: '{{ .Values.global.imageOverrides.cluster_proxy }}'
-        imagePullPolicy: '{{ .Values.global.pullPolicy }}'
-        command:
-          - "/cluster-proxy"
-        args:
-          - "user-server"
-          - "--host=proxy-entrypoint.{{ .Values.global.namespace }}.svc"
-          - "--port=8090"
-          - "--proxy-ca-cert=/proxy-ca/ca.crt"
-          - "--proxy-cert=/proxy-client-tls/tls.crt"
-          - "--proxy-key=/proxy-client-tls/tls.key"
-          - "--server-port=9092"
-          - "--server-key=/user-tls/tls.key"
-          - "--server-cert=/user-tls/tls.crt"
-          - "--service-proxy-ca-cert=/proxy-ca/ca.crt" # service-proxy is also sign by the singer ca of cluster-proxy. So here we use the same CA cert.
-          - "--agent-install-namespace=open-cluster-management-agent-addon"
-        env:
-        - name: POD_NAMESPACE
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.namespace
-        {{- if .Values.hubconfig.proxyConfigs }}
-        - name: HTTP_PROXY
-          value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
-        - name: HTTPS_PROXY
-          value: {{ .Values.hubconfig.proxyConfigs.HTTPS_PROXY }}
-        - name: NO_PROXY
-          value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
-        {{- end }}
-        resources:
-          requests:
-            cpu: 25m
-            memory: 256Mi
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-            - ALL
-          privileged: false
-          readOnlyRootFilesystem: true
-          runAsNonRoot: true
-        livenessProbe:
-          httpGet:
-            path: /healthz
-            scheme: HTTP
-            port: 8000
-          initialDelaySeconds: 2
-          periodSeconds: 10
-        volumeMounts:
-          - name: user-tls-vol
-            mountPath: /user-tls
-            readOnly: true
-          - name: proxy-server-ca
-            mountPath: /proxy-ca
-            readOnly: true
-          - name: proxy-client-cert
-            mountPath: /proxy-client-tls
-            readOnly: true
-        ports:
-          - name: user-port
-            containerPort: 9092
-            protocol: TCP
+        - name: controllers
+          # ACM override: upstream uses  include "cluster-proxy-common.clusterProxyImage" . .
+          # Backplane uses a single pre-composed image ref from RELATED_IMAGE_cluster_proxy env var.
+          image: {{ .Values.global.imageOverrides.cluster_proxy }}
+          # ACM override: upstream hardcodes IfNotPresent.
+          # Backplane controls pull policy via MCE spec.overrides.imagePullPolicy.
+          imagePullPolicy: {{ .Values.global.pullPolicy }}
+          command:
+            - /cluster-proxy
+          args:
+            - controllers
+            # ACM override: upstream uses  .Release.Namespace .
+            - --certificates-namespace={{ .Values.global.namespace }}
+            # ACM override: upstream uses  .Release.Namespace .
+            - --signer-secret-namespace={{ .Values.global.namespace }}
+            # ACM override: upstream uses $clusterProxyImage (from cluster-proxy-common.clusterProxyImage helper).
+            - --agent-image={{ .Values.global.imageOverrides.cluster_proxy }}
+          env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            # ACM addition: HTTP proxy support for clusters with egress proxy. Not in upstream.
+            {{- if .Values.hubconfig.proxyConfigs }}
+            - name: HTTP_PROXY
+              value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
+            - name: HTTPS_PROXY
+              value: {{ .Values.hubconfig.proxyConfigs.HTTPS_PROXY }}
+            - name: NO_PROXY
+              value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
+            {{- end }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            privileged: false
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+        - name: user-server
+          # ACM override: upstream uses  include "cluster-proxy-common.clusterProxyImage" . .
+          # Backplane uses a single pre-composed image ref from RELATED_IMAGE_cluster_proxy env var.
+          image: '{{ .Values.global.imageOverrides.cluster_proxy }}'
+          # ACM override: upstream hardcodes IfNotPresent.
+          # Backplane controls pull policy via MCE spec.overrides.imagePullPolicy.
+          imagePullPolicy: '{{ .Values.global.pullPolicy }}'
+          command:
+            - /cluster-proxy
+          args:
+            - user-server
+            # ACM override: upstream uses  .Release.Namespace .
+            - --host=proxy-entrypoint.{{ .Values.global.namespace }}.svc
+            - --port=8090
+            - --proxy-ca-cert=/proxy-ca/ca.crt
+            - --proxy-cert=/proxy-client-tls/tls.crt
+            - --proxy-key=/proxy-client-tls/tls.key
+            - --server-port=9092
+            - --server-key=/user-tls/tls.key
+            - --server-cert=/user-tls/tls.crt
+            - --service-proxy-ca-cert=/proxy-ca/ca.crt
+            # ACM override: upstream uses  <spokeAddonNamespace>  (default "open-cluster-management-cluster-proxy").
+            - --agent-install-namespace=open-cluster-management-agent-addon
+          env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            # ACM addition: HTTP proxy support for clusters with egress proxy. Not in upstream.
+            {{- if .Values.hubconfig.proxyConfigs }}
+            - name: HTTP_PROXY
+              value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
+            - name: HTTPS_PROXY
+              value: {{ .Values.hubconfig.proxyConfigs.HTTPS_PROXY }}
+            - name: NO_PROXY
+              value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
+            {{- end }}
+          # ACM addition: resource requests for QoS. Not in upstream.
+          resources:
+            requests:
+              cpu: 25m
+              memory: 256Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            privileged: false
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+          # ACM addition: liveness probe for health monitoring. Not in upstream.
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              scheme: HTTP
+              port: 8000
+            initialDelaySeconds: 2
+            periodSeconds: 10
+          volumeMounts:
+            - name: user-tls-vol
+              mountPath: /user-tls
+              readOnly: true
+            - name: proxy-server-ca
+              mountPath: /proxy-ca
+              readOnly: true
+            - name: proxy-client-cert
+              mountPath: /proxy-client-tls
+              readOnly: true
+          # ACM addition: named port for Route targetPort reference. Not in upstream.
+          ports:
+            - name: user-port
+              containerPort: 9092
+              protocol: TCP
       volumes:
         - name: user-tls-vol
           secret:
@@ -168,17 +206,23 @@ spec:
         - name: proxy-client-cert
           secret:
             secretName: proxy-client
+        # ACM addition: signer-ca volume added in commit 4dbcc666 (Oct 2022) as part of a security fix.
+        # This volume is defined but has no corresponding volumeMount in any container.
+        # Retained pending investigation of original intent. Not in upstream.
         - name: signer-ca
           secret:
             secretName: cluster-proxy-signer
+      # ACM addition: image pull secret support. Not in upstream.
       {{- if .Values.global.pullSecret }}
       imagePullSecrets:
       - name: {{ .Values.global.pullSecret }}
       {{- end }}
+      # ACM addition: node selector for scheduling control. Not in upstream.
       {{- with .Values.hubconfig.nodeSelector }}
       nodeSelector:
 {{ toYaml . | indent 8 }}
       {{- end }}
+      # ACM addition: tolerations for scheduling on infra nodes. Not in upstream.
       {{- with .Values.hubconfig.tolerations }}
       tolerations:
       {{- range . }}
@@ -188,4 +232,5 @@ spec:
         {{ if .Effect }} effect: {{ .Effect }} {{- end }}
         {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
         {{- end }}
+{{- end }}
 {{- end }}
