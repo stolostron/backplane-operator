@@ -38,19 +38,12 @@ spec:
           port: 5353
         - protocol: TCP
           port: 5353
-    # Kubernetes API
-    - to:
-        - namespaceSelector: {}
-          podSelector:
-            matchLabels:
-              component: apiserver
-      ports:
-        - protocol: TCP
-          port: 6443
-    # Spoke/workload cluster API servers (dynamic IPs)
+    # Kubernetes API and spoke/workload cluster API servers (dynamic IPs)
     - to:
         - ipBlock:
             cidr: 0.0.0.0/0
+        - ipBlock:
+            cidr: ::/0
       ports:
         - protocol: TCP
           port: 6443
@@ -60,6 +53,8 @@ spec:
             cidr: 0.0.0.0/0
             except:
               - 169.254.169.254/32
+        - ipBlock:
+            cidr: ::/0
       ports:
         - protocol: TCP
           port: 443
