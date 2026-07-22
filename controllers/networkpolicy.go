@@ -65,6 +65,11 @@ func (r *MultiClusterEngineReconciler) ensureNetworkPolicies(
 			continue
 		}
 
+		// Skip components without chart directories (e.g. hypershift-local-hosting uses RenderHypershiftAddon)
+		if component == backplanev1.HypershiftLocalHosting {
+			continue
+		}
+
 		// Skip externally managed components
 		if r.isComponentExternallyManaged(mce, component) {
 			log.V(2).Info("Skipping externally managed component", "component", component)
