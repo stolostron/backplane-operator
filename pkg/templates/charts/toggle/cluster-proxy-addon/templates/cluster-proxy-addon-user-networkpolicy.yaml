@@ -1,0 +1,52 @@
+{{- if and .Values.global.networkPolicies.enabled .Values.enableServiceProxy }}
+# Purpose: Layered-product default-deny for cluster-proxy-addon-user (user-server),
+# then allow Route/router and ocm-proxyserver ingress on 9092, plus DNS, API, and
+# ANP client egress to proxy-server on 8090.
+# Gaps: API egress is allow-all ({}). Router namespaceSelector may also match
+# hostNetwork traffic. Probe port 8000 is omitted (kubelet probes are not blocked
+# by NetworkPolicy). DNS is openshift-dns only.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cluster-proxy-addon-user-network-policy
+spec:
+  podSelector:
+    matchLabels:
+      component: cluster-proxy-addon-user
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          policy-group.network.openshift.io/ingress: ""
+    ports:
+    - protocol: TCP
+      port: 9092
+  - from:
+    - podSelector:
+        matchLabels:
+          control-plane: ocm-proxyserver
+    ports:
+    - protocol: TCP
+      port: 9092
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: openshift-dns
+    ports:
+    - protocol: TCP
+      port: 5353
+    - protocol: UDP
+      port: 5353
+  - to:
+    - podSelector:
+        matchLabels:
+          proxy.open-cluster-management.io/component-name: proxy-server
+    ports:
+    - protocol: TCP
+      port: 8090
+  - {}
+{{- end }}

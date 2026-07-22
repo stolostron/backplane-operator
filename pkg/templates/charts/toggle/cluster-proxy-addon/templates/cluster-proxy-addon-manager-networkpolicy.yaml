@@ -1,0 +1,29 @@
+{{- if .Values.global.networkPolicies.enabled }}
+# Purpose: Layered-product default-deny for cluster-proxy-addon-manager, then allow
+# DNS and API egress. Manager has no Service/Route ingress.
+# Gaps: API egress is allow-all ({}) because kube-apiserver is often host-networked
+# and not selectable by NetworkPolicy (OpenShift NP guideline). DNS targets
+# openshift-dns only (OCP); non-OCP kube-dns is not covered.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cluster-proxy-addon-manager-network-policy
+spec:
+  podSelector:
+    matchLabels:
+      component: cluster-proxy-addon-manager
+  policyTypes:
+  - Ingress
+  - Egress
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: openshift-dns
+    ports:
+    - protocol: TCP
+      port: 5353
+    - protocol: UDP
+      port: 5353
+  - {}
+{{- end }}
