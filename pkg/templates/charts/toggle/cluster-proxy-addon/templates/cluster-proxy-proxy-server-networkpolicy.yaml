@@ -1,0 +1,48 @@
+{{- if .Values.global.networkPolicies.enabled }}
+# Purpose: Layered-product default-deny for ANP proxy-server pods created via
+# ManagedProxyConfiguration, then allow OpenShift router ingress on 8090/8091
+# (proxy-entrypoint / cluster-proxy-addon-anp), same-namespace user-server
+# ingress on 8090 (ANP client), and DNS + API egress.
+# Gaps: API egress is allow-all ({}). Router namespaceSelector may also match
+# hostNetwork traffic. DNS is openshift-dns only.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cluster-proxy-proxy-server-network-policy
+spec:
+  podSelector:
+    matchLabels:
+      proxy.open-cluster-management.io/component-name: proxy-server
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          policy-group.network.openshift.io/ingress: ""
+    ports:
+    - protocol: TCP
+      port: 8090
+    - protocol: TCP
+      port: 8091
+  # Reciprocal allow for cluster-proxy-addon-user ANP client → proxy-server :8090
+  - from:
+    - podSelector:
+        matchLabels:
+          component: cluster-proxy-addon-user
+    ports:
+    - protocol: TCP
+      port: 8090
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: openshift-dns
+    ports:
+    - protocol: TCP
+      port: 5353
+    - protocol: UDP
+      port: 5353
+  - {}
+{{- end }}
