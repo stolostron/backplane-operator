@@ -1822,6 +1822,7 @@ rules:
   - metal3remediations
   - rosamachinepools
   - rosanetworks
+  - rosaocmroleconfigs
   - rosaroleconfigs
   verbs:
   - create
@@ -1841,6 +1842,7 @@ rules:
   - azureasomanagedmachinepools/finalizers
   - rosamachinepools/finalizers
   - rosanetworks/finalizers
+  - rosaocmroleconfigs/finalizers
   - rosaroleconfigs/finalizers
   verbs:
   - update
@@ -1870,6 +1872,7 @@ rules:
   - metal3remediations/status
   - rosaclusters/status
   - rosanetworks/status
+  - rosaocmroleconfigs/status
   - rosaroleconfigs/status
   verbs:
   - get

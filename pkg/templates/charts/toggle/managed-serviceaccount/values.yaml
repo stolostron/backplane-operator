@@ -3,9 +3,9 @@ global:
   imageOverrides:
     managed_serviceaccount: ''
   namespace: default
-  olmVersion: v0
   networkPolicies:
     enabled: true
+  olmVersion: v0
   pullSecret: null
   templateOverrides: {}
 hubconfig:
