@@ -2581,6 +2581,11 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 		updateNecessary = true
 	}
 
+	if m.Spec.NetworkPolicies == nil {
+		m.Spec.NetworkPolicies = &backplanev1.NetworkPoliciesConfig{Enabled: true}
+		updateNecessary = true
+	}
+
 	if utils.SetDefaultComponents(m) {
 		updateNecessary = true
 	}

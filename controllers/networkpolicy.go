@@ -36,7 +36,10 @@ func (r *MultiClusterEngineReconciler) ensureNetworkPolicies(
 ) (ctrl.Result, error) {
 	log := r.Log.WithValues("MultiClusterEngine", mce.Name, "Namespace", mce.Namespace)
 
-	networkPoliciesEnabled := mce.Spec.NetworkPolicies.Enabled
+	networkPoliciesEnabled := true
+	if mce.Spec.NetworkPolicies != nil {
+		networkPoliciesEnabled = mce.Spec.NetworkPolicies.Enabled
+	}
 
 	// If globally disabled, delete all MCE-created NetworkPolicies
 	if !networkPoliciesEnabled {
