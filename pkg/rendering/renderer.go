@@ -479,8 +479,12 @@ func injectValuesOverrides(values *Values, backplaneConfig *v1.MultiClusterEngin
 	}
 
 	// Inject NetworkPolicies configuration
+	networkPoliciesEnabled := true
+	if backplaneConfig.Spec.NetworkPolicies != nil {
+		networkPoliciesEnabled = backplaneConfig.Spec.NetworkPolicies.Enabled
+	}
 	values.Global.NetworkPolicies = NetworkPoliciesValue{
-		Enabled: backplaneConfig.Spec.NetworkPolicies.Enabled,
+		Enabled: networkPoliciesEnabled,
 	}
 
 	values.HubConfig.ReplicaCount = utils.DefaultReplicaCount(backplaneConfig)

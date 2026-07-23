@@ -83,7 +83,7 @@ func TestRender(t *testing.T) {
 			ImagePullSecret:    backplaneImagePullSecret,
 			Tolerations:        backplaneTolerations,
 			TargetNamespace:    backplaneNamespace,
-			NetworkPolicies:    backplane.NetworkPoliciesConfig{Enabled: true},
+			NetworkPolicies:    &backplane.NetworkPoliciesConfig{Enabled: true},
 		},
 		Status: backplane.MultiClusterEngineStatus{
 			Phase: "",
@@ -334,7 +334,7 @@ func TestNonOCPRender(t *testing.T) {
 			ImagePullSecret:    backplaneImagePullSecret,
 			Tolerations:        backplaneTolerations,
 			TargetNamespace:    backplaneNamespace,
-			NetworkPolicies:    backplane.NetworkPoliciesConfig{Enabled: true},
+			NetworkPolicies:    &backplane.NetworkPoliciesConfig{Enabled: true},
 		},
 		Status: backplane.MultiClusterEngineStatus{
 			Phase: "",
@@ -691,7 +691,7 @@ func TestNetworkPoliciesValueInjection(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{Name: "test-mce"},
 			Spec: backplane.MultiClusterEngineSpec{
 				TargetNamespace: "default",
-				NetworkPolicies: backplane.NetworkPoliciesConfig{Enabled: true},
+				NetworkPolicies: &backplane.NetworkPoliciesConfig{Enabled: true},
 			},
 		}
 
@@ -719,7 +719,7 @@ func TestNetworkPoliciesValueInjection(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{Name: "test-mce"},
 			Spec: backplane.MultiClusterEngineSpec{
 				TargetNamespace: "default",
-				NetworkPolicies: backplane.NetworkPoliciesConfig{Enabled: false},
+				NetworkPolicies: &backplane.NetworkPoliciesConfig{Enabled: false},
 			},
 		}
 
