@@ -68,6 +68,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (retRes ct
 		r.log.Info("Updating the validatingwebhookconfiguration " + MCEValidatingWebhookName)
 
 		existingWebhook.Webhooks = validatingWebhook.Webhooks
+		// Clear managedFields before applying - Server-Side Apply requires this to be nil
+		existingWebhook.ManagedFields = nil
 		// err = r.Client.Update(ctx, existingWebhook)
 		force := true
 		err := r.Client.Patch(ctx, existingWebhook, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
