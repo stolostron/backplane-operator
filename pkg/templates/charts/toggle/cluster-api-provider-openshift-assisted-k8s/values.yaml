@@ -4,11 +4,11 @@ global:
     cluster_api_provider_openshift_assisted_bootstrap: ''
     cluster_api_provider_openshift_assisted_control_plane: ''
   namespace: default
+  networkPolicies:
+    enabled: true
   olmVersion: v0
   pullSecret: null
   templateOverrides: {}
-  networkPolicies:
-    enabled: true
 hubconfig:
   nodeSelector: null
   ocpVersion: 4.12.0

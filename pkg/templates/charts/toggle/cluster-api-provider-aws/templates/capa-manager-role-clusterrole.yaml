@@ -104,6 +104,16 @@ rules:
   - cluster.x-k8s.io
   resources:
   - machinepools
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - watch
+- apiGroups:
+  - cluster.x-k8s.io
+  resources:
   - machinepools/status
   verbs:
   - create
@@ -201,6 +211,7 @@ rules:
   - awsmachinetemplates/status
   - rosaclusters/status
   - rosanetworks/status
+  - rosaocmroleconfigs/status
   - rosaroleconfigs/status
   verbs:
   - get
@@ -232,6 +243,7 @@ rules:
   - awsmachines
   - rosamachinepools
   - rosanetworks
+  - rosaocmroleconfigs
   - rosaroleconfigs
   verbs:
   - create
@@ -246,6 +258,7 @@ rules:
   resources:
   - rosamachinepools/finalizers
   - rosanetworks/finalizers
+  - rosaocmroleconfigs/finalizers
   - rosaroleconfigs/finalizers
   verbs:
   - update
