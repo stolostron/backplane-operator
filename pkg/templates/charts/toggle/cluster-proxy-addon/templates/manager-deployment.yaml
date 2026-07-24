@@ -108,6 +108,11 @@ spec:
             - --enable-kube-api-proxy={{ .Values.enableKubeApiProxy }}
             # ACM override: upstream default false. ACM sets true via EnableServiceProxy in renderer.go (commit efb29e7b, Nov 2025).
             - --enable-service-proxy={{ .Values.enableServiceProxy }}
+            # ACM override: upstream uses .Values.networkPolicies.enabled.
+            # Backplane uses .Values.global.networkPolicies.enabled (same value, different path).
+            # Controls whether the addon-manager deploys a NetworkPolicy on the managed cluster
+            # spoke-side (proxy-agent pod). Set from MCE spec.networkPolicies.enabled via renderer.go.
+            - --enable-network-policies={{ .Values.global.networkPolicies.enabled }}
             # ACM: upstream --image-pull-policy= <proxyServer.imagePullPolicy>  arg removed. Not needed in ACM.
             # ACM: upstream --feature-gates=ClusterProfile=... conditional removed.
             # ClusterProfile not enabled in ACM. Re-add when needed

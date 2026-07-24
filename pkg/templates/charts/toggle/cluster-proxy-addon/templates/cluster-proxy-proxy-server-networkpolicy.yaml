@@ -1,10 +1,10 @@
 {{- if .Values.global.networkPolicies.enabled }}
-# Purpose: Layered-product default-deny for ANP proxy-server pods created via
-# ManagedProxyConfiguration, then allow OpenShift router ingress on 8090/8091
-# (proxy-entrypoint / cluster-proxy-addon-anp), same-namespace user-server
-# ingress on 8090 (ANP client), and DNS + API egress.
-# Gaps: API egress is allow-all ({}). Router namespaceSelector may also match
-# hostNetwork traffic. DNS is openshift-dns only.
+# ACM override: upstream uses .Values.networkPolicies.enabled; backplane uses .Values.global.networkPolicies.enabled.
+# Purpose: Default-deny for ANP proxy-server pods created via
+# ManagedProxyConfiguration, then allow ingress on 8090/8091 (empty "from" for
+# ingress controllers / tunnel clients), same-namespace user-server on 8090,
+# and DNS + API egress.
+# Peers are port-based where destinations are not selectable across vendors.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -17,11 +17,8 @@ spec:
   - Ingress
   - Egress
   ingress:
-  - from:
-    - namespaceSelector:
-        matchLabels:
-          policy-group.network.openshift.io/ingress: ""
-    ports:
+  # Empty from: port-based allow (ingress controllers / ANP agents).
+  - ports:
     - protocol: TCP
       port: 8090
     - protocol: TCP
@@ -35,14 +32,20 @@ spec:
     - protocol: TCP
       port: 8090
   egress:
-  - to:
-    - namespaceSelector:
-        matchLabels:
-          kubernetes.io/metadata.name: openshift-dns
-    ports:
+  # DNS (:53 common; :5353 used by some distributions)
+  - ports:
+    - protocol: UDP
+      port: 53
     - protocol: TCP
-      port: 5353
+      port: 53
     - protocol: UDP
       port: 5353
-  - {}
+    - protocol: TCP
+      port: 5353
+  # Kubernetes API
+  - ports:
+    - protocol: TCP
+      port: 443
+    - protocol: TCP
+      port: 6443
 {{- end }}

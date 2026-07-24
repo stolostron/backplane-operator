@@ -1,10 +1,10 @@
 {{- if and .Values.global.networkPolicies.enabled .Values.enableServiceProxy }}
-# Purpose: Layered-product default-deny for cluster-proxy-addon-user (user-server),
-# then allow Route/router and ocm-proxyserver ingress on 9092, plus DNS, API, and
-# ANP client egress to proxy-server on 8090.
-# Gaps: API egress is allow-all ({}). Router namespaceSelector may also match
-# hostNetwork traffic. Probe port 8000 is omitted (kubelet probes are not blocked
-# by NetworkPolicy). DNS is openshift-dns only.
+# ACM override: upstream uses .Values.networkPolicies.enabled; backplane uses .Values.global.networkPolicies.enabled.
+# Purpose: Default-deny for cluster-proxy-addon-user (user-server), then allow
+# ingress on serving port 9092 (empty "from" for ingress controllers / in-cluster
+# clients), plus DNS, API, and ANP client egress to proxy-server on 8090.
+# Probe port 8000 is omitted (kubelet probes are not blocked by NetworkPolicy).
+# Peers are port-based where destinations are not selectable across vendors.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -17,30 +17,28 @@ spec:
   - Ingress
   - Egress
   ingress:
-  - from:
-    - namespaceSelector:
-        matchLabels:
-          policy-group.network.openshift.io/ingress: ""
-    ports:
-    - protocol: TCP
-      port: 9092
-  - from:
-    - podSelector:
-        matchLabels:
-          control-plane: ocm-proxyserver
-    ports:
+  # Empty from: port-based allow (ingress controllers / in-cluster clients).
+  - ports:
     - protocol: TCP
       port: 9092
   egress:
-  - to:
-    - namespaceSelector:
-        matchLabels:
-          kubernetes.io/metadata.name: openshift-dns
-    ports:
+  # DNS (:53 common; :5353 used by some distributions)
+  - ports:
+    - protocol: UDP
+      port: 53
     - protocol: TCP
-      port: 5353
+      port: 53
     - protocol: UDP
       port: 5353
+    - protocol: TCP
+      port: 5353
+  # Kubernetes API
+  - ports:
+    - protocol: TCP
+      port: 443
+    - protocol: TCP
+      port: 6443
+  # ANP client → same-namespace proxy-server
   - to:
     - podSelector:
         matchLabels:
@@ -48,5 +46,4 @@ spec:
     ports:
     - protocol: TCP
       port: 8090
-  - {}
 {{- end }}
