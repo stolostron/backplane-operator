@@ -109,7 +109,7 @@ var (
 // +kubebuilder:rbac:groups="discovery.open-cluster-management.io",resources=discoveryconfigs,verbs=list
 // +kubebuilder:rbac:groups="discovery.open-cluster-management.io",resources=discoveryconfigs;discoveredclusters,verbs=create;get;list;watch;update;delete;deletecollection;patch;approve;escalate;bind
 // +kubebuilder:rbac:groups=config.openshift.io,resources=apiservers;clusterversions,verbs=get;list;watch;
-// +kubebuilder:rbac:groups=console.openshift.io,resources=consoleplugins;consolequickstarts,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=console.openshift.io,resources=consoleplugins;consolequickstarts;consolenotifications,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=operator.openshift.io,resources=consoles,verbs=get;list;watch;update;patch
 
 // AgentServiceConfig webhook delete check
@@ -317,6 +317,11 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		currentOCPVersion, err := r.getClusterVersion(ctx)
 		if err != nil {
 			return ctrl.Result{}, fmt.Errorf("failed to detect clusterversion: %w", err)
+		}
+
+		// Ensure OCP compliance banner reflects current version (create or remove as needed)
+		if bannerErr := r.ensureOCPComplianceBanner(ctx, backplaneConfig, currentOCPVersion); bannerErr != nil {
+			r.Log.Error(bannerErr, "Failed to reconcile OCP compliance ConsoleNotification banner")
 		}
 
 		if err := version.ValidOCPVersion(currentOCPVersion); err != nil {
@@ -2247,6 +2252,11 @@ func (r *MultiClusterEngineReconciler) finalizeBackplaneConfig(ctx context.Conte
 				log.Info("Error ensuring plugin is removed from console resource")
 				return ctrl.Result{}, err
 			}
+		}
+
+		if err := r.cleanupConsoleNotifications(ctx, backplaneConfig); err != nil {
+			log.Error(err, "Failed to clean up ConsoleNotification banners")
+			return ctrl.Result{}, err
 		}
 	}
 

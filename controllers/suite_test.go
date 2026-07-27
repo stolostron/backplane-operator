@@ -27,6 +27,7 @@ import (
 	"testing"
 
 	configv1 "github.com/openshift/api/config/v1"
+	openshift_consolev1 "github.com/openshift/api/console/v1"
 	operatorv1 "github.com/openshift/api/operator/v1"
 	hiveconfig "github.com/openshift/hive/apis/hive/v1"
 
@@ -158,6 +159,9 @@ var _ = BeforeSuite(func() {
 	err = addToSchemeIgnoringDuplicate(operatorv1.AddToScheme, scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
+	err = addToSchemeIgnoringDuplicate(openshift_consolev1.AddToScheme, scheme.Scheme)
+	Expect(err).NotTo(HaveOccurred())
+
 	err = os.Setenv("POD_NAMESPACE", "default")
 	Expect(err).NotTo(HaveOccurred())
 
@@ -207,6 +211,9 @@ var _ = BeforeSuite(func() {
 	err = configv1.AddToScheme(mgrScheme)
 	Expect(err).NotTo(HaveOccurred())
 	err = operatorv1.AddToScheme(mgrScheme)
+	Expect(err).NotTo(HaveOccurred())
+
+	err = openshift_consolev1.AddToScheme(mgrScheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
