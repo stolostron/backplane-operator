@@ -11,10 +11,10 @@ spec:
     from:
       kind: DockerImage
       name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/azure-service-operator-rhel9:latest
-  - name: backplane-must-gather-rhel9
+  - name: must-gather-rhel9
     from:
       kind: DockerImage
-      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/backplane-must-gather-rhel9:latest
+      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/must-gather-rhel9:latest
   - name: capoa-bootstrap-rhel9
     from:
       kind: DockerImage
