@@ -50,6 +50,7 @@ import (
 	"github.com/stolostron/backplane-operator/pkg/toggle"
 	"github.com/stolostron/backplane-operator/pkg/utils"
 	"github.com/stolostron/backplane-operator/pkg/version"
+	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/util/retry"
 	addonv1alpha1 "open-cluster-management.io/api/addon/v1alpha1"
 	clustermanager "open-cluster-management.io/api/operator/v1"
@@ -489,6 +490,36 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 	if len(errs) > 0 {
 		for _, err := range errs {
 			return result, err
+		}
+	}
+
+	// Coordinate with Cluster CAPI Operator if it is present and we have CAPI CRDs to apply.
+	capiCRDNames := getCAPICRDNames(crds)
+	if len(capiCRDNames) > 0 {
+		config, err := ctrl.GetConfig()
+		if err != nil {
+			return result, fmt.Errorf("failed to get kubernetes config: %w", err)
+		}
+		discoveryClient, err := discovery.NewDiscoveryClientForConfig(config)
+		if err != nil {
+			return result, fmt.Errorf("failed to create discovery client: %w", err)
+		}
+		registered, err := isClusterAPIRegistered(discoveryClient)
+		if err != nil {
+			return result, err
+		}
+		if registered {
+			r.Log.Info("ClusterAPI API detected, coordinating with Cluster CAPI Operator")
+			generation, err := ensureUnmanagedCRDs(ctx, r.Client, crds)
+			if err != nil {
+				return result, err
+			}
+			if generation > 0 {
+				if err := waitForCAPIOperatorSync(ctx, r.Client, generation); err != nil {
+					return result, err
+				}
+				r.Log.Info("Cluster CAPI Operator synced successfully")
+			}
 		}
 	}
 
