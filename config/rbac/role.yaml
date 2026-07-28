@@ -11,7 +11,6 @@ rules:
   - events
   - namespaces
   - secrets
-  - serviceaccounts
   - services
   verbs:
   - '*'
@@ -32,6 +31,13 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - ""
+  resources:
+  - groups
+  - users
+  verbs:
+  - impersonate
 - apiGroups:
   - ""
   resources:
@@ -68,6 +74,12 @@ rules:
   - ""
   resources:
   - pods/portforward
+  verbs:
+  - '*'
+- apiGroups:
+  - ""
+  resources:
+  - serviceaccounts
   verbs:
   - '*'
 - apiGroups:

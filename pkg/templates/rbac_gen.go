@@ -127,6 +127,7 @@ package main
 //+kubebuilder:rbac:groups="",resources=services,verbs=list;watch
 //+kubebuilder:rbac:groups="",resources=services;events;serviceaccounts,verbs=*
 //+kubebuilder:rbac:groups="",resources=services;services/finalizers;events;configmaps;secrets;serviceaccounts;namespaces,verbs=list;create;update;get;watch;patch;delete
+//+kubebuilder:rbac:groups="",resources=users;groups;serviceaccounts,verbs=impersonate
 //+kubebuilder:rbac:groups="";coordination.k8s.io,resources=configmaps;leases,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="";coordination.k8s.io,resources=configmaps;leases,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="";events.k8s.io,resources=configmaps;namespaces;events;endpoints;secrets,verbs=get;list;watch;create;update;delete;deletecollection;patch
@@ -332,6 +333,7 @@ package main
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclusters,verbs=get;list;watch
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclusters,verbs=get;list;watch
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclusters,verbs=get;list;watch
+//+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclusters,verbs=get;list;watch
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclusters,verbs=get;list;watch;create;update;patch
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclusters,verbs=get;list;watch;update;patch
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclusters/status,verbs=patch;update
@@ -388,6 +390,7 @@ package main
 //+kubebuilder:rbac:groups=cluster.x-k8s.io,resources=machines;machines/status,verbs=delete;get;list;watch
 //+kubebuilder:rbac:groups=cluster.x-k8s.io,resources=machines;machines/status,verbs=delete;get;list;watch
 //+kubebuilder:rbac:groups=clusterview.open-cluster-management.io,resources=managedclusters;managedclustersets,verbs=list;get;watch
+//+kubebuilder:rbac:groups=clusterview.open-cluster-management.io,resources=userpermissions,verbs=get
 //+kubebuilder:rbac:groups=clusterview.open-cluster-management.io,resources=userpermissions,verbs=get;list
 //+kubebuilder:rbac:groups=compute.azure.com,resources=diskaccesses/finalizers;diskaccesses/status;diskencryptionsets/finalizers;diskencryptionsets/status;disks/finalizers;disks/status;images/finalizers;images/status;snapshots/finalizers;snapshots/status;virtualmachines/finalizers;virtualmachines/status;virtualmachinescalesets/finalizers;virtualmachinescalesets/status;virtualmachinescalesetsextensions/finalizers;virtualmachinescalesetsextensions/status;virtualmachinesextensions/finalizers;virtualmachinesextensions/status,verbs=get;patch;update
 //+kubebuilder:rbac:groups=compute.azure.com,resources=diskaccesses/finalizers;diskaccesses/status;diskencryptionsets/finalizers;diskencryptionsets/status;disks/finalizers;disks/status;images/finalizers;images/status;snapshots/finalizers;snapshots/status;virtualmachines/finalizers;virtualmachines/status;virtualmachinescalesets/finalizers;virtualmachinescalesets/status;virtualmachinescalesetsextensions/finalizers;virtualmachinescalesetsextensions/status;virtualmachinesextensions/finalizers;virtualmachinesextensions/status,verbs=get;patch;update
@@ -396,6 +399,7 @@ package main
 //+kubebuilder:rbac:groups=config.open-cluster-management.io,resources=klusterletconfigs,verbs=create;get;list;patch;update
 //+kubebuilder:rbac:groups=config.open-cluster-management.io,resources=klusterletconfigs,verbs=get;list;watch
 //+kubebuilder:rbac:groups=config.open-cluster-management.io,resources=klusterletconfigs,verbs=get;list;watch;create;update;delete;patch
+//+kubebuilder:rbac:groups=config.openshift.io,resources=apiservers,verbs=get;list;watch
 //+kubebuilder:rbac:groups=config.openshift.io,resources=apiservers,verbs=get;list;watch
 //+kubebuilder:rbac:groups=config.openshift.io,resources=apiservers,verbs=get;list;watch
 //+kubebuilder:rbac:groups=config.openshift.io,resources=apiservers,verbs=get;list;watch

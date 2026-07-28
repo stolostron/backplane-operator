@@ -1,0 +1,15 @@
+apiVersion: apiregistration.k8s.io/v1
+kind: APIService
+metadata:
+  name: v1alpha1.hcp.ocm.io
+  annotations:
+    service.beta.openshift.io/inject-cabundle: "true"
+spec:
+  group: hcp.ocm.io
+  groupPriorityMinimum: 2000
+  service:
+    name: hypershift-addon-hcp-proxy
+    namespace: {{ .Values.global.namespace }}
+    port: 443
+  version: v1alpha1
+  versionPriority: 10
