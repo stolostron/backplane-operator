@@ -44,7 +44,7 @@ var _ = Describe("NetworkPolicy Controller", Ordered, func() {
 			},
 			Spec: backplanev1.MultiClusterEngineSpec{
 				TargetNamespace: targetNS,
-				NetworkPolicies: backplanev1.NetworkPoliciesConfig{
+				NetworkPolicies: &backplanev1.NetworkPoliciesConfig{
 					Enabled: true,
 				},
 			},

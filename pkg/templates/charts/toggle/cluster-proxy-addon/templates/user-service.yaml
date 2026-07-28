@@ -1,18 +1,32 @@
+{{- if .Values.enableServiceProxy }}
 apiVersion: v1
 kind: Service
 metadata:
+  # ACM override: upstream uses  .Release.Namespace . Backplane rendering engine
+  # injects namespace from MCE spec.targetNamespace via Go Values struct.
+  namespace: '{{ .Values.global.namespace }}'
   name: cluster-proxy-addon-user
   labels:
-    chart: cluster-proxy-addon-2.1.0
     component: cluster-proxy-addon-user
+    # ACM addition: chart label for resource identification. Not in upstream.
+    chart: cluster-proxy-addon-2.1.0
   annotations:
-     service.alpha.openshift.io/serving-cert-secret-name: cluster-proxy-user-serving-cert
+    # ACM addition: use OpenShift service-ca operator to auto-generate TLS cert
+    # instead of upstream cert rotation (userServer.enabled=true). Upstream has no annotation.
+    service.alpha.openshift.io/serving-cert-secret-name: cluster-proxy-user-serving-cert
 spec:
-  ports:
-  - name: user-port
-    port: 9092
-    protocol: TCP
   selector:
+    # ACM: selects by component label matching the user-deployment pod template labels.
+    # Upstream uses open-cluster-management.io/addon: cluster-proxy selector, but ACM
+    # uses component label for consistency with the chart: label pattern.
     component: cluster-proxy-addon-user
     chart: cluster-proxy-addon-2.1.0
-
+  ports:
+    # ACM override: upstream uses port name "https". ACM uses "user-port" because
+    # user-route.yaml (backplane-only) references targetPort: user-port. Not in upstream.
+    - name: user-port
+      protocol: TCP
+      port: 9092
+      targetPort: 9092
+  type: ClusterIP
+{{- end }}

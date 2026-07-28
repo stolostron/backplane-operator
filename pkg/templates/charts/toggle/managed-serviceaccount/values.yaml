@@ -3,10 +3,11 @@ global:
   imageOverrides:
     managed_serviceaccount: ''
   namespace: default
-  pullSecret: null
-  templateOverrides: {}
   networkPolicies:
     enabled: true
+  olmVersion: v0
+  pullSecret: null
+  templateOverrides: {}
 hubconfig:
   nodeSelector: null
   ocpVersion: 4.12.0

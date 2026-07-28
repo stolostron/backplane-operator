@@ -36,7 +36,10 @@ func (r *MultiClusterEngineReconciler) ensureNetworkPolicies(
 ) (ctrl.Result, error) {
 	log := r.Log.WithValues("MultiClusterEngine", mce.Name, "Namespace", mce.Namespace)
 
-	networkPoliciesEnabled := mce.Spec.NetworkPolicies.Enabled
+	networkPoliciesEnabled := true
+	if mce.Spec.NetworkPolicies != nil {
+		networkPoliciesEnabled = mce.Spec.NetworkPolicies.Enabled
+	}
 
 	// If globally disabled, delete all MCE-created NetworkPolicies
 	if !networkPoliciesEnabled {
@@ -62,6 +65,11 @@ func (r *MultiClusterEngineReconciler) ensureNetworkPolicies(
 		componentEnabled := mce.Enabled(component)
 		if !componentEnabled {
 			// Component disabled - nothing to create or delete (rely on global deletion above if needed)
+			continue
+		}
+
+		// Skip components without chart directories (e.g. hypershift-local-hosting uses RenderHypershiftAddon)
+		if component == backplanev1.HypershiftLocalHosting {
 			continue
 		}
 

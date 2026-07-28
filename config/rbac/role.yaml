@@ -11,7 +11,6 @@ rules:
   - events
   - namespaces
   - secrets
-  - serviceaccounts
   - services
   verbs:
   - '*'
@@ -32,6 +31,13 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - ""
+  resources:
+  - groups
+  - users
+  verbs:
+  - impersonate
 - apiGroups:
   - ""
   resources:
@@ -68,6 +74,12 @@ rules:
   - ""
   resources:
   - pods/portforward
+  verbs:
+  - '*'
+- apiGroups:
+  - ""
+  resources:
+  - serviceaccounts
   verbs:
   - '*'
 - apiGroups:
@@ -1822,6 +1834,7 @@ rules:
   - metal3remediations
   - rosamachinepools
   - rosanetworks
+  - rosaocmroleconfigs
   - rosaroleconfigs
   verbs:
   - create
@@ -1841,6 +1854,7 @@ rules:
   - azureasomanagedmachinepools/finalizers
   - rosamachinepools/finalizers
   - rosanetworks/finalizers
+  - rosaocmroleconfigs/finalizers
   - rosaroleconfigs/finalizers
   verbs:
   - update
@@ -1870,6 +1884,7 @@ rules:
   - metal3remediations/status
   - rosaclusters/status
   - rosanetworks/status
+  - rosaocmroleconfigs/status
   - rosaroleconfigs/status
   verbs:
   - get
@@ -2724,14 +2739,6 @@ rules:
   resources:
   - managedproxyconfigurations/finalizers
   - managedproxyconfigurations/status
-  - managedproxyserviceresolvers/finalizers
-  - managedproxyserviceresolvers/status
-  verbs:
-  - '*'
-- apiGroups:
-  - proxy.open-cluster-management.io
-  resources:
-  - managedproxyserviceresolvers
   verbs:
   - '*'
 - apiGroups:

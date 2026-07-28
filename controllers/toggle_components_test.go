@@ -55,7 +55,7 @@ func Test_reconcileLocalHosting(t *testing.T) {
 		Spec: backplanev1.MultiClusterEngineSpec{
 			LocalClusterName: "local-cluster",
 			TargetNamespace:  DestinationNamespace,
-			NetworkPolicies:  backplanev1.NetworkPoliciesConfig{Enabled: true},
+			NetworkPolicies:  &backplanev1.NetworkPoliciesConfig{Enabled: true},
 			Overrides: &backplanev1.Overrides{
 				Components: []backplanev1.ComponentConfig{
 					{

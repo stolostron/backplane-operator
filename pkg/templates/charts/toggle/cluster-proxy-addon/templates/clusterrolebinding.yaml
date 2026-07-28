@@ -1,12 +1,14 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: {{ .Values.org }}:{{ .Chart.Name }}:addon-manager
+  name: open-cluster-management:cluster-proxy:addon-manager
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: {{ .Values.org }}:{{ .Chart.Name }}:addon-manager
+  name: open-cluster-management:cluster-proxy:addon-manager
 subjects:
   - kind: ServiceAccount
     name: cluster-proxy
+    # ACM override: upstream uses  .Release.Namespace . Backplane rendering engine
+    # injects namespace from MCE spec.targetNamespace via Go Values struct.
     namespace: '{{ .Values.global.namespace }}'

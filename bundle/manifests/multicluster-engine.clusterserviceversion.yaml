@@ -14,7 +14,7 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    createdAt: "2026-07-20T13:37:13Z"
+    createdAt: "2026-07-24T14:28:34Z"
     operators.operatorframework.io/builder: operator-sdk-v1.42.2
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
   name: multicluster-engine.v0.0.1
@@ -1010,6 +1010,7 @@ spec:
           - managedclusters/status
           - managedclustersets
           - placementdecisions
+          - placements
           verbs:
           - create
           - delete
@@ -1026,7 +1027,6 @@ spec:
           - managedclustersets/bind
           - managedclustersets/finalizers
           - managedclustersets/join
-          - placements
           - placements/finalizers
           verbs:
           - create
@@ -1234,6 +1234,7 @@ spec:
         - apiGroups:
           - console.openshift.io
           resources:
+          - consolenotifications
           - consoleplugins
           - consolequickstarts
           verbs:
@@ -1906,6 +1907,7 @@ spec:
           - metal3remediations
           - rosamachinepools
           - rosanetworks
+          - rosaocmroleconfigs
           - rosaroleconfigs
           verbs:
           - create
@@ -1925,6 +1927,7 @@ spec:
           - azureasomanagedmachinepools/finalizers
           - rosamachinepools/finalizers
           - rosanetworks/finalizers
+          - rosaocmroleconfigs/finalizers
           - rosaroleconfigs/finalizers
           verbs:
           - update
@@ -1954,6 +1957,7 @@ spec:
           - metal3remediations/status
           - rosaclusters/status
           - rosanetworks/status
+          - rosaocmroleconfigs/status
           - rosaroleconfigs/status
           verbs:
           - get
@@ -2808,14 +2812,6 @@ spec:
           resources:
           - managedproxyconfigurations/finalizers
           - managedproxyconfigurations/status
-          - managedproxyserviceresolvers/finalizers
-          - managedproxyserviceresolvers/status
-          verbs:
-          - '*'
-        - apiGroups:
-          - proxy.open-cluster-management.io
-          resources:
-          - managedproxyserviceresolvers
           verbs:
           - '*'
         - apiGroups:

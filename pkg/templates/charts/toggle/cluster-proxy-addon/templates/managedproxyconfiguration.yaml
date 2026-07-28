@@ -9,16 +9,29 @@ spec:
     signer:
       type: SelfSigned
   proxyServer:
+    # ACM override: upstream uses  include "cluster-proxy-common.proxyServerImage" . .
+    # Backplane uses a single pre-composed image ref from RELATED_IMAGE_cluster_proxy env var.
     image: '{{ .Values.global.imageOverrides.cluster_proxy }}'
-    namespace: '{{ .Values.global.namespace }}'
+    # ACM override: upstream uses  <replicas> .
+    # Controlled by MCE spec.availabilityConfig via Go Values struct.
     replicas: {{ .Values.hubconfig.replicaCount }}
+    # ACM override: upstream uses  .Release.Namespace .
+    # Backplane rendering engine injects namespace from MCE spec.targetNamespace.
+    namespace: '{{ .Values.global.namespace }}'
+    # ACM override: upstream supports Hostname/LoadBalancerService/PortForward via
+    #  <proxyServer.entrypointAddress> ,  <proxyServer.entrypointLoadBalancer> ,
+    # and  <proxyServer.port>  (default 8091).
+    # ACM always uses Hostname entrypoint via OpenShift Route (anp-route.yaml).
+    # Port is 443 because traffic enters via the OpenShift Route, not direct to 8091.
     entrypoint:
       type: Hostname
       hostname:
         value: cluster-proxy-anp.{{ .Values.hubconfig.clusterIngressDomain }}
       port: 443
+    # ACM addition: keepalive to prevent idle proxy-agent connections from dropping. Not in upstream.
     additionalArgs:
-      - "--keepalive-time=30s" # Use this to keep connection from proxy-agent stay alive
+      - "--keepalive-time=30s"
+    # ACM addition: nodePlacement for proxy-server pod scheduling. Not in upstream.
     nodePlacement:
       {{- with .Values.hubconfig.tolerations }}
       tolerations:
@@ -35,8 +48,19 @@ spec:
       {{- toYaml . | nindent 8 }}
       {{- end }}
   proxyAgent:
+    # ACM override: upstream uses  include "cluster-proxy-common.proxyAgentRepositoryImage" . .
+    # Backplane uses a single pre-composed image ref from RELATED_IMAGE_cluster_proxy env var.
     image: '{{ .Values.global.imageOverrides.cluster_proxy }}'
+    # ACM override: proxyAgent replicas hardcoded to 1.
+    # Upstream uses  <replicas>  (same as proxyServer replicas).
     replicas: 1
+    # ACM addition: OpenShift service CA ConfigMap for service-proxy TLS verification. Not in upstream.
     additionalServiceCAConfigMap: openshift-service-ca.crt
+    # ACM addition: pull secret for proxy-agent image on managed clusters. Not in upstream.
     imagePullSecrets:
     - "open-cluster-management-image-pull-credentials"
+  # ACM: upstream userServer cert rotation section removed.
+  # Upstream: - if <userServer.enabled>  userServer: ... - end 
+  # ACM uses OpenShift service-ca operator (serving-cert annotation on user-service.yaml)
+  # to auto-generate cluster-proxy-user-serving-cert instead.
+  # Re-enable when needed (requires Go struct field for <userServer> in renderer.go).

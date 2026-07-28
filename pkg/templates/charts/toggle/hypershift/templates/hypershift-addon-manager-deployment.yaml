@@ -58,6 +58,10 @@ spec:
       - emptyDir:
           medium: Memory
         name: tmp-vol
+      - name: hcp-proxy-tls
+        secret:
+          secretName: hypershift-addon-hcp-proxy-tls
+          optional: true
       hostNetwork: false
       hostPID: false
       hostIPC: false
@@ -77,6 +81,13 @@ spec:
           volumeMounts:
           - mountPath: /tmp
             name: tmp-vol
+          - mountPath: /etc/hcp-proxy/tls
+            name: hcp-proxy-tls
+            readOnly: true
+          ports:
+          - name: hcp-proxy
+            containerPort: 9443
+            protocol: TCP
           args:
             - ./hypershift-addon
             - manager

@@ -71,9 +71,9 @@ type MultiClusterEngineSpec struct {
 	LocalClusterName string `json:"localClusterName,omitempty"`
 
 	// NetworkPolicies configures NetworkPolicy deployment for MCE components
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="NetworkPolicies Configuration"
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
-	NetworkPolicies NetworkPoliciesConfig `json:"networkPolicies"`
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="NetworkPolicies Configuration",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	// +optional
+	NetworkPolicies *NetworkPoliciesConfig `json:"networkPolicies,omitempty"`
 }
 
 // NetworkPoliciesConfig provides configuration for NetworkPolicy deployment

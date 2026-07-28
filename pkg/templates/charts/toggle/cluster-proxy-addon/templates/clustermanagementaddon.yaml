@@ -1,24 +1,27 @@
-apiVersion: addon.open-cluster-management.io/v1alpha1
+apiVersion: addon.open-cluster-management.io/v1beta1
 kind: ClusterManagementAddOn
 metadata:
-  annotations:
-    addon.open-cluster-management.io/lifecycle: addon-manager
   name: cluster-proxy
+  annotations:
+    "addon.open-cluster-management.io/lifecycle": "addon-manager"
 spec:
   addOnMeta:
     displayName: cluster-proxy
     description: cluster-proxy
-  installStrategy:
-    placements:
-      - name: global
-        namespace: open-cluster-management-global-set
-        rolloutStrategy:
-          type: All
-    type: Placements
-  supportedConfigs:
+  defaultConfigs:
   - group: proxy.open-cluster-management.io
     resource: managedproxyconfigurations
-    defaultConfig:
-      name: cluster-proxy
-  - group: addon.open-cluster-management.io
-    resource: addondeploymentconfigs
+    name: cluster-proxy
+  installStrategy:
+    type: Placements
+    placements:
+      # ACM override: upstream uses  <installByPlacement.placementName> | default "cluster-proxy-placement" 
+      # and  <installByPlacement.placementNamespace> | default <release-namespace> .
+      # ACM uses the pre-existing global Placement and global-set ManagedClusterSetBinding
+      # managed by cluster-manager, not chart-created resources.
+      - name: global
+        namespace: open-cluster-management-global-set
+        # ACM addition: explicitly set rolloutStrategy even though All is the API default,
+        # to guard against future API default changes. Upstream omits this field.
+        rolloutStrategy:
+          type: All

@@ -6,6 +6,7 @@ global:
   imageOverrides:
     cluster_permission: ''
   namespace: open-cluster-management
+  olmVersion: v0
   pullSecret: null
 hubconfig:
   nodeSelector: null
