@@ -736,6 +736,87 @@ func TestNetworkPoliciesValueInjection(t *testing.T) {
 	})
 }
 
+func TestManagedServiceAccountNetworkPolicies(t *testing.T) {
+	os.Setenv("DIRECTORY_OVERRIDE", "../../")
+	defer os.Unsetenv("DIRECTORY_OVERRIDE")
+	os.Setenv("POD_NAMESPACE", "default")
+	defer os.Unsetenv("POD_NAMESPACE")
+	os.Setenv("ACM_HUB_OCP_VERSION", "4.12.0")
+	defer os.Unsetenv("ACM_HUB_OCP_VERSION")
+
+	testImages := map[string]string{}
+	for _, v := range utils.GetTestImages() {
+		testImages[v] = "quay.io/test/test:Test"
+	}
+
+	addonTemplateContainsAgentNP := func(templates []*unstructured.Unstructured) bool {
+		for _, tmpl := range templates {
+			if tmpl.GetKind() != "AddOnTemplate" {
+				continue
+			}
+			manifests, found, err := unstructured.NestedSlice(tmpl.Object, "spec", "agentSpec", "workload", "manifests")
+			if err != nil || !found {
+				continue
+			}
+			for _, m := range manifests {
+				manifest, ok := m.(map[string]interface{})
+				if !ok {
+					continue
+				}
+				if manifest["kind"] == "NetworkPolicy" {
+					meta, _ := manifest["metadata"].(map[string]interface{})
+					if meta != nil && meta["name"] == "managed-serviceaccount-addon-agent-network-policy" {
+						return true
+					}
+				}
+			}
+		}
+		return false
+	}
+
+	t.Run("NetworkPolicies enabled embeds agent NP in AddOnTemplate", func(t *testing.T) {
+		mce := &backplane.MultiClusterEngine{
+			ObjectMeta: metav1.ObjectMeta{Name: "test-mce"},
+			Spec: backplane.MultiClusterEngineSpec{
+				TargetNamespace: "default",
+				NetworkPolicies: &backplane.NetworkPoliciesConfig{Enabled: true},
+			},
+		}
+
+		templates, errs := RenderChart(chartsPath, mce, testImages, map[string]string{})
+		if len(errs) > 0 {
+			t.Fatalf("RenderChart failed: %v", errs)
+		}
+		if !addonTemplateContainsAgentNP(templates) {
+			t.Error("expected managed-serviceaccount-addon-agent-network-policy in AddOnTemplate when networkPolicies.enabled=true")
+		}
+		// Spoke NP is nested in AddOnTemplate; ensure it is not applied as a hub NetworkPolicy.
+		for _, tmpl := range templates {
+			if tmpl.GetKind() == "NetworkPolicy" {
+				t.Errorf("unexpected top-level NetworkPolicy %s (MSA has no hub manager Deployment)", tmpl.GetName())
+			}
+		}
+	})
+
+	t.Run("NetworkPolicies disabled omits agent NP from AddOnTemplate", func(t *testing.T) {
+		mce := &backplane.MultiClusterEngine{
+			ObjectMeta: metav1.ObjectMeta{Name: "test-mce"},
+			Spec: backplane.MultiClusterEngineSpec{
+				TargetNamespace: "default",
+				NetworkPolicies: &backplane.NetworkPoliciesConfig{Enabled: false},
+			},
+		}
+
+		templates, errs := RenderChart(chartsPath, mce, testImages, map[string]string{})
+		if len(errs) > 0 {
+			t.Fatalf("RenderChart failed: %v", errs)
+		}
+		if addonTemplateContainsAgentNP(templates) {
+			t.Error("NetworkPolicy should not be embedded in AddOnTemplate when networkPolicies.enabled=false")
+		}
+	})
+}
+
 func TestRenderChartInvalidPath(t *testing.T) {
 	os.Setenv("DIRECTORY_OVERRIDE", "../../")
 	defer os.Unsetenv("DIRECTORY_OVERRIDE")
