@@ -2674,6 +2674,14 @@ spec:
           - patch
           - update
         - apiGroups:
+          - olm.operatorframework.io
+          resources:
+          - clusterextensions
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
           - operationalinsights.azure.com
           resources:
           - workspaces
