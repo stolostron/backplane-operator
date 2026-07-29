@@ -701,6 +701,7 @@ package main
 //+kubebuilder:rbac:groups=notificationhubs.azure.com,resources=namespaces/finalizers;namespaces/status;namespacesauthorizationrules/finalizers;namespacesauthorizationrules/status;notificationhubs/finalizers;notificationhubs/status;notificationhubsauthorizationrules/finalizers;notificationhubsauthorizationrules/status,verbs=get;patch;update
 //+kubebuilder:rbac:groups=notificationhubs.azure.com,resources=namespaces;namespacesauthorizationrules;notificationhubs;notificationhubsauthorizationrules,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=notificationhubs.azure.com,resources=namespaces;namespacesauthorizationrules;notificationhubs;notificationhubsauthorizationrules,verbs=create;delete;get;list;patch;update;watch
+//+kubebuilder:rbac:groups=olm.operatorframework.io,resources=clusterextensions,verbs=get;list;watch
 //+kubebuilder:rbac:groups=operationalinsights.azure.com,resources=workspaces,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=operationalinsights.azure.com,resources=workspaces,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=operationalinsights.azure.com,resources=workspaces/finalizers;workspaces/status,verbs=get;patch;update

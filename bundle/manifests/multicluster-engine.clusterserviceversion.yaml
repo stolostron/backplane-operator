@@ -2765,6 +2765,14 @@ spec:
           - update
           - watch
         - apiGroups:
+          - olm.operatorframework.io
+          resources:
+          - clusterextensions
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
           - operators.coreos.com
           resources:
           - subscriptions
