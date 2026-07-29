@@ -830,7 +830,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 			})
 		})
 
-			Context("and OCP Console is disabled", func() {
+		Context("and OCP Console is disabled", func() {
 			It("should deploy sub components", func() {
 				os.Setenv("ACM_HUB_OCP_VERSION", "4.18.0")
 				defer os.Unsetenv("ACM_HUB_OCP_VERSION")
