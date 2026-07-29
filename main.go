@@ -33,6 +33,7 @@ import (
 	"open-cluster-management.io/sdk-go/pkg/servingcert"
 
 	configv1 "github.com/openshift/api/config/v1"
+	openshift_consolev1 "github.com/openshift/api/console/v1"
 	operatorv1 "github.com/openshift/api/operator/v1"
 	hiveconfig "github.com/openshift/hive/apis/hive/v1"
 	operatorsapiv2 "github.com/operator-framework/api/pkg/operators/v2"
@@ -111,6 +112,7 @@ func init() {
 	utilruntime.Must(configv1.AddToScheme(scheme))
 
 	utilruntime.Must(operatorv1.AddToScheme(scheme))
+	utilruntime.Must(openshift_consolev1.AddToScheme(scheme))
 
 	// +kubebuilder:scaffold:scheme
 }

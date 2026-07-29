@@ -34,6 +34,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 
 	configv1 "github.com/openshift/api/config/v1"
+	openshift_consolev1 "github.com/openshift/api/console/v1"
 
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 	"github.com/stolostron/backplane-operator/pkg/status"
@@ -829,9 +830,9 @@ var _ = Describe("BackplaneConfig controller", func() {
 			})
 		})
 
-		Context("and OCP Console is disabled", func() {
+			Context("and OCP Console is disabled", func() {
 			It("should deploy sub components", func() {
-				os.Setenv("ACM_HUB_OCP_VERSION", "4.12.0")
+				os.Setenv("ACM_HUB_OCP_VERSION", "4.18.0")
 				defer os.Unsetenv("ACM_HUB_OCP_VERSION")
 				createCtx := context.Background()
 				By("creating the backplane config")
@@ -866,7 +867,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 			It("should deploy sub components", func() {
 				createCtx := context.Background()
 				By("creating the backplane config with everything enabled")
-				os.Setenv("ACM_HUB_OCP_VERSION", "4.12.0")
+				os.Setenv("ACM_HUB_OCP_VERSION", "4.18.0")
 				defer os.Unsetenv("ACM_HUB_OCP_VERSION")
 				backplaneConfig := &backplanev1.MultiClusterEngine{
 					TypeMeta: metav1.TypeMeta{
@@ -1642,6 +1643,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 func registerScheme() {
 	backplanev1.AddToScheme(scheme.Scheme)
 	configv1.AddToScheme(scheme.Scheme)
+	openshift_consolev1.AddToScheme(scheme.Scheme)
 }
 
 func Test_getComponentConfig(t *testing.T) {
