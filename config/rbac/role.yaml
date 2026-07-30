@@ -1145,6 +1145,7 @@ rules:
 - apiGroups:
   - console.openshift.io
   resources:
+  - consolenotifications
   - consoleplugins
   - consolequickstarts
   verbs:
