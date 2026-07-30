@@ -7,4 +7,8 @@ featureGates:
 agentImagePullSecret: ""
 enableAddOnDeploymentConfig: true
 hubDeployMode: AddOnTemplate
+prometheus:
+  enabled: true
+networkPolicies:
+  enabled: true
 global: {}
