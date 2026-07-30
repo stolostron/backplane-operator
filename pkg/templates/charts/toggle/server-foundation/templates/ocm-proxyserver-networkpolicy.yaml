@@ -1,0 +1,48 @@
+{{- if and .Values.global.networkPolicies.enabled .Values.global.deployOnOCP }}
+# Purpose: Default-deny for ocm-proxyserver (OCP-only workload), then allow
+# aggregated API ingress on secure port (:6443), DNS/API egress, and
+# same-namespace egress to cluster-proxy-addon-user (:9092). Probe ports
+# omitted (exec probes). Gaps: API egress limited to :443/:6443; DNS is
+# port-only; empty "from" on ingress for aggregated API / hostNetwork clients.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ocm-proxyserver-network-policy
+spec:
+  podSelector:
+    matchLabels:
+      control-plane: ocm-proxyserver
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # aggregated API Service 443 → pod :6443
+  - ports:
+    - protocol: TCP
+      port: 6443
+  egress:
+  # DNS (:53 common; :5353 used by some distributions)
+  - ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+    - protocol: UDP
+      port: 5353
+    - protocol: TCP
+      port: 5353
+  # Kubernetes API
+  - ports:
+    - protocol: TCP
+      port: 443
+    - protocol: TCP
+      port: 6443
+  # cluster-proxy user-server (same namespace)
+  - to:
+    - podSelector:
+        matchLabels:
+          component: cluster-proxy-addon-user
+    ports:
+    - protocol: TCP
+      port: 9092
+{{- end }}

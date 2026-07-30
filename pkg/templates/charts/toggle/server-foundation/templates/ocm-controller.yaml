@@ -40,6 +40,7 @@ spec:
         - /controller
         - "--enable-agent-deploy=true"
         - "--agent-addon-image={{ .Values.global.imageOverrides.multicloud_manager }}"
+        - "--enable-network-policies={{ .Values.global.networkPolicies.enabled }}"
         env:
 {{- if .Values.hubconfig.proxyConfigs }}
         - name: HTTP_PROXY
