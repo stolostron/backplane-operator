@@ -15,10 +15,12 @@ import (
 	"github.com/stolostron/backplane-operator/pkg/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes/scheme"
 	addonv1alpha1 "open-cluster-management.io/api/addon/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -286,6 +288,8 @@ func TestNonOCPRender(t *testing.T) {
 
 	os.Setenv("DIRECTORY_OVERRIDE", "../../")
 	defer os.Unsetenv("DIRECTORY_OVERRIDE")
+	originalDeployOnOCP := utils.DeployOnOCP()
+	defer utils.SetDeployOnOCP(originalDeployOnOCP)
 	utils.SetDeployOnOCP(false)
 	availabilityList := []string{"clusterclaims-controller", "cluster-curator-controller", "managedcluster-import-controller-v2", "ocm-controller", "ocm-proxyserver", "ocm-webhook"}
 	backplaneNodeSelector := map[string]string{"select": "test", "select2": "test2"}
@@ -815,6 +819,359 @@ func TestManagedServiceAccountNetworkPolicies(t *testing.T) {
 			t.Error("NetworkPolicy should not be embedded in AddOnTemplate when networkPolicies.enabled=false")
 		}
 	})
+}
+
+func TestServerFoundationNetworkPolicies(t *testing.T) {
+	os.Setenv("DIRECTORY_OVERRIDE", "../../")
+	defer os.Unsetenv("DIRECTORY_OVERRIDE")
+	os.Setenv("POD_NAMESPACE", "default")
+	defer os.Unsetenv("POD_NAMESPACE")
+	os.Setenv("ACM_HUB_OCP_VERSION", "4.12.0")
+	defer os.Unsetenv("ACM_HUB_OCP_VERSION")
+	// ocm-proxyserver (and its NetworkPolicy) are OCP-only; pin deployOnOCP so
+	// earlier tests that flip the package-level flag cannot flake this assertion.
+	originalDeployOnOCP := utils.DeployOnOCP()
+	defer utils.SetDeployOnOCP(originalDeployOnOCP)
+	utils.SetDeployOnOCP(true)
+
+	testImages := map[string]string{}
+	for _, v := range utils.GetTestImages() {
+		testImages[v] = "quay.io/test/test:Test"
+	}
+
+	sfChart := "pkg/templates/charts/toggle/server-foundation"
+	expectedNPNames := map[string]bool{
+		"managedcluster-import-controller-network-policy": false,
+		"ocm-controller-network-policy":                   false,
+		"ocm-webhook-network-policy":                      false,
+		"ocm-proxyserver-network-policy":                  false,
+	}
+
+	t.Run("NetworkPolicies enabled renders hub NPs and controller flag", func(t *testing.T) {
+		mce := &backplane.MultiClusterEngine{
+			ObjectMeta: metav1.ObjectMeta{Name: "test-mce"},
+			Spec: backplane.MultiClusterEngineSpec{
+				TargetNamespace: "default",
+				NetworkPolicies: &backplane.NetworkPoliciesConfig{Enabled: true},
+			},
+		}
+
+		templates, errs := RenderChart(sfChart, mce, testImages, map[string]string{})
+		if len(errs) > 0 {
+			t.Fatalf("RenderChart failed: %v", errs)
+		}
+
+		found := map[string]bool{}
+		for name := range expectedNPNames {
+			found[name] = false
+		}
+		ocmControllerFlag := false
+		for _, tmpl := range templates {
+			if tmpl.GetKind() == "NetworkPolicy" {
+				if _, ok := found[tmpl.GetName()]; ok {
+					found[tmpl.GetName()] = true
+					assertServerFoundationNetworkPolicy(t, tmpl)
+				} else {
+					t.Errorf("unexpected NetworkPolicy name: %s", tmpl.GetName())
+				}
+			}
+			if tmpl.GetKind() == "Deployment" && tmpl.GetName() == "ocm-controller" {
+				containers, foundContainers, err := unstructured.NestedSlice(tmpl.Object, "spec", "template", "spec", "containers")
+				if err != nil {
+					t.Fatalf("ocm-controller containers NestedSlice: %v", err)
+				}
+				if !foundContainers {
+					t.Fatal("ocm-controller missing spec.template.spec.containers")
+				}
+				for i, c := range containers {
+					container, ok := c.(map[string]interface{})
+					if !ok {
+						t.Fatalf("ocm-controller containers[%d] is not a map", i)
+					}
+					args, foundArgs, err := unstructured.NestedStringSlice(container, "args")
+					if err != nil {
+						t.Fatalf("ocm-controller containers[%d] args NestedStringSlice: %v", i, err)
+					}
+					if !foundArgs {
+						t.Fatalf("ocm-controller containers[%d] missing args", i)
+					}
+					for _, arg := range args {
+						if arg == "--enable-network-policies=true" {
+							ocmControllerFlag = true
+						}
+					}
+				}
+			}
+		}
+		for name, ok := range found {
+			if !ok {
+				t.Errorf("expected NetworkPolicy %s when networkPolicies.enabled=true", name)
+			}
+		}
+		if !ocmControllerFlag {
+			t.Error("expected ocm-controller --enable-network-policies=true when networkPolicies.enabled=true")
+		}
+	})
+
+	t.Run("NetworkPolicies disabled excludes hub NPs and sets flag false", func(t *testing.T) {
+		mce := &backplane.MultiClusterEngine{
+			ObjectMeta: metav1.ObjectMeta{Name: "test-mce"},
+			Spec: backplane.MultiClusterEngineSpec{
+				TargetNamespace: "default",
+				NetworkPolicies: &backplane.NetworkPoliciesConfig{Enabled: false},
+			},
+		}
+
+		templates, errs := RenderChart(sfChart, mce, testImages, map[string]string{})
+		if len(errs) > 0 {
+			t.Fatalf("RenderChart failed: %v", errs)
+		}
+
+		foundOCMController := false
+		foundDisabledFlag := false
+		for _, tmpl := range templates {
+			if tmpl.GetKind() == "NetworkPolicy" {
+				t.Errorf("NetworkPolicy should not be rendered when networkPolicies.enabled=false: %s", tmpl.GetName())
+			}
+			if tmpl.GetKind() == "Deployment" && tmpl.GetName() == "ocm-controller" {
+				foundOCMController = true
+				containers, foundContainers, err := unstructured.NestedSlice(tmpl.Object, "spec", "template", "spec", "containers")
+				if err != nil {
+					t.Fatalf("ocm-controller containers NestedSlice: %v", err)
+				}
+				if !foundContainers {
+					t.Fatal("ocm-controller missing spec.template.spec.containers")
+				}
+				for i, c := range containers {
+					container, ok := c.(map[string]interface{})
+					if !ok {
+						t.Fatalf("ocm-controller containers[%d] is not a map", i)
+					}
+					args, foundArgs, err := unstructured.NestedStringSlice(container, "args")
+					if err != nil {
+						t.Fatalf("ocm-controller containers[%d] args NestedStringSlice: %v", i, err)
+					}
+					if !foundArgs {
+						t.Fatalf("ocm-controller containers[%d] missing args", i)
+					}
+					for _, arg := range args {
+						if arg == "--enable-network-policies=true" {
+							t.Error("ocm-controller should not have --enable-network-policies=true when disabled")
+						}
+						if arg == "--enable-network-policies=false" {
+							foundDisabledFlag = true
+						}
+					}
+				}
+			}
+		}
+		if !foundOCMController {
+			t.Error("expected ocm-controller Deployment when rendering server-foundation chart")
+		}
+		if !foundDisabledFlag {
+			t.Error("expected ocm-controller --enable-network-policies=false when networkPolicies.enabled=false")
+		}
+	})
+
+	t.Run("non-OCP omits proxyserver Deployment and NetworkPolicy", func(t *testing.T) {
+		utils.SetDeployOnOCP(false)
+		defer utils.SetDeployOnOCP(true)
+
+		mce := &backplane.MultiClusterEngine{
+			ObjectMeta: metav1.ObjectMeta{Name: "test-mce"},
+			Spec: backplane.MultiClusterEngineSpec{
+				TargetNamespace: "default",
+				NetworkPolicies: &backplane.NetworkPoliciesConfig{Enabled: true},
+			},
+		}
+
+		templates, errs := RenderChart(sfChart, mce, testImages, map[string]string{})
+		if len(errs) > 0 {
+			t.Fatalf("RenderChart failed: %v", errs)
+		}
+
+		expectedNonOCP := map[string]bool{
+			"managedcluster-import-controller-network-policy": false,
+			"ocm-controller-network-policy":                   false,
+			"ocm-webhook-network-policy":                      false,
+		}
+		for _, tmpl := range templates {
+			if tmpl.GetKind() == "Deployment" && tmpl.GetName() == "ocm-proxyserver" {
+				t.Error("ocm-proxyserver Deployment should not render when deployOnOCP=false")
+			}
+			if tmpl.GetKind() != "NetworkPolicy" {
+				continue
+			}
+			if tmpl.GetName() == "ocm-proxyserver-network-policy" {
+				t.Error("ocm-proxyserver-network-policy should not render when deployOnOCP=false")
+				continue
+			}
+			if _, ok := expectedNonOCP[tmpl.GetName()]; ok {
+				expectedNonOCP[tmpl.GetName()] = true
+				assertServerFoundationNetworkPolicy(t, tmpl)
+			} else {
+				t.Errorf("unexpected NetworkPolicy name: %s", tmpl.GetName())
+			}
+		}
+		for name, ok := range expectedNonOCP {
+			if !ok {
+				t.Errorf("expected NetworkPolicy %s when networkPolicies.enabled=true on non-OCP", name)
+			}
+		}
+	})
+}
+
+func npPort(proto corev1.Protocol, port int32) networkingv1.NetworkPolicyPort {
+	p := port
+	protocol := proto
+	return networkingv1.NetworkPolicyPort{
+		Protocol: &protocol,
+		Port:     &intstr.IntOrString{Type: intstr.Int, IntVal: p},
+	}
+}
+
+func sfDNSEgress() networkingv1.NetworkPolicyEgressRule {
+	return networkingv1.NetworkPolicyEgressRule{
+		Ports: []networkingv1.NetworkPolicyPort{
+			npPort(corev1.ProtocolUDP, 53),
+			npPort(corev1.ProtocolTCP, 53),
+			npPort(corev1.ProtocolUDP, 5353),
+			npPort(corev1.ProtocolTCP, 5353),
+		},
+	}
+}
+
+func sfAPIEgress() networkingv1.NetworkPolicyEgressRule {
+	return networkingv1.NetworkPolicyEgressRule{
+		Ports: []networkingv1.NetworkPolicyPort{
+			npPort(corev1.ProtocolTCP, 443),
+			npPort(corev1.ProtocolTCP, 6443),
+		},
+	}
+}
+
+func expectedServerFoundationNetworkPolicySpec(name string) (networkingv1.NetworkPolicySpec, bool) {
+	defaultDenyTypes := []networkingv1.PolicyType{
+		networkingv1.PolicyTypeIngress,
+		networkingv1.PolicyTypeEgress,
+	}
+	switch name {
+	case "managedcluster-import-controller-network-policy":
+		return networkingv1.NetworkPolicySpec{
+			PodSelector: metav1.LabelSelector{MatchLabels: map[string]string{
+				"app": "managedcluster-import-controller-v2",
+			}},
+			PolicyTypes: defaultDenyTypes,
+			Ingress: []networkingv1.NetworkPolicyIngressRule{
+				{
+					From: []networkingv1.NetworkPolicyPeer{{
+						NamespaceSelector: &metav1.LabelSelector{MatchLabels: map[string]string{
+							"policy-group.network.openshift.io/ingress": "",
+						}},
+						PodSelector: &metav1.LabelSelector{},
+					}},
+					Ports: []networkingv1.NetworkPolicyPort{npPort(corev1.ProtocolTCP, 9091)},
+				},
+				{Ports: []networkingv1.NetworkPolicyPort{npPort(corev1.ProtocolTCP, 8383)}},
+			},
+			Egress: []networkingv1.NetworkPolicyEgressRule{sfDNSEgress(), sfAPIEgress()},
+		}, true
+	case "ocm-controller-network-policy":
+		return networkingv1.NetworkPolicySpec{
+			PodSelector: metav1.LabelSelector{MatchLabels: map[string]string{
+				"control-plane": "ocm-controller",
+			}},
+			PolicyTypes: defaultDenyTypes,
+			Egress:      []networkingv1.NetworkPolicyEgressRule{sfDNSEgress(), sfAPIEgress()},
+		}, true
+	case "ocm-webhook-network-policy":
+		return networkingv1.NetworkPolicySpec{
+			PodSelector: metav1.LabelSelector{MatchLabels: map[string]string{
+				"control-plane": "ocm-webhook",
+			}},
+			PolicyTypes: defaultDenyTypes,
+			Ingress: []networkingv1.NetworkPolicyIngressRule{
+				{Ports: []networkingv1.NetworkPolicyPort{npPort(corev1.ProtocolTCP, 8000)}},
+			},
+			Egress: []networkingv1.NetworkPolicyEgressRule{sfDNSEgress(), sfAPIEgress()},
+		}, true
+	case "ocm-proxyserver-network-policy":
+		return networkingv1.NetworkPolicySpec{
+			PodSelector: metav1.LabelSelector{MatchLabels: map[string]string{
+				"control-plane": "ocm-proxyserver",
+			}},
+			PolicyTypes: defaultDenyTypes,
+			Ingress: []networkingv1.NetworkPolicyIngressRule{
+				{Ports: []networkingv1.NetworkPolicyPort{npPort(corev1.ProtocolTCP, 6443)}},
+			},
+			Egress: []networkingv1.NetworkPolicyEgressRule{
+				sfDNSEgress(),
+				sfAPIEgress(),
+				{
+					To: []networkingv1.NetworkPolicyPeer{{
+						PodSelector: &metav1.LabelSelector{MatchLabels: map[string]string{
+							"component": "cluster-proxy-addon-user",
+						}},
+					}},
+					Ports: []networkingv1.NetworkPolicyPort{npPort(corev1.ProtocolTCP, 9092)},
+				},
+			},
+		}, true
+	default:
+		return networkingv1.NetworkPolicySpec{}, false
+	}
+}
+
+// assertServerFoundationNetworkPolicy checks podSelector, default-deny policyTypes,
+// and exact ingress/egress peers/ports. Also rejects allow-all rules and health-probe
+// ports that must stay closed (ocm-controller :8000).
+func assertServerFoundationNetworkPolicy(t *testing.T, tmpl *unstructured.Unstructured) {
+	t.Helper()
+	expected, ok := expectedServerFoundationNetworkPolicySpec(tmpl.GetName())
+	if !ok {
+		t.Errorf("no expected NetworkPolicy spec for %s", tmpl.GetName())
+		return
+	}
+
+	var np networkingv1.NetworkPolicy
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(tmpl.Object, &np); err != nil {
+		t.Fatalf("convert NetworkPolicy %s: %v", tmpl.GetName(), err)
+	}
+
+	if !reflect.DeepEqual(np.Spec.PodSelector, expected.PodSelector) {
+		t.Errorf("%s podSelector = %#v, want %#v", tmpl.GetName(), np.Spec.PodSelector, expected.PodSelector)
+	}
+	if !reflect.DeepEqual(np.Spec.PolicyTypes, expected.PolicyTypes) {
+		t.Errorf("%s policyTypes = %#v, want %#v", tmpl.GetName(), np.Spec.PolicyTypes, expected.PolicyTypes)
+	}
+	if !reflect.DeepEqual(np.Spec.Ingress, expected.Ingress) {
+		t.Errorf("%s ingress = %#v, want %#v", tmpl.GetName(), np.Spec.Ingress, expected.Ingress)
+	}
+	if !reflect.DeepEqual(np.Spec.Egress, expected.Egress) {
+		t.Errorf("%s egress = %#v, want %#v", tmpl.GetName(), np.Spec.Egress, expected.Egress)
+	}
+
+	for i, rule := range np.Spec.Ingress {
+		if len(rule.Ports) == 0 {
+			t.Errorf("%s ingress[%d] has no ports (overly broad allow-all ingress)", tmpl.GetName(), i)
+		}
+	}
+	for i, rule := range np.Spec.Egress {
+		if len(rule.Ports) == 0 {
+			t.Errorf("%s egress[%d] has no ports (overly broad allow-all egress)", tmpl.GetName(), i)
+		}
+	}
+
+	// ocm-controller serves health on :8000; default-deny ingress must not open that port.
+	if tmpl.GetName() == "ocm-controller-network-policy" {
+		for i, rule := range np.Spec.Ingress {
+			for _, p := range rule.Ports {
+				if p.Port != nil && p.Port.IntVal == 8000 {
+					t.Errorf("%s ingress[%d] exposes health-probe port 8000", tmpl.GetName(), i)
+				}
+			}
+		}
+	}
 }
 
 func TestRenderChartInvalidPath(t *testing.T) {
