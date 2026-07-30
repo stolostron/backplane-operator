@@ -223,6 +223,18 @@ spec:
                   mastersSchedulable:
                     description: Set to true to allow control plane nodes to be schedulable
                     type: boolean
+                  networkType:
+                    description: |-
+                      NetworkType is the Container Network Interface (CNI) plug-in to install.
+                      Defaults to OVNKubernetes for IPv6 or SNO, and OpenShiftSDN for IPv4.
+                    enum:
+                    - OpenShiftSDN
+                    - OVNKubernetes
+                    - CiscoACI
+                    - Cilium
+                    - Calico
+                    - None
+                    type: string
                   proxy:
                     description: Proxy defines the proxy settings used for the install
                       config
@@ -882,6 +894,18 @@ spec:
                   mastersSchedulable:
                     description: Set to true to allow control plane nodes to be schedulable
                     type: boolean
+                  networkType:
+                    description: |-
+                      NetworkType is the Container Network Interface (CNI) plug-in to install.
+                      Defaults to OVNKubernetes for IPv6 or SNO, and OpenShiftSDN for IPv4.
+                    enum:
+                    - OpenShiftSDN
+                    - OVNKubernetes
+                    - CiscoACI
+                    - Cilium
+                    - Calico
+                    - None
+                    type: string
                   proxy:
                     description: Proxy defines the proxy settings used for the install
                       config

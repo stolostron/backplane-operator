@@ -283,6 +283,16 @@ spec:
                     minimum: 75
                     type: integer
                 type: object
+              deleteProtection:
+                default: Disabled
+                description: |-
+                  DeleteProtection prevents accidental ROSA cluster deletion.
+                  When set to "Enabled", the ROSA cluster cannot be deleted through OCM.
+                  Defaults to "Disabled".
+                enum:
+                - Enabled
+                - Disabled
+                type: string
               domainPrefix:
                 description: |-
                   DomainPrefix is an optional prefix added to the cluster's domain name. It will be used
