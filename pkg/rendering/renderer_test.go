@@ -740,6 +740,102 @@ func TestNetworkPoliciesValueInjection(t *testing.T) {
 	})
 }
 
+func TestClusterLifecycleStateMetricsNetworkPolicies(t *testing.T) {
+	t.Setenv("DIRECTORY_OVERRIDE", "../../")
+	t.Setenv("POD_NAMESPACE", "default")
+	t.Setenv("ACM_HUB_OCP_VERSION", "4.12.0")
+
+	testImages := map[string]string{}
+	for _, v := range utils.GetTestImages() {
+		testImages[v] = "quay.io/test/test:Test"
+	}
+
+	clcChart := "pkg/templates/charts/toggle/cluster-lifecycle"
+	const npName = "clusterlifecycle-state-metrics-network-policy"
+
+	t.Run("NetworkPolicies enabled renders CLSM NP", func(t *testing.T) {
+		mce := &backplane.MultiClusterEngine{
+			ObjectMeta: metav1.ObjectMeta{Name: "test-mce"},
+			Spec: backplane.MultiClusterEngineSpec{
+				TargetNamespace: "default",
+				NetworkPolicies: &backplane.NetworkPoliciesConfig{Enabled: true},
+			},
+		}
+
+		templates, errs := RenderChart(clcChart, mce, testImages, map[string]string{})
+		if len(errs) > 0 {
+			t.Fatalf("RenderChart failed: %v", errs)
+		}
+
+		var np *unstructured.Unstructured
+		for _, tmpl := range templates {
+			if tmpl.GetKind() == "NetworkPolicy" {
+				if tmpl.GetName() != npName {
+					t.Errorf("unexpected NetworkPolicy name: %s", tmpl.GetName())
+					continue
+				}
+				np = tmpl
+			}
+		}
+		if np == nil {
+			t.Fatalf("expected NetworkPolicy %s when networkPolicies.enabled=true", npName)
+		}
+
+		podSelector, found, err := unstructured.NestedStringMap(np.Object, "spec", "podSelector", "matchLabels")
+		if err != nil || !found {
+			t.Fatalf("podSelector NestedStringMap: found=%v err=%v", found, err)
+		}
+		if podSelector["app"] != "clusterlifecycle-state-metrics-v2" {
+			t.Errorf("unexpected podSelector: %v", podSelector)
+		}
+
+		ingress, found, err := unstructured.NestedSlice(np.Object, "spec", "ingress")
+		if err != nil || !found || len(ingress) == 0 {
+			t.Fatalf("expected ingress rules, found=%v err=%v len=%d", found, err, len(ingress))
+		}
+		rule, ok := ingress[0].(map[string]interface{})
+		if !ok {
+			t.Fatal("ingress[0] is not a map")
+		}
+		from, found, err := unstructured.NestedSlice(rule, "from")
+		if err != nil || !found || len(from) == 0 {
+			t.Fatalf("expected ingress from openshift-monitoring, found=%v err=%v", found, err)
+		}
+		peer, ok := from[0].(map[string]interface{})
+		if !ok {
+			t.Fatal("ingress from[0] is not a map")
+		}
+		nsLabels, found, err := unstructured.NestedStringMap(peer, "namespaceSelector", "matchLabels")
+		if err != nil || !found {
+			t.Fatalf("namespaceSelector NestedStringMap: found=%v err=%v", found, err)
+		}
+		if nsLabels["kubernetes.io/metadata.name"] != "openshift-monitoring" {
+			t.Errorf("unexpected ingress namespaceSelector: %v", nsLabels)
+		}
+	})
+
+	t.Run("NetworkPolicies disabled excludes CLSM NP", func(t *testing.T) {
+		mce := &backplane.MultiClusterEngine{
+			ObjectMeta: metav1.ObjectMeta{Name: "test-mce"},
+			Spec: backplane.MultiClusterEngineSpec{
+				TargetNamespace: "default",
+				NetworkPolicies: &backplane.NetworkPoliciesConfig{Enabled: false},
+			},
+		}
+
+		templates, errs := RenderChart(clcChart, mce, testImages, map[string]string{})
+		if len(errs) > 0 {
+			t.Fatalf("RenderChart failed: %v", errs)
+		}
+
+		for _, tmpl := range templates {
+			if tmpl.GetKind() == "NetworkPolicy" {
+				t.Errorf("NetworkPolicy should not be rendered when networkPolicies.enabled=false: %s", tmpl.GetName())
+			}
+		}
+	})
+}
+
 func TestManagedServiceAccountNetworkPolicies(t *testing.T) {
 	os.Setenv("DIRECTORY_OVERRIDE", "../../")
 	defer os.Unsetenv("DIRECTORY_OVERRIDE")

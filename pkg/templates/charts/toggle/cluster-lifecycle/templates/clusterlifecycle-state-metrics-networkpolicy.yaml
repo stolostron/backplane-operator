@@ -1,0 +1,44 @@
+{{- if .Values.global.networkPolicies.enabled }}
+# Purpose: Default-deny for clusterlifecycle-state-metrics-v2, then allow
+# HTTPS metrics scrape from openshift-monitoring (:8443) and DNS/API egress.
+# Health probes (:8081) omitted (kubelet probes are not blocked by
+# NetworkPolicy). Gaps: API egress limited to :443/:6443; DNS is port-only;
+# HTTP metrics (:8080) not exposed by the Service, so not allowed.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: clusterlifecycle-state-metrics-network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app: clusterlifecycle-state-metrics-v2
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # HTTPS metrics (:8443) — ServiceMonitor scrapes port "https"
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: openshift-monitoring
+    ports:
+    - protocol: TCP
+      port: 8443
+  egress:
+  # DNS (:53 common; :5353 used by some distributions)
+  - ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+    - protocol: UDP
+      port: 5353
+    - protocol: TCP
+      port: 5353
+  # Kubernetes API
+  - ports:
+    - protocol: TCP
+      port: 443
+    - protocol: TCP
+      port: 6443
+{{- end }}
