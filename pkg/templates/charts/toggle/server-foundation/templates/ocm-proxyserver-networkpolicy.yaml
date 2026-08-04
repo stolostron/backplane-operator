@@ -45,4 +45,8 @@ spec:
     ports:
     - protocol: TCP
       port: 9092
+  # search-indexer (proxied managed-cluster collector traffic)
+  - ports:
+    - protocol: TCP
+      port: 3010
 {{- end }}
