@@ -1211,6 +1211,9 @@ func expectedServerFoundationNetworkPolicySpec(name string) (networkingv1.Networ
 					}},
 					Ports: []networkingv1.NetworkPolicyPort{npPort(corev1.ProtocolTCP, 9092)},
 				},
+				{
+					Ports: []networkingv1.NetworkPolicyPort{npPort(corev1.ProtocolTCP, 3010)},
+				},
 			},
 		}, true
 	default:
