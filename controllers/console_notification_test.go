@@ -4,6 +4,7 @@ package controllers
 
 import (
 	"context"
+	"time"
 
 	consolev1 "github.com/openshift/api/console/v1"
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
@@ -87,13 +88,15 @@ var _ = Describe("OCP compliance ConsoleNotification banner", func() {
 			}
 			Expect(k8sClient.Create(ctx, existing)).To(Succeed())
 
-			// Now pass a valid OCP version
-			err := reconciler.ensureOCPComplianceBanner(ctx, mce, version.MinimumOCPVersion)
-			Expect(err).NotTo(HaveOccurred())
-
-			notification := &consolev1.ConsoleNotification{}
-			err = k8sClient.Get(ctx, types.NamespacedName{Name: ocpComplianceBannerName}, notification)
-			Expect(err).To(HaveOccurred())
+			// Now pass a valid OCP version. ensureOCPComplianceBanner no-ops if
+			// the reconciler's cached client hasn't yet observed the
+			// pre-created banner, so retry the call together with the
+			// existence check until the removal actually takes effect.
+			Eventually(func() error {
+				_ = reconciler.ensureOCPComplianceBanner(ctx, mce, version.MinimumOCPVersion)
+				notification := &consolev1.ConsoleNotification{}
+				return k8sClient.Get(ctx, types.NamespacedName{Name: ocpComplianceBannerName}, notification)
+			}).WithTimeout(5 * time.Second).Should(HaveOccurred())
 		})
 
 		It("does not create a banner when OCP version is empty", func() {
@@ -117,18 +120,17 @@ var _ = Describe("OCP compliance ConsoleNotification banner", func() {
 			notification.Spec.Text = "stale text"
 			Expect(k8sClient.Update(ctx, notification)).To(Succeed())
 
-			// Retry until the reconciler's cached client sees the update and patches it back
-			Eventually(func() error {
-				return reconciler.ensureOCPComplianceBanner(ctx, mce, "4.17.0")
-			}).Should(Succeed())
-
+			// ensureOCPComplianceBanner is a no-op if the reconciler's cached
+			// client hasn't yet observed the "stale text" update, so retry the
+			// call together with the text check until the patch actually lands.
 			Eventually(func() string {
+				_ = reconciler.ensureOCPComplianceBanner(ctx, mce, "4.17.0")
 				updated := &consolev1.ConsoleNotification{}
 				if err := k8sClient.Get(ctx, types.NamespacedName{Name: ocpComplianceBannerName}, updated); err != nil {
 					return ""
 				}
 				return updated.Spec.Text
-			}).Should(Equal(expectedText))
+			}).WithTimeout(5 * time.Second).Should(Equal(expectedText))
 		})
 	})
 
@@ -149,15 +151,16 @@ var _ = Describe("OCP compliance ConsoleNotification banner", func() {
 			}
 			Expect(k8sClient.Create(ctx, existing)).To(Succeed())
 
-			Eventually(func() error {
-				return reconciler.removeOCPComplianceBanner(ctx)
-			}).Should(Succeed())
-
+			// removeOCPComplianceBanner is a no-op (returns nil) if the
+			// reconciler's cached client hasn't yet observed the pre-created
+			// banner, so retry the call together with the existence check
+			// until the deletion actually takes effect.
 			Eventually(func() bool {
+				_ = reconciler.removeOCPComplianceBanner(ctx)
 				notification := &consolev1.ConsoleNotification{}
 				err := k8sClient.Get(ctx, types.NamespacedName{Name: ocpComplianceBannerName}, notification)
 				return err != nil
-			}).Should(BeTrue())
+			}).WithTimeout(5 * time.Second).Should(BeTrue())
 		})
 
 		It("is a no-op when banner does not exist", func() {

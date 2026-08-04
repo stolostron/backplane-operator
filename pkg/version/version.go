@@ -15,7 +15,7 @@ var Version string
 
 // MinimumOCPVersion is the minimum version of OCP this operator supports.
 // Can be overridden by setting the env variable DISABLE_OCP_MIN_VERSION
-var MinimumOCPVersion string = "4.18.0"
+var MinimumOCPVersion string = "4.19.0"
 
 func init() {
 	if value, exists := os.LookupEnv("OPERATOR_VERSION"); exists {

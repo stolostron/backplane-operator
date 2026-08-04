@@ -832,7 +832,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 
 		Context("and OCP Console is disabled", func() {
 			It("should deploy sub components", func() {
-				os.Setenv("ACM_HUB_OCP_VERSION", "4.18.0")
+				os.Setenv("ACM_HUB_OCP_VERSION", "4.19.0")
 				defer os.Unsetenv("ACM_HUB_OCP_VERSION")
 				createCtx := context.Background()
 				By("creating the backplane config")
@@ -867,7 +867,7 @@ var _ = Describe("BackplaneConfig controller", func() {
 			It("should deploy sub components", func() {
 				createCtx := context.Background()
 				By("creating the backplane config with everything enabled")
-				os.Setenv("ACM_HUB_OCP_VERSION", "4.18.0")
+				os.Setenv("ACM_HUB_OCP_VERSION", "4.19.0")
 				defer os.Unsetenv("ACM_HUB_OCP_VERSION")
 				backplaneConfig := &backplanev1.MultiClusterEngine{
 					TypeMeta: metav1.TypeMeta{
