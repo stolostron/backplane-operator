@@ -112,8 +112,8 @@ func (r *MultiClusterEngineReconciler) removeOCPComplianceBanner(ctx context.Con
 
 func (r *MultiClusterEngineReconciler) cleanupConsoleNotifications(ctx context.Context,
 	mce *backplanev1.MultiClusterEngine) error {
-	return r.Client.DeleteAllOf(ctx, &consolev1.ConsoleNotification{}, client.MatchingLabels{
-		"installer.name":      mce.GetName(),
-		"installer.namespace": mce.GetNamespace(),
-	})
+	// Only one ConsoleNotification is ever created by this operator (the OCP
+	// compliance banner), so remove it directly by name instead of using
+	// DeleteAllOf, which requires the cluster-scoped "deletecollection" verb.
+	return r.removeOCPComplianceBanner(ctx)
 }

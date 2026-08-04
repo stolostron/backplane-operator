@@ -1243,6 +1243,7 @@ spec:
         - apiGroups:
           - console.openshift.io
           resources:
+          - consolenotifications
           - consoleplugins
           - consolequickstarts
           verbs:
