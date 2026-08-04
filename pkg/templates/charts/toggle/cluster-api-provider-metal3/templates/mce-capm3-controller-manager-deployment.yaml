@@ -48,7 +48,7 @@ spec:
       containers:
       - args:
         - --webhook-port=9443
-        - --enableBMHNameBasedPreallocation=false
+        - --enableBMHNameBasedPreallocation=true
         - --diagnostics-address=:8443
         - --insecure-diagnostics=false
         - --tls-min-version=VersionTLS13
