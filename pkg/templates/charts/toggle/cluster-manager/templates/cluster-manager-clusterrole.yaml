@@ -202,6 +202,18 @@ rules:
   - patch
   - delete
 - apiGroups:
+  - networking.k8s.io
+  resources:
+  - networkpolicies
+  verbs:
+  - create
+  - get
+  - list
+  - update
+  - watch
+  - patch
+  - delete
+- apiGroups:
   - operator.open-cluster-management.io
   resources:
   - clustermanagers
