@@ -143,3 +143,68 @@ func TestClusterManager(t *testing.T) {
 		})
 	}
 }
+
+func TestClusterManagerNetworkPoliciesFeatureGate(t *testing.T) {
+	images := map[string]string{
+		"registration":  "quay.io/stolostron/registration:test",
+		"work":          "quay.io/stolostron/work:test",
+		"placement":     "quay.io/stolostron/placement:test",
+		"addon_manager": "quay.io/stolostron/addon-manager:test",
+	}
+
+	tests := []struct {
+		name         string
+		mce          *v1.MultiClusterEngine
+		expectedMode string
+	}{
+		{
+			name:         "defaults to Enable when NetworkPolicies unset",
+			mce:          &v1.MultiClusterEngine{},
+			expectedMode: string(ocmapiv1.FeatureGateModeTypeEnable),
+		},
+		{
+			name: "Enable when NetworkPolicies.enabled=true",
+			mce: &v1.MultiClusterEngine{
+				Spec: v1.MultiClusterEngineSpec{
+					NetworkPolicies: &v1.NetworkPoliciesConfig{Enabled: true},
+				},
+			},
+			expectedMode: string(ocmapiv1.FeatureGateModeTypeEnable),
+		},
+		{
+			name: "Disable when NetworkPolicies.enabled=false",
+			mce: &v1.MultiClusterEngine{
+				Spec: v1.MultiClusterEngineSpec{
+					NetworkPolicies: &v1.NetworkPoliciesConfig{Enabled: false},
+				},
+			},
+			expectedMode: string(ocmapiv1.FeatureGateModeTypeDisable),
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			c := ClusterManager(test.mce, images)
+
+			featureGates, found, err := unstructured.NestedSlice(
+				c.Object, "spec", "registrationConfiguration", "featureGates")
+			if err != nil || !found {
+				t.Fatalf("expected registrationConfiguration.featureGates not found: found=%v err=%v", found, err)
+			}
+			if len(featureGates) != 1 {
+				t.Fatalf("expected 1 registration feature gate, got %d", len(featureGates))
+			}
+
+			gate, ok := featureGates[0].(map[string]interface{})
+			if !ok {
+				t.Fatalf("expected registration feature gate to be a map, got %T", featureGates[0])
+			}
+			if gate["feature"] != "NetworkPolicies" {
+				t.Errorf("expected feature NetworkPolicies, got %v", gate["feature"])
+			}
+			if gate["mode"] != test.expectedMode {
+				t.Errorf("expected mode %s, got %v", test.expectedMode, gate["mode"])
+			}
+		})
+	}
+}
