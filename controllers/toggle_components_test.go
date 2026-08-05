@@ -834,7 +834,8 @@ func Test_enableClusterManagerGRPCServer(t *testing.T) {
 				}
 
 				if tt.expectFeatureGatesRemain {
-					featureGates, found, _ := unstructured.NestedSlice(updatedCM.Object, "spec", "registrationConfiguration", "featureGates")
+					featureGates, found, _ := unstructured.NestedSlice(
+						updatedCM.Object, "spec", "registrationConfiguration", "featureGates")
 					if !found || len(featureGates) != 1 {
 						t.Fatalf("expected featureGates to be preserved, got %v", featureGates)
 					}
@@ -1098,10 +1099,12 @@ func Test_disableClusterManagerGRPCServer(t *testing.T) {
 					if !regConfigExists {
 						t.Fatal("registrationConfiguration should remain to preserve featureGates")
 					}
-					if _, hasDrivers, _ := unstructured.NestedFieldNoCopy(updatedCM.Object, "spec", "registrationConfiguration", "registrationDrivers"); hasDrivers {
+					if _, hasDrivers, _ := unstructured.NestedFieldNoCopy(
+						updatedCM.Object, "spec", "registrationConfiguration", "registrationDrivers"); hasDrivers {
 						t.Error("registrationDrivers should be removed but still exists")
 					}
-					featureGates, found, _ := unstructured.NestedSlice(updatedCM.Object, "spec", "registrationConfiguration", "featureGates")
+					featureGates, found, _ := unstructured.NestedSlice(
+						updatedCM.Object, "spec", "registrationConfiguration", "featureGates")
 					if !found || len(featureGates) != 1 {
 						t.Fatalf("expected featureGates to be preserved, got %v", featureGates)
 					}
