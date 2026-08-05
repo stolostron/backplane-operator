@@ -1117,6 +1117,77 @@ func TestServerFoundationNetworkPolicies(t *testing.T) {
 	})
 }
 
+func TestClusterManagerNetworkPolicies(t *testing.T) {
+	os.Setenv("DIRECTORY_OVERRIDE", "../../")
+	defer os.Unsetenv("DIRECTORY_OVERRIDE")
+	os.Setenv("POD_NAMESPACE", "default")
+	defer os.Unsetenv("POD_NAMESPACE")
+	os.Setenv("ACM_HUB_OCP_VERSION", "4.12.0")
+	defer os.Unsetenv("ACM_HUB_OCP_VERSION")
+
+	testImages := map[string]string{}
+	for _, v := range utils.GetTestImages() {
+		testImages[v] = "quay.io/test/test:Test"
+	}
+
+	cmChart := "pkg/templates/charts/toggle/cluster-manager"
+	const npName = "cluster-manager-network-policy"
+
+	t.Run("NetworkPolicies enabled renders registration-operator NP", func(t *testing.T) {
+		mce := &backplane.MultiClusterEngine{
+			ObjectMeta: metav1.ObjectMeta{Name: "test-mce"},
+			Spec: backplane.MultiClusterEngineSpec{
+				TargetNamespace: "multicluster-engine",
+				NetworkPolicies: &backplane.NetworkPoliciesConfig{Enabled: true},
+			},
+		}
+
+		templates, errs := RenderChart(cmChart, mce, testImages, map[string]string{})
+		if len(errs) > 0 {
+			t.Fatalf("RenderChart failed: %v", errs)
+		}
+
+		var np *unstructured.Unstructured
+		for _, tmpl := range templates {
+			if tmpl.GetKind() == "NetworkPolicy" {
+				if tmpl.GetName() != npName {
+					t.Errorf("unexpected NetworkPolicy name: %s", tmpl.GetName())
+					continue
+				}
+				np = tmpl
+			}
+		}
+		if np == nil {
+			t.Fatalf("expected NetworkPolicy %s when networkPolicies.enabled=true", npName)
+		}
+		if np.GetNamespace() != "multicluster-engine" {
+			t.Errorf("NetworkPolicy namespace = %s, want multicluster-engine", np.GetNamespace())
+		}
+		assertServerFoundationNetworkPolicy(t, np)
+	})
+
+	t.Run("NetworkPolicies disabled excludes registration-operator NP", func(t *testing.T) {
+		mce := &backplane.MultiClusterEngine{
+			ObjectMeta: metav1.ObjectMeta{Name: "test-mce"},
+			Spec: backplane.MultiClusterEngineSpec{
+				TargetNamespace: "multicluster-engine",
+				NetworkPolicies: &backplane.NetworkPoliciesConfig{Enabled: false},
+			},
+		}
+
+		templates, errs := RenderChart(cmChart, mce, testImages, map[string]string{})
+		if len(errs) > 0 {
+			t.Fatalf("RenderChart failed: %v", errs)
+		}
+
+		for _, tmpl := range templates {
+			if tmpl.GetKind() == "NetworkPolicy" {
+				t.Errorf("NetworkPolicy should not be rendered when networkPolicies.enabled=false: %s", tmpl.GetName())
+			}
+		}
+	})
+}
+
 func npPort(proto corev1.Protocol, port int32) networkingv1.NetworkPolicyPort {
 	p := port
 	protocol := proto
@@ -1215,6 +1286,14 @@ func expectedServerFoundationNetworkPolicySpec(name string) (networkingv1.Networ
 					Ports: []networkingv1.NetworkPolicyPort{npPort(corev1.ProtocolTCP, 3010)},
 				},
 			},
+		}, true
+	case "cluster-manager-network-policy":
+		return networkingv1.NetworkPolicySpec{
+			PodSelector: metav1.LabelSelector{MatchLabels: map[string]string{
+				"app": "cluster-manager",
+			}},
+			PolicyTypes: defaultDenyTypes,
+			Egress:      []networkingv1.NetworkPolicyEgressRule{sfDNSEgress(), sfAPIEgress()},
 		}, true
 	default:
 		return networkingv1.NetworkPolicySpec{}, false

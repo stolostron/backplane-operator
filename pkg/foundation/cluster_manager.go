@@ -103,6 +103,24 @@ func ClusterManager(m *v1.MultiClusterEngine, overrides map[string]string) *unst
 		},
 	}
 
+	// Toggle OCM's operator-internal NetworkPolicies feature gate so the
+	// registration-operator applies (or removes) hub-namespace NPs for the
+	// components it embeds: registration, work, placement, addon-manager.
+	// Always set Enable/Disable so server-side apply clears a previously
+	// enabled gate when MCE networkPolicies are turned off.
+	networkPoliciesMode := ocmapiv1.FeatureGateModeTypeEnable
+	if m.Spec.NetworkPolicies != nil && !m.Spec.NetworkPolicies.Enabled {
+		networkPoliciesMode = ocmapiv1.FeatureGateModeTypeDisable
+	}
+	cm.Spec.RegistrationConfiguration = &ocmapiv1.RegistrationHubConfiguration{
+		FeatureGates: []ocmapiv1.FeatureGate{
+			{
+				Feature: "NetworkPolicies",
+				Mode:    networkPoliciesMode,
+			},
+		},
+	}
+
 	utils.AddBackplaneConfigLabels(cm, m.GetName())
 	unstructured, err := utils.CoreToUnstructured(cm)
 	if err != nil {
