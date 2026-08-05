@@ -962,6 +962,7 @@ func TestServerFoundationNetworkPolicies(t *testing.T) {
 			found[name] = false
 		}
 		ocmControllerFlag := false
+		importControllerFlag := false
 		for _, tmpl := range templates {
 			if tmpl.GetKind() == "NetworkPolicy" {
 				if _, ok := found[tmpl.GetName()]; ok {
@@ -998,6 +999,33 @@ func TestServerFoundationNetworkPolicies(t *testing.T) {
 					}
 				}
 			}
+			if tmpl.GetKind() == "Deployment" && tmpl.GetName() == "managedcluster-import-controller-v2" {
+				containers, foundContainers, err := unstructured.NestedSlice(tmpl.Object, "spec", "template", "spec", "containers")
+				if err != nil {
+					t.Fatalf("managedcluster-import-controller-v2 containers NestedSlice: %v", err)
+				}
+				if !foundContainers {
+					t.Fatal("managedcluster-import-controller-v2 missing spec.template.spec.containers")
+				}
+				for i, c := range containers {
+					container, ok := c.(map[string]interface{})
+					if !ok {
+						t.Fatalf("managedcluster-import-controller-v2 containers[%d] is not a map", i)
+					}
+					args, foundArgs, err := unstructured.NestedStringSlice(container, "args")
+					if err != nil {
+						t.Fatalf("managedcluster-import-controller-v2 containers[%d] args NestedStringSlice: %v", i, err)
+					}
+					if !foundArgs {
+						t.Fatalf("managedcluster-import-controller-v2 containers[%d] missing args", i)
+					}
+					for _, arg := range args {
+						if arg == "--enable-klusterlet-network-policies=true" {
+							importControllerFlag = true
+						}
+					}
+				}
+			}
 		}
 		for name, ok := range found {
 			if !ok {
@@ -1006,6 +1034,9 @@ func TestServerFoundationNetworkPolicies(t *testing.T) {
 		}
 		if !ocmControllerFlag {
 			t.Error("expected ocm-controller --enable-network-policies=true when networkPolicies.enabled=true")
+		}
+		if !importControllerFlag {
+			t.Error("expected managedcluster-import-controller-v2 --enable-klusterlet-network-policies=true when networkPolicies.enabled=true")
 		}
 	})
 
@@ -1025,6 +1056,8 @@ func TestServerFoundationNetworkPolicies(t *testing.T) {
 
 		foundOCMController := false
 		foundDisabledFlag := false
+		foundImportController := false
+		foundImportDisabledFlag := false
 		for _, tmpl := range templates {
 			if tmpl.GetKind() == "NetworkPolicy" {
 				t.Errorf("NetworkPolicy should not be rendered when networkPolicies.enabled=false: %s", tmpl.GetName())
@@ -1060,12 +1093,49 @@ func TestServerFoundationNetworkPolicies(t *testing.T) {
 					}
 				}
 			}
+			if tmpl.GetKind() == "Deployment" && tmpl.GetName() == "managedcluster-import-controller-v2" {
+				foundImportController = true
+				containers, foundContainers, err := unstructured.NestedSlice(tmpl.Object, "spec", "template", "spec", "containers")
+				if err != nil {
+					t.Fatalf("managedcluster-import-controller-v2 containers NestedSlice: %v", err)
+				}
+				if !foundContainers {
+					t.Fatal("managedcluster-import-controller-v2 missing spec.template.spec.containers")
+				}
+				for i, c := range containers {
+					container, ok := c.(map[string]interface{})
+					if !ok {
+						t.Fatalf("managedcluster-import-controller-v2 containers[%d] is not a map", i)
+					}
+					args, foundArgs, err := unstructured.NestedStringSlice(container, "args")
+					if err != nil {
+						t.Fatalf("managedcluster-import-controller-v2 containers[%d] args NestedStringSlice: %v", i, err)
+					}
+					if !foundArgs {
+						t.Fatalf("managedcluster-import-controller-v2 containers[%d] missing args", i)
+					}
+					for _, arg := range args {
+						if arg == "--enable-klusterlet-network-policies=true" {
+							t.Error("managedcluster-import-controller-v2 should not have --enable-klusterlet-network-policies=true when disabled")
+						}
+						if arg == "--enable-klusterlet-network-policies=false" {
+							foundImportDisabledFlag = true
+						}
+					}
+				}
+			}
 		}
 		if !foundOCMController {
 			t.Error("expected ocm-controller Deployment when rendering server-foundation chart")
 		}
 		if !foundDisabledFlag {
 			t.Error("expected ocm-controller --enable-network-policies=false when networkPolicies.enabled=false")
+		}
+		if !foundImportController {
+			t.Error("expected managedcluster-import-controller-v2 Deployment when rendering server-foundation chart")
+		}
+		if !foundImportDisabledFlag {
+			t.Error("expected managedcluster-import-controller-v2 --enable-klusterlet-network-policies=false when networkPolicies.enabled=false")
 		}
 	})
 
