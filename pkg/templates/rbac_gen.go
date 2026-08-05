@@ -113,7 +113,7 @@ package main
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=create;get;list;watch
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=create;get;list;watch
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;update;watch;patch
-//+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update
+//+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;delete
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;watch;list;create
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=list;get;watch
