@@ -1297,14 +1297,20 @@ func TestServerFoundationNetworkPolicies(t *testing.T) {
 			if err != nil || !found {
 				t.Fatalf("hosting import controller missing containers: %v", err)
 			}
-			for _, c := range containers {
-				container := c.(map[string]interface{})
+			for i, c := range containers {
+				container, ok := c.(map[string]interface{})
+				if !ok {
+					t.Fatalf("hosting import controller containers[%d] is not a map", i)
+				}
 				envList, found, err := unstructured.NestedSlice(container, "env")
 				if err != nil || !found {
 					t.Fatalf("hosting import controller missing env: %v", err)
 				}
-				for _, e := range envList {
-					env := e.(map[string]interface{})
+				for j, e := range envList {
+					env, ok := e.(map[string]interface{})
+					if !ok {
+						t.Fatalf("hosting import controller env[%d] is not a map", j)
+					}
 					if env["name"] == "ENABLE_KLUSTERLET_NETWORK_POLICIES" && env["value"] == "true" {
 						foundEnvVar = true
 					}
@@ -1339,14 +1345,20 @@ func TestServerFoundationNetworkPolicies(t *testing.T) {
 			if err != nil || !found {
 				t.Fatalf("hosting import controller missing containers: %v", err)
 			}
-			for _, c := range containers {
-				container := c.(map[string]interface{})
+			for i, c := range containers {
+				container, ok := c.(map[string]interface{})
+				if !ok {
+					t.Fatalf("hosting import controller containers[%d] is not a map", i)
+				}
 				envList, found, err := unstructured.NestedSlice(container, "env")
 				if err != nil || !found {
 					t.Fatalf("hosting import controller missing env: %v", err)
 				}
-				for _, e := range envList {
-					env := e.(map[string]interface{})
+				for j, e := range envList {
+					env, ok := e.(map[string]interface{})
+					if !ok {
+						t.Fatalf("hosting import controller env[%d] is not a map", j)
+					}
 					if env["name"] == "ENABLE_KLUSTERLET_NETWORK_POLICIES" {
 						if env["value"] == "true" {
 							t.Error("hosting import controller should not have ENABLE_KLUSTERLET_NETWORK_POLICIES=true when disabled")
