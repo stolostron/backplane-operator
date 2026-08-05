@@ -530,12 +530,13 @@ func Test_enableClusterManagerGRPCServer(t *testing.T) {
 	ctx := context.TODO()
 
 	tests := []struct {
-		name                   string
-		imageOverrides         map[string]string
-		existingClusterManager *unstructured.Unstructured
-		expectedUpdate         bool
-		expectError            bool
-		errorContains          string
+		name                     string
+		imageOverrides           map[string]string
+		existingClusterManager   *unstructured.Unstructured
+		expectedUpdate           bool
+		expectError              bool
+		errorContains            string
+		expectFeatureGatesRemain bool
 	}{
 		{
 			name:           "Error when conductor image not found",
@@ -701,6 +702,34 @@ func Test_enableClusterManagerGRPCServer(t *testing.T) {
 			expectedUpdate: true,
 			expectError:    false,
 		},
+		{
+			name: "Preserves featureGates when adding registrationDrivers",
+			imageOverrides: map[string]string{
+				"cloudevents_conductor": "quay.io/test/conductor:latest",
+			},
+			existingClusterManager: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "operator.open-cluster-management.io/v1",
+					"kind":       "ClusterManager",
+					"metadata": map[string]interface{}{
+						"name": "cluster-manager",
+					},
+					"spec": map[string]interface{}{
+						"registrationConfiguration": map[string]interface{}{
+							"featureGates": []interface{}{
+								map[string]interface{}{
+									"feature": "NetworkPolicies",
+									"mode":    "Enable",
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedUpdate:           true,
+			expectError:              false,
+			expectFeatureGatesRemain: true,
+		},
 	}
 
 	for _, tt := range tests {
@@ -804,6 +833,17 @@ func Test_enableClusterManagerGRPCServer(t *testing.T) {
 					}
 				}
 
+				if tt.expectFeatureGatesRemain {
+					featureGates, found, _ := unstructured.NestedSlice(updatedCM.Object, "spec", "registrationConfiguration", "featureGates")
+					if !found || len(featureGates) != 1 {
+						t.Fatalf("expected featureGates to be preserved, got %v", featureGates)
+					}
+					gate, ok := featureGates[0].(map[string]interface{})
+					if !ok || gate["feature"] != "NetworkPolicies" || gate["mode"] != "Enable" {
+						t.Errorf("featureGates not preserved: got %v", featureGates)
+					}
+				}
+
 				// For the "no update" test case, we can't reliably check generation with fake client
 				// as it doesn't increment generation on updates
 				_ = initialGeneration
@@ -820,11 +860,13 @@ func Test_disableClusterManagerGRPCServer(t *testing.T) {
 	ctx := context.TODO()
 
 	tests := []struct {
-		name                   string
-		existingClusterManager *unstructured.Unstructured
-		expectUpdate           bool
-		expectError            bool
-		errorContains          string
+		name                     string
+		existingClusterManager   *unstructured.Unstructured
+		expectUpdate             bool
+		expectError              bool
+		errorContains            string
+		expectRegConfigRemoved   bool
+		expectFeatureGatesRemain bool
 	}{
 		{
 			name:         "No error when ClusterManager not found",
@@ -832,7 +874,7 @@ func Test_disableClusterManagerGRPCServer(t *testing.T) {
 			expectError:  false,
 		},
 		{
-			name: "Remove both registrationConfiguration and serverConfiguration",
+			name: "Remove registrationDrivers and serverConfiguration",
 			existingClusterManager: &unstructured.Unstructured{
 				Object: map[string]interface{}{
 					"apiVersion": "operator.open-cluster-management.io/v1",
@@ -867,11 +909,12 @@ func Test_disableClusterManagerGRPCServer(t *testing.T) {
 					},
 				},
 			},
-			expectUpdate: true,
-			expectError:  false,
+			expectUpdate:           true,
+			expectError:            false,
+			expectRegConfigRemoved: true,
 		},
 		{
-			name: "Remove only registrationConfiguration",
+			name: "Remove registrationDrivers when only drivers present",
 			existingClusterManager: &unstructured.Unstructured{
 				Object: map[string]interface{}{
 					"apiVersion": "operator.open-cluster-management.io/v1",
@@ -892,8 +935,9 @@ func Test_disableClusterManagerGRPCServer(t *testing.T) {
 					},
 				},
 			},
-			expectUpdate: true,
-			expectError:  false,
+			expectUpdate:           true,
+			expectError:            false,
+			expectRegConfigRemoved: true,
 		},
 		{
 			name: "Remove only serverConfiguration",
@@ -914,8 +958,45 @@ func Test_disableClusterManagerGRPCServer(t *testing.T) {
 					},
 				},
 			},
-			expectUpdate: true,
-			expectError:  false,
+			expectUpdate:           true,
+			expectError:            false,
+			expectRegConfigRemoved: true,
+		},
+		{
+			name: "Preserves featureGates when removing registrationDrivers",
+			existingClusterManager: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "operator.open-cluster-management.io/v1",
+					"kind":       "ClusterManager",
+					"metadata": map[string]interface{}{
+						"name": "cluster-manager",
+					},
+					"spec": map[string]interface{}{
+						"deployOption": map[string]interface{}{
+							"mode": "Default",
+						},
+						"registrationConfiguration": map[string]interface{}{
+							"registrationDrivers": []interface{}{
+								map[string]interface{}{"authType": "csr"},
+								map[string]interface{}{"authType": "grpc"},
+							},
+							"featureGates": []interface{}{
+								map[string]interface{}{
+									"feature": "NetworkPolicies",
+									"mode":    "Enable",
+								},
+							},
+						},
+						"serverConfiguration": map[string]interface{}{
+							"imagePullSpec": "quay.io/test/conductor:latest",
+						},
+					},
+				},
+			},
+			expectUpdate:             true,
+			expectError:              false,
+			expectRegConfigRemoved:   false,
+			expectFeatureGatesRemain: true,
 		},
 		{
 			name: "No update when configurations not present",
@@ -1009,9 +1090,25 @@ func Test_disableClusterManagerGRPCServer(t *testing.T) {
 					return
 				}
 
-				// Verify registrationConfiguration is removed
-				if _, exists := spec["registrationConfiguration"]; exists {
+				_, regConfigExists := spec["registrationConfiguration"]
+				if tt.expectRegConfigRemoved && regConfigExists {
 					t.Error("registrationConfiguration should be removed but still exists")
+				}
+				if tt.expectFeatureGatesRemain {
+					if !regConfigExists {
+						t.Fatal("registrationConfiguration should remain to preserve featureGates")
+					}
+					if _, hasDrivers, _ := unstructured.NestedFieldNoCopy(updatedCM.Object, "spec", "registrationConfiguration", "registrationDrivers"); hasDrivers {
+						t.Error("registrationDrivers should be removed but still exists")
+					}
+					featureGates, found, _ := unstructured.NestedSlice(updatedCM.Object, "spec", "registrationConfiguration", "featureGates")
+					if !found || len(featureGates) != 1 {
+						t.Fatalf("expected featureGates to be preserved, got %v", featureGates)
+					}
+					gate, ok := featureGates[0].(map[string]interface{})
+					if !ok || gate["feature"] != "NetworkPolicies" || gate["mode"] != "Enable" {
+						t.Errorf("featureGates not preserved: got %v", featureGates)
+					}
 				}
 
 				// Verify serverConfiguration is removed
