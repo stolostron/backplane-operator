@@ -1217,6 +1217,61 @@ func TestServerFoundationNetworkPolicies(t *testing.T) {
 		}
 	})
 
+	t.Run("non-OCP sets klusterlet network policies flag false when disabled", func(t *testing.T) {
+		utils.SetDeployOnOCP(false)
+		defer utils.SetDeployOnOCP(true)
+
+		mce := &backplane.MultiClusterEngine{
+			ObjectMeta: metav1.ObjectMeta{Name: "test-mce"},
+			Spec: backplane.MultiClusterEngineSpec{
+				TargetNamespace: "default",
+				NetworkPolicies: &backplane.NetworkPoliciesConfig{Enabled: false},
+			},
+		}
+
+		templates, errs := RenderChart(sfChart, mce, testImages, map[string]string{})
+		if len(errs) > 0 {
+			t.Fatalf("RenderChart failed: %v", errs)
+		}
+
+		foundImportController := false
+		foundDisabledFlag := false
+		for _, tmpl := range templates {
+			if tmpl.GetKind() != "Deployment" || tmpl.GetName() != "managedcluster-import-controller-v2" {
+				continue
+			}
+			foundImportController = true
+			containers, found, err := unstructured.NestedSlice(tmpl.Object, "spec", "template", "spec", "containers")
+			if err != nil || !found {
+				t.Fatalf("managedcluster-import-controller-v2 missing containers: %v", err)
+			}
+			for i, c := range containers {
+				container, ok := c.(map[string]interface{})
+				if !ok {
+					t.Fatalf("managedcluster-import-controller-v2 containers[%d] is not a map", i)
+				}
+				args, foundArgs, err := unstructured.NestedStringSlice(container, "args")
+				if err != nil || !foundArgs {
+					t.Fatalf("managedcluster-import-controller-v2 containers[%d] missing args: %v", i, err)
+				}
+				for _, arg := range args {
+					if arg == "--enable-klusterlet-network-policies=true" {
+						t.Error("managedcluster-import-controller-v2 should not have --enable-klusterlet-network-policies=true when disabled on non-OCP")
+					}
+					if arg == "--enable-klusterlet-network-policies=false" {
+						foundDisabledFlag = true
+					}
+				}
+			}
+		}
+		if !foundImportController {
+			t.Error("expected managedcluster-import-controller-v2 Deployment on non-OCP path")
+		}
+		if !foundDisabledFlag {
+			t.Error("expected managedcluster-import-controller-v2 --enable-klusterlet-network-policies=false on non-OCP path when disabled")
+		}
+	})
+
 	hostingChart := "pkg/templates/charts/hosting/server-foundation"
 
 	t.Run("Hosting chart passes ENABLE_KLUSTERLET_NETWORK_POLICIES env var when enabled", func(t *testing.T) {
