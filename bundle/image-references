@@ -43,10 +43,10 @@ spec:
     from:
       kind: DockerImage
       name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/cluster-api-provider-kubevirt-rhel9:latest
-  - name: cluster-api-webhook-config-rhel9
+  - name: mce-capi-webhook-config-rhel9
     from:
       kind: DockerImage
-      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/cluster-api-webhook-config-rhel9:latest
+      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/mce-capi-webhook-config-rhel9:latest
   - name: cluster-curator-controller-rhel9
     from:
       kind: DockerImage
@@ -71,34 +71,34 @@ spec:
     from:
       kind: DockerImage
       name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/console-mce-rhel9:latest
-  - name: discovery-operator-rhel9
+  - name: discovery-rhel9
     from:
       kind: DockerImage
-      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/discovery-operator-rhel9:latest
+      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/discovery-rhel9:latest
   - name: hive-rhel9
     from:
       kind: DockerImage
       name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/hive-rhel9:latest
-  - name: hypershift-addon-operator-rhel9
+  - name: hypershift-addon-rhel9-operator
     from:
       kind: DockerImage
-      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/hypershift-addon-operator-rhel9:latest
+      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/hypershift-addon-rhel9-operator:latest
   - name: hypershift-cli-rhel9
     from:
       kind: DockerImage
       name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/hypershift-cli-rhel9:latest
-  - name: hypershift-release-rhel9
+  - name: hypershift-rhel9-operator
     from:
       kind: DockerImage
-      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/hypershift-release-rhel9:latest
-  - name: image-based-install-operator-rhel9
+      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/hypershift-rhel9-operator:latest
+  - name: image-based-install-rhel9
     from:
       kind: DockerImage
-      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/image-based-install-operator-rhel9:latest
-  - name: kube-rbac-proxy-rhel9
+      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/image-based-install-rhel9:latest
+  - name: kube-rbac-proxy-mce-rhel9
     from:
       kind: DockerImage
-      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/kube-rbac-proxy-rhel9:latest
+      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/kube-rbac-proxy-mce-rhel9:latest
   - name: managed-serviceaccount-rhel9
     from:
       kind: DockerImage
