@@ -125,6 +125,8 @@ spec:
           value: {{ .Values.global.imageOverrides.registration }}
         - name: WORK_IMAGE
           value: {{ .Values.global.imageOverrides.work }}
+        - name: ENABLE_KLUSTERLET_NETWORK_POLICIES
+          value: "{{ .Values.global.networkPolicies.enabled }}"
         - name: POD_NAMESPACE
           valueFrom:
             fieldRef:
