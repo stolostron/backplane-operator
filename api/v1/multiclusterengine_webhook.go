@@ -232,7 +232,7 @@ func validateLocalClusterNameLength(name string) (err error) {
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
 func (r *MultiClusterEngine) ValidateUpdate(ctx context.Context, oldObj, newObj *MultiClusterEngine) (admission.Warnings, error) {
-	backplaneconfiglog.Info("validate update", "Kind", newObj.Kind, "Name", newObj.GetName(), "Namespace", newObj.Namespace)
+	backplaneconfiglog.Info("validate update", "Kind", newObj.Kind, "Name", newObj.GetName(), "Namespace", newObj.Spec.TargetNamespace)
 
 	if (newObj.Spec.TargetNamespace != oldObj.Spec.TargetNamespace) && (oldObj.Spec.TargetNamespace != "") {
 		return nil, fmt.Errorf("%w: changes cannot be made to target namespace", ErrInvalidNamespace)
