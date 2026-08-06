@@ -2691,9 +2691,14 @@ func (r *MultiClusterEngineReconciler) enableClusterManagerGRPCServer(ctx contex
 		spec = make(map[string]interface{})
 	}
 
-	spec["registrationConfiguration"] = map[string]interface{}{
-		"registrationDrivers": expectedDrivers,
+	// Merge registrationDrivers into registrationConfiguration, preserving
+	// featureGates (e.g. NetworkPolicies) that other reconcile paths set.
+	regConfig, _ := spec["registrationConfiguration"].(map[string]interface{})
+	if regConfig == nil {
+		regConfig = make(map[string]interface{})
 	}
+	regConfig["registrationDrivers"] = expectedDrivers
+	spec["registrationConfiguration"] = regConfig
 	spec["serverConfiguration"] = map[string]interface{}{
 		"endpointsExposure": []interface{}{
 			map[string]interface{}{
@@ -2801,11 +2806,19 @@ func (r *MultiClusterEngineReconciler) disableClusterManagerGRPCServer(ctx conte
 		return nil
 	}
 
-	// Remove the gRPC-related configurations
+	// Remove only the gRPC-specific registrationDrivers from registrationConfiguration,
+	// preserving featureGates (e.g. NetworkPolicies) that other reconcile paths set.
 	modified := false
-	if _, exists := spec["registrationConfiguration"]; exists {
-		delete(spec, "registrationConfiguration")
-		modified = true
+	if regConfig, exists := spec["registrationConfiguration"]; exists {
+		if regMap, ok := regConfig.(map[string]interface{}); ok {
+			if _, hasDrivers := regMap["registrationDrivers"]; hasDrivers {
+				delete(regMap, "registrationDrivers")
+				modified = true
+			}
+			if len(regMap) == 0 {
+				delete(spec, "registrationConfiguration")
+			}
+		}
 	}
 	if _, exists := spec["serverConfiguration"]; exists {
 		delete(spec, "serverConfiguration")
