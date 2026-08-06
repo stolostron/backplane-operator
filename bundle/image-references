@@ -14,11 +14,11 @@ spec:
   - name: backplane-rhel9-operator
     from:
       kind: DockerImage
-      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/backplane-rhel9-operator:latest
+      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/backplane-operator:latest
   - name: must-gather-rhel9
     from:
       kind: DockerImage
-      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/must-gather-rhel9:latest
+      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/backplane-must-gather-rhel9:latest
   - name: capoa-bootstrap-rhel9
     from:
       kind: DockerImage
