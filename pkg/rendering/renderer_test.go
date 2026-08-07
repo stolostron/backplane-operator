@@ -767,14 +767,14 @@ func TestClusterLifecycleStateMetricsNetworkPolicies(t *testing.T) {
 			t.Fatalf("RenderChart failed: %v", errs)
 		}
 
+		// The cluster-lifecycle chart now renders a NetworkPolicy per controller
+		// (see networkpolicy.yaml), so only look for the CLSM policy by name here
+		// rather than failing on the presence of the other, unrelated policies.
 		var np *unstructured.Unstructured
 		for _, tmpl := range templates {
-			if tmpl.GetKind() == "NetworkPolicy" {
-				if tmpl.GetName() != npName {
-					t.Errorf("unexpected NetworkPolicy name: %s", tmpl.GetName())
-					continue
-				}
+			if tmpl.GetKind() == "NetworkPolicy" && tmpl.GetName() == npName {
 				np = tmpl
+				break
 			}
 		}
 		if np == nil {
