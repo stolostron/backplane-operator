@@ -1,4 +1,9 @@
 ---
+updates:
+- file: "manifests/multicluster-engine.clusterserviceversion.yaml"
+  update_list:
+  - search: "2.11.4"
+    replace: "2.11.5"
 external-images:
 - name: assisted-image-service
   search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-image-service-rhel9:latest"
