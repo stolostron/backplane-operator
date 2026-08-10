@@ -63,11 +63,7 @@ SHELL = /usr/bin/env bash -o pipefail
 GIT_VERSION ?= $(shell git describe --match='v*' --always --dirty)
 GIT_HASH ?= $(shell git rev-parse HEAD)
 BUILDDATE = $(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
-GIT_TREESTATE = "clean"
-DIFF = $(shell git diff --quiet >/dev/null 2>&1; if [ $$? -eq 1 ]; then echo "1"; fi)
-ifeq ($(DIFF), 1)
-    GIT_TREESTATE = "dirty"
-endif
+GIT_TREESTATE = $(shell git diff --quiet >/dev/null 2>&1; rc=$$?; if [ $$rc -eq 0 ]; then echo "clean"; elif [ $$rc -eq 1 ]; then echo "dirty"; else echo "unknown"; fi)
 
 VERSION_PKG = "github.com/stolostron/backplane-operator/pkg/version"
 LDFLAGS = "-X $(VERSION_PKG).gitVersion=$(GIT_VERSION) \
