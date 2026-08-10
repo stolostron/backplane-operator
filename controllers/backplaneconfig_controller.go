@@ -204,6 +204,17 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 	// Check if any deprecated fields are present within the backplaneConfig spec.
 	r.CheckDeprecatedFieldUsage(backplaneConfig)
 
+	// Auto-disable maestro-preview if enabled
+	if backplaneConfig.Enabled(backplanev1.MaestroPreview) {
+		r.Log.Info("Auto-disabling maestro-preview component")
+		backplaneConfig.Disable(backplanev1.MaestroPreview)
+		if err := r.Client.Update(ctx, backplaneConfig); err != nil {
+			r.Log.Error(err, "Failed to disable maestro-preview")
+			return ctrl.Result{}, err
+		}
+		return ctrl.Result{Requeue: true}, nil
+	}
+
 	// reset status manager
 	r.StatusManager.Reset("")
 	for _, c := range backplaneConfig.Status.Conditions {
