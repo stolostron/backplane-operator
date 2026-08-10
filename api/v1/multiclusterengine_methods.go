@@ -48,7 +48,6 @@ const (
 	ManagedServiceAccount            = "managedserviceaccount"
 	ManagedServiceAccountPreview     = "managedserviceaccount-preview"
 	ServerFoundation                 = "server-foundation"
-	Maestro                          = "maestro"
 	MaestroPreview                   = "maestro-preview"
 
 	// CRD directory names
@@ -103,7 +102,6 @@ var AllComponents = []string{
 	ManagedServiceAccount,
 	ManagedServiceAccountPreview,
 	ServerFoundation,
-	// Maestro, Uncomment until stable release is available
 	MaestroPreview,
 }
 
@@ -129,7 +127,6 @@ var MCEComponents = []string{
 	ImageBasedInstallOperator,
 	ManagedServiceAccount,
 	ServerFoundation,
-	// Maestro, Uncomment until stable release is available
 	MaestroPreview,
 }
 
@@ -146,7 +143,6 @@ var PreviewComponents = []string{
 	HyperShiftPreview,
 	ImageBasedInstallOperatorPreview,
 	ManagedServiceAccountPreview,
-	// MaestroPreview, // Uncomment when stable release is available
 }
 
 /*
@@ -162,7 +158,6 @@ var PreviewToStable = map[string]string{
 	HyperShiftPreview:                HyperShift,                // Upgraded in ACM 2.8 / MCE 2.3
 	ImageBasedInstallOperatorPreview: ImageBasedInstallOperator, // Upgraded in ACM 2.12 / MCE 2.7
 	ManagedServiceAccountPreview:     ManagedServiceAccount,     // Upgraded in ACM 2.9 / MCE 2.4
-	// MaestroPreview:                   Maestro,                   // Upgraded in ACM 2.17 / MCE 2.12
 }
 
 /*

@@ -105,6 +105,26 @@ var _ = Describe("Multiclusterengine webhook", func() {
 				}
 				Expect(k8sClient.Create(ctx, mce)).NotTo(BeNil(), "Invalid components not allowed in config")
 			})
+			By("because maestro-preview is deprecated", func() {
+				mce := &MultiClusterEngine{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:        fmt.Sprintf("%s-maestro", multiClusterEngineName),
+						Annotations: map[string]string{"deploymentmode": string(ModeHosted)},
+					},
+					Spec: MultiClusterEngineSpec{
+						TargetNamespace: "maestro-ns",
+						Overrides: &Overrides{
+							Components: []ComponentConfig{
+								{
+									Name:    MaestroPreview,
+									Enabled: true,
+								},
+							},
+						},
+					},
+				}
+				Expect(k8sClient.Create(ctx, mce)).NotTo(BeNil(), "maestro-preview component should be blocked")
+			})
 		})
 
 		It("Should fail to update multiclusterengine", func() {
@@ -138,6 +158,19 @@ var _ = Describe("Multiclusterengine webhook", func() {
 				Expect(k8sClient.Get(ctx, types.NamespacedName{Name: multiClusterEngineName}, mce)).To(Succeed())
 				mce.Spec.Overrides = &Overrides{}
 				Expect(k8sClient.Update(ctx, mce)).To(Succeed())
+			})
+
+			By("because maestro-preview cannot be enabled", func() {
+				Expect(k8sClient.Get(ctx, types.NamespacedName{Name: multiClusterEngineName}, mce)).To(Succeed())
+				mce.Spec.Overrides = &Overrides{
+					Components: []ComponentConfig{
+						{
+							Name:    MaestroPreview,
+							Enabled: true,
+						},
+					},
+				}
+				Expect(k8sClient.Update(ctx, mce)).NotTo(BeNil(), "maestro-preview cannot be enabled")
 			})
 
 			By("because of existing local-cluster resource", func() {
