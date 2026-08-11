@@ -3,6 +3,7 @@ global:
     hypershift_addon_operator: ""
     cluster_api_provider_agent: ""
     hypershift_operator: ""
+    hypershift_cli: ""
     cluster_api_provider_kubevirt: ""
     kube_rbac_proxy_mce: "registry.redhat.io/openshift4/ose-kube-rbac-proxy:v4.10"
   templateOverrides: {}
