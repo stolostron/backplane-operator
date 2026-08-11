@@ -106,6 +106,8 @@ spec:
             value: '{{ .Values.global.imageOverrides.hypershift_operator }}'
           - name: HYPERSHIFT_ADDON_IMAGE_NAME
             value: '{{ .Values.global.imageOverrides.hypershift_addon_operator }}'
+          - name: HYPERSHIFT_CLI_IMAGE_NAME
+            value: '{{ .Values.global.imageOverrides.hypershift_cli }}'
           - name: KUBE_RBAC_PROXY_IMAGE_NAME
             value: '{{ .Values.global.imageOverrides.kube_rbac_proxy_mce }}'
 {{- if .Values.hubconfig.proxyConfigs }}
