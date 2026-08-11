@@ -21,6 +21,11 @@ on:
         required: false
         default: "stolostron"
         type: string
+      component_arg:
+        description: 'COMPONENT to regenerate (e.g. cluster-manager). Leave empty for all.'
+        required: false
+        default: ''
+        type: string
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -89,8 +94,10 @@ jobs:
       # Runs a set of commands using the runners shell
       - name: Regenerate Operator Charts From Bundles
         id: generate_charts_from_bundles
+        env:
+          COMPONENT: ${{ github.event.inputs.component_arg || '' }}
         run: |
-          make regenerate-charts-from-bundles
+          make regenerate-charts-from-bundles COMPONENT="${COMPONENT}"
           exit_code=$?
           if [ $exit_code -ne 0 ]; then
             echo "Regenerate Operator Charts From Bundles step failed with exit code $exit_code"
