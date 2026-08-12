@@ -3,8 +3,8 @@
 ORG ?= stolostron
 REPO ?= installer-dev-tools
 BRANCH ?= main
-COMPONENT ?= ""
-CONFIG ?= ""
+COMPONENT ?=
+CONFIG ?=
 
 PIPELINE_REPO ?= backplane-pipeline
 PIPELINE_BRANCH ?= 2.9-integration
@@ -38,37 +38,37 @@ install-requirements:
 ## Lints the operator bundles
 .PHONY: lint-operator-bundles
 lint-operator-bundles: install-requirements
-	python3 ./hack/bundle-automation/generate-shell.py --lint-bundles --org $(ORG) --repo $(REPO) --branch $(BRANCH) --component $(COMPONENT) --config $(CONFIG)
+	python3 ./hack/bundle-automation/generate-shell.py --lint-bundles --org $(ORG) --repo $(REPO) --branch $(BRANCH) --component "$(COMPONENT)" --config "$(CONFIG)"
 
 ## Regenerates the operator bundles
 .PHONY: refresh-image-aliases
 refresh-image-aliases: install-requirements
-	python3 ./hack/bundle-automation/generate-shell.py --refresh-image-aliases --org $(ORG) --repo $(REPO) --branch $(BRANCH) --pipeline-repo $(PIPELINE_REPO) --pipeline-branch $(PIPELINE_BRANCH) --component $(COMPONENT)
+	python3 ./hack/bundle-automation/generate-shell.py --refresh-image-aliases --org $(ORG) --repo $(REPO) --branch $(BRANCH) --pipeline-repo $(PIPELINE_REPO) --pipeline-branch $(PIPELINE_BRANCH) --component "$(COMPONENT)"
 
 ## Regenerates the operator charts from bundles
 .PHONY: regenerate-charts-from-bundles
 regenerate-charts-from-bundles: install-requirements
-	python3 ./hack/bundle-automation/generate-shell.py --update-charts-from-bundles --org $(ORG) --repo $(REPO) --branch $(BRANCH) --component $(COMPONENT) --config $(CONFIG)
+	python3 ./hack/bundle-automation/generate-shell.py --update-charts-from-bundles --org $(ORG) --repo $(REPO) --branch $(BRANCH) --component "$(COMPONENT)" --config "$(CONFIG)"
 
 ## Regenerates the operator bundles
 .PHONY: regenerate-operator-sha-commits
 regenerate-operator-sha-commits: install-requirements
-	python3 ./hack/bundle-automation/generate-shell.py --update-commits --org $(ORG) --repo $(REPO) --branch $(BRANCH) --pipeline-repo $(PIPELINE_REPO) --pipeline-branch $(PIPELINE_BRANCH) --component $(COMPONENT) --config $(CONFIG)
+	python3 ./hack/bundle-automation/generate-shell.py --update-commits --org $(ORG) --repo $(REPO) --branch $(BRANCH) --pipeline-repo $(PIPELINE_REPO) --pipeline-branch $(PIPELINE_BRANCH) --component "$(COMPONENT)" --config "$(CONFIG)"
 
 ## Regenerates the charts
 .PHONY: regenerate-charts
 regenerate-charts: install-requirements
-	python3 ./hack/bundle-automation/generate-shell.py --update-charts --org $(ORG) --repo $(REPO) --branch $(BRANCH) --component $(COMPONENT) --config $(CONFIG)
+	python3 ./hack/bundle-automation/generate-shell.py --update-charts --org $(ORG) --repo $(REPO) --branch $(BRANCH) --component "$(COMPONENT)" --config "$(CONFIG)"
 
 ## Regenerates the operator bundles
 .PHONY: copy-charts
 copy-charts: install-requirements
-	python3 ./hack/bundle-automation/generate-shell.py --copy-charts --org $(ORG) --repo $(REPO) --branch $(BRANCH) --component $(COMPONENT) --config $(CONFIG)
+	python3 ./hack/bundle-automation/generate-shell.py --copy-charts --org $(ORG) --repo $(REPO) --branch $(BRANCH) --component "$(COMPONENT)" --config "$(CONFIG)"
 
 ## Onboard new OLM/Chart component
 .PHONY: onboard-new-component
 onboard-new-component: install-requirements
-	python3 ./hack/bundle-automation/generate-shell.py --onboard-new-component --org $(ORG) --repo $(REPO) --branch $(BRANCH) --component $(COMPONENT)
+	python3 ./hack/bundle-automation/generate-shell.py --onboard-new-component --org $(ORG) --repo $(REPO) --branch $(BRANCH) --component "$(COMPONENT)"
 
 .PHONY: catalog-deploy
 catalog-deploy: ## Deploys backplane operator via subscription
