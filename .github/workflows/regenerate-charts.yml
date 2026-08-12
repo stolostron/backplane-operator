@@ -21,6 +21,11 @@ on:
         required: false
         default: 'stolostron'
         type: string
+      component_arg:
+        description: 'COMPONENT to regenerate (e.g. cluster-manager). Leave empty for all.'
+        required: false
+        default: ''
+        type: string
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -73,9 +78,11 @@ jobs:
       # Runs a set of commands using the runners shell
       - name: Regenerate Charts
         id: generate_chart
+        env:
+          COMPONENT: ${{ github.event.inputs.component_arg || '' }}
         run: |
           set -o pipefail
-          make regenerate-charts 2>&1 | tee /tmp/regenerate.log
+          make regenerate-charts COMPONENT="${COMPONENT}" 2>&1 | tee /tmp/regenerate.log
 
       - name: Generate code
         run: |

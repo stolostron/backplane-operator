@@ -7,6 +7,7 @@ import argparse
 import coloredlogs
 import os
 import logging
+import shlex
 import subprocess
 import shutil
 import sys
@@ -163,21 +164,31 @@ def prepare_and_execute(operation, operation_data, args, extra_args):
     script_name = Path(script_path).name
     script_file = DEST_DIR / script_name
 
-    operations_args = operation_data.get("args", "").format(
-        pipeline_repo=args.pipeline_repo,
-        pipeline_branch=args.pipeline_branch,
-        bundle=getattr(args, 'bundle', '../mce-operator-bundle')
-    ) if "args" in operation_data else ""
+    # SUPPORTED_OPERATIONS' "args" templates are developer-authored, static
+    # strings (with {placeholder} substitution), so it's safe to tokenize
+    # them once here with shlex. From this point on, operations_args is a
+    # real list - COMPONENT/CONFIG (which can contain arbitrary user-
+    # supplied values, e.g. a config file path with spaces) are appended as
+    # individual list elements rather than being joined into a string, so
+    # there's no lossy re-split later that could break a value containing
+    # whitespace into multiple argv entries.
+    operations_args = shlex.split(
+        operation_data.get("args", "").format(
+            pipeline_repo=args.pipeline_repo,
+            pipeline_branch=args.pipeline_branch,
+            bundle=getattr(args, 'bundle', '../mce-operator-bundle')
+        )
+    ) if "args" in operation_data else []
 
     if args.component:
-        operations_args += " --component {}".format(args.component)
+        operations_args += ["--component", args.component]
 
     if args.config:
-        operations_args += " --config {}".format(args.config)
+        operations_args += ["--config", args.config]
 
     # Add any extra arguments passed through
     if extra_args:
-        operations_args += " " + " ".join(extra_args)
+        operations_args += list(extra_args)
 
     try:
         execute_script(script_file, operations_args)
@@ -189,7 +200,9 @@ def execute_script(script_path, args):
 
     Args:
         script_path (Path): Path to the script to execute
-        args (str): Command-line arguments for the script
+        args (list[str]): Command-line arguments for the script, as
+            individual argv entries (not a shell-joined string) so a value
+            containing whitespace is passed through intact.
     """
     if not script_path.exists():
         logging.error(f"Script {script_path} not found.")
@@ -199,7 +212,7 @@ def execute_script(script_path, args):
     env = os.environ.copy()
     env['PYTHONPATH'] = str(DEST_DIR) + os.pathsep + env.get('PYTHONPATH', '')
 
-    command = ["python3", str(script_path)] + args.split()
+    command = ["python3", str(script_path)] + args
     try:
         subprocess.run(command, check=True, env=env)
     except subprocess.CalledProcessError as e:
