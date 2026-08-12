@@ -48,6 +48,8 @@ jobs:
             "backplane-2.17",
           ]
         include:
+          - branch: main
+            go-version: "1.26"
           - branch: backplane-2.6
             go-version: "1.24"
           - branch: backplane-2.8

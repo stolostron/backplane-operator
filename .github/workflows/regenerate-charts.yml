@@ -39,6 +39,8 @@ jobs:
         python-version: [3.9]
         branch: ['main', 'backplane-2.6', 'backplane-2.8', 'backplane-2.9', 'backplane-2.10', 'backplane-2.11', 'backplane-2.17']
         include:
+          - branch: main
+            go-version: "1.26"
           - branch: backplane-2.6
             go-version: "1.24"
           - branch: backplane-2.8
