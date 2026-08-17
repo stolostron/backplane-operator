@@ -14,9 +14,21 @@ rules:
   resources: ["ansiblejobs","jobs","clusterdeployments","serviceaccounts", "machinepools"]
   verbs: ["get"]
 
+# Delete the cluster-installer ServiceAccount once curation completes, so it
+# cannot be used to mint tokens between curations (post-curation RBAC cleanup).
+- apiGroups: [""]
+  resources: ["serviceaccounts"]
+  verbs: ["delete"]
+
 - apiGroups: ["rbac.authorization.k8s.io",""]
-  resources: ["roles","rolebindings", "clusterroles", "clusterrolebindings", "namespaces"]
+  resources: ["roles", "clusterroles", "namespaces"]
   verbs: ["create","get"]
+
+# rolebindings/curator and clusterrolebindings/curator-crb are also deleted as
+# part of the same post-curation RBAC cleanup.
+- apiGroups: ["rbac.authorization.k8s.io"]
+  resources: ["rolebindings", "clusterrolebindings"]
+  verbs: ["create","get","delete"]
 
 - apiGroups: ["hive.openshift.io"]
   resources: ["clusterdeployments"]
