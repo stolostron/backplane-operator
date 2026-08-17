@@ -99,6 +99,3 @@ require (
 	sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
 )
-
-// golang.org/x/text v0.39.0+ requires Go 1.25. This replace backports CVE-2026-56852 (GO-2026-5970) onto v0.33.0 for Go 1.24.
-replace golang.org/x/text => github.com/katekeiroz-dev/golang-x-text v0.33.0-sec.1
