@@ -25,10 +25,13 @@ rules:
   verbs: ["create","get"]
 
 # rolebindings/curator and clusterrolebindings/curator-crb are also deleted as
-# part of the same post-curation RBAC cleanup.
+# part of the same post-curation RBAC cleanup. Update is needed because the
+# shared clusterrolebindings/curator-crb singleton is upserted: its subject
+# namespace is patched in place when a different Hypershift cluster's curation
+# takes it over, rather than deleting and recreating it.
 - apiGroups: ["rbac.authorization.k8s.io"]
   resources: ["rolebindings", "clusterrolebindings"]
-  verbs: ["create","get","delete"]
+  verbs: ["create","get","update","delete"]
 
 - apiGroups: ["hive.openshift.io"]
   resources: ["clusterdeployments"]
