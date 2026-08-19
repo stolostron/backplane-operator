@@ -16,16 +16,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// ensureNetworkPolicies relies on existing installer labels to track NetworkPolicy ownership:
+// ensureNetworkPolicies relies on the existing backplaneconfig.name label to track
+// NetworkPolicy ownership:
 //
-// Labels (applied by rendering):
-//   - installer.name = "multiclusterengine"
-//   - installer.namespace = "multicluster-engine"
+// Labels (applied by rendering via utils.AddBackplaneConfigLabels):
+//   - backplaneconfig.name = "<mce.Name>" (e.g. "multiclusterengine")
 //
 // Annotations (applied by rendering):
 //   - installer.open-cluster-management.io/release-version = "5.0.0"
 //
-// These are sufficient to identify MCE-created NetworkPolicies for deletion when disabled.
+// The backplaneconfig.name label is sufficient to identify MCE-created NetworkPolicies
+// for deletion when disabled.
 
 // ensureNetworkPolicies implements the create-once NetworkPolicy pattern:
 // - component enabled + networkPolicies enabled → CREATE (if missing), SKIP (if exists)
@@ -45,8 +46,7 @@ func (r *MultiClusterEngineReconciler) ensureNetworkPolicies(
 	if !networkPoliciesEnabled {
 		npList := &networkingv1.NetworkPolicyList{}
 		if err := r.Client.List(ctx, npList, client.InNamespace(mce.Spec.TargetNamespace), client.MatchingLabels{
-			"installer.name":      mce.Name,
-			"installer.namespace": mce.Spec.TargetNamespace,
+			"backplaneconfig.name": mce.Name,
 		}); err != nil {
 			return ctrl.Result{}, fmt.Errorf("failed to list NetworkPolicies: %w", err)
 		}
