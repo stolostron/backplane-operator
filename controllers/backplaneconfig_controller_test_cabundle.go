@@ -17,13 +17,13 @@ func TestEnsureCRD_PreservesCABundle(t *testing.T) {
 	testCABundle := "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURQakNDQWlhZ0F3SUJBZ0lVRXhHY2FBPT0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo="
 
 	tests := []struct {
-		name              string
-		existingCRD       *unstructured.Unstructured
-		newCRD            *unstructured.Unstructured
-		expectCABundle    bool
-		expectedCABundle  string
-		expectError       bool
-		description       string
+		name             string
+		existingCRD      *unstructured.Unstructured
+		newCRD           *unstructured.Unstructured
+		expectCABundle   bool
+		expectedCABundle string
+		expectError      bool
+		description      string
 	}{
 		{
 			name: "Preserves caBundle when updating CRD with conversion webhook",
