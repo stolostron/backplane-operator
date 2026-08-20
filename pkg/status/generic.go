@@ -183,6 +183,7 @@ func (s PresentStatus) Status(k8sClient client.Client) bpv1.ComponentCondition {
 			Type:      "Present",
 			Status:    metav1.ConditionTrue,
 			Reason:    DeploySuccessReason,
+			Message:   "Resource is present",
 			Available: true,
 		}
 	}
