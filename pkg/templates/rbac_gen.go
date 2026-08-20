@@ -328,6 +328,7 @@ package main
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=addonplacementscores;addonplacementscores/status,verbs=create;delete;deletecollection;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=clustercurators/status,verbs=get;patch;update
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=clustercurators;managedclusters,verbs=create;delete;get;list;patch;update;watch
+//+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclusters,verbs=get
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclusters,verbs=get;create;update
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclusters,verbs=get;list;create;delete;watch;update;patch
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclusters,verbs=get;list;watch
