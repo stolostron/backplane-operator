@@ -2,7 +2,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.20.0
   labels:
     cluster.x-k8s.io/provider: infrastructure-azure
     cluster.x-k8s.io/v1beta1: v1beta1
@@ -320,9 +320,6 @@ spec:
                     description: port is the port on which the API server is serving.
                     format: int32
                     type: integer
-                required:
-                - host
-                - port
                 type: object
               disableLocalAccounts:
                 description: DisableLocalAccounts disables getting static credentials

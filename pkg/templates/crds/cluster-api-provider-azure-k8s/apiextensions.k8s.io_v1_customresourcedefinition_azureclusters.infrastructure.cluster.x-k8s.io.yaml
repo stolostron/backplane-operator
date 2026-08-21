@@ -3,7 +3,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: multicluster-engine/capz-serving-cert
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.20.0
   labels:
     cluster.x-k8s.io/provider: infrastructure-azure
     cluster.x-k8s.io/v1beta1: v1beta1
@@ -586,9 +586,6 @@ spec:
                     description: port is the port on which the API server is serving.
                     format: int32
                     type: integer
-                required:
-                - host
-                - port
                 type: object
               extendedLocation:
                 description: ExtendedLocation is an optional set of ExtendedLocation
@@ -703,6 +700,18 @@ spec:
                     description: APIServerLB is the configuration for the control-plane
                       load balancer.
                     properties:
+                      availabilityZones:
+                        description: |-
+                          AvailabilityZones is a list of availability zones for the load balancer.
+                          When specified for an internal load balancer, the frontend IP configuration
+                          will be zone-redundant across the specified zones.
+                          For public load balancers, this should be set on the associated public IP addresses instead.
+                        items:
+                          pattern: ^[1-3]$
+                          type: string
+                        maxItems: 3
+                        type: array
+                        x-kubernetes-list-type: set
                       backendPool:
                         description: BackendPool describes the backend pool of the
                           load balancer.
@@ -786,6 +795,18 @@ spec:
                       ControlPlaneOutboundLB is the configuration for the control-plane outbound load balancer.
                       This is different from APIServerLB, and is used only in private clusters (optionally) for enabling outbound traffic.
                     properties:
+                      availabilityZones:
+                        description: |-
+                          AvailabilityZones is a list of availability zones for the load balancer.
+                          When specified for an internal load balancer, the frontend IP configuration
+                          will be zone-redundant across the specified zones.
+                          For public load balancers, this should be set on the associated public IP addresses instead.
+                        items:
+                          pattern: ^[1-3]$
+                          type: string
+                        maxItems: 3
+                        type: array
+                        x-kubernetes-list-type: set
                       backendPool:
                         description: BackendPool describes the backend pool of the
                           load balancer.
@@ -868,6 +889,18 @@ spec:
                     description: NodeOutboundLB is the configuration for the node
                       outbound load balancer.
                     properties:
+                      availabilityZones:
+                        description: |-
+                          AvailabilityZones is a list of availability zones for the load balancer.
+                          When specified for an internal load balancer, the frontend IP configuration
+                          will be zone-redundant across the specified zones.
+                          For public load balancers, this should be set on the associated public IP addresses instead.
+                        items:
+                          pattern: ^[1-3]$
+                          type: string
+                        maxItems: 3
+                        type: array
+                        x-kubernetes-list-type: set
                       backendPool:
                         description: BackendPool describes the backend pool of the
                           load balancer.

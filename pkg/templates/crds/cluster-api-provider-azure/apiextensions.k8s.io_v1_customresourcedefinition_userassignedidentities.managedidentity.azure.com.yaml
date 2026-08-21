@@ -6,7 +6,7 @@ metadata:
     service.beta.openshift.io/inject-cabundle: "true"
   labels:
     app.kubernetes.io/name: azure-service-operator
-    app.kubernetes.io/version: v2.13.0-hcpclusters.7
+    app.kubernetes.io/version: v2.18.0-hcpclusters.1
   name: userassignedidentities.managedidentity.azure.com
 spec:
   conversion:
@@ -22,6 +22,9 @@ spec:
       - v1
   group: managedidentity.azure.com
   names:
+    categories:
+    - azure
+    - managedidentity
     kind: UserAssignedIdentity
     listKind: UserAssignedIdentityList
     plural: userassignedidentities
@@ -47,7 +50,7 @@ spec:
       openAPIV3Schema:
         description: |-
           Generator information:
-          - Generated from: /msi/resource-manager/Microsoft.ManagedIdentity/stable/2018-11-30/ManagedIdentity.json
+          - Generated from: /msi/resource-manager/Microsoft.ManagedIdentity/ManagedIdentity/stable/2018-11-30/ManagedIdentity.json
           - ARM URI: /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{resourceName}
         properties:
           apiVersion:
@@ -330,7 +333,7 @@ spec:
         description: |-
           Storage version of v1api20181130.UserAssignedIdentity
           Generator information:
-          - Generated from: /msi/resource-manager/Microsoft.ManagedIdentity/stable/2018-11-30/ManagedIdentity.json
+          - Generated from: /msi/resource-manager/Microsoft.ManagedIdentity/ManagedIdentity/stable/2018-11-30/ManagedIdentity.json
           - ARM URI: /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{resourceName}
         properties:
           apiVersion:
@@ -624,7 +627,7 @@ spec:
       openAPIV3Schema:
         description: |-
           Generator information:
-          - Generated from: /msi/resource-manager/Microsoft.ManagedIdentity/stable/2023-01-31/ManagedIdentity.json
+          - Generated from: /msi/resource-manager/Microsoft.ManagedIdentity/ManagedIdentity/stable/2023-01-31/ManagedIdentity.json
           - ARM URI: /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{resourceName}
         properties:
           apiVersion:
@@ -817,6 +820,24 @@ spec:
                         - key
                         - name
                         type: object
+                      subscriptionId:
+                        description: |-
+                          SubscriptionId: indicates where the SubscriptionId secret should be placed. If omitted, the secret will not be retrieved
+                          from Azure.
+                        properties:
+                          key:
+                            description: Key is the key in the Kubernetes secret being
+                              referenced.
+                            type: string
+                          name:
+                            description: |-
+                              Name is the name of the Kubernetes secret to write to.
+                              The secret will be created in the same namespace as the resource.
+                            type: string
+                        required:
+                        - key
+                        - name
+                        type: object
                       tenantId:
                         description: 'TenantId: indicates where the TenantId secret
                           should be placed. If omitted, the secret will not be retrieved
@@ -993,7 +1014,7 @@ spec:
         description: |-
           Storage version of v1api20230131.UserAssignedIdentity
           Generator information:
-          - Generated from: /msi/resource-manager/Microsoft.ManagedIdentity/stable/2023-01-31/ManagedIdentity.json
+          - Generated from: /msi/resource-manager/Microsoft.ManagedIdentity/ManagedIdentity/stable/2023-01-31/ManagedIdentity.json
           - ARM URI: /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{resourceName}
         properties:
           apiVersion:
@@ -1195,6 +1216,25 @@ spec:
                         - name
                         type: object
                       principalId:
+                        description: |-
+                          SecretDestination describes the location to store a single secret value.
+                          Note: This is similar to: ConfigMapDestination in configmaps.go.
+                          Changes to one may need to be made to the others as well.
+                        properties:
+                          key:
+                            description: Key is the key in the Kubernetes secret being
+                              referenced.
+                            type: string
+                          name:
+                            description: |-
+                              Name is the name of the Kubernetes secret to write to.
+                              The secret will be created in the same namespace as the resource.
+                            type: string
+                        required:
+                        - key
+                        - name
+                        type: object
+                      subscriptionId:
                         description: |-
                           SecretDestination describes the location to store a single secret value.
                           Note: This is similar to: ConfigMapDestination in configmaps.go.
