@@ -6,9 +6,7 @@ metadata:
     controller-gen.kubebuilder.io/version: v0.19.0
   labels:
     app.kubernetes.io/name: azure-service-operator
-    app.kubernetes.io/version: v2.13.0-hcpclusters.7
-    visualizer.cluster.x-k8s.io: ""
-    visualizer.cluster.x-k8s.io/provider-type: infrastructure
+    app.kubernetes.io/version: v2.18.0-hcpclusters.1
   name: fleetsmembers.containerservice.azure.com
 spec:
   conversion:
@@ -24,6 +22,9 @@ spec:
       - v1
   group: containerservice.azure.com
   names:
+    categories:
+    - azure
+    - containerservice
     kind: FleetsMember
     listKind: FleetsMemberList
     plural: fleetsmembers
@@ -44,12 +45,12 @@ spec:
     - jsonPath: .status.conditions[?(@.type=='Ready')].message
       name: Message
       type: string
-    name: v1api20230315preview
+    name: v1api20250301
     schema:
       openAPIV3Schema:
         description: |-
           Generator information:
-          - Generated from: /containerservice/resource-manager/Microsoft.ContainerService/fleet/preview/2023-03-15-preview/fleets.json
+          - Generated from: /containerservice/resource-manager/Microsoft.ContainerService/fleet/stable/2025-03-01/fleets.json
           - ARM URI: /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ContainerService/fleets/{fleetName}/members/{fleetMemberName}
         properties:
           apiVersion:
@@ -262,8 +263,8 @@ spec:
                 type: string
               id:
                 description: |-
-                  Id: Fully qualified resource ID for the resource. Ex -
-                  /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}
+                  Id: Fully qualified resource ID for the resource. E.g.
+                  "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}"
                 type: string
               name:
                 description: 'Name: The name of the resource'
@@ -271,6 +272,75 @@ spec:
               provisioningState:
                 description: 'ProvisioningState: The status of the last operation.'
                 type: string
+              status:
+                description: 'Status: Status information of the last operation for
+                  fleet member.'
+                properties:
+                  lastOperationError:
+                    description: 'LastOperationError: The last operation error of
+                      the fleet member'
+                    properties:
+                      additionalInfo:
+                        description: 'AdditionalInfo: The error additional info.'
+                        items:
+                          description: The resource management error additional info.
+                          properties:
+                            info:
+                              additionalProperties:
+                                x-kubernetes-preserve-unknown-fields: true
+                              description: 'Info: The additional info.'
+                              type: object
+                            type:
+                              description: 'Type: The additional info type.'
+                              type: string
+                          type: object
+                        type: array
+                      code:
+                        description: 'Code: The error code.'
+                        type: string
+                      details:
+                        description: 'Details: The error details.'
+                        items:
+                          properties:
+                            additionalInfo:
+                              description: 'AdditionalInfo: The error additional info.'
+                              items:
+                                description: The resource management error additional
+                                  info.
+                                properties:
+                                  info:
+                                    additionalProperties:
+                                      x-kubernetes-preserve-unknown-fields: true
+                                    description: 'Info: The additional info.'
+                                    type: object
+                                  type:
+                                    description: 'Type: The additional info type.'
+                                    type: string
+                                type: object
+                              type: array
+                            code:
+                              description: 'Code: The error code.'
+                              type: string
+                            message:
+                              description: 'Message: The error message.'
+                              type: string
+                            target:
+                              description: 'Target: The error target.'
+                              type: string
+                          type: object
+                        type: array
+                      message:
+                        description: 'Message: The error message.'
+                        type: string
+                      target:
+                        description: 'Target: The error target.'
+                        type: string
+                    type: object
+                  lastOperationId:
+                    description: 'LastOperationId: The last operation ID for the fleet
+                      member'
+                    type: string
+                type: object
               systemData:
                 description: 'SystemData: Azure Resource Manager metadata containing
                   createdBy and modifiedBy information.'
@@ -321,13 +391,13 @@ spec:
     - jsonPath: .status.conditions[?(@.type=='Ready')].message
       name: Message
       type: string
-    name: v1api20230315previewstorage
+    name: v1api20250301storage
     schema:
       openAPIV3Schema:
         description: |-
-          Storage version of v1api20230315preview.FleetsMember
+          Storage version of v1api20250301.FleetsMember
           Generator information:
-          - Generated from: /containerservice/resource-manager/Microsoft.ContainerService/fleet/preview/2023-03-15-preview/fleets.json
+          - Generated from: /containerservice/resource-manager/Microsoft.ContainerService/fleet/stable/2025-03-01/fleets.json
           - ARM URI: /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ContainerService/fleets/{fleetName}/members/{fleetMemberName}
         properties:
           apiVersion:
@@ -348,7 +418,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: Storage version of v1api20230315preview.FleetsMember_Spec
+            description: Storage version of v1api20250301.FleetsMember_Spec
             properties:
               $propertyBag:
                 additionalProperties:
@@ -389,7 +459,7 @@ spec:
                 type: string
               operatorSpec:
                 description: |-
-                  Storage version of v1api20230315preview.FleetsMemberOperatorSpec
+                  Storage version of v1api20250301.FleetsMemberOperatorSpec
                   Details for configuring operator behavior. Fields in this struct are interpreted by the operator directly rather than being passed to Azure
                 properties:
                   $propertyBag:
@@ -478,7 +548,7 @@ spec:
             - owner
             type: object
           status:
-            description: Storage version of v1api20230315preview.FleetsMember_STATUS
+            description: Storage version of v1api20250301.FleetsMember_STATUS
             properties:
               $propertyBag:
                 additionalProperties:
@@ -546,9 +616,104 @@ spec:
                 type: string
               provisioningState:
                 type: string
+              status:
+                description: |-
+                  Storage version of v1api20250301.FleetMemberStatus_STATUS
+                  Status information for the fleet member
+                properties:
+                  $propertyBag:
+                    additionalProperties:
+                      type: string
+                    description: |-
+                      PropertyBag is an unordered set of stashed information that used for properties not directly supported by storage
+                      resources, allowing for full fidelity round trip conversions
+                    type: object
+                  lastOperationError:
+                    description: |-
+                      Storage version of v1api20250301.ErrorDetail_STATUS
+                      The error detail.
+                    properties:
+                      $propertyBag:
+                        additionalProperties:
+                          type: string
+                        description: |-
+                          PropertyBag is an unordered set of stashed information that used for properties not directly supported by storage
+                          resources, allowing for full fidelity round trip conversions
+                        type: object
+                      additionalInfo:
+                        items:
+                          description: |-
+                            Storage version of v1api20250301.ErrorAdditionalInfo_STATUS
+                            The resource management error additional info.
+                          properties:
+                            $propertyBag:
+                              additionalProperties:
+                                type: string
+                              description: |-
+                                PropertyBag is an unordered set of stashed information that used for properties not directly supported by storage
+                                resources, allowing for full fidelity round trip conversions
+                              type: object
+                            info:
+                              additionalProperties:
+                                x-kubernetes-preserve-unknown-fields: true
+                              type: object
+                            type:
+                              type: string
+                          type: object
+                        type: array
+                      code:
+                        type: string
+                      details:
+                        items:
+                          description: Storage version of v1api20250301.ErrorDetail_STATUS_Unrolled
+                          properties:
+                            $propertyBag:
+                              additionalProperties:
+                                type: string
+                              description: |-
+                                PropertyBag is an unordered set of stashed information that used for properties not directly supported by storage
+                                resources, allowing for full fidelity round trip conversions
+                              type: object
+                            additionalInfo:
+                              items:
+                                description: |-
+                                  Storage version of v1api20250301.ErrorAdditionalInfo_STATUS
+                                  The resource management error additional info.
+                                properties:
+                                  $propertyBag:
+                                    additionalProperties:
+                                      type: string
+                                    description: |-
+                                      PropertyBag is an unordered set of stashed information that used for properties not directly supported by storage
+                                      resources, allowing for full fidelity round trip conversions
+                                    type: object
+                                  info:
+                                    additionalProperties:
+                                      x-kubernetes-preserve-unknown-fields: true
+                                    type: object
+                                  type:
+                                    type: string
+                                type: object
+                              type: array
+                            code:
+                              type: string
+                            message:
+                              type: string
+                            target:
+                              type: string
+                          type: object
+                        type: array
+                      message:
+                        type: string
+                      target:
+                        type: string
+                    type: object
+                  lastOperationId:
+                    type: string
+                type: object
               systemData:
                 description: |-
-                  Storage version of v1api20230315preview.SystemData_STATUS
+                  Storage version of v1api20250301.SystemData_STATUS
                   Metadata pertaining to creation and last modification of the resource.
                 properties:
                   $propertyBag:

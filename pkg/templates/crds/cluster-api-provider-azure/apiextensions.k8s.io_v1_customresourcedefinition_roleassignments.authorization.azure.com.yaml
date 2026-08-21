@@ -6,7 +6,7 @@ metadata:
     service.beta.openshift.io/inject-cabundle: "true"
   labels:
     app.kubernetes.io/name: azure-service-operator
-    app.kubernetes.io/version: v2.13.0-hcpclusters.7
+    app.kubernetes.io/version: v2.18.0-hcpclusters.1
   name: roleassignments.authorization.azure.com
 spec:
   conversion:
@@ -22,6 +22,9 @@ spec:
       - v1
   group: authorization.azure.com
   names:
+    categories:
+    - azure
+    - authorization
     kind: RoleAssignment
     listKind: RoleAssignmentList
     plural: roleassignments
@@ -250,6 +253,8 @@ spec:
                     type: string
                   name:
                     description: Name is the Kubernetes name of the resource.
+                    type: string
+                  wellKnownName:
                     type: string
                 type: object
             required:
@@ -581,6 +586,8 @@ spec:
                   name:
                     description: Name is the Kubernetes name of the resource.
                     type: string
+                  wellKnownName:
+                    type: string
                 type: object
             required:
             - owner
@@ -903,6 +910,8 @@ spec:
                     type: string
                   name:
                     description: Name is the Kubernetes name of the resource.
+                    type: string
+                  wellKnownName:
                     type: string
                 type: object
             required:
@@ -1233,6 +1242,8 @@ spec:
                     type: string
                   name:
                     description: Name is the Kubernetes name of the resource.
+                    type: string
+                  wellKnownName:
                     type: string
                 type: object
             required:

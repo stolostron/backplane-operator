@@ -6,9 +6,7 @@ metadata:
     service.beta.openshift.io/inject-cabundle: "true"
   labels:
     app.kubernetes.io/name: azure-service-operator
-    app.kubernetes.io/version: v2.13.0-hcpclusters.7
-    visualizer.cluster.x-k8s.io: ""
-    visualizer.cluster.x-k8s.io/provider-type: infrastructure
+    app.kubernetes.io/version: v2.18.0-hcpclusters.1
   name: extensions.kubernetesconfiguration.azure.com
 spec:
   conversion:
@@ -24,6 +22,9 @@ spec:
       - v1
   group: kubernetesconfiguration.azure.com
   names:
+    categories:
+    - azure
+    - kubernetesconfiguration
     kind: Extension
     listKind: ExtensionList
     plural: extensions
