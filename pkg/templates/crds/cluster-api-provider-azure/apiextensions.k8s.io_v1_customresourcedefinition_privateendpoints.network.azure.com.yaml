@@ -6,9 +6,7 @@ metadata:
     service.beta.openshift.io/inject-cabundle: "true"
   labels:
     app.kubernetes.io/name: azure-service-operator
-    app.kubernetes.io/version: v2.13.0-hcpclusters.7
-    visualizer.cluster.x-k8s.io: ""
-    visualizer.cluster.x-k8s.io/provider-type: infrastructure
+    app.kubernetes.io/version: v2.18.0-hcpclusters.1
   name: privateendpoints.network.azure.com
 spec:
   conversion:
@@ -24,6 +22,9 @@ spec:
       - v1
   group: network.azure.com
   names:
+    categories:
+    - azure
+    - network
     kind: PrivateEndpoint
     listKind: PrivateEndpointList
     plural: privateendpoints
@@ -49,7 +50,7 @@ spec:
       openAPIV3Schema:
         description: |-
           Generator information:
-          - Generated from: /network/resource-manager/Microsoft.Network/stable/2022-07-01/privateEndpoint.json
+          - Generated from: /network/resource-manager/Microsoft.Network/Network/stable/2022-07-01/privateEndpoint.json
           - ARM URI: /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Network/privateEndpoints/{privateEndpointName}
         properties:
           apiVersion:
@@ -734,7 +735,7 @@ spec:
         description: |-
           Storage version of v1api20220701.PrivateEndpoint
           Generator information:
-          - Generated from: /network/resource-manager/Microsoft.Network/stable/2022-07-01/privateEndpoint.json
+          - Generated from: /network/resource-manager/Microsoft.Network/Network/stable/2022-07-01/privateEndpoint.json
           - ARM URI: /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Network/privateEndpoints/{privateEndpointName}
         properties:
           apiVersion:
@@ -1131,7 +1132,7 @@ spec:
             type: object
           status:
             description: |-
-              Storage version of v1api20220701.PrivateEndpoint_STATUS_PrivateEndpoint_SubResourceEmbedded
+              Storage version of v1api20220701.PrivateEndpoint_STATUS
               Private endpoint resource.
             properties:
               $propertyBag:
@@ -1448,7 +1449,7 @@ spec:
       openAPIV3Schema:
         description: |-
           Generator information:
-          - Generated from: /network/resource-manager/Microsoft.Network/stable/2024-03-01/privateEndpoint.json
+          - Generated from: /network/resource-manager/Microsoft.Network/Network/stable/2024-03-01/privateEndpoint.json
           - ARM URI: /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Network/privateEndpoints/{privateEndpointName}
         properties:
           apiVersion:
@@ -2133,7 +2134,7 @@ spec:
         description: |-
           Storage version of v1api20240301.PrivateEndpoint
           Generator information:
-          - Generated from: /network/resource-manager/Microsoft.Network/stable/2024-03-01/privateEndpoint.json
+          - Generated from: /network/resource-manager/Microsoft.Network/Network/stable/2024-03-01/privateEndpoint.json
           - ARM URI: /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Network/privateEndpoints/{privateEndpointName}
         properties:
           apiVersion:
@@ -2530,7 +2531,7 @@ spec:
             type: object
           status:
             description: |-
-              Storage version of v1api20240301.PrivateEndpoint_STATUS_PrivateEndpoint_SubResourceEmbedded
+              Storage version of v1api20240301.PrivateEndpoint_STATUS
               Private endpoint resource.
             properties:
               $propertyBag:

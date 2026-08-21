@@ -145,6 +145,7 @@ rules:
   - containerservice.azure.com
   resources:
   - fleetsmembers
+  - maintenanceconfigurations
   - managedclusters
   - managedclustersagentpools
   verbs:
@@ -159,6 +160,7 @@ rules:
   - containerservice.azure.com
   resources:
   - fleetsmembers/status
+  - maintenanceconfigurations/status
   - managedclusters/status
   - managedclustersagentpools/status
   verbs:
