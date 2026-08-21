@@ -1,0 +1,29 @@
+---
+external-images:
+- name: assisted-image-service
+  search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-image-service-rhel9:latest"
+  replace: "registry.redhat.io/multicluster-engine/assisted-image-service-rhel9@sha256:29a14cf51a7d1d8de28ece345d9a9c2f0c076d4aa972a51916caafb43f605662"
+- name: assisted-installer
+  search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-installer-rhel9:latest"
+  replace: "registry.redhat.io/multicluster-engine/assisted-installer-rhel9@sha256:fa5d45b9f1c7c7e8554b57699fb6b93b72d134af4f4ca4f8d04556b2cc22265c"
+- name: assisted-installer-agent
+  search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-installer-agent-rhel9:latest"
+  replace: "registry.redhat.io/multicluster-engine/assisted-installer-agent-rhel9@sha256:05d2d25a6f9107223cad5e594584dc60af2cfb6e7aae9bdfb3002284ea128a7a"
+- name: assisted-installer-controller
+  search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-installer-controller-rhel9:latest"
+  replace: "registry.redhat.io/multicluster-engine/assisted-installer-controller-rhel9@sha256:eb2d70b235927dcfccc7da08b09b0a55287b4b96787bb3f9fecc58a4788a0a5b"
+- name: assisted-service
+  search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-service-9-rhel9:latest"
+  replace: "registry.redhat.io/multicluster-engine/assisted-service-9-rhel9@sha256:2f2000589315cb444b19c5c86d337078982896909dc530f8e05c95ea5861e520"
+- name: ose-cluster-api
+  search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/ose-cluster-api-rhel9:latest"
+  replace: "registry.redhat.io/openshift5/ose-cluster-api-rhel9:v5.0"
+- name: ose-baremetal-cluster-api-controllers
+  search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/ose-baremetal-cluster-api-controllers-rhel9:latest"
+  replace: "registry.redhat.io/openshift5/ose-baremetal-cluster-api-controllers-rhel9:v5.0"
+- name: postgresql-15
+  search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/postgresql-15:latest"
+  replace: "registry.redhat.io/rhel9/postgresql-15@sha256:17d8f73eefb3492386bf1984ca32a6c5556d559ab19bdbccb5bc01bcf6d435ab"
+- name: postgresql-16
+  search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/postgresql-16:latest"
+  replace: "registry.redhat.io/rhel9/postgresql-16@sha256:160578ef9e4c872f8f06d407aceb65c5d874049bb56a14b62a09b52ecc1ca0a0"
