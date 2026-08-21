@@ -1,0 +1,6 @@
+---
+packageName: multicluster-engine
+channels:
+- name: stable-5.0
+  currentCSV: multicluster-engine.v5.0.0
+defaultChannel: stable-5.0
