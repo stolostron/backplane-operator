@@ -2,7 +2,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.20.0
     service.beta.openshift.io/inject-cabundle: "true"
   labels:
     cluster.x-k8s.io/provider: infrastructure-azure
@@ -383,6 +383,14 @@ spec:
                         - storageAccountType
                         type: object
                     type: object
+                  disableVMBootstrapExtension:
+                    description: |-
+                      DisableVMBootstrapExtension specifies whether the VM bootstrap extension should be disabled on the virtual machine scale set.
+                      Use this setting if you want to disable only the bootstrapping extension and not all extensions.
+                      If unset, CAPZ treats this as true during reconciliation, meaning the bootstrap extension is not installed on new VMSSes.
+                      Set to false to opt back in to the bootstrap extension. Changing this field on an existing AzureMachinePool only takes
+                      effect on the next model-changing update of the underlying VMSS (e.g. image, identity, zones, or SKU change).
+                    type: boolean
                   image:
                     description: |-
                       Image is used to provide details of an image to use during VM creation.
@@ -497,6 +505,7 @@ spec:
                       sharedGallery:
                         description: |-
                           SharedGallery specifies an image to use from an Azure Shared Image Gallery
+
                           Deprecated: use ComputeGallery instead.
                         properties:
                           gallery:
@@ -1026,6 +1035,7 @@ spec:
                   sharedGallery:
                     description: |-
                       SharedGallery specifies an image to use from an Azure Shared Image Gallery
+
                       Deprecated: use ComputeGallery instead.
                     properties:
                       gallery:
@@ -1125,6 +1135,14 @@ spec:
                   - latestModelApplied
                   type: object
                 type: array
+              lastReconciledReplicas:
+                description: |-
+                  LastReconciledReplicas is the desired replica count that was most recently reconciled onto the
+                  VMSS. It is used to tell an explicit scale-down (the desired count dropped below this value)
+                  apart from a rollout, where the desired count is unchanged and the extra instances come from
+                  surge capacity. Those two states are otherwise indistinguishable from the instance list alone.
+                format: int32
+                type: integer
               longRunningOperationStates:
                 description: |-
                   LongRunningOperationStates saves the state for Azure long-running operations so they can be continued on the
