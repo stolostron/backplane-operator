@@ -1,0 +1,679 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: capz-system/azureserviceoperator-serving-cert
+  name: azureserviceoperator-dbforpostgresql-mwh
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbforpostgresql-azure-com-v1-user
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1.users.dbforpostgresql.azure.com
+  rules:
+  - apiGroups:
+    - dbforpostgresql.azure.com
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - users
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbforpostgresql-azure-com-v1api20210601-flexibleserver
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20210601.flexibleservers.dbforpostgresql.azure.com
+  rules:
+  - apiGroups:
+    - dbforpostgresql.azure.com
+    apiVersions:
+    - v1api20210601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleservers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbforpostgresql-azure-com-v1api20210601-flexibleserversconfiguration
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20210601.flexibleserversconfigurations.dbforpostgresql.azure.com
+  rules:
+  - apiGroups:
+    - dbforpostgresql.azure.com
+    apiVersions:
+    - v1api20210601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversconfigurations
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbforpostgresql-azure-com-v1api20210601-flexibleserversdatabase
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20210601.flexibleserversdatabases.dbforpostgresql.azure.com
+  rules:
+  - apiGroups:
+    - dbforpostgresql.azure.com
+    apiVersions:
+    - v1api20210601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversdatabases
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbforpostgresql-azure-com-v1api20210601-flexibleserversfirewallrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20210601.flexibleserversfirewallrules.dbforpostgresql.azure.com
+  rules:
+  - apiGroups:
+    - dbforpostgresql.azure.com
+    apiVersions:
+    - v1api20210601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversfirewallrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbforpostgresql-azure-com-v1api20220120preview-flexibleserver
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20220120preview.flexibleservers.dbforpostgresql.azure.com
+  rules:
+  - apiGroups:
+    - dbforpostgresql.azure.com
+    apiVersions:
+    - v1api20220120preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleservers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbforpostgresql-azure-com-v1api20220120preview-flexibleserversconfiguration
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20220120preview.flexibleserversconfigurations.dbforpostgresql.azure.com
+  rules:
+  - apiGroups:
+    - dbforpostgresql.azure.com
+    apiVersions:
+    - v1api20220120preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversconfigurations
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbforpostgresql-azure-com-v1api20220120preview-flexibleserversdatabase
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20220120preview.flexibleserversdatabases.dbforpostgresql.azure.com
+  rules:
+  - apiGroups:
+    - dbforpostgresql.azure.com
+    apiVersions:
+    - v1api20220120preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversdatabases
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbforpostgresql-azure-com-v1api20220120preview-flexibleserversfirewallrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20220120preview.flexibleserversfirewallrules.dbforpostgresql.azure.com
+  rules:
+  - apiGroups:
+    - dbforpostgresql.azure.com
+    apiVersions:
+    - v1api20220120preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversfirewallrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbforpostgresql-azure-com-v1api20221201-flexibleserver
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20221201.flexibleservers.dbforpostgresql.azure.com
+  rules:
+  - apiGroups:
+    - dbforpostgresql.azure.com
+    apiVersions:
+    - v1api20221201
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleservers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbforpostgresql-azure-com-v1api20221201-flexibleserversconfiguration
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20221201.flexibleserversconfigurations.dbforpostgresql.azure.com
+  rules:
+  - apiGroups:
+    - dbforpostgresql.azure.com
+    apiVersions:
+    - v1api20221201
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversconfigurations
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbforpostgresql-azure-com-v1api20221201-flexibleserversdatabase
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20221201.flexibleserversdatabases.dbforpostgresql.azure.com
+  rules:
+  - apiGroups:
+    - dbforpostgresql.azure.com
+    apiVersions:
+    - v1api20221201
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversdatabases
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbforpostgresql-azure-com-v1api20221201-flexibleserversfirewallrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20221201.flexibleserversfirewallrules.dbforpostgresql.azure.com
+  rules:
+  - apiGroups:
+    - dbforpostgresql.azure.com
+    apiVersions:
+    - v1api20221201
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversfirewallrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbforpostgresql-azure-com-v1api20230601preview-flexibleserver
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20230601preview.flexibleservers.dbforpostgresql.azure.com
+  rules:
+  - apiGroups:
+    - dbforpostgresql.azure.com
+    apiVersions:
+    - v1api20230601preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleservers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbforpostgresql-azure-com-v1api20230601preview-flexibleserversconfiguration
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20230601preview.flexibleserversconfigurations.dbforpostgresql.azure.com
+  rules:
+  - apiGroups:
+    - dbforpostgresql.azure.com
+    apiVersions:
+    - v1api20230601preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversconfigurations
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbforpostgresql-azure-com-v1api20230601preview-flexibleserversdatabase
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20230601preview.flexibleserversdatabases.dbforpostgresql.azure.com
+  rules:
+  - apiGroups:
+    - dbforpostgresql.azure.com
+    apiVersions:
+    - v1api20230601preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversdatabases
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbforpostgresql-azure-com-v1api20230601preview-flexibleserversfirewallrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20230601preview.flexibleserversfirewallrules.dbforpostgresql.azure.com
+  rules:
+  - apiGroups:
+    - dbforpostgresql.azure.com
+    apiVersions:
+    - v1api20230601preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversfirewallrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbforpostgresql-azure-com-v1api20240801-flexibleserver
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20240801.flexibleservers.dbforpostgresql.azure.com
+  rules:
+  - apiGroups:
+    - dbforpostgresql.azure.com
+    apiVersions:
+    - v1api20240801
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleservers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbforpostgresql-azure-com-v1api20240801-flexibleserversadvancedthreatprotectionsettings
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20240801.flexibleserversadvancedthreatprotectionsettings.dbforpostgresql.azure.com
+  rules:
+  - apiGroups:
+    - dbforpostgresql.azure.com
+    apiVersions:
+    - v1api20240801
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversadvancedthreatprotectionsettings
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbforpostgresql-azure-com-v1api20240801-flexibleserversbackup
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20240801.flexibleserversbackups.dbforpostgresql.azure.com
+  rules:
+  - apiGroups:
+    - dbforpostgresql.azure.com
+    apiVersions:
+    - v1api20240801
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversbackups
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbforpostgresql-azure-com-v1api20240801-flexibleserversconfiguration
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20240801.flexibleserversconfigurations.dbforpostgresql.azure.com
+  rules:
+  - apiGroups:
+    - dbforpostgresql.azure.com
+    apiVersions:
+    - v1api20240801
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversconfigurations
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbforpostgresql-azure-com-v1api20240801-flexibleserversdatabase
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20240801.flexibleserversdatabases.dbforpostgresql.azure.com
+  rules:
+  - apiGroups:
+    - dbforpostgresql.azure.com
+    apiVersions:
+    - v1api20240801
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversdatabases
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbforpostgresql-azure-com-v1api20240801-flexibleserversfirewallrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20240801.flexibleserversfirewallrules.dbforpostgresql.azure.com
+  rules:
+  - apiGroups:
+    - dbforpostgresql.azure.com
+    apiVersions:
+    - v1api20240801
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversfirewallrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbforpostgresql-azure-com-v1api20240801-flexibleserversvirtualendpoint
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20240801.flexibleserversvirtualendpoints.dbforpostgresql.azure.com
+  rules:
+  - apiGroups:
+    - dbforpostgresql.azure.com
+    apiVersions:
+    - v1api20240801
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversvirtualendpoints
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbforpostgresql-azure-com-v20250801-flexibleserver
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20250801.flexibleservers.dbforpostgresql.azure.com
+  rules:
+  - apiGroups:
+    - dbforpostgresql.azure.com
+    apiVersions:
+    - v20250801
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleservers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbforpostgresql-azure-com-v20250801-flexibleserversadministrator
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20250801.flexibleserversadministrators.dbforpostgresql.azure.com
+  rules:
+  - apiGroups:
+    - dbforpostgresql.azure.com
+    apiVersions:
+    - v20250801
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversadministrators
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbforpostgresql-azure-com-v20250801-flexibleserversadvancedthreatprotectionsettings
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20250801.flexibleserversadvancedthreatprotectionsettings.dbforpostgresql.azure.com
+  rules:
+  - apiGroups:
+    - dbforpostgresql.azure.com
+    apiVersions:
+    - v20250801
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversadvancedthreatprotectionsettings
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbforpostgresql-azure-com-v20250801-flexibleserversbackup
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20250801.flexibleserversbackups.dbforpostgresql.azure.com
+  rules:
+  - apiGroups:
+    - dbforpostgresql.azure.com
+    apiVersions:
+    - v20250801
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversbackups
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbforpostgresql-azure-com-v20250801-flexibleserversconfiguration
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20250801.flexibleserversconfigurations.dbforpostgresql.azure.com
+  rules:
+  - apiGroups:
+    - dbforpostgresql.azure.com
+    apiVersions:
+    - v20250801
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversconfigurations
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbforpostgresql-azure-com-v20250801-flexibleserversdatabase
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20250801.flexibleserversdatabases.dbforpostgresql.azure.com
+  rules:
+  - apiGroups:
+    - dbforpostgresql.azure.com
+    apiVersions:
+    - v20250801
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversdatabases
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbforpostgresql-azure-com-v20250801-flexibleserversfirewallrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20250801.flexibleserversfirewallrules.dbforpostgresql.azure.com
+  rules:
+  - apiGroups:
+    - dbforpostgresql.azure.com
+    apiVersions:
+    - v20250801
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversfirewallrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbforpostgresql-azure-com-v20250801-flexibleserversvirtualendpoint
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20250801.flexibleserversvirtualendpoints.dbforpostgresql.azure.com
+  rules:
+  - apiGroups:
+    - dbforpostgresql.azure.com
+    apiVersions:
+    - v20250801
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversvirtualendpoints
+  sideEffects: None

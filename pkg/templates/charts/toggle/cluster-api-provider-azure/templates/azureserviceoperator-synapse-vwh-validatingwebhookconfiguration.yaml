@@ -1,0 +1,91 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+    service.beta.openshift.io/inject-cabundle: 'true'
+  name: azureserviceoperator-synapse-vwh
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-synapse-azure-com-v1api20210601-workspace
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20210601.workspaces.synapse.azure.com
+  rules:
+  - apiGroups:
+    - synapse.azure.com
+    apiVersions:
+    - v1api20210601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - workspaces
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-synapse-azure-com-v1api20210601-workspacesbigdatapool
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20210601.workspacesbigdatapools.synapse.azure.com
+  rules:
+  - apiGroups:
+    - synapse.azure.com
+    apiVersions:
+    - v1api20210601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - workspacesbigdatapools
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-synapse-azure-com-v20210601-workspace
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20210601.workspaces.synapse.azure.com
+  rules:
+  - apiGroups:
+    - synapse.azure.com
+    apiVersions:
+    - v20210601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - workspaces
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-synapse-azure-com-v20210601-workspacesbigdatapool
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20210601.workspacesbigdatapools.synapse.azure.com
+  rules:
+  - apiGroups:
+    - synapse.azure.com
+    apiVersions:
+    - v20210601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - workspacesbigdatapools
+  sideEffects: None

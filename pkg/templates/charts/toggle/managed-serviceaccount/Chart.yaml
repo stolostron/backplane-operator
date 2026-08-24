@@ -7,4 +7,4 @@ dependencies:
 description: A Helm chart for Managed ServiceAccount Addon
 name: managed-serviceaccount
 type: application
-version: '5.0'
+version: '5.1'

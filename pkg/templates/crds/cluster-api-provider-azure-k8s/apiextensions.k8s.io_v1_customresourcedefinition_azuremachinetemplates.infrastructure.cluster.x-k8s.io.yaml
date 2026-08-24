@@ -3,7 +3,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: multicluster-engine/capz-serving-cert
-    controller-gen.kubebuilder.io/version: v0.20.0
+    controller-gen.kubebuilder.io/version: v0.21.0
   labels:
     cluster.x-k8s.io/provider: infrastructure-azure
     cluster.x-k8s.io/v1beta1: v1beta1
@@ -720,6 +720,15 @@ spec:
                           - providerID
                           type: object
                         type: array
+                      virtualMachineScaleSetID:
+                        description: |-
+                          VirtualMachineScaleSetID specifies the VMSS Flex resource id that the virtual machine should be
+                          created in.
+                          The field input must be a valid Azure resource ID for a Virtual Machine Scale Set resource, for example
+                          '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Compute/virtualMachineScaleSets/{vmssName}'.
+                          The referenced Virtual Machine Scale Set must already exist and use Flexible orchestration mode.
+                          It is optional but may not be changed once set.
+                        type: string
                       vmExtensions:
                         description: VMExtensions specifies a list of extensions to
                           be added to the virtual machine.

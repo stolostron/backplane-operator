@@ -1,0 +1,28 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  annotations:
+    service.beta.openshift.io/inject-cabundle: 'true'
+  name: azureserviceoperator-network.frontdoor-mwh
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /mutate-network-frontdoor-azure-com-v1api20220501-webapplicationfirewallpolicy
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20220501.webapplicationfirewallpolicies.network.frontdoor.azure.com
+  rules:
+  - apiGroups:
+    - network.frontdoor.azure.com
+    apiVersions:
+    - v1api20220501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - webapplicationfirewallpolicies
+  sideEffects: None

@@ -1,0 +1,1099 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: capz-system/azureserviceoperator-serving-cert
+  name: azureserviceoperator-cache-vwh
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-cache-azure-com-v1api20201201-redis
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20201201.redis.cache.azure.com
+  rules:
+  - apiGroups:
+    - cache.azure.com
+    apiVersions:
+    - v1api20201201
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - redis
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-cache-azure-com-v1api20201201-redisfirewallrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20201201.redisfirewallrules.cache.azure.com
+  rules:
+  - apiGroups:
+    - cache.azure.com
+    apiVersions:
+    - v1api20201201
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - redisfirewallrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-cache-azure-com-v1api20201201-redislinkedserver
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20201201.redislinkedservers.cache.azure.com
+  rules:
+  - apiGroups:
+    - cache.azure.com
+    apiVersions:
+    - v1api20201201
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - redislinkedservers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-cache-azure-com-v1api20201201-redispatchschedule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20201201.redispatchschedules.cache.azure.com
+  rules:
+  - apiGroups:
+    - cache.azure.com
+    apiVersions:
+    - v1api20201201
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - redispatchschedules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-cache-azure-com-v1api20210301-redisenterprisedatabase
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20210301.redisenterprisedatabases.cache.azure.com
+  rules:
+  - apiGroups:
+    - cache.azure.com
+    apiVersions:
+    - v1api20210301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - redisenterprisedatabases
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-cache-azure-com-v1api20210301-redisenterprise
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20210301.redisenterprises.cache.azure.com
+  rules:
+  - apiGroups:
+    - cache.azure.com
+    apiVersions:
+    - v1api20210301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - redisenterprises
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-cache-azure-com-v1api20230401-redis
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20230401.redis.cache.azure.com
+  rules:
+  - apiGroups:
+    - cache.azure.com
+    apiVersions:
+    - v1api20230401
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - redis
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-cache-azure-com-v1api20230401-redisfirewallrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20230401.redisfirewallrules.cache.azure.com
+  rules:
+  - apiGroups:
+    - cache.azure.com
+    apiVersions:
+    - v1api20230401
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - redisfirewallrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-cache-azure-com-v1api20230401-redislinkedserver
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20230401.redislinkedservers.cache.azure.com
+  rules:
+  - apiGroups:
+    - cache.azure.com
+    apiVersions:
+    - v1api20230401
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - redislinkedservers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-cache-azure-com-v1api20230401-redispatchschedule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20230401.redispatchschedules.cache.azure.com
+  rules:
+  - apiGroups:
+    - cache.azure.com
+    apiVersions:
+    - v1api20230401
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - redispatchschedules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-cache-azure-com-v1api20230701-redisenterprisedatabase
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20230701.redisenterprisedatabases.cache.azure.com
+  rules:
+  - apiGroups:
+    - cache.azure.com
+    apiVersions:
+    - v1api20230701
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - redisenterprisedatabases
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-cache-azure-com-v1api20230701-redisenterprise
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20230701.redisenterprises.cache.azure.com
+  rules:
+  - apiGroups:
+    - cache.azure.com
+    apiVersions:
+    - v1api20230701
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - redisenterprises
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-cache-azure-com-v1api20230801-redis
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20230801.redis.cache.azure.com
+  rules:
+  - apiGroups:
+    - cache.azure.com
+    apiVersions:
+    - v1api20230801
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - redis
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-cache-azure-com-v1api20230801-redisfirewallrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20230801.redisfirewallrules.cache.azure.com
+  rules:
+  - apiGroups:
+    - cache.azure.com
+    apiVersions:
+    - v1api20230801
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - redisfirewallrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-cache-azure-com-v1api20230801-redislinkedserver
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20230801.redislinkedservers.cache.azure.com
+  rules:
+  - apiGroups:
+    - cache.azure.com
+    apiVersions:
+    - v1api20230801
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - redislinkedservers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-cache-azure-com-v1api20230801-redispatchschedule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20230801.redispatchschedules.cache.azure.com
+  rules:
+  - apiGroups:
+    - cache.azure.com
+    apiVersions:
+    - v1api20230801
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - redispatchschedules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-cache-azure-com-v1api20241101-redis
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20241101.redis.cache.azure.com
+  rules:
+  - apiGroups:
+    - cache.azure.com
+    apiVersions:
+    - v1api20241101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - redis
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-cache-azure-com-v1api20241101-redisaccesspolicy
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20241101.redisaccesspolicies.cache.azure.com
+  rules:
+  - apiGroups:
+    - cache.azure.com
+    apiVersions:
+    - v1api20241101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - redisaccesspolicies
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-cache-azure-com-v1api20241101-redisaccesspolicyassignment
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20241101.redisaccesspolicyassignments.cache.azure.com
+  rules:
+  - apiGroups:
+    - cache.azure.com
+    apiVersions:
+    - v1api20241101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - redisaccesspolicyassignments
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-cache-azure-com-v1api20241101-redisfirewallrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20241101.redisfirewallrules.cache.azure.com
+  rules:
+  - apiGroups:
+    - cache.azure.com
+    apiVersions:
+    - v1api20241101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - redisfirewallrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-cache-azure-com-v1api20241101-redislinkedserver
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20241101.redislinkedservers.cache.azure.com
+  rules:
+  - apiGroups:
+    - cache.azure.com
+    apiVersions:
+    - v1api20241101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - redislinkedservers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-cache-azure-com-v1api20241101-redispatchschedule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20241101.redispatchschedules.cache.azure.com
+  rules:
+  - apiGroups:
+    - cache.azure.com
+    apiVersions:
+    - v1api20241101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - redispatchschedules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-cache-azure-com-v1api20250401-redisenterprisedatabase
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20250401.redisenterprisedatabases.cache.azure.com
+  rules:
+  - apiGroups:
+    - cache.azure.com
+    apiVersions:
+    - v1api20250401
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - redisenterprisedatabases
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-cache-azure-com-v1api20250401-redisenterprise
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20250401.redisenterprises.cache.azure.com
+  rules:
+  - apiGroups:
+    - cache.azure.com
+    apiVersions:
+    - v1api20250401
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - redisenterprises
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-cache-azure-com-v20201201-redis
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20201201.redis.cache.azure.com
+  rules:
+  - apiGroups:
+    - cache.azure.com
+    apiVersions:
+    - v20201201
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - redis
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-cache-azure-com-v20201201-redisfirewallrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20201201.redisfirewallrules.cache.azure.com
+  rules:
+  - apiGroups:
+    - cache.azure.com
+    apiVersions:
+    - v20201201
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - redisfirewallrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-cache-azure-com-v20201201-redislinkedserver
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20201201.redislinkedservers.cache.azure.com
+  rules:
+  - apiGroups:
+    - cache.azure.com
+    apiVersions:
+    - v20201201
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - redislinkedservers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-cache-azure-com-v20201201-redispatchschedule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20201201.redispatchschedules.cache.azure.com
+  rules:
+  - apiGroups:
+    - cache.azure.com
+    apiVersions:
+    - v20201201
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - redispatchschedules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-cache-azure-com-v20210301-redisenterprisedatabase
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20210301.redisenterprisedatabases.cache.azure.com
+  rules:
+  - apiGroups:
+    - cache.azure.com
+    apiVersions:
+    - v20210301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - redisenterprisedatabases
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-cache-azure-com-v20210301-redisenterprise
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20210301.redisenterprises.cache.azure.com
+  rules:
+  - apiGroups:
+    - cache.azure.com
+    apiVersions:
+    - v20210301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - redisenterprises
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-cache-azure-com-v20230401-redis
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20230401.redis.cache.azure.com
+  rules:
+  - apiGroups:
+    - cache.azure.com
+    apiVersions:
+    - v20230401
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - redis
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-cache-azure-com-v20230401-redisfirewallrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20230401.redisfirewallrules.cache.azure.com
+  rules:
+  - apiGroups:
+    - cache.azure.com
+    apiVersions:
+    - v20230401
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - redisfirewallrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-cache-azure-com-v20230401-redislinkedserver
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20230401.redislinkedservers.cache.azure.com
+  rules:
+  - apiGroups:
+    - cache.azure.com
+    apiVersions:
+    - v20230401
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - redislinkedservers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-cache-azure-com-v20230401-redispatchschedule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20230401.redispatchschedules.cache.azure.com
+  rules:
+  - apiGroups:
+    - cache.azure.com
+    apiVersions:
+    - v20230401
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - redispatchschedules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-cache-azure-com-v20230701-redisenterprisedatabase
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20230701.redisenterprisedatabases.cache.azure.com
+  rules:
+  - apiGroups:
+    - cache.azure.com
+    apiVersions:
+    - v20230701
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - redisenterprisedatabases
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-cache-azure-com-v20230701-redisenterprise
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20230701.redisenterprises.cache.azure.com
+  rules:
+  - apiGroups:
+    - cache.azure.com
+    apiVersions:
+    - v20230701
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - redisenterprises
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-cache-azure-com-v20230801-redis
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20230801.redis.cache.azure.com
+  rules:
+  - apiGroups:
+    - cache.azure.com
+    apiVersions:
+    - v20230801
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - redis
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-cache-azure-com-v20230801-redisfirewallrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20230801.redisfirewallrules.cache.azure.com
+  rules:
+  - apiGroups:
+    - cache.azure.com
+    apiVersions:
+    - v20230801
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - redisfirewallrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-cache-azure-com-v20230801-redislinkedserver
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20230801.redislinkedservers.cache.azure.com
+  rules:
+  - apiGroups:
+    - cache.azure.com
+    apiVersions:
+    - v20230801
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - redislinkedservers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-cache-azure-com-v20230801-redispatchschedule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20230801.redispatchschedules.cache.azure.com
+  rules:
+  - apiGroups:
+    - cache.azure.com
+    apiVersions:
+    - v20230801
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - redispatchschedules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-cache-azure-com-v20241101-redis
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20241101.redis.cache.azure.com
+  rules:
+  - apiGroups:
+    - cache.azure.com
+    apiVersions:
+    - v20241101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - redis
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-cache-azure-com-v20241101-redisaccesspolicy
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20241101.redisaccesspolicies.cache.azure.com
+  rules:
+  - apiGroups:
+    - cache.azure.com
+    apiVersions:
+    - v20241101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - redisaccesspolicies
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-cache-azure-com-v20241101-redisaccesspolicyassignment
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20241101.redisaccesspolicyassignments.cache.azure.com
+  rules:
+  - apiGroups:
+    - cache.azure.com
+    apiVersions:
+    - v20241101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - redisaccesspolicyassignments
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-cache-azure-com-v20241101-redisfirewallrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20241101.redisfirewallrules.cache.azure.com
+  rules:
+  - apiGroups:
+    - cache.azure.com
+    apiVersions:
+    - v20241101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - redisfirewallrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-cache-azure-com-v20241101-redislinkedserver
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20241101.redislinkedservers.cache.azure.com
+  rules:
+  - apiGroups:
+    - cache.azure.com
+    apiVersions:
+    - v20241101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - redislinkedservers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-cache-azure-com-v20241101-redispatchschedule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20241101.redispatchschedules.cache.azure.com
+  rules:
+  - apiGroups:
+    - cache.azure.com
+    apiVersions:
+    - v20241101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - redispatchschedules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-cache-azure-com-v20250401-redisenterprisedatabaseaccesspolicyassignment
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250401.redisenterprisedatabaseaccesspolicyassignments.cache.azure.com
+  rules:
+  - apiGroups:
+    - cache.azure.com
+    apiVersions:
+    - v20250401
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - redisenterprisedatabaseaccesspolicyassignments
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-cache-azure-com-v20250401-redisenterprisedatabase
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250401.redisenterprisedatabases.cache.azure.com
+  rules:
+  - apiGroups:
+    - cache.azure.com
+    apiVersions:
+    - v20250401
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - redisenterprisedatabases
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-cache-azure-com-v20250401-redisenterprise
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250401.redisenterprises.cache.azure.com
+  rules:
+  - apiGroups:
+    - cache.azure.com
+    apiVersions:
+    - v20250401
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - redisenterprises
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-cache-azure-com-v20250701-redisenterprisedatabaseaccesspolicyassignment
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250701.redisenterprisedatabaseaccesspolicyassignments.cache.azure.com
+  rules:
+  - apiGroups:
+    - cache.azure.com
+    apiVersions:
+    - v20250701
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - redisenterprisedatabaseaccesspolicyassignments
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-cache-azure-com-v20250701-redisenterprisedatabase
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250701.redisenterprisedatabases.cache.azure.com
+  rules:
+  - apiGroups:
+    - cache.azure.com
+    apiVersions:
+    - v20250701
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - redisenterprisedatabases
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-cache-azure-com-v20250701-redisenterprise
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250701.redisenterprises.cache.azure.com
+  rules:
+  - apiGroups:
+    - cache.azure.com
+    apiVersions:
+    - v20250701
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - redisenterprises
+  sideEffects: None

@@ -1,0 +1,70 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+    service.beta.openshift.io/inject-cabundle: 'true'
+  name: azureserviceoperator-containerregistry-vwh
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-containerregistry-azure-com-v1api20210901-registry
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20210901.registries.containerregistry.azure.com
+  rules:
+  - apiGroups:
+    - containerregistry.azure.com
+    apiVersions:
+    - v1api20210901
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - registries
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-containerregistry-azure-com-v1api20230701-registry
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20230701.registries.containerregistry.azure.com
+  rules:
+  - apiGroups:
+    - containerregistry.azure.com
+    apiVersions:
+    - v1api20230701
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - registries
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-containerregistry-azure-com-v1api20230701-registryreplication
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20230701.registryreplications.containerregistry.azure.com
+  rules:
+  - apiGroups:
+    - containerregistry.azure.com
+    apiVersions:
+    - v1api20230701
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - registryreplications
+  sideEffects: None

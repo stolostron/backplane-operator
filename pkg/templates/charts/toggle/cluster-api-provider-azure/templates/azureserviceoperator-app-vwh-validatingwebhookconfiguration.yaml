@@ -1,0 +1,343 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+    service.beta.openshift.io/inject-cabundle: 'true'
+  name: azureserviceoperator-app-vwh
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-app-azure-com-v1api20240301-authconfig
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240301.authconfigs.app.azure.com
+  rules:
+  - apiGroups:
+    - app.azure.com
+    apiVersions:
+    - v1api20240301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - authconfigs
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-app-azure-com-v1api20240301-containerapp
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240301.containerapps.app.azure.com
+  rules:
+  - apiGroups:
+    - app.azure.com
+    apiVersions:
+    - v1api20240301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - containerapps
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-app-azure-com-v1api20240301-job
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240301.jobs.app.azure.com
+  rules:
+  - apiGroups:
+    - app.azure.com
+    apiVersions:
+    - v1api20240301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - jobs
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-app-azure-com-v1api20240301-managedenvironment
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240301.managedenvironments.app.azure.com
+  rules:
+  - apiGroups:
+    - app.azure.com
+    apiVersions:
+    - v1api20240301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - managedenvironments
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-app-azure-com-v1api20250101-authconfig
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20250101.authconfigs.app.azure.com
+  rules:
+  - apiGroups:
+    - app.azure.com
+    apiVersions:
+    - v1api20250101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - authconfigs
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-app-azure-com-v1api20250101-containerapp
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20250101.containerapps.app.azure.com
+  rules:
+  - apiGroups:
+    - app.azure.com
+    apiVersions:
+    - v1api20250101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - containerapps
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-app-azure-com-v1api20250101-job
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20250101.jobs.app.azure.com
+  rules:
+  - apiGroups:
+    - app.azure.com
+    apiVersions:
+    - v1api20250101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - jobs
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-app-azure-com-v1api20250101-managedenvironment
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20250101.managedenvironments.app.azure.com
+  rules:
+  - apiGroups:
+    - app.azure.com
+    apiVersions:
+    - v1api20250101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - managedenvironments
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-app-azure-com-v20240301-authconfig
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20240301.authconfigs.app.azure.com
+  rules:
+  - apiGroups:
+    - app.azure.com
+    apiVersions:
+    - v20240301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - authconfigs
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-app-azure-com-v20240301-containerapp
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20240301.containerapps.app.azure.com
+  rules:
+  - apiGroups:
+    - app.azure.com
+    apiVersions:
+    - v20240301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - containerapps
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-app-azure-com-v20240301-job
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20240301.jobs.app.azure.com
+  rules:
+  - apiGroups:
+    - app.azure.com
+    apiVersions:
+    - v20240301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - jobs
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-app-azure-com-v20240301-managedenvironment
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20240301.managedenvironments.app.azure.com
+  rules:
+  - apiGroups:
+    - app.azure.com
+    apiVersions:
+    - v20240301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - managedenvironments
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-app-azure-com-v20250101-authconfig
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250101.authconfigs.app.azure.com
+  rules:
+  - apiGroups:
+    - app.azure.com
+    apiVersions:
+    - v20250101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - authconfigs
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-app-azure-com-v20250101-containerapp
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250101.containerapps.app.azure.com
+  rules:
+  - apiGroups:
+    - app.azure.com
+    apiVersions:
+    - v20250101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - containerapps
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-app-azure-com-v20250101-job
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250101.jobs.app.azure.com
+  rules:
+  - apiGroups:
+    - app.azure.com
+    apiVersions:
+    - v20250101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - jobs
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-app-azure-com-v20250101-managedenvironment
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250101.managedenvironments.app.azure.com
+  rules:
+  - apiGroups:
+    - app.azure.com
+    apiVersions:
+    - v20250101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - managedenvironments
+  sideEffects: None
