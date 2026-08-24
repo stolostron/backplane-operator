@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   labels:
     app.kubernetes.io/name: azure-service-operator
-    app.kubernetes.io/version: v2.18.0-hcpclusters.1
+    app.kubernetes.io/version: v2.20.0-rev.118
     control-plane: azureserviceoperator-controller-manager
   name: azureserviceoperator-controller-manager
 spec:
@@ -20,7 +20,7 @@ spec:
         kubectl.kubernetes.io/default-container: manager
       labels:
         app.kubernetes.io/name: azure-service-operator
-        app.kubernetes.io/version: v2.18.0-hcpclusters.1
+        app.kubernetes.io/version: v2.20.0-rev.118
         control-plane: azureserviceoperator-controller-manager
         ocm-antiaffinity-selector: azureserviceoperator-controller-manager
     spec:
@@ -54,8 +54,10 @@ spec:
         - --enable-leader-election
         - --v=2
         - --crd-pattern=resources.azure.com/*;containerservice.azure.com/*;keyvault.azure.com/*;managedidentity.azure.com/*;eventhub.azure.com/*;network.azure.com/*;authorization.azure.com/*
+        - --crd-labels=
         - --webhook-port=9443
         - --webhook-cert-dir=/tmp/k8s-webhook-server/serving-certs
+        - --metrics-cert-dir=/tmp/k8s-metrics-server/serving-certs
         - --crd-management=none
         env:
 {{- if .Values.global.pullSecret }}
@@ -248,6 +250,9 @@ spec:
             port: 8081
           periodSeconds: 10
         volumeMounts:
+        - mountPath: /tmp/k8s-metrics-server/serving-certs
+          name: metrics-cert
+          readOnly: true
         - mountPath: /var/run/secrets/tokens
           name: azure-identity
           readOnly: true
@@ -286,6 +291,10 @@ spec:
         {{- end }}
 {{- end }}
       volumes:
+      - name: metrics-cert
+        secret:
+          defaultMode: 420
+          secretName: metrics-server-cert
       - name: cert
         secret:
           defaultMode: 420

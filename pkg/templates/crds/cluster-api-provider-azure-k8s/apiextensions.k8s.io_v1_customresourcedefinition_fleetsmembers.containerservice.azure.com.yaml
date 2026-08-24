@@ -6,7 +6,7 @@ metadata:
     controller-gen.kubebuilder.io/version: v0.19.0
   labels:
     app.kubernetes.io/name: azure-service-operator
-    app.kubernetes.io/version: v2.18.0-hcpclusters.1
+    app.kubernetes.io/version: v2.20.0-rev.118
   name: fleetsmembers.containerservice.azure.com
 spec:
   conversion:
@@ -124,6 +124,12 @@ spec:
                         be a secret or a configmap. The value of the expression is stored at the specified location in
                         the destination.
                       properties:
+                        annotations:
+                          additionalProperties:
+                            type: string
+                          description: Annotations is an optional set of annotations
+                            to apply to the destination resource.
+                          type: object
                         key:
                           description: |-
                             Key is the key in the ConfigMap or Secret being written to. If the CEL expression in Value returns a string
@@ -131,6 +137,12 @@ spec:
                             Key must not be set, instead the keys written will be determined dynamically based on the keys of the resulting
                             map[string]string.
                           type: string
+                        labels:
+                          additionalProperties:
+                            type: string
+                          description: Labels is an optional set of labels to apply
+                            to the destination resource.
+                          type: object
                         name:
                           description: |-
                             Name is the name of the Kubernetes configmap or secret to write to.
@@ -155,6 +167,12 @@ spec:
                         be a secret or a configmap. The value of the expression is stored at the specified location in
                         the destination.
                       properties:
+                        annotations:
+                          additionalProperties:
+                            type: string
+                          description: Annotations is an optional set of annotations
+                            to apply to the destination resource.
+                          type: object
                         key:
                           description: |-
                             Key is the key in the ConfigMap or Secret being written to. If the CEL expression in Value returns a string
@@ -162,6 +180,12 @@ spec:
                             Key must not be set, instead the keys written will be determined dynamically based on the keys of the resulting
                             map[string]string.
                           type: string
+                        labels:
+                          additionalProperties:
+                            type: string
+                          description: Labels is an optional set of labels to apply
+                            to the destination resource.
+                          type: object
                         name:
                           description: |-
                             Name is the name of the Kubernetes configmap or secret to write to.
@@ -476,6 +500,12 @@ spec:
                         be a secret or a configmap. The value of the expression is stored at the specified location in
                         the destination.
                       properties:
+                        annotations:
+                          additionalProperties:
+                            type: string
+                          description: Annotations is an optional set of annotations
+                            to apply to the destination resource.
+                          type: object
                         key:
                           description: |-
                             Key is the key in the ConfigMap or Secret being written to. If the CEL expression in Value returns a string
@@ -483,6 +513,12 @@ spec:
                             Key must not be set, instead the keys written will be determined dynamically based on the keys of the resulting
                             map[string]string.
                           type: string
+                        labels:
+                          additionalProperties:
+                            type: string
+                          description: Labels is an optional set of labels to apply
+                            to the destination resource.
+                          type: object
                         name:
                           description: |-
                             Name is the name of the Kubernetes configmap or secret to write to.
@@ -505,6 +541,12 @@ spec:
                         be a secret or a configmap. The value of the expression is stored at the specified location in
                         the destination.
                       properties:
+                        annotations:
+                          additionalProperties:
+                            type: string
+                          description: Annotations is an optional set of annotations
+                            to apply to the destination resource.
+                          type: object
                         key:
                           description: |-
                             Key is the key in the ConfigMap or Secret being written to. If the CEL expression in Value returns a string
@@ -512,6 +554,12 @@ spec:
                             Key must not be set, instead the keys written will be determined dynamically based on the keys of the resulting
                             map[string]string.
                           type: string
+                        labels:
+                          additionalProperties:
+                            type: string
+                          description: Labels is an optional set of labels to apply
+                            to the destination resource.
+                          type: object
                         name:
                           description: |-
                             Name is the name of the Kubernetes configmap or secret to write to.

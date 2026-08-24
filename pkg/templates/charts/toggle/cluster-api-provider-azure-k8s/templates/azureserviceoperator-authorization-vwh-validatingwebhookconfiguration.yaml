@@ -1,0 +1,133 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: capz-system/azureserviceoperator-serving-cert
+  name: azureserviceoperator-authorization-vwh
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-authorization-azure-com-v1api20200801preview-roleassignment
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20200801preview.roleassignments.authorization.azure.com
+  rules:
+  - apiGroups:
+    - authorization.azure.com
+    apiVersions:
+    - v1api20200801preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - roleassignments
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-authorization-azure-com-v1api20220401-roleassignment
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20220401.roleassignments.authorization.azure.com
+  rules:
+  - apiGroups:
+    - authorization.azure.com
+    apiVersions:
+    - v1api20220401
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - roleassignments
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-authorization-azure-com-v1api20220401-roledefinition
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20220401.roledefinitions.authorization.azure.com
+  rules:
+  - apiGroups:
+    - authorization.azure.com
+    apiVersions:
+    - v1api20220401
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - roledefinitions
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-authorization-azure-com-v20200801preview-roleassignment
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20200801preview.roleassignments.authorization.azure.com
+  rules:
+  - apiGroups:
+    - authorization.azure.com
+    apiVersions:
+    - v20200801preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - roleassignments
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-authorization-azure-com-v20220401-roleassignment
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20220401.roleassignments.authorization.azure.com
+  rules:
+  - apiGroups:
+    - authorization.azure.com
+    apiVersions:
+    - v20220401
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - roleassignments
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-authorization-azure-com-v20220401-roledefinition
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20220401.roledefinitions.authorization.azure.com
+  rules:
+  - apiGroups:
+    - authorization.azure.com
+    apiVersions:
+    - v20220401
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - roledefinitions
+  sideEffects: None

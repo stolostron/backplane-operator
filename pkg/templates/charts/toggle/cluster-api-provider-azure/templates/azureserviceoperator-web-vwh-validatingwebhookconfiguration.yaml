@@ -1,0 +1,196 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+    service.beta.openshift.io/inject-cabundle: 'true'
+  name: azureserviceoperator-web-vwh
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-web-azure-com-v1api20220301-serverfarm
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20220301.serverfarms.web.azure.com
+  rules:
+  - apiGroups:
+    - web.azure.com
+    apiVersions:
+    - v1api20220301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serverfarms
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-web-azure-com-v1api20220301-site
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20220301.sites.web.azure.com
+  rules:
+  - apiGroups:
+    - web.azure.com
+    apiVersions:
+    - v1api20220301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - sites
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-web-azure-com-v1api20220301-sitessourcecontrol
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20220301.sitessourcecontrols.web.azure.com
+  rules:
+  - apiGroups:
+    - web.azure.com
+    apiVersions:
+    - v1api20220301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - sitessourcecontrols
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-web-azure-com-v20220301-serverfarm
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20220301.serverfarms.web.azure.com
+  rules:
+  - apiGroups:
+    - web.azure.com
+    apiVersions:
+    - v20220301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serverfarms
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-web-azure-com-v20220301-site
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20220301.sites.web.azure.com
+  rules:
+  - apiGroups:
+    - web.azure.com
+    apiVersions:
+    - v20220301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - sites
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-web-azure-com-v20220301-sitessourcecontrol
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20220301.sitessourcecontrols.web.azure.com
+  rules:
+  - apiGroups:
+    - web.azure.com
+    apiVersions:
+    - v20220301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - sitessourcecontrols
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-web-azure-com-v20250501-serverfarm
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250501.serverfarms.web.azure.com
+  rules:
+  - apiGroups:
+    - web.azure.com
+    apiVersions:
+    - v20250501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serverfarms
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-web-azure-com-v20250501-site
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250501.sites.web.azure.com
+  rules:
+  - apiGroups:
+    - web.azure.com
+    apiVersions:
+    - v20250501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - sites
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-web-azure-com-v20250501-sitessourcecontrol
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250501.sitessourcecontrols.web.azure.com
+  rules:
+  - apiGroups:
+    - web.azure.com
+    apiVersions:
+    - v20250501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - sitessourcecontrols
+  sideEffects: None

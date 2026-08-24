@@ -1,0 +1,2023 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: capz-system/azureserviceoperator-serving-cert
+  name: azureserviceoperator-apimanagement-mwh
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v1api20220801-api
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20220801.apis.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v1api20220801
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - apis
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v1api20220801-apiversionset
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20220801.apiversionsets.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v1api20220801
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - apiversionsets
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v1api20220801-authorizationprovider
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20220801.authorizationproviders.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v1api20220801
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - authorizationproviders
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v1api20220801-authorizationprovidersauthorization
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20220801.authorizationprovidersauthorizations.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v1api20220801
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - authorizationprovidersauthorizations
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v1api20220801-authorizationprovidersauthorizationsaccesspolicy
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20220801.authorizationprovidersauthorizationsaccesspolicies.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v1api20220801
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - authorizationprovidersauthorizationsaccesspolicies
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v1api20220801-backend
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20220801.backends.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v1api20220801
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - backends
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v1api20220801-namedvalue
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20220801.namedvalues.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v1api20220801
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - namedvalues
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v1api20220801-policy
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20220801.policies.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v1api20220801
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - policies
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v1api20220801-policyfragment
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20220801.policyfragments.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v1api20220801
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - policyfragments
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v1api20220801-productapi
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20220801.productapis.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v1api20220801
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - productapis
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v1api20220801-productpolicy
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20220801.productpolicies.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v1api20220801
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - productpolicies
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v1api20220801-product
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20220801.products.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v1api20220801
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - products
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v1api20220801-service
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20220801.services.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v1api20220801
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - services
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v1api20220801-subscription
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20220801.subscriptions.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v1api20220801
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - subscriptions
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v1api20230501preview-api
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20230501preview.apis.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v1api20230501preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - apis
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v1api20230501preview-apiversionset
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20230501preview.apiversionsets.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v1api20230501preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - apiversionsets
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v1api20230501preview-authorizationprovider
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20230501preview.authorizationproviders.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v1api20230501preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - authorizationproviders
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v1api20230501preview-authorizationprovidersauthorization
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20230501preview.authorizationprovidersauthorizations.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v1api20230501preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - authorizationprovidersauthorizations
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v1api20230501preview-authorizationprovidersauthorizationsaccesspolicy
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20230501preview.authorizationprovidersauthorizationsaccesspolicies.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v1api20230501preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - authorizationprovidersauthorizationsaccesspolicies
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v1api20230501preview-backend
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20230501preview.backends.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v1api20230501preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - backends
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v1api20230501preview-namedvalue
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20230501preview.namedvalues.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v1api20230501preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - namedvalues
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v1api20230501preview-policy
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20230501preview.policies.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v1api20230501preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - policies
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v1api20230501preview-policyfragment
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20230501preview.policyfragments.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v1api20230501preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - policyfragments
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v1api20230501preview-productapi
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20230501preview.productapis.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v1api20230501preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - productapis
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v1api20230501preview-productpolicy
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20230501preview.productpolicies.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v1api20230501preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - productpolicies
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v1api20230501preview-product
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20230501preview.products.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v1api20230501preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - products
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v1api20230501preview-service
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20230501preview.services.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v1api20230501preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - services
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v1api20230501preview-subscription
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20230501preview.subscriptions.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v1api20230501preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - subscriptions
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v1api20240501-api
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20240501.apis.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v1api20240501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - apis
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v1api20240501-apiversionset
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20240501.apiversionsets.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v1api20240501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - apiversionsets
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v1api20240501-authorizationprovider
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20240501.authorizationproviders.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v1api20240501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - authorizationproviders
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v1api20240501-authorizationprovidersauthorization
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20240501.authorizationprovidersauthorizations.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v1api20240501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - authorizationprovidersauthorizations
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v1api20240501-authorizationprovidersauthorizationsaccesspolicy
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20240501.authorizationprovidersauthorizationsaccesspolicies.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v1api20240501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - authorizationprovidersauthorizationsaccesspolicies
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v1api20240501-backend
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20240501.backends.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v1api20240501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - backends
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v1api20240501-namedvalue
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20240501.namedvalues.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v1api20240501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - namedvalues
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v1api20240501-policy
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20240501.policies.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v1api20240501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - policies
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v1api20240501-policyfragment
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20240501.policyfragments.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v1api20240501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - policyfragments
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v1api20240501-productapi
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20240501.productapis.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v1api20240501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - productapis
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v1api20240501-productpolicy
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20240501.productpolicies.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v1api20240501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - productpolicies
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v1api20240501-product
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20240501.products.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v1api20240501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - products
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v1api20240501-service
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20240501.services.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v1api20240501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - services
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v1api20240501-subscription
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20240501.subscriptions.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v1api20240501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - subscriptions
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v20220801-api
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20220801.apis.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v20220801
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - apis
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v20220801-apiversionset
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20220801.apiversionsets.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v20220801
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - apiversionsets
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v20220801-authorizationprovider
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20220801.authorizationproviders.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v20220801
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - authorizationproviders
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v20220801-authorizationprovidersauthorization
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20220801.authorizationprovidersauthorizations.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v20220801
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - authorizationprovidersauthorizations
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v20220801-authorizationprovidersauthorizationsaccesspolicy
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20220801.authorizationprovidersauthorizationsaccesspolicies.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v20220801
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - authorizationprovidersauthorizationsaccesspolicies
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v20220801-backend
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20220801.backends.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v20220801
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - backends
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v20220801-namedvalue
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20220801.namedvalues.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v20220801
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - namedvalues
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v20220801-policy
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20220801.policies.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v20220801
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - policies
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v20220801-policyfragment
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20220801.policyfragments.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v20220801
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - policyfragments
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v20220801-productapi
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20220801.productapis.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v20220801
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - productapis
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v20220801-productpolicy
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20220801.productpolicies.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v20220801
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - productpolicies
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v20220801-product
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20220801.products.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v20220801
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - products
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v20220801-service
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20220801.services.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v20220801
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - services
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v20220801-subscription
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20220801.subscriptions.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v20220801
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - subscriptions
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v20230501preview-api
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20230501preview.apis.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v20230501preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - apis
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v20230501preview-apiversionset
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20230501preview.apiversionsets.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v20230501preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - apiversionsets
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v20230501preview-authorizationprovider
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20230501preview.authorizationproviders.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v20230501preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - authorizationproviders
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v20230501preview-authorizationprovidersauthorization
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20230501preview.authorizationprovidersauthorizations.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v20230501preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - authorizationprovidersauthorizations
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v20230501preview-authorizationprovidersauthorizationsaccesspolicy
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20230501preview.authorizationprovidersauthorizationsaccesspolicies.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v20230501preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - authorizationprovidersauthorizationsaccesspolicies
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v20230501preview-backend
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20230501preview.backends.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v20230501preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - backends
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v20230501preview-namedvalue
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20230501preview.namedvalues.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v20230501preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - namedvalues
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v20230501preview-policy
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20230501preview.policies.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v20230501preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - policies
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v20230501preview-policyfragment
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20230501preview.policyfragments.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v20230501preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - policyfragments
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v20230501preview-productapi
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20230501preview.productapis.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v20230501preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - productapis
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v20230501preview-productpolicy
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20230501preview.productpolicies.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v20230501preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - productpolicies
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v20230501preview-product
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20230501preview.products.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v20230501preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - products
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v20230501preview-service
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20230501preview.services.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v20230501preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - services
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v20230501preview-subscription
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20230501preview.subscriptions.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v20230501preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - subscriptions
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v20240501-apidiagnostic
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20240501.apidiagnostics.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v20240501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - apidiagnostics
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v20240501-apipolicy
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20240501.apipolicies.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v20240501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - apipolicies
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v20240501-api
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20240501.apis.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v20240501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - apis
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v20240501-apiversionset
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20240501.apiversionsets.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v20240501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - apiversionsets
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v20240501-authorizationprovider
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20240501.authorizationproviders.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v20240501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - authorizationproviders
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v20240501-authorizationprovidersauthorization
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20240501.authorizationprovidersauthorizations.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v20240501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - authorizationprovidersauthorizations
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v20240501-authorizationprovidersauthorizationsaccesspolicy
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20240501.authorizationprovidersauthorizationsaccesspolicies.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v20240501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - authorizationprovidersauthorizationsaccesspolicies
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v20240501-backend
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20240501.backends.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v20240501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - backends
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v20240501-certificate
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20240501.certificates.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v20240501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - certificates
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v20240501-diagnostic
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20240501.diagnostics.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v20240501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - diagnostics
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v20240501-group
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20240501.groups.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v20240501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - groups
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v20240501-logger
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20240501.loggers.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v20240501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - loggers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v20240501-namedvalue
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20240501.namedvalues.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v20240501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - namedvalues
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v20240501-policy
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20240501.policies.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v20240501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - policies
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v20240501-policyfragment
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20240501.policyfragments.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v20240501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - policyfragments
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v20240501-productapi
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20240501.productapis.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v20240501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - productapis
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v20240501-productgroup
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20240501.productgroups.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v20240501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - productgroups
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v20240501-productpolicy
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20240501.productpolicies.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v20240501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - productpolicies
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v20240501-product
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20240501.products.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v20240501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - products
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v20240501-servicegatewayapi
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20240501.servicegatewayapis.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v20240501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - servicegatewayapis
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v20240501-servicegatewaycertificateauthority
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20240501.servicegatewaycertificateauthorities.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v20240501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - servicegatewaycertificateauthorities
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v20240501-servicegatewayhostnameconfiguration
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20240501.servicegatewayhostnameconfigurations.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v20240501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - servicegatewayhostnameconfigurations
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v20240501-servicegateway
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20240501.servicegateways.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v20240501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - servicegateways
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v20240501-service
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20240501.services.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v20240501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - services
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v20240501-subscription
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20240501.subscriptions.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v20240501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - subscriptions
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-apimanagement-azure-com-v20240501-user
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20240501.users.apimanagement.azure.com
+  rules:
+  - apiGroups:
+    - apimanagement.azure.com
+    apiVersions:
+    - v20240501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - users
+  sideEffects: None

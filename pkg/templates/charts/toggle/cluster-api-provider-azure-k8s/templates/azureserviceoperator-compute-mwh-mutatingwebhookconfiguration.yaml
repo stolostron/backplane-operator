@@ -1,0 +1,847 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: capz-system/azureserviceoperator-serving-cert
+  name: azureserviceoperator-compute-mwh
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-compute-azure-com-v1api20200930-disk
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20200930.disks.compute.azure.com
+  rules:
+  - apiGroups:
+    - compute.azure.com
+    apiVersions:
+    - v1api20200930
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - disks
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-compute-azure-com-v1api20200930-snapshot
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20200930.snapshots.compute.azure.com
+  rules:
+  - apiGroups:
+    - compute.azure.com
+    apiVersions:
+    - v1api20200930
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - snapshots
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-compute-azure-com-v1api20201201-virtualmachine
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20201201.virtualmachines.compute.azure.com
+  rules:
+  - apiGroups:
+    - compute.azure.com
+    apiVersions:
+    - v1api20201201
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - virtualmachines
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-compute-azure-com-v1api20201201-virtualmachinescaleset
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20201201.virtualmachinescalesets.compute.azure.com
+  rules:
+  - apiGroups:
+    - compute.azure.com
+    apiVersions:
+    - v1api20201201
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - virtualmachinescalesets
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-compute-azure-com-v1api20201201-virtualmachinescalesetsextension
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20201201.virtualmachinescalesetsextensions.compute.azure.com
+  rules:
+  - apiGroups:
+    - compute.azure.com
+    apiVersions:
+    - v1api20201201
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - virtualmachinescalesetsextensions
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-compute-azure-com-v1api20201201-virtualmachinesextension
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20201201.virtualmachinesextensions.compute.azure.com
+  rules:
+  - apiGroups:
+    - compute.azure.com
+    apiVersions:
+    - v1api20201201
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - virtualmachinesextensions
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-compute-azure-com-v1api20210701-image
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20210701.images.compute.azure.com
+  rules:
+  - apiGroups:
+    - compute.azure.com
+    apiVersions:
+    - v1api20210701
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - images
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-compute-azure-com-v1api20220301-image
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20220301.images.compute.azure.com
+  rules:
+  - apiGroups:
+    - compute.azure.com
+    apiVersions:
+    - v1api20220301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - images
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-compute-azure-com-v1api20220301-virtualmachine
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20220301.virtualmachines.compute.azure.com
+  rules:
+  - apiGroups:
+    - compute.azure.com
+    apiVersions:
+    - v1api20220301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - virtualmachines
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-compute-azure-com-v1api20220301-virtualmachinescaleset
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20220301.virtualmachinescalesets.compute.azure.com
+  rules:
+  - apiGroups:
+    - compute.azure.com
+    apiVersions:
+    - v1api20220301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - virtualmachinescalesets
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-compute-azure-com-v1api20220301-virtualmachinescalesetsextension
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20220301.virtualmachinescalesetsextensions.compute.azure.com
+  rules:
+  - apiGroups:
+    - compute.azure.com
+    apiVersions:
+    - v1api20220301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - virtualmachinescalesetsextensions
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-compute-azure-com-v1api20220301-virtualmachinesextension
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20220301.virtualmachinesextensions.compute.azure.com
+  rules:
+  - apiGroups:
+    - compute.azure.com
+    apiVersions:
+    - v1api20220301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - virtualmachinesextensions
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-compute-azure-com-v1api20220702-diskencryptionset
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20220702.diskencryptionsets.compute.azure.com
+  rules:
+  - apiGroups:
+    - compute.azure.com
+    apiVersions:
+    - v1api20220702
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - diskencryptionsets
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-compute-azure-com-v1api20240302-diskaccess
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20240302.diskaccesses.compute.azure.com
+  rules:
+  - apiGroups:
+    - compute.azure.com
+    apiVersions:
+    - v1api20240302
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - diskaccesses
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-compute-azure-com-v1api20240302-diskencryptionset
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20240302.diskencryptionsets.compute.azure.com
+  rules:
+  - apiGroups:
+    - compute.azure.com
+    apiVersions:
+    - v1api20240302
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - diskencryptionsets
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-compute-azure-com-v1api20240302-disk
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20240302.disks.compute.azure.com
+  rules:
+  - apiGroups:
+    - compute.azure.com
+    apiVersions:
+    - v1api20240302
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - disks
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-compute-azure-com-v1api20240302-snapshot
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20240302.snapshots.compute.azure.com
+  rules:
+  - apiGroups:
+    - compute.azure.com
+    apiVersions:
+    - v1api20240302
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - snapshots
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-compute-azure-com-v1api20241101-availabilityset
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20241101.availabilitysets.compute.azure.com
+  rules:
+  - apiGroups:
+    - compute.azure.com
+    apiVersions:
+    - v1api20241101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - availabilitysets
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-compute-azure-com-v1api20250401-capacityreservationgroup
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20250401.capacityreservationgroups.compute.azure.com
+  rules:
+  - apiGroups:
+    - compute.azure.com
+    apiVersions:
+    - v1api20250401
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - capacityreservationgroups
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-compute-azure-com-v1api20250401-capacityreservation
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20250401.capacityreservations.compute.azure.com
+  rules:
+  - apiGroups:
+    - compute.azure.com
+    apiVersions:
+    - v1api20250401
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - capacityreservations
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-compute-azure-com-v20200930-disk
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20200930.disks.compute.azure.com
+  rules:
+  - apiGroups:
+    - compute.azure.com
+    apiVersions:
+    - v20200930
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - disks
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-compute-azure-com-v20200930-snapshot
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20200930.snapshots.compute.azure.com
+  rules:
+  - apiGroups:
+    - compute.azure.com
+    apiVersions:
+    - v20200930
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - snapshots
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-compute-azure-com-v20201201-virtualmachine
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20201201.virtualmachines.compute.azure.com
+  rules:
+  - apiGroups:
+    - compute.azure.com
+    apiVersions:
+    - v20201201
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - virtualmachines
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-compute-azure-com-v20201201-virtualmachinescaleset
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20201201.virtualmachinescalesets.compute.azure.com
+  rules:
+  - apiGroups:
+    - compute.azure.com
+    apiVersions:
+    - v20201201
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - virtualmachinescalesets
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-compute-azure-com-v20201201-virtualmachinescalesetsextension
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20201201.virtualmachinescalesetsextensions.compute.azure.com
+  rules:
+  - apiGroups:
+    - compute.azure.com
+    apiVersions:
+    - v20201201
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - virtualmachinescalesetsextensions
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-compute-azure-com-v20201201-virtualmachinesextension
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20201201.virtualmachinesextensions.compute.azure.com
+  rules:
+  - apiGroups:
+    - compute.azure.com
+    apiVersions:
+    - v20201201
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - virtualmachinesextensions
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-compute-azure-com-v20210701-image
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20210701.images.compute.azure.com
+  rules:
+  - apiGroups:
+    - compute.azure.com
+    apiVersions:
+    - v20210701
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - images
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-compute-azure-com-v20220301-image
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20220301.images.compute.azure.com
+  rules:
+  - apiGroups:
+    - compute.azure.com
+    apiVersions:
+    - v20220301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - images
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-compute-azure-com-v20220301-virtualmachine
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20220301.virtualmachines.compute.azure.com
+  rules:
+  - apiGroups:
+    - compute.azure.com
+    apiVersions:
+    - v20220301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - virtualmachines
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-compute-azure-com-v20220301-virtualmachinescaleset
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20220301.virtualmachinescalesets.compute.azure.com
+  rules:
+  - apiGroups:
+    - compute.azure.com
+    apiVersions:
+    - v20220301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - virtualmachinescalesets
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-compute-azure-com-v20220301-virtualmachinescalesetsextension
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20220301.virtualmachinescalesetsextensions.compute.azure.com
+  rules:
+  - apiGroups:
+    - compute.azure.com
+    apiVersions:
+    - v20220301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - virtualmachinescalesetsextensions
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-compute-azure-com-v20220301-virtualmachinesextension
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20220301.virtualmachinesextensions.compute.azure.com
+  rules:
+  - apiGroups:
+    - compute.azure.com
+    apiVersions:
+    - v20220301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - virtualmachinesextensions
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-compute-azure-com-v20220702-diskencryptionset
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20220702.diskencryptionsets.compute.azure.com
+  rules:
+  - apiGroups:
+    - compute.azure.com
+    apiVersions:
+    - v20220702
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - diskencryptionsets
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-compute-azure-com-v20240302-diskaccess
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20240302.diskaccesses.compute.azure.com
+  rules:
+  - apiGroups:
+    - compute.azure.com
+    apiVersions:
+    - v20240302
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - diskaccesses
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-compute-azure-com-v20240302-diskencryptionset
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20240302.diskencryptionsets.compute.azure.com
+  rules:
+  - apiGroups:
+    - compute.azure.com
+    apiVersions:
+    - v20240302
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - diskencryptionsets
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-compute-azure-com-v20240302-disk
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20240302.disks.compute.azure.com
+  rules:
+  - apiGroups:
+    - compute.azure.com
+    apiVersions:
+    - v20240302
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - disks
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-compute-azure-com-v20240302-snapshot
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20240302.snapshots.compute.azure.com
+  rules:
+  - apiGroups:
+    - compute.azure.com
+    apiVersions:
+    - v20240302
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - snapshots
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-compute-azure-com-v20241101-availabilityset
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20241101.availabilitysets.compute.azure.com
+  rules:
+  - apiGroups:
+    - compute.azure.com
+    apiVersions:
+    - v20241101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - availabilitysets
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-compute-azure-com-v20250401-capacityreservationgroup
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20250401.capacityreservationgroups.compute.azure.com
+  rules:
+  - apiGroups:
+    - compute.azure.com
+    apiVersions:
+    - v20250401
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - capacityreservationgroups
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-compute-azure-com-v20250401-capacityreservation
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20250401.capacityreservations.compute.azure.com
+  rules:
+  - apiGroups:
+    - compute.azure.com
+    apiVersions:
+    - v20250401
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - capacityreservations
+  sideEffects: None

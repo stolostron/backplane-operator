@@ -1,0 +1,28 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: capz-system/azureserviceoperator-serving-cert
+  name: azureserviceoperator-monitor-mwh
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-monitor-azure-com-v1api20230403-account
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20230403.accounts.monitor.azure.com
+  rules:
+  - apiGroups:
+    - monitor.azure.com
+    apiVersions:
+    - v1api20230403
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - accounts
+  sideEffects: None

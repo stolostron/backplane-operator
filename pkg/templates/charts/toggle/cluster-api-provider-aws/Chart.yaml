@@ -3,4 +3,4 @@ appVersion: 5.0-dev
 description: Cluster API provider for AWS
 name: cluster-api-provider-aws
 type: application
-version: '5.0'
+version: '5.1'

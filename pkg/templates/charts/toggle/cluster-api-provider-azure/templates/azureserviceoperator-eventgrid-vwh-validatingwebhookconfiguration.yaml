@@ -1,0 +1,175 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+    service.beta.openshift.io/inject-cabundle: 'true'
+  name: azureserviceoperator-eventgrid-vwh
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-eventgrid-azure-com-v1api20200601-domain
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20200601.domains.eventgrid.azure.com
+  rules:
+  - apiGroups:
+    - eventgrid.azure.com
+    apiVersions:
+    - v1api20200601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - domains
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-eventgrid-azure-com-v1api20200601-domainstopic
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20200601.domainstopics.eventgrid.azure.com
+  rules:
+  - apiGroups:
+    - eventgrid.azure.com
+    apiVersions:
+    - v1api20200601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - domainstopics
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-eventgrid-azure-com-v1api20200601-eventsubscription
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20200601.eventsubscriptions.eventgrid.azure.com
+  rules:
+  - apiGroups:
+    - eventgrid.azure.com
+    apiVersions:
+    - v1api20200601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - eventsubscriptions
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-eventgrid-azure-com-v1api20200601-topic
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20200601.topics.eventgrid.azure.com
+  rules:
+  - apiGroups:
+    - eventgrid.azure.com
+    apiVersions:
+    - v1api20200601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - topics
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-eventgrid-azure-com-v20200601-domain
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20200601.domains.eventgrid.azure.com
+  rules:
+  - apiGroups:
+    - eventgrid.azure.com
+    apiVersions:
+    - v20200601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - domains
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-eventgrid-azure-com-v20200601-domainstopic
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20200601.domainstopics.eventgrid.azure.com
+  rules:
+  - apiGroups:
+    - eventgrid.azure.com
+    apiVersions:
+    - v20200601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - domainstopics
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-eventgrid-azure-com-v20200601-eventsubscription
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20200601.eventsubscriptions.eventgrid.azure.com
+  rules:
+  - apiGroups:
+    - eventgrid.azure.com
+    apiVersions:
+    - v20200601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - eventsubscriptions
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-eventgrid-azure-com-v20200601-topic
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20200601.topics.eventgrid.azure.com
+  rules:
+  - apiGroups:
+    - eventgrid.azure.com
+    apiVersions:
+    - v20200601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - topics
+  sideEffects: None

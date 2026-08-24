@@ -1,0 +1,175 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: capz-system/azureserviceoperator-serving-cert
+  name: azureserviceoperator-eventgrid-mwh
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-eventgrid-azure-com-v1api20200601-domain
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20200601.domains.eventgrid.azure.com
+  rules:
+  - apiGroups:
+    - eventgrid.azure.com
+    apiVersions:
+    - v1api20200601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - domains
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-eventgrid-azure-com-v1api20200601-domainstopic
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20200601.domainstopics.eventgrid.azure.com
+  rules:
+  - apiGroups:
+    - eventgrid.azure.com
+    apiVersions:
+    - v1api20200601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - domainstopics
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-eventgrid-azure-com-v1api20200601-eventsubscription
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20200601.eventsubscriptions.eventgrid.azure.com
+  rules:
+  - apiGroups:
+    - eventgrid.azure.com
+    apiVersions:
+    - v1api20200601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - eventsubscriptions
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-eventgrid-azure-com-v1api20200601-topic
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20200601.topics.eventgrid.azure.com
+  rules:
+  - apiGroups:
+    - eventgrid.azure.com
+    apiVersions:
+    - v1api20200601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - topics
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-eventgrid-azure-com-v20200601-domain
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20200601.domains.eventgrid.azure.com
+  rules:
+  - apiGroups:
+    - eventgrid.azure.com
+    apiVersions:
+    - v20200601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - domains
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-eventgrid-azure-com-v20200601-domainstopic
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20200601.domainstopics.eventgrid.azure.com
+  rules:
+  - apiGroups:
+    - eventgrid.azure.com
+    apiVersions:
+    - v20200601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - domainstopics
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-eventgrid-azure-com-v20200601-eventsubscription
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20200601.eventsubscriptions.eventgrid.azure.com
+  rules:
+  - apiGroups:
+    - eventgrid.azure.com
+    apiVersions:
+    - v20200601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - eventsubscriptions
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-eventgrid-azure-com-v20200601-topic
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20200601.topics.eventgrid.azure.com
+  rules:
+  - apiGroups:
+    - eventgrid.azure.com
+    apiVersions:
+    - v20200601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - topics
+  sideEffects: None

@@ -1,0 +1,994 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: capz-system/azureserviceoperator-serving-cert
+  name: azureserviceoperator-documentdb-vwh
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-documentdb-azure-com-v1api20210515-databaseaccount
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20210515.databaseaccounts.documentdb.azure.com
+  rules:
+  - apiGroups:
+    - documentdb.azure.com
+    apiVersions:
+    - v1api20210515
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - databaseaccounts
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-documentdb-azure-com-v1api20210515-mongodbdatabasecollection
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20210515.mongodbdatabasecollections.documentdb.azure.com
+  rules:
+  - apiGroups:
+    - documentdb.azure.com
+    apiVersions:
+    - v1api20210515
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - mongodbdatabasecollections
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-documentdb-azure-com-v1api20210515-mongodbdatabasecollectionthroughputsetting
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20210515.mongodbdatabasecollectionthroughputsettings.documentdb.azure.com
+  rules:
+  - apiGroups:
+    - documentdb.azure.com
+    apiVersions:
+    - v1api20210515
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - mongodbdatabasecollectionthroughputsettings
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-documentdb-azure-com-v1api20210515-mongodbdatabase
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20210515.mongodbdatabases.documentdb.azure.com
+  rules:
+  - apiGroups:
+    - documentdb.azure.com
+    apiVersions:
+    - v1api20210515
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - mongodbdatabases
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-documentdb-azure-com-v1api20210515-mongodbdatabasethroughputsetting
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20210515.mongodbdatabasethroughputsettings.documentdb.azure.com
+  rules:
+  - apiGroups:
+    - documentdb.azure.com
+    apiVersions:
+    - v1api20210515
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - mongodbdatabasethroughputsettings
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-documentdb-azure-com-v1api20210515-sqldatabasecontainer
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20210515.sqldatabasecontainers.documentdb.azure.com
+  rules:
+  - apiGroups:
+    - documentdb.azure.com
+    apiVersions:
+    - v1api20210515
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - sqldatabasecontainers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-documentdb-azure-com-v1api20210515-sqldatabasecontainerstoredprocedure
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20210515.sqldatabasecontainerstoredprocedures.documentdb.azure.com
+  rules:
+  - apiGroups:
+    - documentdb.azure.com
+    apiVersions:
+    - v1api20210515
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - sqldatabasecontainerstoredprocedures
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-documentdb-azure-com-v1api20210515-sqldatabasecontainerthroughputsetting
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20210515.sqldatabasecontainerthroughputsettings.documentdb.azure.com
+  rules:
+  - apiGroups:
+    - documentdb.azure.com
+    apiVersions:
+    - v1api20210515
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - sqldatabasecontainerthroughputsettings
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-documentdb-azure-com-v1api20210515-sqldatabasecontainertrigger
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20210515.sqldatabasecontainertriggers.documentdb.azure.com
+  rules:
+  - apiGroups:
+    - documentdb.azure.com
+    apiVersions:
+    - v1api20210515
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - sqldatabasecontainertriggers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-documentdb-azure-com-v1api20210515-sqldatabasecontaineruserdefinedfunction
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20210515.sqldatabasecontaineruserdefinedfunctions.documentdb.azure.com
+  rules:
+  - apiGroups:
+    - documentdb.azure.com
+    apiVersions:
+    - v1api20210515
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - sqldatabasecontaineruserdefinedfunctions
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-documentdb-azure-com-v1api20210515-sqldatabase
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20210515.sqldatabases.documentdb.azure.com
+  rules:
+  - apiGroups:
+    - documentdb.azure.com
+    apiVersions:
+    - v1api20210515
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - sqldatabases
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-documentdb-azure-com-v1api20210515-sqldatabasethroughputsetting
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20210515.sqldatabasethroughputsettings.documentdb.azure.com
+  rules:
+  - apiGroups:
+    - documentdb.azure.com
+    apiVersions:
+    - v1api20210515
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - sqldatabasethroughputsettings
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-documentdb-azure-com-v1api20210515-sqlroleassignment
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20210515.sqlroleassignments.documentdb.azure.com
+  rules:
+  - apiGroups:
+    - documentdb.azure.com
+    apiVersions:
+    - v1api20210515
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - sqlroleassignments
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-documentdb-azure-com-v1api20231115-databaseaccount
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20231115.databaseaccounts.documentdb.azure.com
+  rules:
+  - apiGroups:
+    - documentdb.azure.com
+    apiVersions:
+    - v1api20231115
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - databaseaccounts
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-documentdb-azure-com-v1api20231115-mongodbdatabasecollection
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20231115.mongodbdatabasecollections.documentdb.azure.com
+  rules:
+  - apiGroups:
+    - documentdb.azure.com
+    apiVersions:
+    - v1api20231115
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - mongodbdatabasecollections
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-documentdb-azure-com-v1api20231115-mongodbdatabasecollectionthroughputsetting
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20231115.mongodbdatabasecollectionthroughputsettings.documentdb.azure.com
+  rules:
+  - apiGroups:
+    - documentdb.azure.com
+    apiVersions:
+    - v1api20231115
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - mongodbdatabasecollectionthroughputsettings
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-documentdb-azure-com-v1api20231115-mongodbdatabase
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20231115.mongodbdatabases.documentdb.azure.com
+  rules:
+  - apiGroups:
+    - documentdb.azure.com
+    apiVersions:
+    - v1api20231115
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - mongodbdatabases
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-documentdb-azure-com-v1api20231115-mongodbdatabasethroughputsetting
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20231115.mongodbdatabasethroughputsettings.documentdb.azure.com
+  rules:
+  - apiGroups:
+    - documentdb.azure.com
+    apiVersions:
+    - v1api20231115
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - mongodbdatabasethroughputsettings
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-documentdb-azure-com-v1api20231115-sqldatabasecontainer
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20231115.sqldatabasecontainers.documentdb.azure.com
+  rules:
+  - apiGroups:
+    - documentdb.azure.com
+    apiVersions:
+    - v1api20231115
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - sqldatabasecontainers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-documentdb-azure-com-v1api20231115-sqldatabasecontainerstoredprocedure
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20231115.sqldatabasecontainerstoredprocedures.documentdb.azure.com
+  rules:
+  - apiGroups:
+    - documentdb.azure.com
+    apiVersions:
+    - v1api20231115
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - sqldatabasecontainerstoredprocedures
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-documentdb-azure-com-v1api20231115-sqldatabasecontainerthroughputsetting
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20231115.sqldatabasecontainerthroughputsettings.documentdb.azure.com
+  rules:
+  - apiGroups:
+    - documentdb.azure.com
+    apiVersions:
+    - v1api20231115
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - sqldatabasecontainerthroughputsettings
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-documentdb-azure-com-v1api20231115-sqldatabasecontainertrigger
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20231115.sqldatabasecontainertriggers.documentdb.azure.com
+  rules:
+  - apiGroups:
+    - documentdb.azure.com
+    apiVersions:
+    - v1api20231115
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - sqldatabasecontainertriggers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-documentdb-azure-com-v1api20231115-sqldatabasecontaineruserdefinedfunction
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20231115.sqldatabasecontaineruserdefinedfunctions.documentdb.azure.com
+  rules:
+  - apiGroups:
+    - documentdb.azure.com
+    apiVersions:
+    - v1api20231115
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - sqldatabasecontaineruserdefinedfunctions
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-documentdb-azure-com-v1api20231115-sqldatabase
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20231115.sqldatabases.documentdb.azure.com
+  rules:
+  - apiGroups:
+    - documentdb.azure.com
+    apiVersions:
+    - v1api20231115
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - sqldatabases
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-documentdb-azure-com-v1api20231115-sqldatabasethroughputsetting
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20231115.sqldatabasethroughputsettings.documentdb.azure.com
+  rules:
+  - apiGroups:
+    - documentdb.azure.com
+    apiVersions:
+    - v1api20231115
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - sqldatabasethroughputsettings
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-documentdb-azure-com-v1api20231115-sqlroleassignment
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20231115.sqlroleassignments.documentdb.azure.com
+  rules:
+  - apiGroups:
+    - documentdb.azure.com
+    apiVersions:
+    - v1api20231115
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - sqlroleassignments
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-documentdb-azure-com-v1api20240701-firewallrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240701.firewallrules.documentdb.azure.com
+  rules:
+  - apiGroups:
+    - documentdb.azure.com
+    apiVersions:
+    - v1api20240701
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - firewallrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-documentdb-azure-com-v1api20240701-mongocluster
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240701.mongoclusters.documentdb.azure.com
+  rules:
+  - apiGroups:
+    - documentdb.azure.com
+    apiVersions:
+    - v1api20240701
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - mongoclusters
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-documentdb-azure-com-v1api20240815-databaseaccount
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240815.databaseaccounts.documentdb.azure.com
+  rules:
+  - apiGroups:
+    - documentdb.azure.com
+    apiVersions:
+    - v1api20240815
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - databaseaccounts
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-documentdb-azure-com-v1api20240815-mongodbdatabasecollection
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240815.mongodbdatabasecollections.documentdb.azure.com
+  rules:
+  - apiGroups:
+    - documentdb.azure.com
+    apiVersions:
+    - v1api20240815
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - mongodbdatabasecollections
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-documentdb-azure-com-v1api20240815-mongodbdatabasecollectionthroughputsetting
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240815.mongodbdatabasecollectionthroughputsettings.documentdb.azure.com
+  rules:
+  - apiGroups:
+    - documentdb.azure.com
+    apiVersions:
+    - v1api20240815
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - mongodbdatabasecollectionthroughputsettings
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-documentdb-azure-com-v1api20240815-mongodbdatabase
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240815.mongodbdatabases.documentdb.azure.com
+  rules:
+  - apiGroups:
+    - documentdb.azure.com
+    apiVersions:
+    - v1api20240815
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - mongodbdatabases
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-documentdb-azure-com-v1api20240815-mongodbdatabasethroughputsetting
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240815.mongodbdatabasethroughputsettings.documentdb.azure.com
+  rules:
+  - apiGroups:
+    - documentdb.azure.com
+    apiVersions:
+    - v1api20240815
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - mongodbdatabasethroughputsettings
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-documentdb-azure-com-v1api20240815-mongodbroledefinition
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240815.mongodbroledefinitions.documentdb.azure.com
+  rules:
+  - apiGroups:
+    - documentdb.azure.com
+    apiVersions:
+    - v1api20240815
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - mongodbroledefinitions
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-documentdb-azure-com-v1api20240815-mongodbuserdefinition
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240815.mongodbuserdefinitions.documentdb.azure.com
+  rules:
+  - apiGroups:
+    - documentdb.azure.com
+    apiVersions:
+    - v1api20240815
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - mongodbuserdefinitions
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-documentdb-azure-com-v1api20240815-sqldatabasecontainer
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240815.sqldatabasecontainers.documentdb.azure.com
+  rules:
+  - apiGroups:
+    - documentdb.azure.com
+    apiVersions:
+    - v1api20240815
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - sqldatabasecontainers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-documentdb-azure-com-v1api20240815-sqldatabasecontainerstoredprocedure
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240815.sqldatabasecontainerstoredprocedures.documentdb.azure.com
+  rules:
+  - apiGroups:
+    - documentdb.azure.com
+    apiVersions:
+    - v1api20240815
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - sqldatabasecontainerstoredprocedures
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-documentdb-azure-com-v1api20240815-sqldatabasecontainerthroughputsetting
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240815.sqldatabasecontainerthroughputsettings.documentdb.azure.com
+  rules:
+  - apiGroups:
+    - documentdb.azure.com
+    apiVersions:
+    - v1api20240815
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - sqldatabasecontainerthroughputsettings
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-documentdb-azure-com-v1api20240815-sqldatabasecontainertrigger
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240815.sqldatabasecontainertriggers.documentdb.azure.com
+  rules:
+  - apiGroups:
+    - documentdb.azure.com
+    apiVersions:
+    - v1api20240815
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - sqldatabasecontainertriggers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-documentdb-azure-com-v1api20240815-sqldatabasecontaineruserdefinedfunction
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240815.sqldatabasecontaineruserdefinedfunctions.documentdb.azure.com
+  rules:
+  - apiGroups:
+    - documentdb.azure.com
+    apiVersions:
+    - v1api20240815
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - sqldatabasecontaineruserdefinedfunctions
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-documentdb-azure-com-v1api20240815-sqldatabase
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240815.sqldatabases.documentdb.azure.com
+  rules:
+  - apiGroups:
+    - documentdb.azure.com
+    apiVersions:
+    - v1api20240815
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - sqldatabases
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-documentdb-azure-com-v1api20240815-sqldatabasethroughputsetting
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240815.sqldatabasethroughputsettings.documentdb.azure.com
+  rules:
+  - apiGroups:
+    - documentdb.azure.com
+    apiVersions:
+    - v1api20240815
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - sqldatabasethroughputsettings
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-documentdb-azure-com-v1api20240815-sqlroleassignment
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240815.sqlroleassignments.documentdb.azure.com
+  rules:
+  - apiGroups:
+    - documentdb.azure.com
+    apiVersions:
+    - v1api20240815
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - sqlroleassignments
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-documentdb-azure-com-v20251015-cassandracluster
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20251015.cassandraclusters.documentdb.azure.com
+  rules:
+  - apiGroups:
+    - documentdb.azure.com
+    apiVersions:
+    - v20251015
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - cassandraclusters
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-documentdb-azure-com-v20251015-cassandradatacenter
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20251015.cassandradatacenters.documentdb.azure.com
+  rules:
+  - apiGroups:
+    - documentdb.azure.com
+    apiVersions:
+    - v20251015
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - cassandradatacenters
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-documentdb-azure-com-v20260315-cassandracluster
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20260315.cassandraclusters.documentdb.azure.com
+  rules:
+  - apiGroups:
+    - documentdb.azure.com
+    apiVersions:
+    - v20260315
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - cassandraclusters
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-documentdb-azure-com-v20260315-cassandradatacenter
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20260315.cassandradatacenters.documentdb.azure.com
+  rules:
+  - apiGroups:
+    - documentdb.azure.com
+    apiVersions:
+    - v20260315
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - cassandradatacenters
+  sideEffects: None
