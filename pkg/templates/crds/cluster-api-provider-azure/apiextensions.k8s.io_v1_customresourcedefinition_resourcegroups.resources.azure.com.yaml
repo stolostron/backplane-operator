@@ -6,9 +6,7 @@ metadata:
     service.beta.openshift.io/inject-cabundle: "true"
   labels:
     app.kubernetes.io/name: azure-service-operator
-    app.kubernetes.io/version: v2.13.0-hcpclusters.7
-    visualizer.cluster.x-k8s.io: ""
-    visualizer.cluster.x-k8s.io/provider-type: infrastructure
+    app.kubernetes.io/version: v2.18.0-hcpclusters.1
   name: resourcegroups.resources.azure.com
 spec:
   conversion:
@@ -24,6 +22,9 @@ spec:
       - v1
   group: resources.azure.com
   names:
+    categories:
+    - azure
+    - resources
     kind: ResourceGroup
     listKind: ResourceGroupList
     plural: resourcegroups
@@ -49,7 +50,7 @@ spec:
       openAPIV3Schema:
         description: |-
           Generator information:
-          - Generated from: /resources/resource-manager/Microsoft.Resources/stable/2020-06-01/resources.json
+          - Generated from: /resources/resource-manager/Microsoft.Resources/resources/stable/2020-06-01/resources.json
           - ARM URI: /subscriptions/{subscriptionId}/resourcegroups/{resourceGroupName}
         properties:
           apiVersion:
@@ -269,7 +270,7 @@ spec:
         description: |-
           Storage version of v1api20200601.ResourceGroup
           Generator information:
-          - Generated from: /resources/resource-manager/Microsoft.Resources/stable/2020-06-01/resources.json
+          - Generated from: /resources/resource-manager/Microsoft.Resources/resources/stable/2020-06-01/resources.json
           - ARM URI: /subscriptions/{subscriptionId}/resourcegroups/{resourceGroupName}
         properties:
           apiVersion:

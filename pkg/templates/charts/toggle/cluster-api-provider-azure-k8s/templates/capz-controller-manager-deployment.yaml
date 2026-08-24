@@ -47,7 +47,7 @@ spec:
         - --leader-elect
         - --diagnostics-address=:8443
         - --insecure-diagnostics=false
-        - --feature-gates=MachinePool=true,AKSResourceHealth=false,EdgeZone=false,ASOAPI=true,APIServerILB=false,ARO=true
+        - --feature-gates=MachinePool=true,AKSResourceHealth=false,EdgeZone=false,ASOAPI=true,APIServerILB=false,ARO=true,SkipMachinePoolModelReconciliation=false
         - --v=0
         env:
 {{- if .Values.global.pullSecret }}
