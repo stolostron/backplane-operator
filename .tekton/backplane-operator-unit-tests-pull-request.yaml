@@ -1,43 +1,14 @@
 # Copyright Contributors to the Open Cluster Management project
 #
-# Standalone Pipelines-as-Code check that runs `make test` (Go unit tests)
-# on every PR. It is intentionally NOT a `pipelines.appstudio.openshift.io/
-# type: build` pipeline and isn't triggered by/tied to a Snapshot, so it
-# does not participate in Konflux's Snapshot/Release gating -- it's a
-# plain PR check, running the same `make test` a Prow unit-test job would.
+# Standalone Pipelines-as-Code PR check that runs `make test` (Go unit
+# tests) on every PR to main/backplane-5.1/backplane-5.2. This is a plain
+# PR check (not tied to Konflux Snapshot/Release gating), equivalent to
+# Prow's `make unit-tests` job. Replaces the old
+# backplane-operator-main-unit-test.yaml, which never actually ran (no
+# IntegrationTestScenario referenced it).
 #
-# It carries `appstudio.openshift.io/application`/`component` labels
-# (pointing at the existing release-mce-51 Application/
-# backplane-operator-mce-51 Component for this repo) purely so the
-# Konflux UI can resolve it. Without those labels the UI's GithubRedirect
-# component (src/components/GithubRedirect/GithubRedirect.tsx in
-# konflux-ci/konflux-ui) can never build a redirect URL and gets stuck on
-# a permanent "Redirecting to pipeline run..." spinner --
-# `shouldRedirect = application && !error` never becomes true if
-# `application` is undefined. This mislabels the check's actual branch
-# coverage a bit (it also runs on backplane-5.2 and main, not just
-# backplane-5.1), but that's a cosmetic tradeoff for being able to view
-# it in the UI at all.
-#
-# This replaces the previous .tekton/backplane-operator-main-unit-test.yaml,
-# which was a bare `kind: Pipeline` (not a `PipelineRun`) -- it required
-# an IntegrationTestScenario to invoke it, and no such ITS existed in the
-# crt-redhat-acm-tenant namespace, so it never actually ran. It also used
-# the same runtime `dnf install`/`curl dl.google.com`/`go install
-# ...@latest` pattern that proved fragile in stolostron/multiclusterhub-
-# operator#3893 (2h hang from an unrelated issue, since fixed there).
-#
-# See stolostron/multiclusterhub-operator PR #4657 for the design this
-# is based on, including:
-#   - registry.redhat.io/ubi9/go-toolset, not
-#     brew.registry.redhat.io/rh-osbs/openshift-golang-builder (the
-#     product build's base image) -- that credential only authenticates
-#     within the officially blessed build pipeline, not a generic custom
-#     Task, and fails fast with ImagePullBackOff/unauthorized otherwise.
-#   - Explicit `computeResources`: without it, Tekton injects a 2Gi
-#     memory limit and `go vet ./...` gets OOMKilled. GOFLAGS=-p=2 caps
-#     parallel compile workers so peak memory isn't driven up by the
-#     node's CPU count.
+# The appstudio.openshift.io/* labels are required for UI resolution
+# only; they don't affect the check's actual scope or gating behavior.
 apiVersion: tekton.dev/v1
 kind: PipelineRun
 metadata:
@@ -113,9 +84,7 @@ spec:
                 mkdir -p "${HOME}"
 
                 echo "===== Checking required tools ====="
-                # This image runs as a non-root, OpenShift-arbitrary UID, so
-                # we can't `microdnf install` anything missing here --
-                # go-toolset already ships git/make/go, so just verify.
+                # go-toolset already ships git/make/go; just verify they exist.
                 for tool in git make go; do
                   if ! command -v "${tool}" >/dev/null 2>&1; then
                     echo "Required tool '${tool}' not found in this image."
@@ -132,8 +101,7 @@ spec:
                 git checkout --quiet "${REVISION}"
 
                 echo "===== Running unit tests: make test ====="
-                # Bounded to 10m so a stuck download fails fast instead of
-                # hanging for hours (see multiclusterhub-operator#3893).
+                # Timeout 10m so a stuck download fails fast, not hangs for hours.
                 if timeout 600 make test; then
                   echo "Unit tests passed."
                 else
