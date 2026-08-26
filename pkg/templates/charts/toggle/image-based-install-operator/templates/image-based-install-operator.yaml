@@ -121,6 +121,7 @@ spec:
         ports:
         - containerPort: 8000
           name: config-server
+          protocol: TCP
         resources:
           requests:
             cpu: 10m
