@@ -1,20 +1,22 @@
 ---
+# TODO: The assisted-* digests below are placeholders borrowed from MCE 2.11.
+# Replace with MCE 5.0 digests once the assisted-installer team publishes them.
 external-images:
 - name: assisted-image-service
   search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-image-service-rhel9:latest"
-  replace: "registry.redhat.io/multicluster-engine/assisted-image-service-rhel9@sha256:29a14cf51a7d1d8de28ece345d9a9c2f0c076d4aa972a51916caafb43f605662"
+  replace: "registry.redhat.io/multicluster-engine/assisted-image-service-rhel9@sha256:48305470fa7e55e78165734d094022a14ac9d083573974036c1f40021c362ba1"
 - name: assisted-installer
   search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-installer-rhel9:latest"
-  replace: "registry.redhat.io/multicluster-engine/assisted-installer-rhel9@sha256:fa5d45b9f1c7c7e8554b57699fb6b93b72d134af4f4ca4f8d04556b2cc22265c"
+  replace: "registry.redhat.io/multicluster-engine/assisted-installer-rhel9@sha256:4dd8f3992fcc23dc8f1e14dbfe4e3c3e447b592d88152fbf5d92ccd469653377"
 - name: assisted-installer-agent
   search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-installer-agent-rhel9:latest"
-  replace: "registry.redhat.io/multicluster-engine/assisted-installer-agent-rhel9@sha256:05d2d25a6f9107223cad5e594584dc60af2cfb6e7aae9bdfb3002284ea128a7a"
+  replace: "registry.redhat.io/multicluster-engine/assisted-installer-agent-rhel9@sha256:72427b669fe6feb4b46bcabf100bbd633ffd13bd0d3583b2e544f5709f680b73"
 - name: assisted-installer-controller
   search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-installer-controller-rhel9:latest"
-  replace: "registry.redhat.io/multicluster-engine/assisted-installer-controller-rhel9@sha256:eb2d70b235927dcfccc7da08b09b0a55287b4b96787bb3f9fecc58a4788a0a5b"
+  replace: "registry.redhat.io/multicluster-engine/assisted-installer-controller-rhel9@sha256:b3d2b3c7c5bef17dfea7985eb854a6fe77720dfc185a968adc2db831081546ee"
 - name: assisted-service
   search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-service-9-rhel9:latest"
-  replace: "registry.redhat.io/multicluster-engine/assisted-service-9-rhel9@sha256:2f2000589315cb444b19c5c86d337078982896909dc530f8e05c95ea5861e520"
+  replace: "registry.redhat.io/multicluster-engine/assisted-service-9-rhel9@sha256:eb11d23849d00fc2ec07284054335921158f00f6dd7e4347c54fd606e80c8a2e"
 - name: ose-cluster-api
   search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/ose-cluster-api-rhel9:latest"
   replace: "registry.redhat.io/openshift5/ose-cluster-api-rhel9:v5.0"
