@@ -25,7 +25,6 @@ ARG LDFLAGS
 RUN CGO_ENABLED=1 go build -mod=readonly -ldflags "${LDFLAGS}" -o backplane-operator main.go
 
 FROM registry.redhat.io/ubi9/ubi-minimal-pqc:latest
-
 LABEL org.label-schema.vendor="Red Hat" \
       org.label-schema.name="backplane-operator" \
       org.label-schema.description="Installer operator for Red Hat multicluster engine for Kubernetes" \
