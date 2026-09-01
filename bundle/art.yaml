@@ -17,12 +17,15 @@ external-images:
 - name: assisted-service
   search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-service-9-rhel9:latest"
   replace: "registry.redhat.io/multicluster-engine/assisted-service-9-rhel9@sha256:eb11d23849d00fc2ec07284054335921158f00f6dd7e4347c54fd606e80c8a2e"
+# TODO: The ose-cluster-api and ose-baremetal tags below are placeholders
+# borrowed from MCE 2.11 (openshift4:v4.21). Replace with openshift5:v5.0
+# once the OCP 5.0 images are published to registry.redhat.io.
 - name: ose-cluster-api
   search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/ose-cluster-api-rhel9:latest"
-  replace: "registry.redhat.io/openshift5/ose-cluster-api-rhel9:v5.0"
+  replace: "registry.redhat.io/openshift4/ose-cluster-api-rhel9:v4.21"
 - name: ose-baremetal-cluster-api-controllers
   search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/ose-baremetal-cluster-api-controllers-rhel9:latest"
-  replace: "registry.redhat.io/openshift5/ose-baremetal-cluster-api-controllers-rhel9:v5.0"
+  replace: "registry.redhat.io/openshift4/ose-baremetal-cluster-api-controllers-rhel9:v4.21"
 - name: postgresql-15
   search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/postgresql-15:latest"
   replace: "registry.redhat.io/rhel9/postgresql-15@sha256:17d8f73eefb3492386bf1984ca32a6c5556d559ab19bdbccb5bc01bcf6d435ab"
