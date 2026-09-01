@@ -8,7 +8,7 @@ spec:
   group: hcp.ocm.io
   # Below the CRD default (1000) so unqualified `oc get hostedclusters`
   # prefers hypershift.openshift.io instead of this proxy API.
-  groupPriorityMinimum: 100
+  groupPriorityMinimum: 1
   service:
     name: hypershift-addon-hcp-proxy
     namespace: {{ .Values.global.namespace }}
