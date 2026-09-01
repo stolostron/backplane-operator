@@ -1250,6 +1250,7 @@ rules:
   - tower.ansible.com
   resources:
   - ansiblejobs
+  - ansibleworkflows
   - clusterversions
   - consolelinks
   - featuregates
