@@ -49,6 +49,7 @@ spec:
         - --insecure-diagnostics=false
         - --feature-gates=MachinePool=true,AKSResourceHealth=false,EdgeZone=false,ASOAPI=true,APIServerILB=false,ARO=true,SkipMachinePoolModelReconciliation=false
         - --v=0
+        - --tls-min-version=VersionTLS13
         env:
 {{- if .Values.global.pullSecret }}
         - name: AGENT_IMAGE_PULL_SECRET
