@@ -10,7 +10,6 @@ spec:
     - namespaceSelector:
         matchLabels:
           policy-group.network.openshift.io/host-network: ''
-      podSelector: {}
     ports:
     - port: 9443
       protocol: TCP
