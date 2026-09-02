@@ -1144,6 +1144,10 @@ func (r *MultiClusterEngineReconciler) ensureServerFoundation(ctx context.Contex
 	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
 
+	namespacedName = types.NamespacedName{Name: "managedcluster-import-controller-v2", Namespace: mce.Spec.TargetNamespace}
+	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
+	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
+
 	// Ensure that the InternalHubComponent CR instance is created for component in MCE.
 	if result, err := r.ensureInternalEngineComponent(ctx, mce, backplanev1.ServerFoundation); err != nil {
 		return result, err
@@ -1213,6 +1217,10 @@ func (r *MultiClusterEngineReconciler) ensureNoServerFoundation(ctx context.Cont
 	}
 
 	namespacedName = types.NamespacedName{Name: "ocm-webhook", Namespace: mce.Spec.TargetNamespace}
+	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
+	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
+
+	namespacedName = types.NamespacedName{Name: "managedcluster-import-controller-v2", Namespace: mce.Spec.TargetNamespace}
 	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
 	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 
@@ -1664,6 +1672,10 @@ func (r *MultiClusterEngineReconciler) ensureHyperShift(ctx context.Context, mce
 	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
 	r.StatusManager.AddComponent(status.NewPresentStatus(types.NamespacedName{Name: "hypershift-addon"}, clusterManagementAddOnGVK))
 
+	namespacedName = types.NamespacedName{Name: "hcp-cli-download", Namespace: mce.Spec.TargetNamespace}
+	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
+	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
+
 	// Ensure that the InternalHubComponent CR instance is created for component in MCE.
 	if result, err := r.ensureInternalEngineComponent(ctx, mce, backplanev1.HyperShift); err != nil {
 		return result, err
@@ -1757,6 +1769,10 @@ func (r *MultiClusterEngineReconciler) ensureNoHyperShift(ctx context.Context,
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
 	}
 
+	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
+
+	namespacedName = types.NamespacedName{Name: "hcp-cli-download", Namespace: mce.Spec.TargetNamespace}
+	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
 	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 
 	// Renders all templates from charts

@@ -6,7 +6,9 @@ metadata:
     service.beta.openshift.io/inject-cabundle: "true"
 spec:
   group: hcp.ocm.io
-  groupPriorityMinimum: 2000
+  # Below the CRD default (1000) so unqualified `oc get hostedclusters`
+  # prefers hypershift.openshift.io instead of this proxy API.
+  groupPriorityMinimum: 1
   service:
     name: hypershift-addon-hcp-proxy
     namespace: {{ .Values.global.namespace }}
