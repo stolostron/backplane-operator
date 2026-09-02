@@ -49,6 +49,7 @@ spec:
         - --diagnostics-address=:8443
         - --insecure-diagnostics=false
         - --disable-controllers=unmanaged
+        - --tls-min-version=VersionTLS13
         command:
         - /bin/cluster-api-provider-aws-controller-manager
         env:
