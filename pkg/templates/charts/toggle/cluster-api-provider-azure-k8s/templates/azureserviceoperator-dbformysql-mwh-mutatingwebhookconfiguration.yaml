@@ -1,0 +1,868 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: capz-system/azureserviceoperator-serving-cert
+  name: azureserviceoperator-dbformysql-mwh
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbformysql-azure-com-v1-user
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1.users.dbformysql.azure.com
+  rules:
+  - apiGroups:
+    - dbformysql.azure.com
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - users
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbformysql-azure-com-v1api20210501-flexibleserver
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20210501.flexibleservers.dbformysql.azure.com
+  rules:
+  - apiGroups:
+    - dbformysql.azure.com
+    apiVersions:
+    - v1api20210501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleservers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbformysql-azure-com-v1api20210501-flexibleserversdatabase
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20210501.flexibleserversdatabases.dbformysql.azure.com
+  rules:
+  - apiGroups:
+    - dbformysql.azure.com
+    apiVersions:
+    - v1api20210501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversdatabases
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbformysql-azure-com-v1api20210501-flexibleserversfirewallrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20210501.flexibleserversfirewallrules.dbformysql.azure.com
+  rules:
+  - apiGroups:
+    - dbformysql.azure.com
+    apiVersions:
+    - v1api20210501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversfirewallrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbformysql-azure-com-v1api20220101-flexibleserversadministrator
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20220101.flexibleserversadministrators.dbformysql.azure.com
+  rules:
+  - apiGroups:
+    - dbformysql.azure.com
+    apiVersions:
+    - v1api20220101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversadministrators
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbformysql-azure-com-v1api20220101-flexibleserversconfiguration
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20220101.flexibleserversconfigurations.dbformysql.azure.com
+  rules:
+  - apiGroups:
+    - dbformysql.azure.com
+    apiVersions:
+    - v1api20220101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversconfigurations
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbformysql-azure-com-v1api20230630-flexibleserver
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20230630.flexibleservers.dbformysql.azure.com
+  rules:
+  - apiGroups:
+    - dbformysql.azure.com
+    apiVersions:
+    - v1api20230630
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleservers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbformysql-azure-com-v1api20230630-flexibleserversadministrator
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20230630.flexibleserversadministrators.dbformysql.azure.com
+  rules:
+  - apiGroups:
+    - dbformysql.azure.com
+    apiVersions:
+    - v1api20230630
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversadministrators
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbformysql-azure-com-v1api20230630-flexibleserversconfiguration
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20230630.flexibleserversconfigurations.dbformysql.azure.com
+  rules:
+  - apiGroups:
+    - dbformysql.azure.com
+    apiVersions:
+    - v1api20230630
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversconfigurations
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbformysql-azure-com-v1api20230630-flexibleserversdatabase
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20230630.flexibleserversdatabases.dbformysql.azure.com
+  rules:
+  - apiGroups:
+    - dbformysql.azure.com
+    apiVersions:
+    - v1api20230630
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversdatabases
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbformysql-azure-com-v1api20230630-flexibleserversfirewallrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20230630.flexibleserversfirewallrules.dbformysql.azure.com
+  rules:
+  - apiGroups:
+    - dbformysql.azure.com
+    apiVersions:
+    - v1api20230630
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversfirewallrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbformysql-azure-com-v1api20231230-flexibleserver
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20231230.flexibleservers.dbformysql.azure.com
+  rules:
+  - apiGroups:
+    - dbformysql.azure.com
+    apiVersions:
+    - v1api20231230
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleservers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbformysql-azure-com-v1api20231230-flexibleserversadministrator
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20231230.flexibleserversadministrators.dbformysql.azure.com
+  rules:
+  - apiGroups:
+    - dbformysql.azure.com
+    apiVersions:
+    - v1api20231230
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversadministrators
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbformysql-azure-com-v1api20231230-flexibleserversconfiguration
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20231230.flexibleserversconfigurations.dbformysql.azure.com
+  rules:
+  - apiGroups:
+    - dbformysql.azure.com
+    apiVersions:
+    - v1api20231230
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversconfigurations
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbformysql-azure-com-v1api20231230-flexibleserversdatabase
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20231230.flexibleserversdatabases.dbformysql.azure.com
+  rules:
+  - apiGroups:
+    - dbformysql.azure.com
+    apiVersions:
+    - v1api20231230
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversdatabases
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbformysql-azure-com-v1api20231230-flexibleserversfirewallrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20231230.flexibleserversfirewallrules.dbformysql.azure.com
+  rules:
+  - apiGroups:
+    - dbformysql.azure.com
+    apiVersions:
+    - v1api20231230
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversfirewallrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbformysql-azure-com-v20210501-flexibleserver
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20210501.flexibleservers.dbformysql.azure.com
+  rules:
+  - apiGroups:
+    - dbformysql.azure.com
+    apiVersions:
+    - v20210501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleservers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbformysql-azure-com-v20210501-flexibleserversdatabase
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20210501.flexibleserversdatabases.dbformysql.azure.com
+  rules:
+  - apiGroups:
+    - dbformysql.azure.com
+    apiVersions:
+    - v20210501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversdatabases
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbformysql-azure-com-v20210501-flexibleserversfirewallrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20210501.flexibleserversfirewallrules.dbformysql.azure.com
+  rules:
+  - apiGroups:
+    - dbformysql.azure.com
+    apiVersions:
+    - v20210501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversfirewallrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbformysql-azure-com-v20220101-flexibleserversadministrator
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20220101.flexibleserversadministrators.dbformysql.azure.com
+  rules:
+  - apiGroups:
+    - dbformysql.azure.com
+    apiVersions:
+    - v20220101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversadministrators
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbformysql-azure-com-v20220101-flexibleserversconfiguration
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20220101.flexibleserversconfigurations.dbformysql.azure.com
+  rules:
+  - apiGroups:
+    - dbformysql.azure.com
+    apiVersions:
+    - v20220101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversconfigurations
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbformysql-azure-com-v20230630-flexibleserver
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20230630.flexibleservers.dbformysql.azure.com
+  rules:
+  - apiGroups:
+    - dbformysql.azure.com
+    apiVersions:
+    - v20230630
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleservers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbformysql-azure-com-v20230630-flexibleserversadministrator
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20230630.flexibleserversadministrators.dbformysql.azure.com
+  rules:
+  - apiGroups:
+    - dbformysql.azure.com
+    apiVersions:
+    - v20230630
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversadministrators
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbformysql-azure-com-v20230630-flexibleserversconfiguration
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20230630.flexibleserversconfigurations.dbformysql.azure.com
+  rules:
+  - apiGroups:
+    - dbformysql.azure.com
+    apiVersions:
+    - v20230630
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversconfigurations
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbformysql-azure-com-v20230630-flexibleserversdatabase
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20230630.flexibleserversdatabases.dbformysql.azure.com
+  rules:
+  - apiGroups:
+    - dbformysql.azure.com
+    apiVersions:
+    - v20230630
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversdatabases
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbformysql-azure-com-v20230630-flexibleserversfirewallrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20230630.flexibleserversfirewallrules.dbformysql.azure.com
+  rules:
+  - apiGroups:
+    - dbformysql.azure.com
+    apiVersions:
+    - v20230630
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversfirewallrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbformysql-azure-com-v20231230-flexibleserver
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20231230.flexibleservers.dbformysql.azure.com
+  rules:
+  - apiGroups:
+    - dbformysql.azure.com
+    apiVersions:
+    - v20231230
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleservers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbformysql-azure-com-v20231230-flexibleserversadministrator
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20231230.flexibleserversadministrators.dbformysql.azure.com
+  rules:
+  - apiGroups:
+    - dbformysql.azure.com
+    apiVersions:
+    - v20231230
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversadministrators
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbformysql-azure-com-v20231230-flexibleserversconfiguration
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20231230.flexibleserversconfigurations.dbformysql.azure.com
+  rules:
+  - apiGroups:
+    - dbformysql.azure.com
+    apiVersions:
+    - v20231230
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversconfigurations
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbformysql-azure-com-v20231230-flexibleserversdatabase
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20231230.flexibleserversdatabases.dbformysql.azure.com
+  rules:
+  - apiGroups:
+    - dbformysql.azure.com
+    apiVersions:
+    - v20231230
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversdatabases
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbformysql-azure-com-v20231230-flexibleserversfirewallrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20231230.flexibleserversfirewallrules.dbformysql.azure.com
+  rules:
+  - apiGroups:
+    - dbformysql.azure.com
+    apiVersions:
+    - v20231230
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversfirewallrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbformysql-azure-com-v20241230-flexibleserver
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20241230.flexibleservers.dbformysql.azure.com
+  rules:
+  - apiGroups:
+    - dbformysql.azure.com
+    apiVersions:
+    - v20241230
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleservers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbformysql-azure-com-v20241230-flexibleserversadministrator
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20241230.flexibleserversadministrators.dbformysql.azure.com
+  rules:
+  - apiGroups:
+    - dbformysql.azure.com
+    apiVersions:
+    - v20241230
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversadministrators
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbformysql-azure-com-v20241230-flexibleserversconfiguration
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20241230.flexibleserversconfigurations.dbformysql.azure.com
+  rules:
+  - apiGroups:
+    - dbformysql.azure.com
+    apiVersions:
+    - v20241230
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversconfigurations
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbformysql-azure-com-v20241230-flexibleserversdatabase
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20241230.flexibleserversdatabases.dbformysql.azure.com
+  rules:
+  - apiGroups:
+    - dbformysql.azure.com
+    apiVersions:
+    - v20241230
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversdatabases
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbformysql-azure-com-v20241230-flexibleserversfirewallrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20241230.flexibleserversfirewallrules.dbformysql.azure.com
+  rules:
+  - apiGroups:
+    - dbformysql.azure.com
+    apiVersions:
+    - v20241230
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversfirewallrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbformysql-azure-com-v20250601preview-flexibleserver
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20250601preview.flexibleservers.dbformysql.azure.com
+  rules:
+  - apiGroups:
+    - dbformysql.azure.com
+    apiVersions:
+    - v20250601preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleservers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbformysql-azure-com-v20250601preview-flexibleserversadministrator
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20250601preview.flexibleserversadministrators.dbformysql.azure.com
+  rules:
+  - apiGroups:
+    - dbformysql.azure.com
+    apiVersions:
+    - v20250601preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversadministrators
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbformysql-azure-com-v20250601preview-flexibleserversconfiguration
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20250601preview.flexibleserversconfigurations.dbformysql.azure.com
+  rules:
+  - apiGroups:
+    - dbformysql.azure.com
+    apiVersions:
+    - v20250601preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversconfigurations
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbformysql-azure-com-v20250601preview-flexibleserversdatabase
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20250601preview.flexibleserversdatabases.dbformysql.azure.com
+  rules:
+  - apiGroups:
+    - dbformysql.azure.com
+    apiVersions:
+    - v20250601preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversdatabases
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dbformysql-azure-com-v20250601preview-flexibleserversfirewallrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20250601preview.flexibleserversfirewallrules.dbformysql.azure.com
+  rules:
+  - apiGroups:
+    - dbformysql.azure.com
+    apiVersions:
+    - v20250601preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flexibleserversfirewallrules
+  sideEffects: None

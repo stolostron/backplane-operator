@@ -6,9 +6,7 @@ metadata:
     controller-gen.kubebuilder.io/version: v0.19.0
   labels:
     app.kubernetes.io/name: azure-service-operator
-    app.kubernetes.io/version: v2.13.0-hcpclusters.7
-    visualizer.cluster.x-k8s.io: ""
-    visualizer.cluster.x-k8s.io/provider-type: infrastructure
+    app.kubernetes.io/version: v2.20.0-rev.118
   name: extensions.kubernetesconfiguration.azure.com
 spec:
   conversion:
@@ -24,6 +22,9 @@ spec:
       - v1
   group: kubernetesconfiguration.azure.com
   names:
+    categories:
+    - azure
+    - kubernetesconfiguration
     kind: Extension
     listKind: ExtensionList
     plural: extensions
@@ -138,6 +139,12 @@ spec:
                         be a secret or a configmap. The value of the expression is stored at the specified location in
                         the destination.
                       properties:
+                        annotations:
+                          additionalProperties:
+                            type: string
+                          description: Annotations is an optional set of annotations
+                            to apply to the destination resource.
+                          type: object
                         key:
                           description: |-
                             Key is the key in the ConfigMap or Secret being written to. If the CEL expression in Value returns a string
@@ -145,6 +152,12 @@ spec:
                             Key must not be set, instead the keys written will be determined dynamically based on the keys of the resulting
                             map[string]string.
                           type: string
+                        labels:
+                          additionalProperties:
+                            type: string
+                          description: Labels is an optional set of labels to apply
+                            to the destination resource.
+                          type: object
                         name:
                           description: |-
                             Name is the name of the Kubernetes configmap or secret to write to.
@@ -169,9 +182,21 @@ spec:
                           config map should be placed. If omitted, no config map will
                           be created.'
                         properties:
+                          annotations:
+                            additionalProperties:
+                              type: string
+                            description: Annotations is an optional set of annotations
+                              to apply to the ConfigMap.
+                            type: object
                           key:
                             description: Key is the key in the ConfigMap being referenced
                             type: string
+                          labels:
+                            additionalProperties:
+                              type: string
+                            description: Labels is an optional set of labels to apply
+                              to the ConfigMap.
+                            type: object
                           name:
                             description: |-
                               Name is the name of the Kubernetes ConfigMap to write to.
@@ -191,6 +216,12 @@ spec:
                         be a secret or a configmap. The value of the expression is stored at the specified location in
                         the destination.
                       properties:
+                        annotations:
+                          additionalProperties:
+                            type: string
+                          description: Annotations is an optional set of annotations
+                            to apply to the destination resource.
+                          type: object
                         key:
                           description: |-
                             Key is the key in the ConfigMap or Secret being written to. If the CEL expression in Value returns a string
@@ -198,6 +229,12 @@ spec:
                             Key must not be set, instead the keys written will be determined dynamically based on the keys of the resulting
                             map[string]string.
                           type: string
+                        labels:
+                          additionalProperties:
+                            type: string
+                          description: Labels is an optional set of labels to apply
+                            to the destination resource.
+                          type: object
                         name:
                           description: |-
                             Name is the name of the Kubernetes configmap or secret to write to.
@@ -766,6 +803,12 @@ spec:
                         be a secret or a configmap. The value of the expression is stored at the specified location in
                         the destination.
                       properties:
+                        annotations:
+                          additionalProperties:
+                            type: string
+                          description: Annotations is an optional set of annotations
+                            to apply to the destination resource.
+                          type: object
                         key:
                           description: |-
                             Key is the key in the ConfigMap or Secret being written to. If the CEL expression in Value returns a string
@@ -773,6 +816,12 @@ spec:
                             Key must not be set, instead the keys written will be determined dynamically based on the keys of the resulting
                             map[string]string.
                           type: string
+                        labels:
+                          additionalProperties:
+                            type: string
+                          description: Labels is an optional set of labels to apply
+                            to the destination resource.
+                          type: object
                         name:
                           description: |-
                             Name is the name of the Kubernetes configmap or secret to write to.
@@ -804,9 +853,21 @@ spec:
                           Note: This is similar to: SecretDestination in secrets.go.
                           Changes to one may need to be made to the others as well.
                         properties:
+                          annotations:
+                            additionalProperties:
+                              type: string
+                            description: Annotations is an optional set of annotations
+                              to apply to the ConfigMap.
+                            type: object
                           key:
                             description: Key is the key in the ConfigMap being referenced
                             type: string
+                          labels:
+                            additionalProperties:
+                              type: string
+                            description: Labels is an optional set of labels to apply
+                              to the ConfigMap.
+                            type: object
                           name:
                             description: |-
                               Name is the name of the Kubernetes ConfigMap to write to.
@@ -824,6 +885,12 @@ spec:
                         be a secret or a configmap. The value of the expression is stored at the specified location in
                         the destination.
                       properties:
+                        annotations:
+                          additionalProperties:
+                            type: string
+                          description: Annotations is an optional set of annotations
+                            to apply to the destination resource.
+                          type: object
                         key:
                           description: |-
                             Key is the key in the ConfigMap or Secret being written to. If the CEL expression in Value returns a string
@@ -831,6 +898,12 @@ spec:
                             Key must not be set, instead the keys written will be determined dynamically based on the keys of the resulting
                             map[string]string.
                           type: string
+                        labels:
+                          additionalProperties:
+                            type: string
+                          description: Labels is an optional set of labels to apply
+                            to the destination resource.
+                          type: object
                         name:
                           description: |-
                             Name is the name of the Kubernetes configmap or secret to write to.
@@ -1405,6 +1478,12 @@ spec:
                         be a secret or a configmap. The value of the expression is stored at the specified location in
                         the destination.
                       properties:
+                        annotations:
+                          additionalProperties:
+                            type: string
+                          description: Annotations is an optional set of annotations
+                            to apply to the destination resource.
+                          type: object
                         key:
                           description: |-
                             Key is the key in the ConfigMap or Secret being written to. If the CEL expression in Value returns a string
@@ -1412,6 +1491,12 @@ spec:
                             Key must not be set, instead the keys written will be determined dynamically based on the keys of the resulting
                             map[string]string.
                           type: string
+                        labels:
+                          additionalProperties:
+                            type: string
+                          description: Labels is an optional set of labels to apply
+                            to the destination resource.
+                          type: object
                         name:
                           description: |-
                             Name is the name of the Kubernetes configmap or secret to write to.
@@ -1436,9 +1521,21 @@ spec:
                           config map should be placed. If omitted, no config map will
                           be created.'
                         properties:
+                          annotations:
+                            additionalProperties:
+                              type: string
+                            description: Annotations is an optional set of annotations
+                              to apply to the ConfigMap.
+                            type: object
                           key:
                             description: Key is the key in the ConfigMap being referenced
                             type: string
+                          labels:
+                            additionalProperties:
+                              type: string
+                            description: Labels is an optional set of labels to apply
+                              to the ConfigMap.
+                            type: object
                           name:
                             description: |-
                               Name is the name of the Kubernetes ConfigMap to write to.
@@ -1458,6 +1555,12 @@ spec:
                         be a secret or a configmap. The value of the expression is stored at the specified location in
                         the destination.
                       properties:
+                        annotations:
+                          additionalProperties:
+                            type: string
+                          description: Annotations is an optional set of annotations
+                            to apply to the destination resource.
+                          type: object
                         key:
                           description: |-
                             Key is the key in the ConfigMap or Secret being written to. If the CEL expression in Value returns a string
@@ -1465,6 +1568,12 @@ spec:
                             Key must not be set, instead the keys written will be determined dynamically based on the keys of the resulting
                             map[string]string.
                           type: string
+                        labels:
+                          additionalProperties:
+                            type: string
+                          description: Labels is an optional set of labels to apply
+                            to the destination resource.
+                          type: object
                         name:
                           description: |-
                             Name is the name of the Kubernetes configmap or secret to write to.
@@ -1502,7 +1611,7 @@ spec:
                     type: string
                 type: object
               plan:
-                description: 'Plan: The plan information.'
+                description: 'Plan: Details of the resource plan.'
                 properties:
                   name:
                     description: 'Name: A user defined name of the 3rd Party Artifact
@@ -1558,44 +1667,35 @@ spec:
                         type: string
                     type: object
                 type: object
-              systemData:
-                description: |-
-                  SystemData: Top level metadata
-                  https://github.com/Azure/azure-resource-manager-rpc/blob/master/v1.0/common-api-contracts.md#system-metadata-for-all-azure-resources
-                properties:
-                  createdAt:
-                    description: 'CreatedAt: The timestamp of resource creation (UTC).'
-                    type: string
-                  createdBy:
-                    description: 'CreatedBy: The identity that created the resource.'
-                    type: string
-                  createdByType:
-                    description: 'CreatedByType: The type of identity that created
-                      the resource.'
-                    enum:
-                    - Application
-                    - Key
-                    - ManagedIdentity
-                    - User
-                    type: string
-                  lastModifiedAt:
-                    description: 'LastModifiedAt: The timestamp of resource last modification
-                      (UTC)'
-                    type: string
-                  lastModifiedBy:
-                    description: 'LastModifiedBy: The identity that last modified
-                      the resource.'
-                    type: string
-                  lastModifiedByType:
-                    description: 'LastModifiedByType: The type of identity that last
-                      modified the resource.'
-                    enum:
-                    - Application
-                    - Key
-                    - ManagedIdentity
-                    - User
-                    type: string
-                type: object
+              statuses:
+                description: 'Statuses: Status from this extension.'
+                items:
+                  description: Status from the extension.
+                  properties:
+                    code:
+                      description: 'Code: Status code provided by the Extension'
+                      type: string
+                    displayStatus:
+                      description: 'DisplayStatus: Short description of status of
+                        the extension.'
+                      type: string
+                    level:
+                      description: 'Level: Level of the status.'
+                      enum:
+                      - Error
+                      - Information
+                      - Warning
+                      type: string
+                    message:
+                      description: 'Message: Detailed message of the status from the
+                        Extension.'
+                      type: string
+                    time:
+                      description: 'Time: DateLiteral (per ISO8601) noting the time
+                        of installation status.'
+                      type: string
+                  type: object
+                type: array
               version:
                 description: |-
                   Version: User-specified version of the extension for this extension to 'pin'. To use 'version', autoUpgradeMinorVersion
@@ -1788,7 +1888,7 @@ spec:
                 description: 'PackageUri: Uri of the Helm package'
                 type: string
               plan:
-                description: 'Plan: The plan information.'
+                description: 'Plan: Details of the resource plan.'
                 properties:
                   name:
                     description: 'Name: A user defined name of the 3rd Party Artifact
@@ -1811,6 +1911,9 @@ spec:
                     description: 'Version: The version of the desired product/artifact.'
                     type: string
                 type: object
+              provisioningState:
+                description: 'ProvisioningState: Status of installation of this extension.'
+                type: string
               releaseTrain:
                 description: |-
                   ReleaseTrain: ReleaseTrain this extension participates in for auto-upgrade (e.g. Stable, Preview, etc.) - only if
@@ -1866,9 +1969,8 @@ spec:
                   type: object
                 type: array
               systemData:
-                description: |-
-                  SystemData: Top level metadata
-                  https://github.com/Azure/azure-resource-manager-rpc/blob/master/v1.0/common-api-contracts.md#system-metadata-for-all-azure-resources
+                description: 'SystemData: Azure Resource Manager metadata containing
+                  createdBy and modifiedBy information.'
                 properties:
                   createdAt:
                     description: 'CreatedAt: The timestamp of resource creation (UTC).'
@@ -1958,7 +2060,9 @@ spec:
                   resources, allowing for full fidelity round trip conversions
                 type: object
               aksAssignedIdentity:
-                description: Storage version of v1api20241101.Extension_Properties_AksAssignedIdentity_Spec
+                description: |-
+                  Storage version of v1api20241101.ExtensionPropertiesAksAssignedIdentity
+                  Identity of the Extension resource in an AKS cluster
                 properties:
                   $propertyBag:
                     additionalProperties:
@@ -2030,6 +2134,12 @@ spec:
                         be a secret or a configmap. The value of the expression is stored at the specified location in
                         the destination.
                       properties:
+                        annotations:
+                          additionalProperties:
+                            type: string
+                          description: Annotations is an optional set of annotations
+                            to apply to the destination resource.
+                          type: object
                         key:
                           description: |-
                             Key is the key in the ConfigMap or Secret being written to. If the CEL expression in Value returns a string
@@ -2037,6 +2147,12 @@ spec:
                             Key must not be set, instead the keys written will be determined dynamically based on the keys of the resulting
                             map[string]string.
                           type: string
+                        labels:
+                          additionalProperties:
+                            type: string
+                          description: Labels is an optional set of labels to apply
+                            to the destination resource.
+                          type: object
                         name:
                           description: |-
                             Name is the name of the Kubernetes configmap or secret to write to.
@@ -2068,9 +2184,21 @@ spec:
                           Note: This is similar to: SecretDestination in secrets.go.
                           Changes to one may need to be made to the others as well.
                         properties:
+                          annotations:
+                            additionalProperties:
+                              type: string
+                            description: Annotations is an optional set of annotations
+                              to apply to the ConfigMap.
+                            type: object
                           key:
                             description: Key is the key in the ConfigMap being referenced
                             type: string
+                          labels:
+                            additionalProperties:
+                              type: string
+                            description: Labels is an optional set of labels to apply
+                              to the ConfigMap.
+                            type: object
                           name:
                             description: |-
                               Name is the name of the Kubernetes ConfigMap to write to.
@@ -2088,6 +2216,12 @@ spec:
                         be a secret or a configmap. The value of the expression is stored at the specified location in
                         the destination.
                       properties:
+                        annotations:
+                          additionalProperties:
+                            type: string
+                          description: Annotations is an optional set of annotations
+                            to apply to the destination resource.
+                          type: object
                         key:
                           description: |-
                             Key is the key in the ConfigMap or Secret being written to. If the CEL expression in Value returns a string
@@ -2095,6 +2229,12 @@ spec:
                             Key must not be set, instead the keys written will be determined dynamically based on the keys of the resulting
                             map[string]string.
                           type: string
+                        labels:
+                          additionalProperties:
+                            type: string
+                          description: Labels is an optional set of labels to apply
+                            to the destination resource.
+                          type: object
                         name:
                           description: |-
                             Name is the name of the Kubernetes configmap or secret to write to.
@@ -2201,31 +2341,31 @@ spec:
                         type: string
                     type: object
                 type: object
-              systemData:
-                description: |-
-                  Storage version of v1api20241101.SystemData
-                  Metadata pertaining to creation and last modification of the resource.
-                properties:
-                  $propertyBag:
-                    additionalProperties:
+              statuses:
+                items:
+                  description: |-
+                    Storage version of v1api20241101.ExtensionStatus
+                    Status from the extension.
+                  properties:
+                    $propertyBag:
+                      additionalProperties:
+                        type: string
+                      description: |-
+                        PropertyBag is an unordered set of stashed information that used for properties not directly supported by storage
+                        resources, allowing for full fidelity round trip conversions
+                      type: object
+                    code:
                       type: string
-                    description: |-
-                      PropertyBag is an unordered set of stashed information that used for properties not directly supported by storage
-                      resources, allowing for full fidelity round trip conversions
-                    type: object
-                  createdAt:
-                    type: string
-                  createdBy:
-                    type: string
-                  createdByType:
-                    type: string
-                  lastModifiedAt:
-                    type: string
-                  lastModifiedBy:
-                    type: string
-                  lastModifiedByType:
-                    type: string
-                type: object
+                    displayStatus:
+                      type: string
+                    level:
+                      type: string
+                    message:
+                      type: string
+                    time:
+                      type: string
+                  type: object
+                type: array
               version:
                 type: string
             required:
@@ -2244,7 +2384,9 @@ spec:
                   resources, allowing for full fidelity round trip conversions
                 type: object
               aksAssignedIdentity:
-                description: Storage version of v1api20241101.Extension_Properties_AksAssignedIdentity_STATUS
+                description: |-
+                  Storage version of v1api20241101.ExtensionPropertiesAksAssignedIdentity_STATUS
+                  Identity of the Extension resource in an AKS cluster
                 properties:
                   $propertyBag:
                     additionalProperties:
@@ -2455,6 +2597,8 @@ spec:
                   version:
                     type: string
                 type: object
+              provisioningState:
+                type: string
               releaseTrain:
                 type: string
               scope:

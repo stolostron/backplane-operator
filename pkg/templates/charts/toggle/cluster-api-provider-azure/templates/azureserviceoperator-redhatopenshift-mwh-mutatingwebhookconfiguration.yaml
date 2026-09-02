@@ -1,0 +1,91 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  annotations:
+    service.beta.openshift.io/inject-cabundle: 'true'
+  name: azureserviceoperator-redhatopenshift-mwh
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /mutate-redhatopenshift-azure-com-v1api20231122-openshiftcluster
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20231122.openshiftclusters.redhatopenshift.azure.com
+  rules:
+  - apiGroups:
+    - redhatopenshift.azure.com
+    apiVersions:
+    - v1api20231122
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - openshiftclusters
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /mutate-redhatopenshift-azure-com-v1api20260630preview-hcpopenshiftcluster
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20260630preview.hcpopenshiftclusters.redhatopenshift.azure.com
+  rules:
+  - apiGroups:
+    - redhatopenshift.azure.com
+    apiVersions:
+    - v1api20260630preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - hcpopenshiftclusters
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /mutate-redhatopenshift-azure-com-v1api20260630preview-hcpopenshiftclustersexternalauth
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20260630preview.hcpopenshiftclustersexternalauths.redhatopenshift.azure.com
+  rules:
+  - apiGroups:
+    - redhatopenshift.azure.com
+    apiVersions:
+    - v1api20260630preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - hcpopenshiftclustersexternalauths
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /mutate-redhatopenshift-azure-com-v1api20260630preview-hcpopenshiftclustersnodepool
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20260630preview.hcpopenshiftclustersnodepools.redhatopenshift.azure.com
+  rules:
+  - apiGroups:
+    - redhatopenshift.azure.com
+    apiVersions:
+    - v1api20260630preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - hcpopenshiftclustersnodepools
+  sideEffects: None

@@ -28,6 +28,14 @@ rules:
   - update
   - watch
 - apiGroups:
+  - ''
+  resources:
+  - namespaces
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - alertsmanagement.azure.com
   resources:
   - prometheusrulegroups
@@ -54,20 +62,32 @@ rules:
 - apiGroups:
   - apimanagement.azure.com
   resources:
+  - apidiagnostics
+  - apipolicies
   - apis
   - apiversionsets
   - authorizationproviders
   - authorizationprovidersauthorizations
   - authorizationprovidersauthorizationsaccesspolicies
   - backends
+  - certificates
+  - diagnostics
+  - groups
+  - loggers
   - namedvalues
   - policies
   - policyfragments
   - productapis
+  - productgroups
   - productpolicies
   - products
+  - servicegatewayapis
+  - servicegatewaycertificateauthorities
+  - servicegatewayhostnameconfigurations
+  - servicegateways
   - services
   - subscriptions
+  - users
   verbs:
   - create
   - delete
@@ -79,6 +99,10 @@ rules:
 - apiGroups:
   - apimanagement.azure.com
   resources:
+  - apidiagnostics/finalizers
+  - apidiagnostics/status
+  - apipolicies/finalizers
+  - apipolicies/status
   - apis/finalizers
   - apis/status
   - apiversionsets/finalizers
@@ -91,6 +115,14 @@ rules:
   - authorizationprovidersauthorizationsaccesspolicies/status
   - backends/finalizers
   - backends/status
+  - certificates/finalizers
+  - certificates/status
+  - diagnostics/finalizers
+  - diagnostics/status
+  - groups/finalizers
+  - groups/status
+  - loggers/finalizers
+  - loggers/status
   - namedvalues/finalizers
   - namedvalues/status
   - policies/finalizers
@@ -99,14 +131,26 @@ rules:
   - policyfragments/status
   - productapis/finalizers
   - productapis/status
+  - productgroups/finalizers
+  - productgroups/status
   - productpolicies/finalizers
   - productpolicies/status
   - products/finalizers
   - products/status
+  - servicegatewayapis/finalizers
+  - servicegatewayapis/status
+  - servicegatewaycertificateauthorities/finalizers
+  - servicegatewaycertificateauthorities/status
+  - servicegatewayhostnameconfigurations/finalizers
+  - servicegatewayhostnameconfigurations/status
+  - servicegateways/finalizers
+  - servicegateways/status
   - services/finalizers
   - services/status
   - subscriptions/finalizers
   - subscriptions/status
+  - users/finalizers
+  - users/status
   verbs:
   - get
   - patch
@@ -145,6 +189,9 @@ rules:
   - appconfiguration.azure.com
   resources:
   - configurationstores
+  - keyvalues
+  - replicas
+  - snapshots
   verbs:
   - create
   - delete
@@ -158,6 +205,12 @@ rules:
   resources:
   - configurationstores/finalizers
   - configurationstores/status
+  - keyvalues/finalizers
+  - keyvalues/status
+  - replicas/finalizers
+  - replicas/status
+  - snapshots/finalizers
+  - snapshots/status
   verbs:
   - get
   - patch
@@ -211,6 +264,9 @@ rules:
   - cache.azure.com
   resources:
   - redis
+  - redisaccesspolicies
+  - redisaccesspolicyassignments
+  - redisenterprisedatabaseaccesspolicyassignments
   - redisenterprisedatabases
   - redisenterprises
   - redisfirewallrules
@@ -229,6 +285,12 @@ rules:
   resources:
   - redis/finalizers
   - redis/status
+  - redisaccesspolicies/finalizers
+  - redisaccesspolicies/status
+  - redisaccesspolicyassignments/finalizers
+  - redisaccesspolicyassignments/status
+  - redisenterprisedatabaseaccesspolicyassignments/finalizers
+  - redisenterprisedatabaseaccesspolicyassignments/status
   - redisenterprisedatabases/finalizers
   - redisenterprisedatabases/status
   - redisenterprises/finalizers
@@ -295,8 +357,68 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cognitiveservices.azure.com
+  resources:
+  - accounts
+  - deployments
+  - projects
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cognitiveservices.azure.com
+  resources:
+  - accounts/finalizers
+  - accounts/status
+  - deployments/finalizers
+  - deployments/status
+  - projects/finalizers
+  - projects/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - communication.azure.com
+  resources:
+  - communicationservices
+  - domains
+  - emailservices
+  - senderusernames
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - communication.azure.com
+  resources:
+  - communicationservices/finalizers
+  - communicationservices/status
+  - domains/finalizers
+  - domains/status
+  - emailservices/finalizers
+  - emailservices/status
+  - senderusernames/finalizers
+  - senderusernames/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
   - compute.azure.com
   resources:
+  - availabilitysets
+  - capacityreservationgroups
+  - capacityreservations
   - diskaccesses
   - diskencryptionsets
   - disks
@@ -317,6 +439,12 @@ rules:
 - apiGroups:
   - compute.azure.com
   resources:
+  - availabilitysets/finalizers
+  - availabilitysets/status
+  - capacityreservationgroups/finalizers
+  - capacityreservationgroups/status
+  - capacityreservations/finalizers
+  - capacityreservations/status
   - diskaccesses/finalizers
   - diskaccesses/status
   - diskencryptionsets/finalizers
@@ -388,8 +516,10 @@ rules:
   - containerservice.azure.com
   resources:
   - fleets
+  - fleetsautoupgradeprofiles
   - fleetsmembers
   - fleetsupdateruns
+  - fleetsupdatestrategies
   - maintenanceconfigurations
   - managedclusters
   - managedclustersagentpools
@@ -407,10 +537,14 @@ rules:
   resources:
   - fleets/finalizers
   - fleets/status
+  - fleetsautoupgradeprofiles/finalizers
+  - fleetsautoupgradeprofiles/status
   - fleetsmembers/finalizers
   - fleetsmembers/status
   - fleetsupdateruns/finalizers
   - fleetsupdateruns/status
+  - fleetsupdatestrategies/finalizers
+  - fleetsupdatestrategies/status
   - maintenanceconfigurations/finalizers
   - maintenanceconfigurations/status
   - managedclusters/finalizers
@@ -435,6 +569,33 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - databasewatcher.azure.com
+  resources:
+  - sharedprivatelinks
+  - targets
+  - watchers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - databasewatcher.azure.com
+  resources:
+  - sharedprivatelinks/finalizers
+  - sharedprivatelinks/status
+  - targets/finalizers
+  - targets/status
+  - watchers/finalizers
+  - watchers/status
+  verbs:
+  - get
+  - patch
+  - update
 - apiGroups:
   - datafactory.azure.com
   resources:
@@ -550,6 +711,7 @@ rules:
   - dbforpostgresql.azure.com
   resources:
   - flexibleservers
+  - flexibleserversadministrators
   - flexibleserversadvancedthreatprotectionsettings
   - flexibleserversbackups
   - flexibleserversconfigurations
@@ -570,6 +732,8 @@ rules:
   resources:
   - flexibleservers/finalizers
   - flexibleservers/status
+  - flexibleserversadministrators/finalizers
+  - flexibleserversadministrators/status
   - flexibleserversadvancedthreatprotectionsettings/finalizers
   - flexibleserversadvancedthreatprotectionsettings/status
   - flexibleserversbackups/finalizers
@@ -612,11 +776,16 @@ rules:
 - apiGroups:
   - documentdb.azure.com
   resources:
+  - cassandraclusters
+  - cassandradatacenters
   - databaseaccounts
+  - firewallrules
+  - mongoclusters
   - mongodbdatabasecollections
   - mongodbdatabasecollectionthroughputsettings
   - mongodbdatabases
   - mongodbdatabasethroughputsettings
+  - mongodbroledefinitions
   - mongodbuserdefinitions
   - sqldatabasecontainers
   - sqldatabasecontainerstoredprocedures
@@ -637,8 +806,16 @@ rules:
 - apiGroups:
   - documentdb.azure.com
   resources:
+  - cassandraclusters/finalizers
+  - cassandraclusters/status
+  - cassandradatacenters/finalizers
+  - cassandradatacenters/status
   - databaseaccounts/finalizers
   - databaseaccounts/status
+  - firewallrules/finalizers
+  - firewallrules/status
+  - mongoclusters/finalizers
+  - mongoclusters/status
   - mongodbdatabasecollections/finalizers
   - mongodbdatabasecollections/status
   - mongodbdatabasecollectionthroughputsettings/finalizers
@@ -647,6 +824,8 @@ rules:
   - mongodbdatabases/status
   - mongodbdatabasethroughputsettings/finalizers
   - mongodbdatabasethroughputsettings/status
+  - mongodbroledefinitions/finalizers
+  - mongodbroledefinitions/status
   - mongodbuserdefinitions/finalizers
   - mongodbuserdefinitions/status
   - sqldatabasecontainers/finalizers
@@ -665,6 +844,27 @@ rules:
   - sqldatabasethroughputsettings/status
   - sqlroleassignments/finalizers
   - sqlroleassignments/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - entra.azure.com
+  resources:
+  - securitygroups
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - entra.azure.com
+  resources:
+  - securitygroups/status
+  - users/finalizers
   verbs:
   - get
   - patch
@@ -736,12 +936,18 @@ rules:
   - insights.azure.com
   resources:
   - actiongroups
+  - activitylogalerts
   - autoscalesettings
   - components
+  - datacollectionendpoints
+  - datacollectionruleassociations
+  - datacollectionrules
   - diagnosticsettings
   - metricalerts
+  - pricingplans
   - scheduledqueryrules
   - webtests
+  - workbooks
   verbs:
   - create
   - delete
@@ -755,18 +961,30 @@ rules:
   resources:
   - actiongroups/finalizers
   - actiongroups/status
+  - activitylogalerts/finalizers
+  - activitylogalerts/status
   - autoscalesettings/finalizers
   - autoscalesettings/status
   - components/finalizers
   - components/status
+  - datacollectionendpoints/finalizers
+  - datacollectionendpoints/status
+  - datacollectionruleassociations/finalizers
+  - datacollectionruleassociations/status
+  - datacollectionrules/finalizers
+  - datacollectionrules/status
   - diagnosticsettings/finalizers
   - diagnosticsettings/status
   - metricalerts/finalizers
   - metricalerts/status
+  - pricingplans/finalizers
+  - pricingplans/status
   - scheduledqueryrules/finalizers
   - scheduledqueryrules/status
   - webtests/finalizers
   - webtests/status
+  - workbooks/finalizers
+  - workbooks/status
   verbs:
   - get
   - patch
@@ -819,9 +1037,11 @@ rules:
 - apiGroups:
   - kusto.azure.com
   resources:
+  - clusterprincipalassignments
   - clusters
   - databases
   - dataconnections
+  - principalassignments
   verbs:
   - create
   - delete
@@ -833,12 +1053,16 @@ rules:
 - apiGroups:
   - kusto.azure.com
   resources:
+  - clusterprincipalassignments/finalizers
+  - clusterprincipalassignments/status
   - clusters/finalizers
   - clusters/status
   - databases/finalizers
   - databases/status
   - dataconnections/finalizers
   - dataconnections/status
+  - principalassignments/finalizers
+  - principalassignments/status
   verbs:
   - get
   - patch
@@ -923,7 +1147,9 @@ rules:
   resources:
   - applicationgateways
   - applicationsecuritygroups
+  - azurefirewalls
   - bastionhosts
+  - ddosprotectionplans
   - dnsforwardingrulesets
   - dnsforwardingrulesetsforwardingrules
   - dnsforwardingrulesetsvirtualnetworklinks
@@ -940,12 +1166,16 @@ rules:
   - dnszonesptrrecords
   - dnszonessrvrecords
   - dnszonestxtrecords
+  - firewallpolicies
+  - firewallpoliciesrulecollectiongroups
   - loadbalancers
   - loadbalancersinboundnatrules
   - natgateways
   - networkinterfaces
   - networksecuritygroups
   - networksecuritygroupssecurityrules
+  - networkwatchers
+  - networkwatchersflowlogs
   - privatednszones
   - privatednszonesaaaarecords
   - privatednszonesarecords
@@ -986,8 +1216,12 @@ rules:
   - applicationgateways/status
   - applicationsecuritygroups/finalizers
   - applicationsecuritygroups/status
+  - azurefirewalls/finalizers
+  - azurefirewalls/status
   - bastionhosts/finalizers
   - bastionhosts/status
+  - ddosprotectionplans/finalizers
+  - ddosprotectionplans/status
   - dnsforwardingrulesets/finalizers
   - dnsforwardingrulesets/status
   - dnsforwardingrulesetsforwardingrules/finalizers
@@ -1020,6 +1254,10 @@ rules:
   - dnszonessrvrecords/status
   - dnszonestxtrecords/finalizers
   - dnszonestxtrecords/status
+  - firewallpolicies/finalizers
+  - firewallpolicies/status
+  - firewallpoliciesrulecollectiongroups/finalizers
+  - firewallpoliciesrulecollectiongroups/status
   - loadbalancers/finalizers
   - loadbalancers/status
   - loadbalancersinboundnatrules/finalizers
@@ -1032,6 +1270,10 @@ rules:
   - networksecuritygroups/status
   - networksecuritygroupssecurityrules/finalizers
   - networksecuritygroupssecurityrules/status
+  - networkwatchers/finalizers
+  - networkwatchers/status
+  - networkwatchersflowlogs/finalizers
+  - networkwatchersflowlogs/status
   - privatednszones/finalizers
   - privatednszones/status
   - privatednszonesaaaarecords/finalizers
@@ -1154,6 +1396,27 @@ rules:
   resources:
   - workspaces/finalizers
   - workspaces/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - quota.azure.com
+  resources:
+  - quotas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - quota.azure.com
+  resources:
+  - quotas/finalizers
+  - quotas/status
   verbs:
   - get
   - patch
@@ -1317,9 +1580,11 @@ rules:
   - serversdatabasestransparentdataencryptions
   - serversdatabasesvulnerabilityassessments
   - serverselasticpools
+  - serversencryptionprotectors
   - serversfailovergroups
   - serversfirewallrules
   - serversipv6firewallrules
+  - serverskeys
   - serversoutboundfirewallrules
   - serverssecurityalertpolicies
   - serversvirtualnetworkrules
@@ -1366,12 +1631,16 @@ rules:
   - serversdatabasesvulnerabilityassessments/status
   - serverselasticpools/finalizers
   - serverselasticpools/status
+  - serversencryptionprotectors/finalizers
+  - serversencryptionprotectors/status
   - serversfailovergroups/finalizers
   - serversfailovergroups/status
   - serversfirewallrules/finalizers
   - serversfirewallrules/status
   - serversipv6firewallrules/finalizers
   - serversipv6firewallrules/status
+  - serverskeys/finalizers
+  - serverskeys/status
   - serversoutboundfirewallrules/finalizers
   - serversoutboundfirewallrules/status
   - serverssecurityalertpolicies/finalizers

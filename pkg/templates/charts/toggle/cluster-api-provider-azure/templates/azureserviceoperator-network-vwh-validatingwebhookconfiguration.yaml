@@ -1,0 +1,2191 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+    service.beta.openshift.io/inject-cabundle: 'true'
+  name: azureserviceoperator-network-vwh
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20180501-dnszone
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20180501.dnszones.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20180501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - dnszones
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20180501-dnszonesaaaarecord
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20180501.dnszonesaaaarecords.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20180501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - dnszonesaaaarecords
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20180501-dnszonesarecord
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20180501.dnszonesarecords.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20180501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - dnszonesarecords
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20180501-dnszonescaarecord
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20180501.dnszonescaarecords.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20180501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - dnszonescaarecords
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20180501-dnszonescnamerecord
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20180501.dnszonescnamerecords.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20180501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - dnszonescnamerecords
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20180501-dnszonesmxrecord
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20180501.dnszonesmxrecords.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20180501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - dnszonesmxrecords
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20180501-dnszonesnsrecord
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20180501.dnszonesnsrecords.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20180501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - dnszonesnsrecords
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20180501-dnszonesptrrecord
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20180501.dnszonesptrrecords.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20180501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - dnszonesptrrecords
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20180501-dnszonessrvrecord
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20180501.dnszonessrvrecords.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20180501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - dnszonessrvrecords
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20180501-dnszonestxtrecord
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20180501.dnszonestxtrecords.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20180501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - dnszonestxtrecords
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20180901-privatednszone
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20180901.privatednszones.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20180901
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - privatednszones
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20200601-privatednszonesaaaarecord
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20200601.privatednszonesaaaarecords.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20200601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - privatednszonesaaaarecords
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20200601-privatednszonesarecord
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20200601.privatednszonesarecords.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20200601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - privatednszonesarecords
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20200601-privatednszonescnamerecord
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20200601.privatednszonescnamerecords.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20200601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - privatednszonescnamerecords
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20200601-privatednszonesmxrecord
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20200601.privatednszonesmxrecords.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20200601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - privatednszonesmxrecords
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20200601-privatednszonesptrrecord
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20200601.privatednszonesptrrecords.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20200601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - privatednszonesptrrecords
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20200601-privatednszonessrvrecord
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20200601.privatednszonessrvrecords.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20200601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - privatednszonessrvrecords
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20200601-privatednszonestxtrecord
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20200601.privatednszonestxtrecords.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20200601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - privatednszonestxtrecords
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20200601-privatednszonesvirtualnetworklink
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20200601.privatednszonesvirtualnetworklinks.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20200601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - privatednszonesvirtualnetworklinks
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20201101-loadbalancer
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20201101.loadbalancers.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20201101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - loadbalancers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20201101-loadbalancersinboundnatrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20201101.loadbalancersinboundnatrules.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20201101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - loadbalancersinboundnatrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20201101-networkinterface
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20201101.networkinterfaces.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20201101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - networkinterfaces
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20201101-networksecuritygroup
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20201101.networksecuritygroups.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20201101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - networksecuritygroups
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20201101-networksecuritygroupssecurityrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20201101.networksecuritygroupssecurityrules.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20201101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - networksecuritygroupssecurityrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20201101-publicipaddress
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20201101.publicipaddresses.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20201101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - publicipaddresses
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20201101-routetable
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20201101.routetables.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20201101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - routetables
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20201101-routetablesroute
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20201101.routetablesroutes.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20201101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - routetablesroutes
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20201101-virtualnetworkgateway
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20201101.virtualnetworkgateways.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20201101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - virtualnetworkgateways
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20201101-virtualnetwork
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20201101.virtualnetworks.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20201101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - virtualnetworks
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20201101-virtualnetworkssubnet
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20201101.virtualnetworkssubnets.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20201101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - virtualnetworkssubnets
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20201101-virtualnetworksvirtualnetworkpeering
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20201101.virtualnetworksvirtualnetworkpeerings.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20201101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - virtualnetworksvirtualnetworkpeerings
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20220401-trafficmanagerprofile
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20220401.trafficmanagerprofiles.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20220401
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - trafficmanagerprofiles
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20220401-trafficmanagerprofilesazureendpoint
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20220401.trafficmanagerprofilesazureendpoints.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20220401
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - trafficmanagerprofilesazureendpoints
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20220401-trafficmanagerprofilesexternalendpoint
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20220401.trafficmanagerprofilesexternalendpoints.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20220401
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - trafficmanagerprofilesexternalendpoints
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20220401-trafficmanagerprofilesnestedendpoint
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20220401.trafficmanagerprofilesnestedendpoints.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20220401
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - trafficmanagerprofilesnestedendpoints
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20220701-applicationgateway
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20220701.applicationgateways.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20220701
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - applicationgateways
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20220701-bastionhost
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20220701.bastionhosts.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20220701
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - bastionhosts
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20220701-dnsforwardingruleset
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20220701.dnsforwardingrulesets.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20220701
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - dnsforwardingrulesets
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20220701-dnsforwardingrulesetsforwardingrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20220701.dnsforwardingrulesetsforwardingrules.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20220701
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - dnsforwardingrulesetsforwardingrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20220701-dnsforwardingrulesetsvirtualnetworklink
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20220701.dnsforwardingrulesetsvirtualnetworklinks.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20220701
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - dnsforwardingrulesetsvirtualnetworklinks
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20220701-dnsresolver
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20220701.dnsresolvers.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20220701
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - dnsresolvers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20220701-dnsresolversinboundendpoint
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20220701.dnsresolversinboundendpoints.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20220701
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - dnsresolversinboundendpoints
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20220701-dnsresolversoutboundendpoint
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20220701.dnsresolversoutboundendpoints.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20220701
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - dnsresolversoutboundendpoints
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20220701-natgateway
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20220701.natgateways.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20220701
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - natgateways
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20220701-privateendpoint
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20220701.privateendpoints.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20220701
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - privateendpoints
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20220701-privateendpointsprivatednszonegroup
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20220701.privateendpointsprivatednszonegroups.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20220701
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - privateendpointsprivatednszonegroups
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20220701-privatelinkservice
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20220701.privatelinkservices.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20220701
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - privatelinkservices
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20220701-publicipprefix
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20220701.publicipprefixes.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20220701
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - publicipprefixes
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20240101-applicationsecuritygroup
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240101.applicationsecuritygroups.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20240101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - applicationsecuritygroups
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20240101-webapplicationfirewallpolicy
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240101.webapplicationfirewallpolicies.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20240101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - webapplicationfirewallpolicies
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20240301-azurefirewall
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240301.azurefirewalls.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20240301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - azurefirewalls
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20240301-bastionhost
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240301.bastionhosts.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20240301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - bastionhosts
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20240301-firewallpolicy
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240301.firewallpolicies.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20240301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - firewallpolicies
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20240301-firewallpoliciesrulecollectiongroup
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240301.firewallpoliciesrulecollectiongroups.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20240301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - firewallpoliciesrulecollectiongroups
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20240301-loadbalancer
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240301.loadbalancers.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20240301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - loadbalancers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20240301-loadbalancersinboundnatrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240301.loadbalancersinboundnatrules.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20240301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - loadbalancersinboundnatrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20240301-natgateway
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240301.natgateways.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20240301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - natgateways
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20240301-networkinterface
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240301.networkinterfaces.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20240301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - networkinterfaces
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20240301-networksecuritygroup
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240301.networksecuritygroups.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20240301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - networksecuritygroups
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20240301-networksecuritygroupssecurityrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240301.networksecuritygroupssecurityrules.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20240301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - networksecuritygroupssecurityrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20240301-privateendpoint
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240301.privateendpoints.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20240301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - privateendpoints
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20240301-privateendpointsprivatednszonegroup
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240301.privateendpointsprivatednszonegroups.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20240301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - privateendpointsprivatednszonegroups
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20240301-privatelinkservice
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240301.privatelinkservices.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20240301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - privatelinkservices
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20240301-publicipaddress
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240301.publicipaddresses.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20240301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - publicipaddresses
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20240301-publicipprefix
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240301.publicipprefixes.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20240301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - publicipprefixes
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20240301-routetable
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240301.routetables.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20240301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - routetables
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20240301-routetablesroute
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240301.routetablesroutes.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20240301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - routetablesroutes
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20240301-virtualnetworkgateway
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240301.virtualnetworkgateways.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20240301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - virtualnetworkgateways
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20240301-virtualnetwork
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240301.virtualnetworks.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20240301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - virtualnetworks
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20240301-virtualnetworkssubnet
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240301.virtualnetworkssubnets.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20240301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - virtualnetworkssubnets
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20240301-virtualnetworksvirtualnetworkpeering
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240301.virtualnetworksvirtualnetworkpeerings.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20240301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - virtualnetworksvirtualnetworkpeerings
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20240601-privatednszone
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240601.privatednszones.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20240601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - privatednszones
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20240601-privatednszonesaaaarecord
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240601.privatednszonesaaaarecords.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20240601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - privatednszonesaaaarecords
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20240601-privatednszonesarecord
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240601.privatednszonesarecords.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20240601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - privatednszonesarecords
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20240601-privatednszonescnamerecord
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240601.privatednszonescnamerecords.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20240601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - privatednszonescnamerecords
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20240601-privatednszonesmxrecord
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240601.privatednszonesmxrecords.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20240601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - privatednszonesmxrecords
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20240601-privatednszonesptrrecord
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240601.privatednszonesptrrecords.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20240601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - privatednszonesptrrecords
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20240601-privatednszonessrvrecord
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240601.privatednszonessrvrecords.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20240601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - privatednszonessrvrecords
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20240601-privatednszonestxtrecord
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240601.privatednszonestxtrecords.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20240601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - privatednszonestxtrecords
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20240601-privatednszonesvirtualnetworklink
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240601.privatednszonesvirtualnetworklinks.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20240601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - privatednszonesvirtualnetworklinks
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20241001-networkwatcher
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20241001.networkwatchers.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20241001
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - networkwatchers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v1api20241001-networkwatchersflowlog
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20241001.networkwatchersflowlogs.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v1api20241001
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - networkwatchersflowlogs
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v20250301-azurefirewall
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250301.azurefirewalls.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v20250301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - azurefirewalls
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v20250301-bastionhost
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250301.bastionhosts.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v20250301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - bastionhosts
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v20250301-ddosprotectionplan
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250301.ddosprotectionplans.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v20250301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - ddosprotectionplans
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v20250301-firewallpolicy
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250301.firewallpolicies.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v20250301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - firewallpolicies
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v20250301-firewallpoliciesrulecollectiongroup
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250301.firewallpoliciesrulecollectiongroups.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v20250301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - firewallpoliciesrulecollectiongroups
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v20250301-loadbalancer
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250301.loadbalancers.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v20250301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - loadbalancers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v20250301-loadbalancersinboundnatrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250301.loadbalancersinboundnatrules.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v20250301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - loadbalancersinboundnatrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v20250301-natgateway
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250301.natgateways.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v20250301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - natgateways
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v20250301-networkinterface
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250301.networkinterfaces.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v20250301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - networkinterfaces
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v20250301-networksecuritygroup
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250301.networksecuritygroups.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v20250301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - networksecuritygroups
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v20250301-networksecuritygroupssecurityrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250301.networksecuritygroupssecurityrules.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v20250301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - networksecuritygroupssecurityrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v20250301-privateendpoint
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250301.privateendpoints.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v20250301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - privateendpoints
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v20250301-privateendpointsprivatednszonegroup
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250301.privateendpointsprivatednszonegroups.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v20250301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - privateendpointsprivatednszonegroups
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v20250301-privatelinkservice
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250301.privatelinkservices.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v20250301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - privatelinkservices
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v20250301-publicipaddress
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250301.publicipaddresses.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v20250301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - publicipaddresses
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v20250301-publicipprefix
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250301.publicipprefixes.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v20250301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - publicipprefixes
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v20250301-routetable
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250301.routetables.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v20250301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - routetables
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v20250301-routetablesroute
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250301.routetablesroutes.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v20250301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - routetablesroutes
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v20250301-virtualnetworkgateway
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250301.virtualnetworkgateways.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v20250301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - virtualnetworkgateways
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v20250301-virtualnetwork
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250301.virtualnetworks.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v20250301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - virtualnetworks
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v20250301-virtualnetworkssubnet
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250301.virtualnetworkssubnets.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v20250301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - virtualnetworkssubnets
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-network-azure-com-v20250301-virtualnetworksvirtualnetworkpeering
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250301.virtualnetworksvirtualnetworkpeerings.network.azure.com
+  rules:
+  - apiGroups:
+    - network.azure.com
+    apiVersions:
+    - v20250301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - virtualnetworksvirtualnetworkpeerings
+  sideEffects: None

@@ -55,8 +55,7 @@ var _ = Describe("NetworkPolicy Controller", Ordered, func() {
 				Name:      networkPolicyName,
 				Namespace: targetNS,
 				Labels: map[string]string{
-					"installer.name":      mceName,
-					"installer.namespace": targetNS,
+					"backplaneconfig.name": mceName,
 				},
 			},
 			Spec: networkingv1.NetworkPolicySpec{
@@ -137,8 +136,7 @@ var _ = Describe("NetworkPolicy Controller", Ordered, func() {
 				err := k8sClient.List(ctx, npList,
 					client.InNamespace(targetNS),
 					client.MatchingLabels{
-						"installer.name":      mceName,
-						"installer.namespace": targetNS,
+						"backplaneconfig.name": mceName,
 					})
 				if err != nil {
 					return -1
@@ -153,7 +151,7 @@ var _ = Describe("NetworkPolicy Controller", Ordered, func() {
 			// Create NetworkPolicy for different MCE
 			otherNP := np.DeepCopy()
 			otherNP.Name = "other-mce-networkpolicy"
-			otherNP.Labels["installer.name"] = "other-mce"
+			otherNP.Labels["backplaneconfig.name"] = "other-mce"
 
 			Expect(k8sClient.Create(ctx, np)).To(Succeed())
 			Expect(k8sClient.Create(ctx, otherNP)).To(Succeed())

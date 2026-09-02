@@ -1,0 +1,196 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: capz-system/azureserviceoperator-serving-cert
+  name: azureserviceoperator-web-mwh
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-web-azure-com-v1api20220301-serverfarm
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20220301.serverfarms.web.azure.com
+  rules:
+  - apiGroups:
+    - web.azure.com
+    apiVersions:
+    - v1api20220301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serverfarms
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-web-azure-com-v1api20220301-site
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20220301.sites.web.azure.com
+  rules:
+  - apiGroups:
+    - web.azure.com
+    apiVersions:
+    - v1api20220301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - sites
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-web-azure-com-v1api20220301-sitessourcecontrol
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20220301.sitessourcecontrols.web.azure.com
+  rules:
+  - apiGroups:
+    - web.azure.com
+    apiVersions:
+    - v1api20220301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - sitessourcecontrols
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-web-azure-com-v20220301-serverfarm
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20220301.serverfarms.web.azure.com
+  rules:
+  - apiGroups:
+    - web.azure.com
+    apiVersions:
+    - v20220301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serverfarms
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-web-azure-com-v20220301-site
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20220301.sites.web.azure.com
+  rules:
+  - apiGroups:
+    - web.azure.com
+    apiVersions:
+    - v20220301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - sites
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-web-azure-com-v20220301-sitessourcecontrol
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20220301.sitessourcecontrols.web.azure.com
+  rules:
+  - apiGroups:
+    - web.azure.com
+    apiVersions:
+    - v20220301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - sitessourcecontrols
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-web-azure-com-v20250501-serverfarm
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20250501.serverfarms.web.azure.com
+  rules:
+  - apiGroups:
+    - web.azure.com
+    apiVersions:
+    - v20250501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serverfarms
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-web-azure-com-v20250501-site
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20250501.sites.web.azure.com
+  rules:
+  - apiGroups:
+    - web.azure.com
+    apiVersions:
+    - v20250501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - sites
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-web-azure-com-v20250501-sitessourcecontrol
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20250501.sitessourcecontrols.web.azure.com
+  rules:
+  - apiGroups:
+    - web.azure.com
+    apiVersions:
+    - v20250501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - sitessourcecontrols
+  sideEffects: None

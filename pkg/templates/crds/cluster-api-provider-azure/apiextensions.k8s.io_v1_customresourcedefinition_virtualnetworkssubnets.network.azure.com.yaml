@@ -6,9 +6,7 @@ metadata:
     service.beta.openshift.io/inject-cabundle: "true"
   labels:
     app.kubernetes.io/name: azure-service-operator
-    app.kubernetes.io/version: v2.13.0-hcpclusters.7
-    visualizer.cluster.x-k8s.io: ""
-    visualizer.cluster.x-k8s.io/provider-type: infrastructure
+    app.kubernetes.io/version: v2.20.0-rev.118
   name: virtualnetworkssubnets.network.azure.com
 spec:
   conversion:
@@ -24,6 +22,9 @@ spec:
       - v1
   group: network.azure.com
   names:
+    categories:
+    - azure
+    - network
     kind: VirtualNetworksSubnet
     listKind: VirtualNetworksSubnetList
     plural: virtualnetworkssubnets
@@ -49,7 +50,7 @@ spec:
       openAPIV3Schema:
         description: |-
           Generator information:
-          - Generated from: /network/resource-manager/Microsoft.Network/stable/2020-11-01/virtualNetwork.json
+          - Generated from: /network/resource-manager/Microsoft.Network/Network/stable/2020-11-01/virtualNetwork.json
           - ARM URI: /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Network/virtualNetworks/{virtualNetworkName}/subnets/{subnetName}
         properties:
           apiVersion:
@@ -220,6 +221,12 @@ spec:
                         be a secret or a configmap. The value of the expression is stored at the specified location in
                         the destination.
                       properties:
+                        annotations:
+                          additionalProperties:
+                            type: string
+                          description: Annotations is an optional set of annotations
+                            to apply to the destination resource.
+                          type: object
                         key:
                           description: |-
                             Key is the key in the ConfigMap or Secret being written to. If the CEL expression in Value returns a string
@@ -227,6 +234,12 @@ spec:
                             Key must not be set, instead the keys written will be determined dynamically based on the keys of the resulting
                             map[string]string.
                           type: string
+                        labels:
+                          additionalProperties:
+                            type: string
+                          description: Labels is an optional set of labels to apply
+                            to the destination resource.
+                          type: object
                         name:
                           description: |-
                             Name is the name of the Kubernetes configmap or secret to write to.
@@ -251,6 +264,12 @@ spec:
                         be a secret or a configmap. The value of the expression is stored at the specified location in
                         the destination.
                       properties:
+                        annotations:
+                          additionalProperties:
+                            type: string
+                          description: Annotations is an optional set of annotations
+                            to apply to the destination resource.
+                          type: object
                         key:
                           description: |-
                             Key is the key in the ConfigMap or Secret being written to. If the CEL expression in Value returns a string
@@ -258,6 +277,12 @@ spec:
                             Key must not be set, instead the keys written will be determined dynamically based on the keys of the resulting
                             map[string]string.
                           type: string
+                        labels:
+                          additionalProperties:
+                            type: string
+                          description: Labels is an optional set of labels to apply
+                            to the destination resource.
+                          type: object
                         name:
                           description: |-
                             Name is the name of the Kubernetes configmap or secret to write to.
@@ -652,7 +677,7 @@ spec:
         description: |-
           Storage version of v1api20201101.VirtualNetworksSubnet
           Generator information:
-          - Generated from: /network/resource-manager/Microsoft.Network/stable/2020-11-01/virtualNetwork.json
+          - Generated from: /network/resource-manager/Microsoft.Network/Network/stable/2020-11-01/virtualNetwork.json
           - ARM URI: /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Network/virtualNetworks/{virtualNetworkName}/subnets/{subnetName}
         properties:
           apiVersion:
@@ -867,6 +892,12 @@ spec:
                         be a secret or a configmap. The value of the expression is stored at the specified location in
                         the destination.
                       properties:
+                        annotations:
+                          additionalProperties:
+                            type: string
+                          description: Annotations is an optional set of annotations
+                            to apply to the destination resource.
+                          type: object
                         key:
                           description: |-
                             Key is the key in the ConfigMap or Secret being written to. If the CEL expression in Value returns a string
@@ -874,6 +905,12 @@ spec:
                             Key must not be set, instead the keys written will be determined dynamically based on the keys of the resulting
                             map[string]string.
                           type: string
+                        labels:
+                          additionalProperties:
+                            type: string
+                          description: Labels is an optional set of labels to apply
+                            to the destination resource.
+                          type: object
                         name:
                           description: |-
                             Name is the name of the Kubernetes configmap or secret to write to.
@@ -896,6 +933,12 @@ spec:
                         be a secret or a configmap. The value of the expression is stored at the specified location in
                         the destination.
                       properties:
+                        annotations:
+                          additionalProperties:
+                            type: string
+                          description: Annotations is an optional set of annotations
+                            to apply to the destination resource.
+                          type: object
                         key:
                           description: |-
                             Key is the key in the ConfigMap or Secret being written to. If the CEL expression in Value returns a string
@@ -903,6 +946,12 @@ spec:
                             Key must not be set, instead the keys written will be determined dynamically based on the keys of the resulting
                             map[string]string.
                           type: string
+                        labels:
+                          additionalProperties:
+                            type: string
+                          description: Labels is an optional set of labels to apply
+                            to the destination resource.
+                          type: object
                         name:
                           description: |-
                             Name is the name of the Kubernetes configmap or secret to write to.
@@ -1368,7 +1417,7 @@ spec:
       openAPIV3Schema:
         description: |-
           Generator information:
-          - Generated from: /network/resource-manager/Microsoft.Network/stable/2024-03-01/virtualNetwork.json
+          - Generated from: /network/resource-manager/Microsoft.Network/Network/stable/2024-03-01/virtualNetwork.json
           - ARM URI: /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Network/virtualNetworks/{virtualNetworkName}/subnets/{subnetName}
         properties:
           apiVersion:
@@ -1544,6 +1593,12 @@ spec:
                         be a secret or a configmap. The value of the expression is stored at the specified location in
                         the destination.
                       properties:
+                        annotations:
+                          additionalProperties:
+                            type: string
+                          description: Annotations is an optional set of annotations
+                            to apply to the destination resource.
+                          type: object
                         key:
                           description: |-
                             Key is the key in the ConfigMap or Secret being written to. If the CEL expression in Value returns a string
@@ -1551,6 +1606,12 @@ spec:
                             Key must not be set, instead the keys written will be determined dynamically based on the keys of the resulting
                             map[string]string.
                           type: string
+                        labels:
+                          additionalProperties:
+                            type: string
+                          description: Labels is an optional set of labels to apply
+                            to the destination resource.
+                          type: object
                         name:
                           description: |-
                             Name is the name of the Kubernetes configmap or secret to write to.
@@ -1575,6 +1636,12 @@ spec:
                         be a secret or a configmap. The value of the expression is stored at the specified location in
                         the destination.
                       properties:
+                        annotations:
+                          additionalProperties:
+                            type: string
+                          description: Annotations is an optional set of annotations
+                            to apply to the destination resource.
+                          type: object
                         key:
                           description: |-
                             Key is the key in the ConfigMap or Secret being written to. If the CEL expression in Value returns a string
@@ -1582,6 +1649,12 @@ spec:
                             Key must not be set, instead the keys written will be determined dynamically based on the keys of the resulting
                             map[string]string.
                           type: string
+                        labels:
+                          additionalProperties:
+                            type: string
+                          description: Labels is an optional set of labels to apply
+                            to the destination resource.
+                          type: object
                         name:
                           description: |-
                             Name is the name of the Kubernetes configmap or secret to write to.
@@ -2027,7 +2100,7 @@ spec:
         description: |-
           Storage version of v1api20240301.VirtualNetworksSubnet
           Generator information:
-          - Generated from: /network/resource-manager/Microsoft.Network/stable/2024-03-01/virtualNetwork.json
+          - Generated from: /network/resource-manager/Microsoft.Network/Network/stable/2024-03-01/virtualNetwork.json
           - ARM URI: /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Network/virtualNetworks/{virtualNetworkName}/subnets/{subnetName}
         properties:
           apiVersion:
@@ -2244,6 +2317,12 @@ spec:
                         be a secret or a configmap. The value of the expression is stored at the specified location in
                         the destination.
                       properties:
+                        annotations:
+                          additionalProperties:
+                            type: string
+                          description: Annotations is an optional set of annotations
+                            to apply to the destination resource.
+                          type: object
                         key:
                           description: |-
                             Key is the key in the ConfigMap or Secret being written to. If the CEL expression in Value returns a string
@@ -2251,6 +2330,12 @@ spec:
                             Key must not be set, instead the keys written will be determined dynamically based on the keys of the resulting
                             map[string]string.
                           type: string
+                        labels:
+                          additionalProperties:
+                            type: string
+                          description: Labels is an optional set of labels to apply
+                            to the destination resource.
+                          type: object
                         name:
                           description: |-
                             Name is the name of the Kubernetes configmap or secret to write to.
@@ -2273,6 +2358,12 @@ spec:
                         be a secret or a configmap. The value of the expression is stored at the specified location in
                         the destination.
                       properties:
+                        annotations:
+                          additionalProperties:
+                            type: string
+                          description: Annotations is an optional set of annotations
+                            to apply to the destination resource.
+                          type: object
                         key:
                           description: |-
                             Key is the key in the ConfigMap or Secret being written to. If the CEL expression in Value returns a string
@@ -2280,6 +2371,12 @@ spec:
                             Key must not be set, instead the keys written will be determined dynamically based on the keys of the resulting
                             map[string]string.
                           type: string
+                        labels:
+                          additionalProperties:
+                            type: string
+                          description: Labels is an optional set of labels to apply
+                            to the destination resource.
+                          type: object
                         name:
                           description: |-
                             Name is the name of the Kubernetes configmap or secret to write to.
@@ -2753,6 +2850,1599 @@ spec:
                     networkIdentifier:
                       description: |-
                         Storage version of v1api20240301.SubResource_STATUS
+                        Reference to another subresource.
+                      properties:
+                        $propertyBag:
+                          additionalProperties:
+                            type: string
+                          description: |-
+                            PropertyBag is an unordered set of stashed information that used for properties not directly supported by storage
+                            resources, allowing for full fidelity round trip conversions
+                          type: object
+                        id:
+                          type: string
+                      type: object
+                    provisioningState:
+                      type: string
+                    service:
+                      type: string
+                  type: object
+                type: array
+              sharingScope:
+                type: string
+              type:
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: false
+    subresources:
+      status: {}
+  - additionalPrinterColumns:
+    - jsonPath: .status.conditions[?(@.type=='Ready')].status
+      name: Ready
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Ready')].severity
+      name: Severity
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Ready')].reason
+      name: Reason
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Ready')].message
+      name: Message
+      type: string
+    name: v20250301
+    schema:
+      openAPIV3Schema:
+        description: |-
+          Generator information:
+          - Generated from: /network/resource-manager/Microsoft.Network/Network/stable/2025-03-01/virtualNetwork.json
+          - ARM URI: /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Network/virtualNetworks/{virtualNetworkName}/subnets/{subnetName}
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              addressPrefix:
+                description: 'AddressPrefix: The address prefix for the subnet.'
+                type: string
+              addressPrefixes:
+                description: 'AddressPrefixes: List of address prefixes for the subnet.'
+                items:
+                  type: string
+                type: array
+              applicationGatewayIPConfigurations:
+                description: 'ApplicationGatewayIPConfigurations: Application gateway
+                  IP configurations of virtual network resource.'
+                items:
+                  description: IP configuration of an application gateway. Currently
+                    1 public and 1 private IP configuration is allowed.
+                  properties:
+                    reference:
+                      description: 'Reference: Resource ID.'
+                      properties:
+                        armId:
+                          description: |-
+                            ARMID is a string of the form /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}.
+                            The /resourcegroups/{resourceGroupName} bit is optional as some resources are scoped at the subscription level
+                            ARMID is mutually exclusive with Group, Kind, Namespace and Name.
+                          pattern: (?i)(^(/subscriptions/([^/]+)(/resourcegroups/([^/]+))?)?/providers/([^/]+)/([^/]+/[^/]+)(/([^/]+/[^/]+))*$|^/subscriptions/([^/]+)(/resourcegroups/([^/]+))?$)
+                          type: string
+                        group:
+                          description: Group is the Kubernetes group of the resource.
+                          type: string
+                        kind:
+                          description: Kind is the Kubernetes kind of the resource.
+                          type: string
+                        name:
+                          description: Name is the Kubernetes name of the resource.
+                          type: string
+                      type: object
+                  type: object
+                type: array
+              azureName:
+                description: |-
+                  AzureName: The name of the resource in Azure. This is often the same as the name of the resource in Kubernetes but it
+                  doesn't have to be.
+                type: string
+              defaultOutboundAccess:
+                description: 'DefaultOutboundAccess: Set this property to false to
+                  disable default outbound connectivity for all VMs in the subnet.'
+                type: boolean
+              delegations:
+                description: 'Delegations: An array of references to the delegations
+                  on the subnet.'
+                items:
+                  description: Details the service to which the subnet is delegated.
+                  properties:
+                    name:
+                      description: 'Name: The name of the resource that is unique
+                        within a subnet. This name can be used to access the resource.'
+                      type: string
+                    serviceName:
+                      description: 'ServiceName: The name of the service to whom the
+                        subnet should be delegated (e.g. Microsoft.Sql/servers).'
+                      type: string
+                  type: object
+                type: array
+              ipAllocations:
+                description: 'IpAllocations: Array of IpAllocation which reference
+                  this subnet.'
+                items:
+                  description: Reference to another subresource.
+                  properties:
+                    reference:
+                      description: 'Reference: Resource ID.'
+                      properties:
+                        armId:
+                          description: |-
+                            ARMID is a string of the form /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}.
+                            The /resourcegroups/{resourceGroupName} bit is optional as some resources are scoped at the subscription level
+                            ARMID is mutually exclusive with Group, Kind, Namespace and Name.
+                          pattern: (?i)(^(/subscriptions/([^/]+)(/resourcegroups/([^/]+))?)?/providers/([^/]+)/([^/]+/[^/]+)(/([^/]+/[^/]+))*$|^/subscriptions/([^/]+)(/resourcegroups/([^/]+))?$)
+                          type: string
+                        group:
+                          description: Group is the Kubernetes group of the resource.
+                          type: string
+                        kind:
+                          description: Kind is the Kubernetes kind of the resource.
+                          type: string
+                        name:
+                          description: Name is the Kubernetes name of the resource.
+                          type: string
+                      type: object
+                  type: object
+                type: array
+              ipamPoolPrefixAllocations:
+                description: 'IpamPoolPrefixAllocations: A list of IPAM Pools for
+                  allocating IP address prefixes.'
+                items:
+                  description: IpamPool prefix allocation reference.
+                  properties:
+                    numberOfIpAddresses:
+                      description: 'NumberOfIpAddresses: Number of IP addresses to
+                        allocate.'
+                      type: string
+                    reference:
+                      description: 'Reference: Resource id of the associated Azure
+                        IpamPool resource.'
+                      properties:
+                        armId:
+                          description: |-
+                            ARMID is a string of the form /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}.
+                            The /resourcegroups/{resourceGroupName} bit is optional as some resources are scoped at the subscription level
+                            ARMID is mutually exclusive with Group, Kind, Namespace and Name.
+                          pattern: (?i)(^(/subscriptions/([^/]+)(/resourcegroups/([^/]+))?)?/providers/([^/]+)/([^/]+/[^/]+)(/([^/]+/[^/]+))*$|^/subscriptions/([^/]+)(/resourcegroups/([^/]+))?$)
+                          type: string
+                        group:
+                          description: Group is the Kubernetes group of the resource.
+                          type: string
+                        kind:
+                          description: Kind is the Kubernetes kind of the resource.
+                          type: string
+                        name:
+                          description: Name is the Kubernetes name of the resource.
+                          type: string
+                      type: object
+                  type: object
+                type: array
+              natGateway:
+                description: 'NatGateway: Nat gateway associated with this subnet.'
+                properties:
+                  reference:
+                    description: 'Reference: Resource ID.'
+                    properties:
+                      armId:
+                        description: |-
+                          ARMID is a string of the form /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}.
+                          The /resourcegroups/{resourceGroupName} bit is optional as some resources are scoped at the subscription level
+                          ARMID is mutually exclusive with Group, Kind, Namespace and Name.
+                        pattern: (?i)(^(/subscriptions/([^/]+)(/resourcegroups/([^/]+))?)?/providers/([^/]+)/([^/]+/[^/]+)(/([^/]+/[^/]+))*$|^/subscriptions/([^/]+)(/resourcegroups/([^/]+))?$)
+                        type: string
+                      group:
+                        description: Group is the Kubernetes group of the resource.
+                        type: string
+                      kind:
+                        description: Kind is the Kubernetes kind of the resource.
+                        type: string
+                      name:
+                        description: Name is the Kubernetes name of the resource.
+                        type: string
+                    type: object
+                type: object
+              networkSecurityGroup:
+                description: 'NetworkSecurityGroup: The reference to the NetworkSecurityGroup
+                  resource.'
+                properties:
+                  reference:
+                    description: 'Reference: Resource ID.'
+                    properties:
+                      armId:
+                        description: |-
+                          ARMID is a string of the form /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}.
+                          The /resourcegroups/{resourceGroupName} bit is optional as some resources are scoped at the subscription level
+                          ARMID is mutually exclusive with Group, Kind, Namespace and Name.
+                        pattern: (?i)(^(/subscriptions/([^/]+)(/resourcegroups/([^/]+))?)?/providers/([^/]+)/([^/]+/[^/]+)(/([^/]+/[^/]+))*$|^/subscriptions/([^/]+)(/resourcegroups/([^/]+))?$)
+                        type: string
+                      group:
+                        description: Group is the Kubernetes group of the resource.
+                        type: string
+                      kind:
+                        description: Kind is the Kubernetes kind of the resource.
+                        type: string
+                      name:
+                        description: Name is the Kubernetes name of the resource.
+                        type: string
+                    type: object
+                type: object
+              operatorSpec:
+                description: |-
+                  OperatorSpec: The specification for configuring operator behavior. This field is interpreted by the operator and not
+                  passed directly to Azure
+                properties:
+                  configMapExpressions:
+                    description: 'ConfigMapExpressions: configures where to place
+                      operator written dynamic ConfigMaps (created with CEL expressions).'
+                    items:
+                      description: |-
+                        DestinationExpression is a CEL expression and a destination to store the result in. The destination may
+                        be a secret or a configmap. The value of the expression is stored at the specified location in
+                        the destination.
+                      properties:
+                        annotations:
+                          additionalProperties:
+                            type: string
+                          description: Annotations is an optional set of annotations
+                            to apply to the destination resource.
+                          type: object
+                        key:
+                          description: |-
+                            Key is the key in the ConfigMap or Secret being written to. If the CEL expression in Value returns a string
+                            this is required to identify what key to write to. If the CEL expression in Value returns a map[string]string
+                            Key must not be set, instead the keys written will be determined dynamically based on the keys of the resulting
+                            map[string]string.
+                          type: string
+                        labels:
+                          additionalProperties:
+                            type: string
+                          description: Labels is an optional set of labels to apply
+                            to the destination resource.
+                          type: object
+                        name:
+                          description: |-
+                            Name is the name of the Kubernetes configmap or secret to write to.
+                            The configmap or secret will be created in the same namespace as the resource.
+                          type: string
+                        value:
+                          description: |-
+                            Value is a CEL expression. The CEL expression may return a string or a map[string]string. For more information
+                            on CEL in ASO see https://azure.github.io/azure-service-operator/guide/expressions/
+                          type: string
+                      required:
+                      - name
+                      - value
+                      type: object
+                    type: array
+                  secretExpressions:
+                    description: 'SecretExpressions: configures where to place operator
+                      written dynamic secrets (created with CEL expressions).'
+                    items:
+                      description: |-
+                        DestinationExpression is a CEL expression and a destination to store the result in. The destination may
+                        be a secret or a configmap. The value of the expression is stored at the specified location in
+                        the destination.
+                      properties:
+                        annotations:
+                          additionalProperties:
+                            type: string
+                          description: Annotations is an optional set of annotations
+                            to apply to the destination resource.
+                          type: object
+                        key:
+                          description: |-
+                            Key is the key in the ConfigMap or Secret being written to. If the CEL expression in Value returns a string
+                            this is required to identify what key to write to. If the CEL expression in Value returns a map[string]string
+                            Key must not be set, instead the keys written will be determined dynamically based on the keys of the resulting
+                            map[string]string.
+                          type: string
+                        labels:
+                          additionalProperties:
+                            type: string
+                          description: Labels is an optional set of labels to apply
+                            to the destination resource.
+                          type: object
+                        name:
+                          description: |-
+                            Name is the name of the Kubernetes configmap or secret to write to.
+                            The configmap or secret will be created in the same namespace as the resource.
+                          type: string
+                        value:
+                          description: |-
+                            Value is a CEL expression. The CEL expression may return a string or a map[string]string. For more information
+                            on CEL in ASO see https://azure.github.io/azure-service-operator/guide/expressions/
+                          type: string
+                      required:
+                      - name
+                      - value
+                      type: object
+                    type: array
+                type: object
+              owner:
+                description: |-
+                  Owner: The owner of the resource. The owner controls where the resource goes when it is deployed. The owner also
+                  controls the resources lifecycle. When the owner is deleted the resource will also be deleted. Owner is expected to be a
+                  reference to a network.azure.com/VirtualNetwork resource
+                properties:
+                  armId:
+                    pattern: (?i)(^(/subscriptions/([^/]+)(/resourcegroups/([^/]+))?)?/providers/([^/]+)/([^/]+/[^/]+)(/([^/]+/[^/]+))*$|^/subscriptions/([^/]+)(/resourcegroups/([^/]+))?$)
+                    type: string
+                  name:
+                    description: This is the name of the Kubernetes resource to reference.
+                    type: string
+                type: object
+              privateEndpointNetworkPolicies:
+                description: 'PrivateEndpointNetworkPolicies: Enable or Disable apply
+                  network policies on private end point in the subnet.'
+                enum:
+                - Disabled
+                - Enabled
+                - NetworkSecurityGroupEnabled
+                - RouteTableEnabled
+                type: string
+              privateLinkServiceNetworkPolicies:
+                description: 'PrivateLinkServiceNetworkPolicies: Enable or Disable
+                  apply network policies on private link service in the subnet.'
+                enum:
+                - Disabled
+                - Enabled
+                type: string
+              routeTable:
+                description: 'RouteTable: The reference to the RouteTable resource.'
+                properties:
+                  reference:
+                    description: 'Reference: Resource ID.'
+                    properties:
+                      armId:
+                        description: |-
+                          ARMID is a string of the form /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}.
+                          The /resourcegroups/{resourceGroupName} bit is optional as some resources are scoped at the subscription level
+                          ARMID is mutually exclusive with Group, Kind, Namespace and Name.
+                        pattern: (?i)(^(/subscriptions/([^/]+)(/resourcegroups/([^/]+))?)?/providers/([^/]+)/([^/]+/[^/]+)(/([^/]+/[^/]+))*$|^/subscriptions/([^/]+)(/resourcegroups/([^/]+))?$)
+                        type: string
+                      group:
+                        description: Group is the Kubernetes group of the resource.
+                        type: string
+                      kind:
+                        description: Kind is the Kubernetes kind of the resource.
+                        type: string
+                      name:
+                        description: Name is the Kubernetes name of the resource.
+                        type: string
+                    type: object
+                type: object
+              serviceEndpointPolicies:
+                description: 'ServiceEndpointPolicies: An array of service endpoint
+                  policies.'
+                items:
+                  description: Service End point policy resource.
+                  properties:
+                    reference:
+                      description: 'Reference: Resource ID.'
+                      properties:
+                        armId:
+                          description: |-
+                            ARMID is a string of the form /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}.
+                            The /resourcegroups/{resourceGroupName} bit is optional as some resources are scoped at the subscription level
+                            ARMID is mutually exclusive with Group, Kind, Namespace and Name.
+                          pattern: (?i)(^(/subscriptions/([^/]+)(/resourcegroups/([^/]+))?)?/providers/([^/]+)/([^/]+/[^/]+)(/([^/]+/[^/]+))*$|^/subscriptions/([^/]+)(/resourcegroups/([^/]+))?$)
+                          type: string
+                        group:
+                          description: Group is the Kubernetes group of the resource.
+                          type: string
+                        kind:
+                          description: Kind is the Kubernetes kind of the resource.
+                          type: string
+                        name:
+                          description: Name is the Kubernetes name of the resource.
+                          type: string
+                      type: object
+                  type: object
+                type: array
+              serviceEndpoints:
+                description: 'ServiceEndpoints: An array of service endpoints.'
+                items:
+                  description: The service endpoint properties.
+                  properties:
+                    locations:
+                      description: 'Locations: A list of locations.'
+                      items:
+                        type: string
+                      type: array
+                    networkIdentifier:
+                      description: 'NetworkIdentifier: SubResource as network identifier.'
+                      properties:
+                        reference:
+                          description: 'Reference: Resource ID.'
+                          properties:
+                            armId:
+                              description: |-
+                                ARMID is a string of the form /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}.
+                                The /resourcegroups/{resourceGroupName} bit is optional as some resources are scoped at the subscription level
+                                ARMID is mutually exclusive with Group, Kind, Namespace and Name.
+                              pattern: (?i)(^(/subscriptions/([^/]+)(/resourcegroups/([^/]+))?)?/providers/([^/]+)/([^/]+/[^/]+)(/([^/]+/[^/]+))*$|^/subscriptions/([^/]+)(/resourcegroups/([^/]+))?$)
+                              type: string
+                            group:
+                              description: Group is the Kubernetes group of the resource.
+                              type: string
+                            kind:
+                              description: Kind is the Kubernetes kind of the resource.
+                              type: string
+                            name:
+                              description: Name is the Kubernetes name of the resource.
+                              type: string
+                          type: object
+                      type: object
+                    service:
+                      description: 'Service: The type of the endpoint service.'
+                      type: string
+                  type: object
+                type: array
+              sharingScope:
+                description: |-
+                  SharingScope: Set this property to Tenant to allow sharing subnet with other subscriptions in your AAD tenant. This
+                  property can only be set if defaultOutboundAccess is set to false, both properties can only be set if subnet is empty.
+                enum:
+                - DelegatedServices
+                - Tenant
+                type: string
+            required:
+            - owner
+            type: object
+          status:
+            properties:
+              addressPrefix:
+                description: 'AddressPrefix: The address prefix for the subnet.'
+                type: string
+              addressPrefixes:
+                description: 'AddressPrefixes: List of address prefixes for the subnet.'
+                items:
+                  type: string
+                type: array
+              applicationGatewayIPConfigurations:
+                description: 'ApplicationGatewayIPConfigurations: Application gateway
+                  IP configurations of virtual network resource.'
+                items:
+                  description: IP configuration of an application gateway. Currently
+                    1 public and 1 private IP configuration is allowed.
+                  properties:
+                    id:
+                      description: 'Id: Resource ID.'
+                      type: string
+                  type: object
+                type: array
+              conditions:
+                description: 'Conditions: The observed state of the resource'
+                items:
+                  description: Condition defines an extension to status (an observation)
+                    of a resource
+                  properties:
+                    lastTransitionTime:
+                      description: LastTransitionTime is the last time the condition
+                        transitioned from one status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: Message is a human readable message indicating
+                        details about the transition. This field may be empty.
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        ObservedGeneration is the .metadata.generation that the condition was set based upon. For instance, if
+                        .metadata.generation is currently 12, but the .status.condition[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      type: integer
+                    reason:
+                      description: |-
+                        Reason for the condition's last transition.
+                        Reasons are upper CamelCase (PascalCase) with no spaces. A reason is always provided, this field will not be empty.
+                      type: string
+                    severity:
+                      description: |-
+                        Severity with which to treat failures of this type of condition.
+                        For conditions which have positive polarity (Status == True is their normal/healthy state), this will be omitted when Status == True
+                        For conditions which have negative polarity (Status == False is their normal/healthy state), this will be omitted when Status == False.
+                        This is omitted in all cases when Status == Unknown
+                      type: string
+                    status:
+                      description: Status of the condition, one of True, False, or
+                        Unknown.
+                      type: string
+                    type:
+                      description: Type of condition.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+              defaultOutboundAccess:
+                description: 'DefaultOutboundAccess: Set this property to false to
+                  disable default outbound connectivity for all VMs in the subnet.'
+                type: boolean
+              delegations:
+                description: 'Delegations: An array of references to the delegations
+                  on the subnet.'
+                items:
+                  description: Details the service to which the subnet is delegated.
+                  properties:
+                    actions:
+                      description: 'Actions: The actions permitted to the service
+                        upon delegation.'
+                      items:
+                        type: string
+                      type: array
+                    etag:
+                      description: 'Etag: A unique read-only string that changes whenever
+                        the resource is updated.'
+                      type: string
+                    id:
+                      description: 'Id: Resource ID.'
+                      type: string
+                    name:
+                      description: 'Name: The name of the resource that is unique
+                        within a subnet. This name can be used to access the resource.'
+                      type: string
+                    provisioningState:
+                      description: 'ProvisioningState: The provisioning state of the
+                        service delegation resource.'
+                      type: string
+                    serviceName:
+                      description: 'ServiceName: The name of the service to whom the
+                        subnet should be delegated (e.g. Microsoft.Sql/servers).'
+                      type: string
+                    type:
+                      description: 'Type: Resource type.'
+                      type: string
+                  type: object
+                type: array
+              etag:
+                description: 'Etag: A unique read-only string that changes whenever
+                  the resource is updated.'
+                type: string
+              id:
+                description: 'Id: Resource ID.'
+                type: string
+              ipAllocations:
+                description: 'IpAllocations: Array of IpAllocation which reference
+                  this subnet.'
+                items:
+                  description: Reference to another subresource.
+                  properties:
+                    id:
+                      description: 'Id: Resource ID.'
+                      type: string
+                  type: object
+                type: array
+              ipConfigurationProfiles:
+                description: 'IpConfigurationProfiles: Array of IP configuration profiles
+                  which reference this subnet.'
+                items:
+                  description: IP configuration profile child resource.
+                  properties:
+                    id:
+                      description: 'Id: Resource ID.'
+                      type: string
+                  type: object
+                type: array
+              ipConfigurations:
+                description: |-
+                  IpConfigurations: An array of references to the network interface IP configurations using subnet. This field is not
+                  included if there are more than 2000 entries.
+                items:
+                  description: IP configuration.
+                  properties:
+                    id:
+                      description: 'Id: Resource ID.'
+                      type: string
+                  type: object
+                type: array
+              ipamPoolPrefixAllocations:
+                description: 'IpamPoolPrefixAllocations: A list of IPAM Pools for
+                  allocating IP address prefixes.'
+                items:
+                  description: IpamPool prefix allocation reference.
+                  properties:
+                    allocatedAddressPrefixes:
+                      description: 'AllocatedAddressPrefixes: List of assigned IP
+                        address prefixes in the IpamPool of the associated resource.'
+                      items:
+                        type: string
+                      type: array
+                    id:
+                      description: 'Id: Resource id of the associated Azure IpamPool
+                        resource.'
+                      type: string
+                    numberOfIpAddresses:
+                      description: 'NumberOfIpAddresses: Number of IP addresses to
+                        allocate.'
+                      type: string
+                  type: object
+                type: array
+              name:
+                description: 'Name: The name of the resource that is unique within
+                  a resource group. This name can be used to access the resource.'
+                type: string
+              natGateway:
+                description: 'NatGateway: Nat gateway associated with this subnet.'
+                properties:
+                  id:
+                    description: 'Id: Resource ID.'
+                    type: string
+                type: object
+              networkSecurityGroup:
+                description: 'NetworkSecurityGroup: The reference to the NetworkSecurityGroup
+                  resource.'
+                properties:
+                  id:
+                    description: 'Id: Resource ID.'
+                    type: string
+                type: object
+              privateEndpointNetworkPolicies:
+                description: 'PrivateEndpointNetworkPolicies: Enable or Disable apply
+                  network policies on private end point in the subnet.'
+                type: string
+              privateEndpoints:
+                description: 'PrivateEndpoints: An array of references to private
+                  endpoints.'
+                items:
+                  description: Private endpoint resource.
+                  properties:
+                    id:
+                      description: 'Id: Resource ID.'
+                      type: string
+                  type: object
+                type: array
+              privateLinkServiceNetworkPolicies:
+                description: 'PrivateLinkServiceNetworkPolicies: Enable or Disable
+                  apply network policies on private link service in the subnet.'
+                type: string
+              provisioningState:
+                description: 'ProvisioningState: The provisioning state of the subnet
+                  resource.'
+                type: string
+              purpose:
+                description: |-
+                  Purpose: A read-only string identifying the intention of use for this subnet based on delegations and other user-defined
+                  properties.
+                type: string
+              resourceNavigationLinks:
+                description: 'ResourceNavigationLinks: An array of references to the
+                  external resources using subnet.'
+                items:
+                  description: ResourceNavigationLink resource.
+                  properties:
+                    id:
+                      description: 'Id: Resource navigation link identifier.'
+                      type: string
+                  type: object
+                type: array
+              routeTable:
+                description: 'RouteTable: The reference to the RouteTable resource.'
+                properties:
+                  id:
+                    description: 'Id: Resource ID.'
+                    type: string
+                type: object
+              serviceAssociationLinks:
+                description: 'ServiceAssociationLinks: An array of references to services
+                  injecting into this subnet.'
+                items:
+                  description: ServiceAssociationLink resource.
+                  properties:
+                    id:
+                      description: 'Id: Resource ID.'
+                      type: string
+                  type: object
+                type: array
+              serviceEndpointPolicies:
+                description: 'ServiceEndpointPolicies: An array of service endpoint
+                  policies.'
+                items:
+                  description: Service End point policy resource.
+                  properties:
+                    id:
+                      description: 'Id: Resource ID.'
+                      type: string
+                  type: object
+                type: array
+              serviceEndpoints:
+                description: 'ServiceEndpoints: An array of service endpoints.'
+                items:
+                  description: The service endpoint properties.
+                  properties:
+                    locations:
+                      description: 'Locations: A list of locations.'
+                      items:
+                        type: string
+                      type: array
+                    networkIdentifier:
+                      description: 'NetworkIdentifier: SubResource as network identifier.'
+                      properties:
+                        id:
+                          description: 'Id: Resource ID.'
+                          type: string
+                      type: object
+                    provisioningState:
+                      description: 'ProvisioningState: The provisioning state of the
+                        service endpoint resource.'
+                      type: string
+                    service:
+                      description: 'Service: The type of the endpoint service.'
+                      type: string
+                  type: object
+                type: array
+              sharingScope:
+                description: |-
+                  SharingScope: Set this property to Tenant to allow sharing subnet with other subscriptions in your AAD tenant. This
+                  property can only be set if defaultOutboundAccess is set to false, both properties can only be set if subnet is empty.
+                type: string
+              type:
+                description: 'Type: Resource type.'
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: false
+    subresources:
+      status: {}
+  - additionalPrinterColumns:
+    - jsonPath: .status.conditions[?(@.type=='Ready')].status
+      name: Ready
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Ready')].severity
+      name: Severity
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Ready')].reason
+      name: Reason
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Ready')].message
+      name: Message
+      type: string
+    name: v20250301storage
+    schema:
+      openAPIV3Schema:
+        description: |-
+          Storage version of v20250301.VirtualNetworksSubnet
+          Generator information:
+          - Generated from: /network/resource-manager/Microsoft.Network/Network/stable/2025-03-01/virtualNetwork.json
+          - ARM URI: /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Network/virtualNetworks/{virtualNetworkName}/subnets/{subnetName}
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: Storage version of v20250301.VirtualNetworksSubnet_Spec
+            properties:
+              $propertyBag:
+                additionalProperties:
+                  type: string
+                description: |-
+                  PropertyBag is an unordered set of stashed information that used for properties not directly supported by storage
+                  resources, allowing for full fidelity round trip conversions
+                type: object
+              addressPrefix:
+                type: string
+              addressPrefixes:
+                items:
+                  type: string
+                type: array
+              applicationGatewayIPConfigurations:
+                items:
+                  description: |-
+                    Storage version of v20250301.ApplicationGatewayIPConfiguration_VirtualNetworks_Subnet_SubResourceEmbedded
+                    IP configuration of an application gateway. Currently 1 public and 1 private IP configuration is allowed.
+                  properties:
+                    $propertyBag:
+                      additionalProperties:
+                        type: string
+                      description: |-
+                        PropertyBag is an unordered set of stashed information that used for properties not directly supported by storage
+                        resources, allowing for full fidelity round trip conversions
+                      type: object
+                    reference:
+                      description: 'Reference: Resource ID.'
+                      properties:
+                        armId:
+                          description: |-
+                            ARMID is a string of the form /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}.
+                            The /resourcegroups/{resourceGroupName} bit is optional as some resources are scoped at the subscription level
+                            ARMID is mutually exclusive with Group, Kind, Namespace and Name.
+                          pattern: (?i)(^(/subscriptions/([^/]+)(/resourcegroups/([^/]+))?)?/providers/([^/]+)/([^/]+/[^/]+)(/([^/]+/[^/]+))*$|^/subscriptions/([^/]+)(/resourcegroups/([^/]+))?$)
+                          type: string
+                        group:
+                          description: Group is the Kubernetes group of the resource.
+                          type: string
+                        kind:
+                          description: Kind is the Kubernetes kind of the resource.
+                          type: string
+                        name:
+                          description: Name is the Kubernetes name of the resource.
+                          type: string
+                      type: object
+                  type: object
+                type: array
+              azureName:
+                description: |-
+                  AzureName: The name of the resource in Azure. This is often the same as the name of the resource in Kubernetes but it
+                  doesn't have to be.
+                type: string
+              defaultOutboundAccess:
+                type: boolean
+              delegations:
+                items:
+                  description: |-
+                    Storage version of v20250301.Delegation
+                    Details the service to which the subnet is delegated.
+                  properties:
+                    $propertyBag:
+                      additionalProperties:
+                        type: string
+                      description: |-
+                        PropertyBag is an unordered set of stashed information that used for properties not directly supported by storage
+                        resources, allowing for full fidelity round trip conversions
+                      type: object
+                    name:
+                      type: string
+                    serviceName:
+                      type: string
+                  type: object
+                type: array
+              ipAllocations:
+                items:
+                  description: |-
+                    Storage version of v20250301.SubResource
+                    Reference to another subresource.
+                  properties:
+                    $propertyBag:
+                      additionalProperties:
+                        type: string
+                      description: |-
+                        PropertyBag is an unordered set of stashed information that used for properties not directly supported by storage
+                        resources, allowing for full fidelity round trip conversions
+                      type: object
+                    reference:
+                      description: 'Reference: Resource ID.'
+                      properties:
+                        armId:
+                          description: |-
+                            ARMID is a string of the form /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}.
+                            The /resourcegroups/{resourceGroupName} bit is optional as some resources are scoped at the subscription level
+                            ARMID is mutually exclusive with Group, Kind, Namespace and Name.
+                          pattern: (?i)(^(/subscriptions/([^/]+)(/resourcegroups/([^/]+))?)?/providers/([^/]+)/([^/]+/[^/]+)(/([^/]+/[^/]+))*$|^/subscriptions/([^/]+)(/resourcegroups/([^/]+))?$)
+                          type: string
+                        group:
+                          description: Group is the Kubernetes group of the resource.
+                          type: string
+                        kind:
+                          description: Kind is the Kubernetes kind of the resource.
+                          type: string
+                        name:
+                          description: Name is the Kubernetes name of the resource.
+                          type: string
+                      type: object
+                  type: object
+                type: array
+              ipamPoolPrefixAllocations:
+                items:
+                  description: |-
+                    Storage version of v20250301.IpamPoolPrefixAllocation
+                    IpamPool prefix allocation reference.
+                  properties:
+                    $propertyBag:
+                      additionalProperties:
+                        type: string
+                      description: |-
+                        PropertyBag is an unordered set of stashed information that used for properties not directly supported by storage
+                        resources, allowing for full fidelity round trip conversions
+                      type: object
+                    numberOfIpAddresses:
+                      type: string
+                    reference:
+                      description: 'Reference: Resource id of the associated Azure
+                        IpamPool resource.'
+                      properties:
+                        armId:
+                          description: |-
+                            ARMID is a string of the form /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}.
+                            The /resourcegroups/{resourceGroupName} bit is optional as some resources are scoped at the subscription level
+                            ARMID is mutually exclusive with Group, Kind, Namespace and Name.
+                          pattern: (?i)(^(/subscriptions/([^/]+)(/resourcegroups/([^/]+))?)?/providers/([^/]+)/([^/]+/[^/]+)(/([^/]+/[^/]+))*$|^/subscriptions/([^/]+)(/resourcegroups/([^/]+))?$)
+                          type: string
+                        group:
+                          description: Group is the Kubernetes group of the resource.
+                          type: string
+                        kind:
+                          description: Kind is the Kubernetes kind of the resource.
+                          type: string
+                        name:
+                          description: Name is the Kubernetes name of the resource.
+                          type: string
+                      type: object
+                  type: object
+                type: array
+              natGateway:
+                description: |-
+                  Storage version of v20250301.SubResource
+                  Reference to another subresource.
+                properties:
+                  $propertyBag:
+                    additionalProperties:
+                      type: string
+                    description: |-
+                      PropertyBag is an unordered set of stashed information that used for properties not directly supported by storage
+                      resources, allowing for full fidelity round trip conversions
+                    type: object
+                  reference:
+                    description: 'Reference: Resource ID.'
+                    properties:
+                      armId:
+                        description: |-
+                          ARMID is a string of the form /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}.
+                          The /resourcegroups/{resourceGroupName} bit is optional as some resources are scoped at the subscription level
+                          ARMID is mutually exclusive with Group, Kind, Namespace and Name.
+                        pattern: (?i)(^(/subscriptions/([^/]+)(/resourcegroups/([^/]+))?)?/providers/([^/]+)/([^/]+/[^/]+)(/([^/]+/[^/]+))*$|^/subscriptions/([^/]+)(/resourcegroups/([^/]+))?$)
+                        type: string
+                      group:
+                        description: Group is the Kubernetes group of the resource.
+                        type: string
+                      kind:
+                        description: Kind is the Kubernetes kind of the resource.
+                        type: string
+                      name:
+                        description: Name is the Kubernetes name of the resource.
+                        type: string
+                    type: object
+                type: object
+              networkSecurityGroup:
+                description: |-
+                  Storage version of v20250301.NetworkSecurityGroupSpec_VirtualNetworks_Subnet_SubResourceEmbedded
+                  NetworkSecurityGroup resource.
+                properties:
+                  $propertyBag:
+                    additionalProperties:
+                      type: string
+                    description: |-
+                      PropertyBag is an unordered set of stashed information that used for properties not directly supported by storage
+                      resources, allowing for full fidelity round trip conversions
+                    type: object
+                  reference:
+                    description: 'Reference: Resource ID.'
+                    properties:
+                      armId:
+                        description: |-
+                          ARMID is a string of the form /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}.
+                          The /resourcegroups/{resourceGroupName} bit is optional as some resources are scoped at the subscription level
+                          ARMID is mutually exclusive with Group, Kind, Namespace and Name.
+                        pattern: (?i)(^(/subscriptions/([^/]+)(/resourcegroups/([^/]+))?)?/providers/([^/]+)/([^/]+/[^/]+)(/([^/]+/[^/]+))*$|^/subscriptions/([^/]+)(/resourcegroups/([^/]+))?$)
+                        type: string
+                      group:
+                        description: Group is the Kubernetes group of the resource.
+                        type: string
+                      kind:
+                        description: Kind is the Kubernetes kind of the resource.
+                        type: string
+                      name:
+                        description: Name is the Kubernetes name of the resource.
+                        type: string
+                    type: object
+                type: object
+              operatorSpec:
+                description: |-
+                  Storage version of v20250301.VirtualNetworksSubnetOperatorSpec
+                  Details for configuring operator behavior. Fields in this struct are interpreted by the operator directly rather than being passed to Azure
+                properties:
+                  $propertyBag:
+                    additionalProperties:
+                      type: string
+                    description: |-
+                      PropertyBag is an unordered set of stashed information that used for properties not directly supported by storage
+                      resources, allowing for full fidelity round trip conversions
+                    type: object
+                  configMapExpressions:
+                    items:
+                      description: |-
+                        DestinationExpression is a CEL expression and a destination to store the result in. The destination may
+                        be a secret or a configmap. The value of the expression is stored at the specified location in
+                        the destination.
+                      properties:
+                        annotations:
+                          additionalProperties:
+                            type: string
+                          description: Annotations is an optional set of annotations
+                            to apply to the destination resource.
+                          type: object
+                        key:
+                          description: |-
+                            Key is the key in the ConfigMap or Secret being written to. If the CEL expression in Value returns a string
+                            this is required to identify what key to write to. If the CEL expression in Value returns a map[string]string
+                            Key must not be set, instead the keys written will be determined dynamically based on the keys of the resulting
+                            map[string]string.
+                          type: string
+                        labels:
+                          additionalProperties:
+                            type: string
+                          description: Labels is an optional set of labels to apply
+                            to the destination resource.
+                          type: object
+                        name:
+                          description: |-
+                            Name is the name of the Kubernetes configmap or secret to write to.
+                            The configmap or secret will be created in the same namespace as the resource.
+                          type: string
+                        value:
+                          description: |-
+                            Value is a CEL expression. The CEL expression may return a string or a map[string]string. For more information
+                            on CEL in ASO see https://azure.github.io/azure-service-operator/guide/expressions/
+                          type: string
+                      required:
+                      - name
+                      - value
+                      type: object
+                    type: array
+                  secretExpressions:
+                    items:
+                      description: |-
+                        DestinationExpression is a CEL expression and a destination to store the result in. The destination may
+                        be a secret or a configmap. The value of the expression is stored at the specified location in
+                        the destination.
+                      properties:
+                        annotations:
+                          additionalProperties:
+                            type: string
+                          description: Annotations is an optional set of annotations
+                            to apply to the destination resource.
+                          type: object
+                        key:
+                          description: |-
+                            Key is the key in the ConfigMap or Secret being written to. If the CEL expression in Value returns a string
+                            this is required to identify what key to write to. If the CEL expression in Value returns a map[string]string
+                            Key must not be set, instead the keys written will be determined dynamically based on the keys of the resulting
+                            map[string]string.
+                          type: string
+                        labels:
+                          additionalProperties:
+                            type: string
+                          description: Labels is an optional set of labels to apply
+                            to the destination resource.
+                          type: object
+                        name:
+                          description: |-
+                            Name is the name of the Kubernetes configmap or secret to write to.
+                            The configmap or secret will be created in the same namespace as the resource.
+                          type: string
+                        value:
+                          description: |-
+                            Value is a CEL expression. The CEL expression may return a string or a map[string]string. For more information
+                            on CEL in ASO see https://azure.github.io/azure-service-operator/guide/expressions/
+                          type: string
+                      required:
+                      - name
+                      - value
+                      type: object
+                    type: array
+                type: object
+              originalVersion:
+                type: string
+              owner:
+                description: |-
+                  Owner: The owner of the resource. The owner controls where the resource goes when it is deployed. The owner also
+                  controls the resources lifecycle. When the owner is deleted the resource will also be deleted. Owner is expected to be a
+                  reference to a network.azure.com/VirtualNetwork resource
+                properties:
+                  armId:
+                    pattern: (?i)(^(/subscriptions/([^/]+)(/resourcegroups/([^/]+))?)?/providers/([^/]+)/([^/]+/[^/]+)(/([^/]+/[^/]+))*$|^/subscriptions/([^/]+)(/resourcegroups/([^/]+))?$)
+                    type: string
+                  name:
+                    description: This is the name of the Kubernetes resource to reference.
+                    type: string
+                type: object
+              privateEndpointNetworkPolicies:
+                type: string
+              privateLinkServiceNetworkPolicies:
+                type: string
+              routeTable:
+                description: |-
+                  Storage version of v20250301.RouteTableSpec_VirtualNetworks_Subnet_SubResourceEmbedded
+                  Route table resource.
+                properties:
+                  $propertyBag:
+                    additionalProperties:
+                      type: string
+                    description: |-
+                      PropertyBag is an unordered set of stashed information that used for properties not directly supported by storage
+                      resources, allowing for full fidelity round trip conversions
+                    type: object
+                  reference:
+                    description: 'Reference: Resource ID.'
+                    properties:
+                      armId:
+                        description: |-
+                          ARMID is a string of the form /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}.
+                          The /resourcegroups/{resourceGroupName} bit is optional as some resources are scoped at the subscription level
+                          ARMID is mutually exclusive with Group, Kind, Namespace and Name.
+                        pattern: (?i)(^(/subscriptions/([^/]+)(/resourcegroups/([^/]+))?)?/providers/([^/]+)/([^/]+/[^/]+)(/([^/]+/[^/]+))*$|^/subscriptions/([^/]+)(/resourcegroups/([^/]+))?$)
+                        type: string
+                      group:
+                        description: Group is the Kubernetes group of the resource.
+                        type: string
+                      kind:
+                        description: Kind is the Kubernetes kind of the resource.
+                        type: string
+                      name:
+                        description: Name is the Kubernetes name of the resource.
+                        type: string
+                    type: object
+                type: object
+              serviceEndpointPolicies:
+                items:
+                  description: |-
+                    Storage version of v20250301.ServiceEndpointPolicySpec_VirtualNetworks_Subnet_SubResourceEmbedded
+                    Service End point policy resource.
+                  properties:
+                    $propertyBag:
+                      additionalProperties:
+                        type: string
+                      description: |-
+                        PropertyBag is an unordered set of stashed information that used for properties not directly supported by storage
+                        resources, allowing for full fidelity round trip conversions
+                      type: object
+                    reference:
+                      description: 'Reference: Resource ID.'
+                      properties:
+                        armId:
+                          description: |-
+                            ARMID is a string of the form /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}.
+                            The /resourcegroups/{resourceGroupName} bit is optional as some resources are scoped at the subscription level
+                            ARMID is mutually exclusive with Group, Kind, Namespace and Name.
+                          pattern: (?i)(^(/subscriptions/([^/]+)(/resourcegroups/([^/]+))?)?/providers/([^/]+)/([^/]+/[^/]+)(/([^/]+/[^/]+))*$|^/subscriptions/([^/]+)(/resourcegroups/([^/]+))?$)
+                          type: string
+                        group:
+                          description: Group is the Kubernetes group of the resource.
+                          type: string
+                        kind:
+                          description: Kind is the Kubernetes kind of the resource.
+                          type: string
+                        name:
+                          description: Name is the Kubernetes name of the resource.
+                          type: string
+                      type: object
+                  type: object
+                type: array
+              serviceEndpoints:
+                items:
+                  description: |-
+                    Storage version of v20250301.ServiceEndpointPropertiesFormat
+                    The service endpoint properties.
+                  properties:
+                    $propertyBag:
+                      additionalProperties:
+                        type: string
+                      description: |-
+                        PropertyBag is an unordered set of stashed information that used for properties not directly supported by storage
+                        resources, allowing for full fidelity round trip conversions
+                      type: object
+                    locations:
+                      items:
+                        type: string
+                      type: array
+                    networkIdentifier:
+                      description: |-
+                        Storage version of v20250301.SubResource
+                        Reference to another subresource.
+                      properties:
+                        $propertyBag:
+                          additionalProperties:
+                            type: string
+                          description: |-
+                            PropertyBag is an unordered set of stashed information that used for properties not directly supported by storage
+                            resources, allowing for full fidelity round trip conversions
+                          type: object
+                        reference:
+                          description: 'Reference: Resource ID.'
+                          properties:
+                            armId:
+                              description: |-
+                                ARMID is a string of the form /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}.
+                                The /resourcegroups/{resourceGroupName} bit is optional as some resources are scoped at the subscription level
+                                ARMID is mutually exclusive with Group, Kind, Namespace and Name.
+                              pattern: (?i)(^(/subscriptions/([^/]+)(/resourcegroups/([^/]+))?)?/providers/([^/]+)/([^/]+/[^/]+)(/([^/]+/[^/]+))*$|^/subscriptions/([^/]+)(/resourcegroups/([^/]+))?$)
+                              type: string
+                            group:
+                              description: Group is the Kubernetes group of the resource.
+                              type: string
+                            kind:
+                              description: Kind is the Kubernetes kind of the resource.
+                              type: string
+                            name:
+                              description: Name is the Kubernetes name of the resource.
+                              type: string
+                          type: object
+                      type: object
+                    service:
+                      type: string
+                  type: object
+                type: array
+              sharingScope:
+                type: string
+            required:
+            - owner
+            type: object
+          status:
+            description: Storage version of v20250301.VirtualNetworksSubnet_STATUS
+            properties:
+              $propertyBag:
+                additionalProperties:
+                  type: string
+                description: |-
+                  PropertyBag is an unordered set of stashed information that used for properties not directly supported by storage
+                  resources, allowing for full fidelity round trip conversions
+                type: object
+              addressPrefix:
+                type: string
+              addressPrefixes:
+                items:
+                  type: string
+                type: array
+              applicationGatewayIPConfigurations:
+                items:
+                  description: |-
+                    Storage version of v20250301.ApplicationGatewayIPConfiguration_STATUS_VirtualNetworks_Subnet_SubResourceEmbedded
+                    IP configuration of an application gateway. Currently 1 public and 1 private IP configuration is allowed.
+                  properties:
+                    $propertyBag:
+                      additionalProperties:
+                        type: string
+                      description: |-
+                        PropertyBag is an unordered set of stashed information that used for properties not directly supported by storage
+                        resources, allowing for full fidelity round trip conversions
+                      type: object
+                    id:
+                      type: string
+                  type: object
+                type: array
+              conditions:
+                items:
+                  description: Condition defines an extension to status (an observation)
+                    of a resource
+                  properties:
+                    lastTransitionTime:
+                      description: LastTransitionTime is the last time the condition
+                        transitioned from one status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: Message is a human readable message indicating
+                        details about the transition. This field may be empty.
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        ObservedGeneration is the .metadata.generation that the condition was set based upon. For instance, if
+                        .metadata.generation is currently 12, but the .status.condition[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      type: integer
+                    reason:
+                      description: |-
+                        Reason for the condition's last transition.
+                        Reasons are upper CamelCase (PascalCase) with no spaces. A reason is always provided, this field will not be empty.
+                      type: string
+                    severity:
+                      description: |-
+                        Severity with which to treat failures of this type of condition.
+                        For conditions which have positive polarity (Status == True is their normal/healthy state), this will be omitted when Status == True
+                        For conditions which have negative polarity (Status == False is their normal/healthy state), this will be omitted when Status == False.
+                        This is omitted in all cases when Status == Unknown
+                      type: string
+                    status:
+                      description: Status of the condition, one of True, False, or
+                        Unknown.
+                      type: string
+                    type:
+                      description: Type of condition.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+              defaultOutboundAccess:
+                type: boolean
+              delegations:
+                items:
+                  description: |-
+                    Storage version of v20250301.Delegation_STATUS
+                    Details the service to which the subnet is delegated.
+                  properties:
+                    $propertyBag:
+                      additionalProperties:
+                        type: string
+                      description: |-
+                        PropertyBag is an unordered set of stashed information that used for properties not directly supported by storage
+                        resources, allowing for full fidelity round trip conversions
+                      type: object
+                    actions:
+                      items:
+                        type: string
+                      type: array
+                    etag:
+                      type: string
+                    id:
+                      type: string
+                    name:
+                      type: string
+                    provisioningState:
+                      type: string
+                    serviceName:
+                      type: string
+                    type:
+                      type: string
+                  type: object
+                type: array
+              etag:
+                type: string
+              id:
+                type: string
+              ipAllocations:
+                items:
+                  description: |-
+                    Storage version of v20250301.SubResource_STATUS
+                    Reference to another subresource.
+                  properties:
+                    $propertyBag:
+                      additionalProperties:
+                        type: string
+                      description: |-
+                        PropertyBag is an unordered set of stashed information that used for properties not directly supported by storage
+                        resources, allowing for full fidelity round trip conversions
+                      type: object
+                    id:
+                      type: string
+                  type: object
+                type: array
+              ipConfigurationProfiles:
+                items:
+                  description: |-
+                    Storage version of v20250301.IPConfigurationProfile_STATUS
+                    IP configuration profile child resource.
+                  properties:
+                    $propertyBag:
+                      additionalProperties:
+                        type: string
+                      description: |-
+                        PropertyBag is an unordered set of stashed information that used for properties not directly supported by storage
+                        resources, allowing for full fidelity round trip conversions
+                      type: object
+                    id:
+                      type: string
+                  type: object
+                type: array
+              ipConfigurations:
+                items:
+                  description: |-
+                    Storage version of v20250301.IPConfiguration_STATUS_VirtualNetworks_Subnet_SubResourceEmbedded
+                    IP configuration.
+                  properties:
+                    $propertyBag:
+                      additionalProperties:
+                        type: string
+                      description: |-
+                        PropertyBag is an unordered set of stashed information that used for properties not directly supported by storage
+                        resources, allowing for full fidelity round trip conversions
+                      type: object
+                    id:
+                      type: string
+                  type: object
+                type: array
+              ipamPoolPrefixAllocations:
+                items:
+                  description: |-
+                    Storage version of v20250301.IpamPoolPrefixAllocation_STATUS
+                    IpamPool prefix allocation reference.
+                  properties:
+                    $propertyBag:
+                      additionalProperties:
+                        type: string
+                      description: |-
+                        PropertyBag is an unordered set of stashed information that used for properties not directly supported by storage
+                        resources, allowing for full fidelity round trip conversions
+                      type: object
+                    allocatedAddressPrefixes:
+                      items:
+                        type: string
+                      type: array
+                    id:
+                      type: string
+                    numberOfIpAddresses:
+                      type: string
+                  type: object
+                type: array
+              name:
+                type: string
+              natGateway:
+                description: |-
+                  Storage version of v20250301.SubResource_STATUS
+                  Reference to another subresource.
+                properties:
+                  $propertyBag:
+                    additionalProperties:
+                      type: string
+                    description: |-
+                      PropertyBag is an unordered set of stashed information that used for properties not directly supported by storage
+                      resources, allowing for full fidelity round trip conversions
+                    type: object
+                  id:
+                    type: string
+                type: object
+              networkSecurityGroup:
+                description: |-
+                  Storage version of v20250301.NetworkSecurityGroup_STATUS_VirtualNetworks_Subnet_SubResourceEmbedded
+                  NetworkSecurityGroup resource.
+                properties:
+                  $propertyBag:
+                    additionalProperties:
+                      type: string
+                    description: |-
+                      PropertyBag is an unordered set of stashed information that used for properties not directly supported by storage
+                      resources, allowing for full fidelity round trip conversions
+                    type: object
+                  id:
+                    type: string
+                type: object
+              privateEndpointNetworkPolicies:
+                type: string
+              privateEndpoints:
+                items:
+                  description: |-
+                    Storage version of v20250301.PrivateEndpoint_STATUS_VirtualNetworks_Subnet_SubResourceEmbedded
+                    Private endpoint resource.
+                  properties:
+                    $propertyBag:
+                      additionalProperties:
+                        type: string
+                      description: |-
+                        PropertyBag is an unordered set of stashed information that used for properties not directly supported by storage
+                        resources, allowing for full fidelity round trip conversions
+                      type: object
+                    id:
+                      type: string
+                  type: object
+                type: array
+              privateLinkServiceNetworkPolicies:
+                type: string
+              provisioningState:
+                type: string
+              purpose:
+                type: string
+              resourceNavigationLinks:
+                items:
+                  description: |-
+                    Storage version of v20250301.ResourceNavigationLink_STATUS
+                    ResourceNavigationLink resource.
+                  properties:
+                    $propertyBag:
+                      additionalProperties:
+                        type: string
+                      description: |-
+                        PropertyBag is an unordered set of stashed information that used for properties not directly supported by storage
+                        resources, allowing for full fidelity round trip conversions
+                      type: object
+                    id:
+                      type: string
+                  type: object
+                type: array
+              routeTable:
+                description: |-
+                  Storage version of v20250301.RouteTable_STATUS_SubResourceEmbedded
+                  Route table resource.
+                properties:
+                  $propertyBag:
+                    additionalProperties:
+                      type: string
+                    description: |-
+                      PropertyBag is an unordered set of stashed information that used for properties not directly supported by storage
+                      resources, allowing for full fidelity round trip conversions
+                    type: object
+                  id:
+                    type: string
+                type: object
+              serviceAssociationLinks:
+                items:
+                  description: |-
+                    Storage version of v20250301.ServiceAssociationLink_STATUS
+                    ServiceAssociationLink resource.
+                  properties:
+                    $propertyBag:
+                      additionalProperties:
+                        type: string
+                      description: |-
+                        PropertyBag is an unordered set of stashed information that used for properties not directly supported by storage
+                        resources, allowing for full fidelity round trip conversions
+                      type: object
+                    id:
+                      type: string
+                  type: object
+                type: array
+              serviceEndpointPolicies:
+                items:
+                  description: |-
+                    Storage version of v20250301.ServiceEndpointPolicy_STATUS_VirtualNetworks_Subnet_SubResourceEmbedded
+                    Service End point policy resource.
+                  properties:
+                    $propertyBag:
+                      additionalProperties:
+                        type: string
+                      description: |-
+                        PropertyBag is an unordered set of stashed information that used for properties not directly supported by storage
+                        resources, allowing for full fidelity round trip conversions
+                      type: object
+                    id:
+                      type: string
+                  type: object
+                type: array
+              serviceEndpoints:
+                items:
+                  description: |-
+                    Storage version of v20250301.ServiceEndpointPropertiesFormat_STATUS
+                    The service endpoint properties.
+                  properties:
+                    $propertyBag:
+                      additionalProperties:
+                        type: string
+                      description: |-
+                        PropertyBag is an unordered set of stashed information that used for properties not directly supported by storage
+                        resources, allowing for full fidelity round trip conversions
+                      type: object
+                    locations:
+                      items:
+                        type: string
+                      type: array
+                    networkIdentifier:
+                      description: |-
+                        Storage version of v20250301.SubResource_STATUS
                         Reference to another subresource.
                       properties:
                         $propertyBag:

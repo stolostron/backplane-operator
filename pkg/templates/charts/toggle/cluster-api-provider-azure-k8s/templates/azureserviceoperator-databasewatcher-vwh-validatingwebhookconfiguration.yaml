@@ -1,0 +1,70 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: capz-system/azureserviceoperator-serving-cert
+  name: azureserviceoperator-databasewatcher-vwh
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-databasewatcher-azure-com-v20241001preview-sharedprivatelink
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20241001preview.sharedprivatelinks.databasewatcher.azure.com
+  rules:
+  - apiGroups:
+    - databasewatcher.azure.com
+    apiVersions:
+    - v20241001preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - sharedprivatelinks
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-databasewatcher-azure-com-v20241001preview-target
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20241001preview.targets.databasewatcher.azure.com
+  rules:
+  - apiGroups:
+    - databasewatcher.azure.com
+    apiVersions:
+    - v20241001preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - targets
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-databasewatcher-azure-com-v20241001preview-watcher
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20241001preview.watchers.databasewatcher.azure.com
+  rules:
+  - apiGroups:
+    - databasewatcher.azure.com
+    apiVersions:
+    - v20241001preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - watchers
+  sideEffects: None

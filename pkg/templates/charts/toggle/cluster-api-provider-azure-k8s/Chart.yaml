@@ -1,6 +1,6 @@
 apiVersion: v2
-appVersion: 2.17.0-1
+appVersion: 5.1-dev
 description: Cluster API provider for AZURE
 name: cluster-api-provider-azure
 type: application
-version: '5.0'
+version: '5.1'

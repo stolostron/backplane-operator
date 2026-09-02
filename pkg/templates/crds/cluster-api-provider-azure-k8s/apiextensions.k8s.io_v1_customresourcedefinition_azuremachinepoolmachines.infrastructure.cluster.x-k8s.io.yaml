@@ -3,7 +3,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: multicluster-engine/capz-serving-cert
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.21.0
   labels:
     cluster.x-k8s.io/provider: infrastructure-azure
     cluster.x-k8s.io/v1beta1: v1beta1

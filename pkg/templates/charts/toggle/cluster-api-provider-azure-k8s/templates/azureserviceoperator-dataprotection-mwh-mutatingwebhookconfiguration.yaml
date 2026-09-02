@@ -1,0 +1,217 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: capz-system/azureserviceoperator-serving-cert
+  name: azureserviceoperator-dataprotection-mwh
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dataprotection-azure-com-v1api20230101-backupvault
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20230101.backupvaults.dataprotection.azure.com
+  rules:
+  - apiGroups:
+    - dataprotection.azure.com
+    apiVersions:
+    - v1api20230101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - backupvaults
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dataprotection-azure-com-v1api20230101-backupvaultsbackuppolicy
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20230101.backupvaultsbackuppolicies.dataprotection.azure.com
+  rules:
+  - apiGroups:
+    - dataprotection.azure.com
+    apiVersions:
+    - v1api20230101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - backupvaultsbackuppolicies
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dataprotection-azure-com-v1api20231101-backupvault
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20231101.backupvaults.dataprotection.azure.com
+  rules:
+  - apiGroups:
+    - dataprotection.azure.com
+    apiVersions:
+    - v1api20231101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - backupvaults
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dataprotection-azure-com-v1api20231101-backupvaultsbackupinstance
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20231101.backupvaultsbackupinstances.dataprotection.azure.com
+  rules:
+  - apiGroups:
+    - dataprotection.azure.com
+    apiVersions:
+    - v1api20231101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - backupvaultsbackupinstances
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dataprotection-azure-com-v1api20231101-backupvaultsbackuppolicy
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20231101.backupvaultsbackuppolicies.dataprotection.azure.com
+  rules:
+  - apiGroups:
+    - dataprotection.azure.com
+    apiVersions:
+    - v1api20231101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - backupvaultsbackuppolicies
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dataprotection-azure-com-v20230101-backupvault
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20230101.backupvaults.dataprotection.azure.com
+  rules:
+  - apiGroups:
+    - dataprotection.azure.com
+    apiVersions:
+    - v20230101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - backupvaults
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dataprotection-azure-com-v20230101-backupvaultsbackuppolicy
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20230101.backupvaultsbackuppolicies.dataprotection.azure.com
+  rules:
+  - apiGroups:
+    - dataprotection.azure.com
+    apiVersions:
+    - v20230101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - backupvaultsbackuppolicies
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dataprotection-azure-com-v20231101-backupvault
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20231101.backupvaults.dataprotection.azure.com
+  rules:
+  - apiGroups:
+    - dataprotection.azure.com
+    apiVersions:
+    - v20231101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - backupvaults
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dataprotection-azure-com-v20231101-backupvaultsbackupinstance
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20231101.backupvaultsbackupinstances.dataprotection.azure.com
+  rules:
+  - apiGroups:
+    - dataprotection.azure.com
+    apiVersions:
+    - v20231101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - backupvaultsbackupinstances
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-dataprotection-azure-com-v20231101-backupvaultsbackuppolicy
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20231101.backupvaultsbackuppolicies.dataprotection.azure.com
+  rules:
+  - apiGroups:
+    - dataprotection.azure.com
+    apiVersions:
+    - v20231101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - backupvaultsbackuppolicies
+  sideEffects: None

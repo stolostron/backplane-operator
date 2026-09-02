@@ -1,0 +1,532 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: capz-system/azureserviceoperator-serving-cert
+  name: azureserviceoperator-servicebus-vwh
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-servicebus-azure-com-v1api20210101preview-namespace
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20210101preview.namespaces.servicebus.azure.com
+  rules:
+  - apiGroups:
+    - servicebus.azure.com
+    apiVersions:
+    - v1api20210101preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - namespaces
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-servicebus-azure-com-v1api20210101preview-namespacesauthorizationrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20210101preview.namespacesauthorizationrules.servicebus.azure.com
+  rules:
+  - apiGroups:
+    - servicebus.azure.com
+    apiVersions:
+    - v1api20210101preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - namespacesauthorizationrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-servicebus-azure-com-v1api20210101preview-namespacesqueue
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20210101preview.namespacesqueues.servicebus.azure.com
+  rules:
+  - apiGroups:
+    - servicebus.azure.com
+    apiVersions:
+    - v1api20210101preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - namespacesqueues
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-servicebus-azure-com-v1api20210101preview-namespacestopic
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20210101preview.namespacestopics.servicebus.azure.com
+  rules:
+  - apiGroups:
+    - servicebus.azure.com
+    apiVersions:
+    - v1api20210101preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - namespacestopics
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-servicebus-azure-com-v1api20210101preview-namespacestopicssubscription
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20210101preview.namespacestopicssubscriptions.servicebus.azure.com
+  rules:
+  - apiGroups:
+    - servicebus.azure.com
+    apiVersions:
+    - v1api20210101preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - namespacestopicssubscriptions
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-servicebus-azure-com-v1api20210101preview-namespacestopicssubscriptionsrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20210101preview.namespacestopicssubscriptionsrules.servicebus.azure.com
+  rules:
+  - apiGroups:
+    - servicebus.azure.com
+    apiVersions:
+    - v1api20210101preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - namespacestopicssubscriptionsrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-servicebus-azure-com-v1api20211101-namespace
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20211101.namespaces.servicebus.azure.com
+  rules:
+  - apiGroups:
+    - servicebus.azure.com
+    apiVersions:
+    - v1api20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - namespaces
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-servicebus-azure-com-v1api20211101-namespacesauthorizationrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20211101.namespacesauthorizationrules.servicebus.azure.com
+  rules:
+  - apiGroups:
+    - servicebus.azure.com
+    apiVersions:
+    - v1api20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - namespacesauthorizationrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-servicebus-azure-com-v1api20211101-namespacesqueue
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20211101.namespacesqueues.servicebus.azure.com
+  rules:
+  - apiGroups:
+    - servicebus.azure.com
+    apiVersions:
+    - v1api20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - namespacesqueues
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-servicebus-azure-com-v1api20211101-namespacestopic
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20211101.namespacestopics.servicebus.azure.com
+  rules:
+  - apiGroups:
+    - servicebus.azure.com
+    apiVersions:
+    - v1api20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - namespacestopics
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-servicebus-azure-com-v1api20211101-namespacestopicssubscription
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20211101.namespacestopicssubscriptions.servicebus.azure.com
+  rules:
+  - apiGroups:
+    - servicebus.azure.com
+    apiVersions:
+    - v1api20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - namespacestopicssubscriptions
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-servicebus-azure-com-v1api20211101-namespacestopicssubscriptionsrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20211101.namespacestopicssubscriptionsrules.servicebus.azure.com
+  rules:
+  - apiGroups:
+    - servicebus.azure.com
+    apiVersions:
+    - v1api20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - namespacestopicssubscriptionsrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-servicebus-azure-com-v1api20221001preview-namespace
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20221001preview.namespaces.servicebus.azure.com
+  rules:
+  - apiGroups:
+    - servicebus.azure.com
+    apiVersions:
+    - v1api20221001preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - namespaces
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-servicebus-azure-com-v1api20221001preview-namespacesauthorizationrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20221001preview.namespacesauthorizationrules.servicebus.azure.com
+  rules:
+  - apiGroups:
+    - servicebus.azure.com
+    apiVersions:
+    - v1api20221001preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - namespacesauthorizationrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-servicebus-azure-com-v1api20221001preview-namespacesqueue
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20221001preview.namespacesqueues.servicebus.azure.com
+  rules:
+  - apiGroups:
+    - servicebus.azure.com
+    apiVersions:
+    - v1api20221001preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - namespacesqueues
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-servicebus-azure-com-v1api20221001preview-namespacestopic
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20221001preview.namespacestopics.servicebus.azure.com
+  rules:
+  - apiGroups:
+    - servicebus.azure.com
+    apiVersions:
+    - v1api20221001preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - namespacestopics
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-servicebus-azure-com-v1api20221001preview-namespacestopicssubscription
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20221001preview.namespacestopicssubscriptions.servicebus.azure.com
+  rules:
+  - apiGroups:
+    - servicebus.azure.com
+    apiVersions:
+    - v1api20221001preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - namespacestopicssubscriptions
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-servicebus-azure-com-v1api20221001preview-namespacestopicssubscriptionsrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20221001preview.namespacestopicssubscriptionsrules.servicebus.azure.com
+  rules:
+  - apiGroups:
+    - servicebus.azure.com
+    apiVersions:
+    - v1api20221001preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - namespacestopicssubscriptionsrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-servicebus-azure-com-v1api20240101-namespace
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240101.namespaces.servicebus.azure.com
+  rules:
+  - apiGroups:
+    - servicebus.azure.com
+    apiVersions:
+    - v1api20240101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - namespaces
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-servicebus-azure-com-v1api20240101-namespacesauthorizationrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240101.namespacesauthorizationrules.servicebus.azure.com
+  rules:
+  - apiGroups:
+    - servicebus.azure.com
+    apiVersions:
+    - v1api20240101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - namespacesauthorizationrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-servicebus-azure-com-v1api20240101-namespacesqueue
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240101.namespacesqueues.servicebus.azure.com
+  rules:
+  - apiGroups:
+    - servicebus.azure.com
+    apiVersions:
+    - v1api20240101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - namespacesqueues
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-servicebus-azure-com-v1api20240101-namespacestopic
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240101.namespacestopics.servicebus.azure.com
+  rules:
+  - apiGroups:
+    - servicebus.azure.com
+    apiVersions:
+    - v1api20240101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - namespacestopics
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-servicebus-azure-com-v1api20240101-namespacestopicssubscription
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240101.namespacestopicssubscriptions.servicebus.azure.com
+  rules:
+  - apiGroups:
+    - servicebus.azure.com
+    apiVersions:
+    - v1api20240101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - namespacestopicssubscriptions
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-servicebus-azure-com-v1api20240101-namespacestopicssubscriptionsrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240101.namespacestopicssubscriptionsrules.servicebus.azure.com
+  rules:
+  - apiGroups:
+    - servicebus.azure.com
+    apiVersions:
+    - v1api20240101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - namespacestopicssubscriptionsrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-servicebus-azure-com-v1api20240101-topicauthorizationrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240101.topicauthorizationrules.servicebus.azure.com
+  rules:
+  - apiGroups:
+    - servicebus.azure.com
+    apiVersions:
+    - v1api20240101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - topicauthorizationrules
+  sideEffects: None

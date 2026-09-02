@@ -14,8 +14,8 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    createdAt: "2026-07-24T14:28:34Z"
-    operators.operatorframework.io/builder: operator-sdk-v1.42.2
+    createdAt: "2026-08-18T20:48:25Z"
+    operators.operatorframework.io/builder: operator-sdk-v1.42.3
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
   name: multicluster-engine.v0.0.1
   namespace: placeholder
@@ -96,7 +96,6 @@ spec:
           - events
           - namespaces
           - secrets
-          - serviceaccounts
           - services
           verbs:
           - '*'
@@ -117,6 +116,13 @@ spec:
           - patch
           - update
           - watch
+        - apiGroups:
+          - ""
+          resources:
+          - groups
+          - users
+          verbs:
+          - impersonate
         - apiGroups:
           - ""
           resources:
@@ -153,6 +159,12 @@ spec:
           - ""
           resources:
           - pods/portforward
+          verbs:
+          - '*'
+        - apiGroups:
+          - ""
+          resources:
+          - serviceaccounts
           verbs:
           - '*'
         - apiGroups:
@@ -264,10 +276,8 @@ spec:
           - ""
           - rbac.authorization.k8s.io
           resources:
-          - clusterrolebindings
           - clusterroles
           - namespaces
-          - rolebindings
           - roles
           verbs:
           - create

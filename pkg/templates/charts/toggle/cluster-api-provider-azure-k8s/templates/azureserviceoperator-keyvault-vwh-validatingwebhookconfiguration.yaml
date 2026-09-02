@@ -1,0 +1,49 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: capz-system/azureserviceoperator-serving-cert
+  name: azureserviceoperator-keyvault-vwh
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-keyvault-azure-com-v1api20210401preview-vault
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20210401preview.vaults.keyvault.azure.com
+  rules:
+  - apiGroups:
+    - keyvault.azure.com
+    apiVersions:
+    - v1api20210401preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - vaults
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-keyvault-azure-com-v1api20230701-vault
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20230701.vaults.keyvault.azure.com
+  rules:
+  - apiGroups:
+    - keyvault.azure.com
+    apiVersions:
+    - v1api20230701
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - vaults
+  sideEffects: None

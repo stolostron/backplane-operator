@@ -6,7 +6,7 @@ RUN microdnf install -y git findutils
 COPY hack/scripts hack/scripts
 
 # Build the backplane-operator binary
-FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_1.25 AS builder
+FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_1.26 AS builder
 
 WORKDIR /workspace
 # Copy the Go Modules manifests
@@ -24,7 +24,7 @@ ARG LDFLAGS
 # Build
 RUN CGO_ENABLED=1 go build -mod=readonly -ldflags "${LDFLAGS}" -o backplane-operator main.go
 
-FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
+FROM registry.redhat.io/ubi9/ubi-minimal-pqc:latest
 
 LABEL org.label-schema.vendor="Red Hat" \
       org.label-schema.name="backplane-operator" \

@@ -37,20 +37,8 @@ jobs:
       fail-fast: false # If one jobs fail, we still want the other jobs to run.
       matrix:
         python-version: [3.9]
-        branch: ['main', 'backplane-2.6', 'backplane-2.8', 'backplane-2.9', 'backplane-2.10', 'backplane-2.11', 'backplane-2.17']
-        include:
-          - branch: backplane-2.6
-            go-version: "1.24"
-          - branch: backplane-2.8
-            go-version: "1.25"
-          - branch: backplane-2.9
-            go-version: "1.25"
-          - branch: backplane-2.10
-            go-version: "1.25"
-          - branch: backplane-2.11
-            go-version: "1.25"
-          - branch: backplane-2.17
-            go-version: "1.25"
+        go-version: ["1.26"]
+        branch: ['main', 'backplane-2.6', 'backplane-2.8', 'backplane-2.9', 'backplane-2.10', 'backplane-2.11', 'backplane-2.17', 'backplane-5.0']
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -73,7 +61,7 @@ jobs:
       - name: Install Helm
         uses: azure/setup-helm@v1
         with:
-          version: v3.21.3
+          version: v3.21.4
 
       # Runs a set of commands using the runners shell
       - name: Regenerate Charts

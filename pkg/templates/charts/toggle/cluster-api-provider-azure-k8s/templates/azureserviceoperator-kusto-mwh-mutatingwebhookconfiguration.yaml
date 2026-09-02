@@ -1,0 +1,175 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: capz-system/azureserviceoperator-serving-cert
+  name: azureserviceoperator-kusto-mwh
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-kusto-azure-com-v1api20230815-cluster
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20230815.clusters.kusto.azure.com
+  rules:
+  - apiGroups:
+    - kusto.azure.com
+    apiVersions:
+    - v1api20230815
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - clusters
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-kusto-azure-com-v1api20230815-database
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20230815.databases.kusto.azure.com
+  rules:
+  - apiGroups:
+    - kusto.azure.com
+    apiVersions:
+    - v1api20230815
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - databases
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-kusto-azure-com-v1api20230815-dataconnection
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20230815.dataconnections.kusto.azure.com
+  rules:
+  - apiGroups:
+    - kusto.azure.com
+    apiVersions:
+    - v1api20230815
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - dataconnections
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-kusto-azure-com-v1api20240413-cluster
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20240413.clusters.kusto.azure.com
+  rules:
+  - apiGroups:
+    - kusto.azure.com
+    apiVersions:
+    - v1api20240413
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - clusters
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-kusto-azure-com-v1api20240413-database
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20240413.databases.kusto.azure.com
+  rules:
+  - apiGroups:
+    - kusto.azure.com
+    apiVersions:
+    - v1api20240413
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - databases
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-kusto-azure-com-v1api20240413-dataconnection
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20240413.dataconnections.kusto.azure.com
+  rules:
+  - apiGroups:
+    - kusto.azure.com
+    apiVersions:
+    - v1api20240413
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - dataconnections
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-kusto-azure-com-v1api20240413-principalassignment
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20240413.principalassignments.kusto.azure.com
+  rules:
+  - apiGroups:
+    - kusto.azure.com
+    apiVersions:
+    - v1api20240413
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - principalassignments
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-kusto-azure-com-v20240413-clusterprincipalassignment
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20240413.clusterprincipalassignments.kusto.azure.com
+  rules:
+  - apiGroups:
+    - kusto.azure.com
+    apiVersions:
+    - v20240413
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - clusterprincipalassignments
+  sideEffects: None
