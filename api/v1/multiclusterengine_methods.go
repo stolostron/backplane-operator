@@ -48,7 +48,6 @@ const (
 	ManagedServiceAccount            = "managedserviceaccount"
 	ManagedServiceAccountPreview     = "managedserviceaccount-preview"
 	ServerFoundation                 = "server-foundation"
-	MaestroPreview                   = "maestro-preview"
 
 	// CRD directory names
 	AssistedServiceCRDDir            = "assisted-service"
@@ -102,7 +101,6 @@ var AllComponents = []string{
 	ManagedServiceAccount,
 	ManagedServiceAccountPreview,
 	ServerFoundation,
-	MaestroPreview,
 }
 
 // MCEComponents is a slice containing component names specific to the "MCE" category.
@@ -127,7 +125,6 @@ var MCEComponents = []string{
 	ImageBasedInstallOperator,
 	ManagedServiceAccount,
 	ServerFoundation,
-	MaestroPreview,
 }
 
 /*
