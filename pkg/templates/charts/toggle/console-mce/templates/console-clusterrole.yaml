@@ -74,6 +74,7 @@ rules:
   - projects
   - featuregates
   - ansiblejobs
+  - ansibleworkflows
   - clusterversions
 
 - verbs:
