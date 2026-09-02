@@ -1,4 +1,9 @@
 ---
+updates:
+- file: "manifests/multicluster-engine.clusterserviceversion.yaml"
+  update_list:
+  - search: "5.0.0"
+    replace: "5.0.0"
 # TODO: The assisted-* digests below are placeholders borrowed from MCE 2.11.
 # Replace with MCE 5.0 digests once the assisted-installer team publishes them.
 external-images:

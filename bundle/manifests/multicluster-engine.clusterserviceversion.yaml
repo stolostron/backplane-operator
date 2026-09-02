@@ -17,7 +17,7 @@ metadata:
     createdAt: "2026-08-18T20:48:25Z"
     operators.operatorframework.io/builder: operator-sdk-v1.42.3
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
-  name: multicluster-engine.v0.0.1
+  name: multicluster-engine.v5.0.0
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -3469,6 +3469,10 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: metadata.namespace
+                - name: OPERATOR_VERSION
+                  value: "5.0.0"
+                - name: OPERATOR_PACKAGE
+                  value: multicluster-engine
                 image: quay.io/stolostron/backplane-operator:latest
                 imagePullPolicy: IfNotPresent
                 livenessProbe:
@@ -3569,4 +3573,4 @@ spec:
   provider:
     name: Red Hat
     url: https://multicluster-engine.domain
-  version: 0.0.1
+  version: 5.0.0
