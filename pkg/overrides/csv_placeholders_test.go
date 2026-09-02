@@ -182,7 +182,7 @@ func helmImageOverrideKeys(t *testing.T, templatesDir string) []string {
 		if err != nil {
 			return err
 		}
-		if info.IsDir() || !(strings.HasSuffix(path, ".yaml") || strings.HasSuffix(path, ".yml")) {
+		if info.IsDir() || !strings.HasSuffix(path, ".yaml") && !strings.HasSuffix(path, ".yml") {
 			return nil
 		}
 		raw, err := os.ReadFile(path)
