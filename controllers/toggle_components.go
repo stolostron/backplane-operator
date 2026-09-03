@@ -725,6 +725,10 @@ func (r *MultiClusterEngineReconciler) ensureServerFoundation(ctx context.Contex
 	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
 
+	namespacedName = types.NamespacedName{Name: "managedcluster-import-controller-v2", Namespace: mce.Spec.TargetNamespace}
+	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
+	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
+
 	// Ensure that the InternalHubComponent CR instance is created for component in MCE.
 	if result, err := r.ensureInternalEngineComponent(ctx, mce, backplanev1.ServerFoundation); err != nil {
 		return result, err
@@ -789,6 +793,10 @@ func (r *MultiClusterEngineReconciler) ensureNoServerFoundation(ctx context.Cont
 	}
 
 	namespacedName = types.NamespacedName{Name: "ocm-webhook", Namespace: mce.Spec.TargetNamespace}
+	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
+	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
+
+	namespacedName = types.NamespacedName{Name: "managedcluster-import-controller-v2", Namespace: mce.Spec.TargetNamespace}
 	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
 	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 
