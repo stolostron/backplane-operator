@@ -1,0 +1,113 @@
+# Copyright Contributors to the Open Cluster Management project
+#
+# Standalone Pipelines-as-Code PR check that runs `make test` (Go unit
+# tests) on every PR to main/backplane-5.1/backplane-5.2. This is a plain
+# PR check (not tied to Konflux Snapshot/Release gating), equivalent to
+# Prow's `make unit-tests` job. Replaces the old
+# backplane-operator-main-unit-test.yaml, which never actually ran (no
+# IntegrationTestScenario referenced it).
+#
+# The appstudio.openshift.io/* labels are required for UI resolution
+# only; they don't affect the check's actual scope or gating behavior.
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  annotations:
+    build.appstudio.openshift.io/repo: https://github.com/stolostron/backplane-operator?rev={{revision}}
+    build.appstudio.redhat.com/commit_sha: '{{revision}}'
+    build.appstudio.redhat.com/pull_request_number: '{{pull_request_number}}'
+    build.appstudio.redhat.com/target_branch: '{{target_branch}}'
+    pipelinesascode.tekton.dev/cancel-in-progress: "true"
+    pipelinesascode.tekton.dev/max-keep-runs: "3"
+    pipelinesascode.tekton.dev/on-cel-expression: event == "pull_request" && (target_branch == "main" || target_branch == "backplane-5.1" || target_branch == "backplane-5.2")
+  creationTimestamp: null
+  labels:
+    appstudio.openshift.io/application: release-mce-51
+    appstudio.openshift.io/component: backplane-operator-mce-51
+    pipelines.appstudio.openshift.io/type: test
+  name: backplane-operator-unit-tests
+  namespace: crt-redhat-acm-tenant
+spec:
+  params:
+  - name: git-url
+    value: '{{source_url}}'
+  - name: revision
+    value: '{{revision}}'
+  timeouts:
+    pipeline: "20m"
+  pipelineSpec:
+    params:
+      - name: git-url
+        type: string
+      - name: revision
+        type: string
+    tasks:
+      - name: unit-test
+        params:
+          - name: git-url
+            value: $(params.git-url)
+          - name: revision
+            value: $(params.revision)
+        taskSpec:
+          params:
+            - name: git-url
+              type: string
+            - name: revision
+              type: string
+          steps:
+            - name: run-unit-tests
+              image: registry.redhat.io/ubi9/go-toolset:1.26
+              workingDir: /workspace
+              computeResources:
+                requests:
+                  cpu: "1"
+                  memory: 2Gi
+                limits:
+                  cpu: "2"
+                  memory: 6Gi
+              env:
+                - name: GIT_URL
+                  value: $(params.git-url)
+                - name: REVISION
+                  value: $(params.revision)
+                - name: HOME
+                  value: /tmp/home
+                - name: GOPATH
+                  value: /tmp/go
+                - name: GOCACHE
+                  value: /tmp/go-cache
+                - name: GOFLAGS
+                  value: -p=2
+              script: |
+                #!/bin/bash
+                set -uo pipefail
+                mkdir -p "${HOME}"
+
+                echo "===== Checking required tools ====="
+                # go-toolset already ships git/make/go; just verify they exist.
+                for tool in git make go; do
+                  if ! command -v "${tool}" >/dev/null 2>&1; then
+                    echo "Required tool '${tool}' not found in this image."
+                    exit 1
+                  fi
+                done
+                echo "git:  $(git --version)"
+                echo "make: $(make --version | head -1)"
+                echo "go:   $(go version)"
+
+                echo "===== Cloning ${GIT_URL}@${REVISION} ====="
+                git clone --quiet "${GIT_URL}" src
+                cd src
+                git checkout --quiet "${REVISION}"
+
+                echo "===== Running unit tests: make test ====="
+                # Timeout 10m so a stuck download fails fast, not hangs for hours.
+                if timeout 600 make test; then
+                  echo "Unit tests passed."
+                else
+                  echo "make test failed or timed out after 10m."
+                  exit 1
+                fi
+  taskRunTemplate:
+    serviceAccountName: build-pipeline-backplane-operator-mce-51
+status: {}
