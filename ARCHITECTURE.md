@@ -41,7 +41,7 @@ MCE as a prerequisite for the full ACM hub stack.
 
 ### Managed components (`api/v1/multiclusterengine_methods.go`)
 
-Includes assisted-service, cluster-api (+ AWS/Azure/Metal3/OpenShift-Assisted providers), cluster-lifecycle, cluster-manager, cluster-permission, cluster-proxy-addon, console-mce, discovery, hive, hypershift, image-based-install-operator, local-cluster, managedserviceaccount, server-foundation, and maestro. A `PreviewToStable` map auto-upgrades preview components to stable during reconciliation.
+Includes assisted-service, cluster-api (+ AWS/Azure/Metal3/OpenShift-Assisted providers), cluster-lifecycle, cluster-manager, cluster-permission, cluster-proxy-addon, console-mce, discovery, hive, hypershift, image-based-install-operator, local-cluster, managedserviceaccount, and server-foundation. A `PreviewToStable` map auto-upgrades preview components to stable during reconciliation.
 
 ### Controllers
 

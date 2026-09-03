@@ -67,7 +67,6 @@ var (
 	ErrInvalidAvailability  = errors.New("invalid AvailabilityConfig")
 	ErrInvalidInfraNS       = errors.New("invalid InfrastructureCustomNamespace")
 	ErrComponentExclusivity = errors.New("component exclusivity violation")
-	ErrMaestroDeprecated    = errors.New("maestro component is deprecated in MCE 5.0 and cannot be enabled")
 
 	blockDeletionResources = []BlockDeletionResource{
 		{
@@ -183,9 +182,6 @@ func (r *MultiClusterEngine) ValidateCreate(ctx context.Context, obj *MultiClust
 			if !validComponent(c) {
 				return nil, fmt.Errorf("%w: %s is not a known component", ErrInvalidComponent, c.Name)
 			}
-			if c.Name == MaestroPreview && c.Enabled {
-				return nil, fmt.Errorf("%w: %s cannot be enabled", ErrMaestroDeprecated, c.Name)
-			}
 		}
 	}
 
@@ -265,9 +261,6 @@ func (r *MultiClusterEngine) ValidateUpdate(ctx context.Context, oldObj, newObj 
 		for _, c := range newObj.Spec.Overrides.Components {
 			if !validComponent(c) {
 				return nil, fmt.Errorf("%w: %s is not a known component", ErrInvalidComponent, c.Name)
-			}
-			if c.Name == MaestroPreview && c.Enabled && !oldObj.Enabled(MaestroPreview) {
-				return nil, fmt.Errorf("%w: %s cannot be enabled", ErrMaestroDeprecated, c.Name)
 			}
 		}
 	}
