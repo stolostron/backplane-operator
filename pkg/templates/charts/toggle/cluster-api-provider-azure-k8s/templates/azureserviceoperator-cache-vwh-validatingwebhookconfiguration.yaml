@@ -95,48 +95,6 @@ webhooks:
     service:
       name: azureserviceoperator-webhook-service
       namespace: '{{ .Values.global.namespace }}'
-      path: /validate-cache-azure-com-v1api20210301-redisenterprisedatabase
-  failurePolicy: Fail
-  matchPolicy: Exact
-  name: validate.v1api20210301.redisenterprisedatabases.cache.azure.com
-  rules:
-  - apiGroups:
-    - cache.azure.com
-    apiVersions:
-    - v1api20210301
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - redisenterprisedatabases
-  sideEffects: None
-- admissionReviewVersions:
-  - v1
-  clientConfig:
-    service:
-      name: azureserviceoperator-webhook-service
-      namespace: '{{ .Values.global.namespace }}'
-      path: /validate-cache-azure-com-v1api20210301-redisenterprise
-  failurePolicy: Fail
-  matchPolicy: Exact
-  name: validate.v1api20210301.redisenterprises.cache.azure.com
-  rules:
-  - apiGroups:
-    - cache.azure.com
-    apiVersions:
-    - v1api20210301
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - redisenterprises
-  sideEffects: None
-- admissionReviewVersions:
-  - v1
-  clientConfig:
-    service:
-      name: azureserviceoperator-webhook-service
-      namespace: '{{ .Values.global.namespace }}'
       path: /validate-cache-azure-com-v1api20230401-redis
   failurePolicy: Fail
   matchPolicy: Exact
@@ -214,48 +172,6 @@ webhooks:
     - UPDATE
     resources:
     - redispatchschedules
-  sideEffects: None
-- admissionReviewVersions:
-  - v1
-  clientConfig:
-    service:
-      name: azureserviceoperator-webhook-service
-      namespace: '{{ .Values.global.namespace }}'
-      path: /validate-cache-azure-com-v1api20230701-redisenterprisedatabase
-  failurePolicy: Fail
-  matchPolicy: Exact
-  name: validate.v1api20230701.redisenterprisedatabases.cache.azure.com
-  rules:
-  - apiGroups:
-    - cache.azure.com
-    apiVersions:
-    - v1api20230701
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - redisenterprisedatabases
-  sideEffects: None
-- admissionReviewVersions:
-  - v1
-  clientConfig:
-    service:
-      name: azureserviceoperator-webhook-service
-      namespace: '{{ .Values.global.namespace }}'
-      path: /validate-cache-azure-com-v1api20230701-redisenterprise
-  failurePolicy: Fail
-  matchPolicy: Exact
-  name: validate.v1api20230701.redisenterprises.cache.azure.com
-  rules:
-  - apiGroups:
-    - cache.azure.com
-    apiVersions:
-    - v1api20230701
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - redisenterprises
   sideEffects: None
 - admissionReviewVersions:
   - v1
@@ -599,48 +515,6 @@ webhooks:
     service:
       name: azureserviceoperator-webhook-service
       namespace: '{{ .Values.global.namespace }}'
-      path: /validate-cache-azure-com-v20210301-redisenterprisedatabase
-  failurePolicy: Fail
-  matchPolicy: Exact
-  name: validate.v20210301.redisenterprisedatabases.cache.azure.com
-  rules:
-  - apiGroups:
-    - cache.azure.com
-    apiVersions:
-    - v20210301
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - redisenterprisedatabases
-  sideEffects: None
-- admissionReviewVersions:
-  - v1
-  clientConfig:
-    service:
-      name: azureserviceoperator-webhook-service
-      namespace: '{{ .Values.global.namespace }}'
-      path: /validate-cache-azure-com-v20210301-redisenterprise
-  failurePolicy: Fail
-  matchPolicy: Exact
-  name: validate.v20210301.redisenterprises.cache.azure.com
-  rules:
-  - apiGroups:
-    - cache.azure.com
-    apiVersions:
-    - v20210301
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - redisenterprises
-  sideEffects: None
-- admissionReviewVersions:
-  - v1
-  clientConfig:
-    service:
-      name: azureserviceoperator-webhook-service
-      namespace: '{{ .Values.global.namespace }}'
       path: /validate-cache-azure-com-v20230401-redis
   failurePolicy: Fail
   matchPolicy: Exact
@@ -718,48 +592,6 @@ webhooks:
     - UPDATE
     resources:
     - redispatchschedules
-  sideEffects: None
-- admissionReviewVersions:
-  - v1
-  clientConfig:
-    service:
-      name: azureserviceoperator-webhook-service
-      namespace: '{{ .Values.global.namespace }}'
-      path: /validate-cache-azure-com-v20230701-redisenterprisedatabase
-  failurePolicy: Fail
-  matchPolicy: Exact
-  name: validate.v20230701.redisenterprisedatabases.cache.azure.com
-  rules:
-  - apiGroups:
-    - cache.azure.com
-    apiVersions:
-    - v20230701
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - redisenterprisedatabases
-  sideEffects: None
-- admissionReviewVersions:
-  - v1
-  clientConfig:
-    service:
-      name: azureserviceoperator-webhook-service
-      namespace: '{{ .Values.global.namespace }}'
-      path: /validate-cache-azure-com-v20230701-redisenterprise
-  failurePolicy: Fail
-  matchPolicy: Exact
-  name: validate.v20230701.redisenterprises.cache.azure.com
-  rules:
-  - apiGroups:
-    - cache.azure.com
-    apiVersions:
-    - v20230701
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - redisenterprises
   sideEffects: None
 - admissionReviewVersions:
   - v1

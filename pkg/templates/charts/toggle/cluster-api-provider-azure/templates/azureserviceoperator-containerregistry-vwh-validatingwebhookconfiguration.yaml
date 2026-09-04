@@ -68,3 +68,24 @@ webhooks:
     resources:
     - registryreplications
   sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-containerregistry-azure-com-v20251101-registrycacherule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20251101.registrycacherules.containerregistry.azure.com
+  rules:
+  - apiGroups:
+    - containerregistry.azure.com
+    apiVersions:
+    - v20251101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - registrycacherules
+  sideEffects: None
