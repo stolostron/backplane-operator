@@ -3,7 +3,7 @@ kind: Service
 metadata:
   labels:
     app.kubernetes.io/name: azure-service-operator
-    app.kubernetes.io/version: v2.18.0-hcpclusters.1
+    app.kubernetes.io/version: v2.18.0-hcpclusters.2
   name: azureserviceoperator-webhook-service
   namespace: '{{ .Values.global.namespace }}'
 spec:
