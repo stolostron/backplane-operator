@@ -11,6 +11,27 @@ webhooks:
     service:
       name: azureserviceoperator-webhook-service
       namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /mutate-entra-azure-com-v1-application
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1.applications.entra.azure.com
+  rules:
+  - apiGroups:
+    - entra.azure.com
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - applications
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
       path: /mutate-entra-azure-com-v1-securitygroup
   failurePolicy: Fail
   matchPolicy: Exact

@@ -1320,6 +1320,7 @@ rules:
   - containerregistry.azure.com
   resources:
   - registries
+  - registrycacherules
   - registryreplications
   verbs:
   - create
@@ -1334,6 +1335,8 @@ rules:
   resources:
   - registries/finalizers
   - registries/status
+  - registrycacherules/finalizers
+  - registrycacherules/status
   - registryreplications/finalizers
   - registryreplications/status
   verbs:
@@ -1764,6 +1767,7 @@ rules:
 - apiGroups:
   - entra.azure.com
   resources:
+  - applications
   - securitygroups
   verbs:
   - create
@@ -1776,6 +1780,8 @@ rules:
 - apiGroups:
   - entra.azure.com
   resources:
+  - applications/finalizers
+  - applications/status
   - securitygroups/status
   - users/finalizers
   verbs:
