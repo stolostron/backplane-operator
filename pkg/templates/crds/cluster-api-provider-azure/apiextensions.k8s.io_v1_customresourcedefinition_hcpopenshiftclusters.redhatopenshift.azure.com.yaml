@@ -6,7 +6,7 @@ metadata:
     service.beta.openshift.io/inject-cabundle: "true"
   labels:
     app.kubernetes.io/name: azure-service-operator
-    app.kubernetes.io/version: v2.20.0-rev.118
+    app.kubernetes.io/version: v2.20.0-hcpclusters.1
   name: hcpopenshiftclusters.redhatopenshift.azure.com
 spec:
   conversion:
@@ -45,12 +45,12 @@ spec:
     - jsonPath: .status.conditions[?(@.type=='Ready')].message
       name: Message
       type: string
-    name: v1api20260630preview
+    name: v1api20260901preview
     schema:
       openAPIV3Schema:
         description: |-
           Generator information:
-          - Generated from: /redhatopenshift/resource-manager/Microsoft.RedHatOpenShift/hcpopenshiftclusters/preview/2026-06-30-preview/openapi.json
+          - Generated from: /redhatopenshift/resource-manager/Microsoft.RedHatOpenShift/hcpopenshiftclusters/preview/2026-09-01-preview/openapi.json
           - ARM URI: /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.RedHatOpenShift/hcpOpenShiftClusters/{hcpOpenShiftClusterName}
         properties:
           apiVersion:
@@ -302,10 +302,6 @@ spec:
                           MaxNodeProvisionTimeSeconds: maxNodeProvisionTimeSeconds is the maximum time to wait for node provisioning before
                           considering the
                           provisioning to be unsuccessful. The default is 900 seconds, or 15 minutes.
-                          Note: The default value is not declared in the API specification because
-                          of a TypeSpec bug with updatable fields. The default value will be
-                          declared in a future API version once the TypeSpec bug is fixed.
-                          https://github.com/Azure/typespec-azure/issues/1586
                         minimum: 0
                         type: integer
                       maxNodesTotal:
@@ -319,10 +315,6 @@ spec:
                           MaxPodGracePeriodSeconds: maxPodGracePeriod is the maximum seconds to wait for graceful pod termination before scaling
                           down a NodePool.
                           The default is 600 seconds.
-                          Note: The default value is not declared in the API specification because
-                          of a TypeSpec bug with updatable fields. The default value will be
-                          declared in a future API version once the TypeSpec bug is fixed.
-                          https://github.com/Azure/typespec-azure/issues/1586
                         minimum: 0
                         type: integer
                       podPriorityThreshold:
@@ -332,10 +324,6 @@ spec:
                           but only run when there are spare resources available. The default is -10.
                           See the following for more details:
                           https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/FAQ.md#how-does-cluster-autoscaler-work-with-pod-priority-and-preemption
-                          Note: The default value is not declared in the API specification because
-                          of a TypeSpec bug with updatable fields. The default value will be
-                          declared in a future API version once the TypeSpec bug is fixed.
-                          https://github.com/Azure/typespec-azure/issues/1586
                         type: integer
                     type: object
                   clusterImageRegistry:
@@ -758,10 +746,6 @@ spec:
                           ChannelGroup: ChannelGroup is the name of the set to which this version belongs.
                           Each version belongs to only a single set.
                           If not specified, the default value is 'stable'.
-                          Note: The default value is not declared in the API specification because
-                          of a TypeSpec bug with updatable fields. The default value will be
-                          declared in a future API version once the TypeSpec bug is fixed.
-                          https://github.com/Azure/typespec-azure/issues/1586
                         type: string
                       id:
                         description: 'Id: ID is the desired X.Y version of the cluster
@@ -912,10 +896,6 @@ spec:
                           MaxNodeProvisionTimeSeconds: maxNodeProvisionTimeSeconds is the maximum time to wait for node provisioning before
                           considering the
                           provisioning to be unsuccessful. The default is 900 seconds, or 15 minutes.
-                          Note: The default value is not declared in the API specification because
-                          of a TypeSpec bug with updatable fields. The default value will be
-                          declared in a future API version once the TypeSpec bug is fixed.
-                          https://github.com/Azure/typespec-azure/issues/1586
                         type: integer
                       maxNodesTotal:
                         description: |-
@@ -927,10 +907,6 @@ spec:
                           MaxPodGracePeriodSeconds: maxPodGracePeriod is the maximum seconds to wait for graceful pod termination before scaling
                           down a NodePool.
                           The default is 600 seconds.
-                          Note: The default value is not declared in the API specification because
-                          of a TypeSpec bug with updatable fields. The default value will be
-                          declared in a future API version once the TypeSpec bug is fixed.
-                          https://github.com/Azure/typespec-azure/issues/1586
                         type: integer
                       podPriorityThreshold:
                         description: |-
@@ -939,10 +915,6 @@ spec:
                           but only run when there are spare resources available. The default is -10.
                           See the following for more details:
                           https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/FAQ.md#how-does-cluster-autoscaler-work-with-pod-priority-and-preemption
-                          Note: The default value is not declared in the API specification because
-                          of a TypeSpec bug with updatable fields. The default value will be
-                          declared in a future API version once the TypeSpec bug is fixed.
-                          https://github.com/Azure/typespec-azure/issues/1586
                         type: integer
                     type: object
                   clusterImageRegistry:
@@ -1266,10 +1238,6 @@ spec:
                           ChannelGroup: ChannelGroup is the name of the set to which this version belongs.
                           Each version belongs to only a single set.
                           If not specified, the default value is 'stable'.
-                          Note: The default value is not declared in the API specification because
-                          of a TypeSpec bug with updatable fields. The default value will be
-                          declared in a future API version once the TypeSpec bug is fixed.
-                          https://github.com/Azure/typespec-azure/issues/1586
                         type: string
                       id:
                         description: 'Id: ID is the desired X.Y version of the cluster
@@ -1332,13 +1300,13 @@ spec:
     - jsonPath: .status.conditions[?(@.type=='Ready')].message
       name: Message
       type: string
-    name: v1api20260630previewstorage
+    name: v1api20260901previewstorage
     schema:
       openAPIV3Schema:
         description: |-
-          Storage version of v1api20260630preview.HcpOpenShiftCluster
+          Storage version of v1api20260901preview.HcpOpenShiftCluster
           Generator information:
-          - Generated from: /redhatopenshift/resource-manager/Microsoft.RedHatOpenShift/hcpopenshiftclusters/preview/2026-06-30-preview/openapi.json
+          - Generated from: /redhatopenshift/resource-manager/Microsoft.RedHatOpenShift/hcpopenshiftclusters/preview/2026-09-01-preview/openapi.json
           - ARM URI: /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.RedHatOpenShift/hcpOpenShiftClusters/{hcpOpenShiftClusterName}
         properties:
           apiVersion:
@@ -1359,7 +1327,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: Storage version of v1api20260630preview.HcpOpenShiftCluster_Spec
+            description: Storage version of v1api20260901preview.HcpOpenShiftCluster_Spec
             properties:
               $propertyBag:
                 additionalProperties:
@@ -1375,7 +1343,7 @@ spec:
                 type: string
               identity:
                 description: |-
-                  Storage version of v1api20260630preview.ManagedServiceIdentity
+                  Storage version of v1api20260901preview.ManagedServiceIdentity
                   Managed service identity (system assigned and/or user assigned identities)
                 properties:
                   $propertyBag:
@@ -1390,7 +1358,7 @@ spec:
                   userAssignedIdentities:
                     items:
                       description: |-
-                        Storage version of v1api20260630preview.UserAssignedIdentityDetails
+                        Storage version of v1api20260901preview.UserAssignedIdentityDetails
                         Information about the user assigned identity for the resource
                       properties:
                         $propertyBag:
@@ -1429,7 +1397,7 @@ spec:
                 type: string
               operatorSpec:
                 description: |-
-                  Storage version of v1api20260630preview.HcpOpenShiftClusterOperatorSpec
+                  Storage version of v1api20260901preview.HcpOpenShiftClusterOperatorSpec
                   Details for configuring operator behavior. Fields in this struct are interpreted by the operator directly rather than being passed to Azure
                 properties:
                   $propertyBag:
@@ -1522,7 +1490,7 @@ spec:
                       type: object
                     type: array
                   secrets:
-                    description: Storage version of v1api20260630preview.HcpOpenShiftClusterOperatorSecrets
+                    description: Storage version of v1api20260901preview.HcpOpenShiftClusterOperatorSecrets
                     properties:
                       $propertyBag:
                         additionalProperties:
@@ -1581,7 +1549,7 @@ spec:
                 type: object
               properties:
                 description: |-
-                  Storage version of v1api20260630preview.HcpOpenShiftClusterProperties
+                  Storage version of v1api20260901preview.HcpOpenShiftClusterProperties
                   HCP cluster properties
                 properties:
                   $propertyBag:
@@ -1593,7 +1561,7 @@ spec:
                     type: object
                   api:
                     description: |-
-                      Storage version of v1api20260630preview.ApiProfile
+                      Storage version of v1api20260901preview.ApiProfile
                       Information about the API of a cluster.
                     properties:
                       $propertyBag:
@@ -1612,7 +1580,7 @@ spec:
                     type: object
                   autoscaling:
                     description: |-
-                      Storage version of v1api20260630preview.ClusterAutoscalingProfile
+                      Storage version of v1api20260901preview.ClusterAutoscalingProfile
                       ClusterAutoscaling specifies auto-scaling behavior that
                       applies to all NodePools associated with a control plane.
                     properties:
@@ -1634,7 +1602,7 @@ spec:
                     type: object
                   clusterImageRegistry:
                     description: |-
-                      Storage version of v1api20260630preview.ClusterImageRegistryProfile
+                      Storage version of v1api20260901preview.ClusterImageRegistryProfile
                       OpenShift cluster image registry
                     properties:
                       $propertyBag:
@@ -1651,7 +1619,7 @@ spec:
                     type: string
                   dns:
                     description: |-
-                      Storage version of v1api20260630preview.DnsProfile
+                      Storage version of v1api20260901preview.DnsProfile
                       DNS contains the DNS settings of the cluster
                     properties:
                       $propertyBag:
@@ -1666,7 +1634,7 @@ spec:
                     type: object
                   etcd:
                     description: |-
-                      Storage version of v1api20260630preview.EtcdProfile
+                      Storage version of v1api20260901preview.EtcdProfile
                       The ETCD settings and configuration options.
                     properties:
                       $propertyBag:
@@ -1678,7 +1646,7 @@ spec:
                         type: object
                       dataEncryption:
                         description: |-
-                          Storage version of v1api20260630preview.EtcdDataEncryptionProfile
+                          Storage version of v1api20260901preview.EtcdDataEncryptionProfile
                           The ETCD data encryption settings.
                         properties:
                           $propertyBag:
@@ -1690,7 +1658,7 @@ spec:
                             type: object
                           customerManaged:
                             description: |-
-                              Storage version of v1api20260630preview.CustomerManagedEncryptionProfile
+                              Storage version of v1api20260901preview.CustomerManagedEncryptionProfile
                               Customer managed encryption key profile.
                             properties:
                               $propertyBag:
@@ -1704,7 +1672,7 @@ spec:
                                 type: string
                               kms:
                                 description: |-
-                                  Storage version of v1api20260630preview.KmsEncryptionProfile
+                                  Storage version of v1api20260901preview.KmsEncryptionProfile
                                   Configure etcd encryption Key Management Service (KMS) key.
                                   Your Microsoft Entra application used to create the cluster
                                   must be authorized to access this keyvault,
@@ -1720,7 +1688,7 @@ spec:
                                     type: object
                                   activeKey:
                                     description: |-
-                                      Storage version of v1api20260630preview.KmsKey
+                                      Storage version of v1api20260901preview.KmsKey
                                       A representation of a KeyVault Secret.
                                     properties:
                                       $propertyBag:
@@ -1748,7 +1716,7 @@ spec:
                   imageDigestMirrors:
                     items:
                       description: |-
-                        Storage version of v1api20260630preview.ImageDigestMirror
+                        Storage version of v1api20260901preview.ImageDigestMirror
                         ImageDigestMirror specifies a set of mirror registries to redirect image
                         pulls targeting the specified source registries.
                       properties:
@@ -1769,7 +1737,7 @@ spec:
                     type: array
                   ingress:
                     description: |-
-                      Storage version of v1api20260630preview.IngressProfile
+                      Storage version of v1api20260901preview.IngressProfile
                       Information about the Ingress of a cluster.
                     properties:
                       $propertyBag:
@@ -1784,7 +1752,7 @@ spec:
                     type: object
                   network:
                     description: |-
-                      Storage version of v1api20260630preview.NetworkProfile
+                      Storage version of v1api20260901preview.NetworkProfile
                       OpenShift networking configuration
                     properties:
                       $propertyBag:
@@ -1809,7 +1777,7 @@ spec:
                     type: integer
                   platform:
                     description: |-
-                      Storage version of v1api20260630preview.PlatformProfile
+                      Storage version of v1api20260901preview.PlatformProfile
                       Azure specific configuration
                     properties:
                       $propertyBag:
@@ -1845,7 +1813,7 @@ spec:
                         type: object
                       operatorsAuthentication:
                         description: |-
-                          Storage version of v1api20260630preview.OperatorsAuthenticationProfile
+                          Storage version of v1api20260901preview.OperatorsAuthenticationProfile
                           The configuration that the operators of the cluster have to authenticate to Azure.
                         properties:
                           $propertyBag:
@@ -1857,7 +1825,7 @@ spec:
                             type: object
                           userAssignedIdentities:
                             description: |-
-                              Storage version of v1api20260630preview.UserAssignedIdentitiesProfile
+                              Storage version of v1api20260901preview.UserAssignedIdentitiesProfile
                               Represents the information related to Azure User-Assigned managed identities needed
                               to perform Operators authentication
                               based on Azure User-Assigned Managed Identities
@@ -2007,7 +1975,7 @@ spec:
                     type: object
                   version:
                     description: |-
-                      Storage version of v1api20260630preview.VersionProfile
+                      Storage version of v1api20260901preview.VersionProfile
                       Versions represents an OpenShift version.
                     properties:
                       $propertyBag:
@@ -2032,7 +2000,7 @@ spec:
             type: object
           status:
             description: |-
-              Storage version of v1api20260630preview.HcpOpenShiftCluster_STATUS
+              Storage version of v1api20260901preview.HcpOpenShiftCluster_STATUS
               HCP cluster resource
             properties:
               $propertyBag:
@@ -2093,7 +2061,7 @@ spec:
                 type: string
               identity:
                 description: |-
-                  Storage version of v1api20260630preview.ManagedServiceIdentity_STATUS
+                  Storage version of v1api20260901preview.ManagedServiceIdentity_STATUS
                   Managed service identity (system assigned and/or user assigned identities)
                 properties:
                   $propertyBag:
@@ -2112,7 +2080,7 @@ spec:
                   userAssignedIdentities:
                     additionalProperties:
                       description: |-
-                        Storage version of v1api20260630preview.UserAssignedIdentity_STATUS
+                        Storage version of v1api20260901preview.UserAssignedIdentity_STATUS
                         User assigned identity properties
                       properties:
                         $propertyBag:
@@ -2135,7 +2103,7 @@ spec:
                 type: string
               properties:
                 description: |-
-                  Storage version of v1api20260630preview.HcpOpenShiftClusterProperties_STATUS
+                  Storage version of v1api20260901preview.HcpOpenShiftClusterProperties_STATUS
                   HCP cluster properties
                 properties:
                   $propertyBag:
@@ -2147,7 +2115,7 @@ spec:
                     type: object
                   api:
                     description: |-
-                      Storage version of v1api20260630preview.ApiProfile_STATUS
+                      Storage version of v1api20260901preview.ApiProfile_STATUS
                       Information about the API of a cluster.
                     properties:
                       $propertyBag:
@@ -2168,7 +2136,7 @@ spec:
                     type: object
                   autoscaling:
                     description: |-
-                      Storage version of v1api20260630preview.ClusterAutoscalingProfile_STATUS
+                      Storage version of v1api20260901preview.ClusterAutoscalingProfile_STATUS
                       ClusterAutoscaling specifies auto-scaling behavior that
                       applies to all NodePools associated with a control plane.
                     properties:
@@ -2190,7 +2158,7 @@ spec:
                     type: object
                   clusterImageRegistry:
                     description: |-
-                      Storage version of v1api20260630preview.ClusterImageRegistryProfile_STATUS
+                      Storage version of v1api20260901preview.ClusterImageRegistryProfile_STATUS
                       OpenShift cluster image registry
                     properties:
                       $propertyBag:
@@ -2205,7 +2173,7 @@ spec:
                     type: object
                   console:
                     description: |-
-                      Storage version of v1api20260630preview.ConsoleProfile_STATUS
+                      Storage version of v1api20260901preview.ConsoleProfile_STATUS
                       Configuration of the cluster web console
                     properties:
                       $propertyBag:
@@ -2222,7 +2190,7 @@ spec:
                     type: string
                   dns:
                     description: |-
-                      Storage version of v1api20260630preview.DnsProfile_STATUS
+                      Storage version of v1api20260901preview.DnsProfile_STATUS
                       DNS contains the DNS settings of the cluster
                     properties:
                       $propertyBag:
@@ -2239,7 +2207,7 @@ spec:
                     type: object
                   etcd:
                     description: |-
-                      Storage version of v1api20260630preview.EtcdProfile_STATUS
+                      Storage version of v1api20260901preview.EtcdProfile_STATUS
                       The ETCD settings and configuration options.
                     properties:
                       $propertyBag:
@@ -2251,7 +2219,7 @@ spec:
                         type: object
                       dataEncryption:
                         description: |-
-                          Storage version of v1api20260630preview.EtcdDataEncryptionProfile_STATUS
+                          Storage version of v1api20260901preview.EtcdDataEncryptionProfile_STATUS
                           The ETCD data encryption settings.
                         properties:
                           $propertyBag:
@@ -2263,7 +2231,7 @@ spec:
                             type: object
                           customerManaged:
                             description: |-
-                              Storage version of v1api20260630preview.CustomerManagedEncryptionProfile_STATUS
+                              Storage version of v1api20260901preview.CustomerManagedEncryptionProfile_STATUS
                               Customer managed encryption key profile.
                             properties:
                               $propertyBag:
@@ -2277,7 +2245,7 @@ spec:
                                 type: string
                               kms:
                                 description: |-
-                                  Storage version of v1api20260630preview.KmsEncryptionProfile_STATUS
+                                  Storage version of v1api20260901preview.KmsEncryptionProfile_STATUS
                                   Configure etcd encryption Key Management Service (KMS) key.
                                   Your Microsoft Entra application used to create the cluster
                                   must be authorized to access this keyvault,
@@ -2293,7 +2261,7 @@ spec:
                                     type: object
                                   activeKey:
                                     description: |-
-                                      Storage version of v1api20260630preview.KmsKey_STATUS
+                                      Storage version of v1api20260901preview.KmsKey_STATUS
                                       A representation of a KeyVault Secret.
                                     properties:
                                       $propertyBag:
@@ -2321,7 +2289,7 @@ spec:
                   imageDigestMirrors:
                     items:
                       description: |-
-                        Storage version of v1api20260630preview.ImageDigestMirror_STATUS
+                        Storage version of v1api20260901preview.ImageDigestMirror_STATUS
                         ImageDigestMirror specifies a set of mirror registries to redirect image
                         pulls targeting the specified source registries.
                       properties:
@@ -2342,7 +2310,7 @@ spec:
                     type: array
                   ingress:
                     description: |-
-                      Storage version of v1api20260630preview.IngressProfile_STATUS
+                      Storage version of v1api20260901preview.IngressProfile_STATUS
                       Information about the Ingress of a cluster.
                     properties:
                       $propertyBag:
@@ -2357,7 +2325,7 @@ spec:
                     type: object
                   network:
                     description: |-
-                      Storage version of v1api20260630preview.NetworkProfile_STATUS
+                      Storage version of v1api20260901preview.NetworkProfile_STATUS
                       OpenShift networking configuration
                     properties:
                       $propertyBag:
@@ -2382,7 +2350,7 @@ spec:
                     type: integer
                   platform:
                     description: |-
-                      Storage version of v1api20260630preview.PlatformProfile_STATUS
+                      Storage version of v1api20260901preview.PlatformProfile_STATUS
                       Azure specific configuration
                     properties:
                       $propertyBag:
@@ -2400,7 +2368,7 @@ spec:
                         type: string
                       operatorsAuthentication:
                         description: |-
-                          Storage version of v1api20260630preview.OperatorsAuthenticationProfile_STATUS
+                          Storage version of v1api20260901preview.OperatorsAuthenticationProfile_STATUS
                           The configuration that the operators of the cluster have to authenticate to Azure.
                         properties:
                           $propertyBag:
@@ -2412,7 +2380,7 @@ spec:
                             type: object
                           userAssignedIdentities:
                             description: |-
-                              Storage version of v1api20260630preview.UserAssignedIdentitiesProfile_STATUS
+                              Storage version of v1api20260901preview.UserAssignedIdentitiesProfile_STATUS
                               Represents the information related to Azure User-Assigned managed identities needed
                               to perform Operators authentication
                               based on Azure User-Assigned Managed Identities
@@ -2447,7 +2415,7 @@ spec:
                     type: string
                   status:
                     description: |-
-                      Storage version of v1api20260630preview.ResourceStatus_STATUS
+                      Storage version of v1api20260901preview.ResourceStatus_STATUS
                       ResourceStatus represents the observed status of the resource.
                     properties:
                       $propertyBag:
@@ -2460,7 +2428,7 @@ spec:
                       conditions:
                         items:
                           description: |-
-                            Storage version of v1api20260630preview.Condition_STATUS
+                            Storage version of v1api20260901preview.Condition_STATUS
                             Condition represents an observation of a resource's state.
                           properties:
                             $propertyBag:
@@ -2485,7 +2453,7 @@ spec:
                     type: object
                   version:
                     description: |-
-                      Storage version of v1api20260630preview.VersionProfile_STATUS
+                      Storage version of v1api20260901preview.VersionProfile_STATUS
                       Versions represents an OpenShift version.
                     properties:
                       $propertyBag:
@@ -2503,7 +2471,7 @@ spec:
                 type: object
               systemData:
                 description: |-
-                  Storage version of v1api20260630preview.SystemData_STATUS
+                  Storage version of v1api20260901preview.SystemData_STATUS
                   Metadata pertaining to creation and last modification of the resource.
                 properties:
                   $propertyBag:

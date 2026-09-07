@@ -32,15 +32,15 @@ webhooks:
     service:
       name: azureserviceoperator-webhook-service
       namespace: '{{ .Values.global.namespace }}'
-      path: /validate-redhatopenshift-azure-com-v1api20260630preview-hcpopenshiftcluster
+      path: /validate-redhatopenshift-azure-com-v1api20260901preview-hcpopenshiftcluster
   failurePolicy: Fail
   matchPolicy: Exact
-  name: validate.v1api20260630preview.hcpopenshiftclusters.redhatopenshift.azure.com
+  name: validate.v1api20260901preview.hcpopenshiftclusters.redhatopenshift.azure.com
   rules:
   - apiGroups:
     - redhatopenshift.azure.com
     apiVersions:
-    - v1api20260630preview
+    - v1api20260901preview
     operations:
     - CREATE
     - UPDATE
@@ -53,15 +53,15 @@ webhooks:
     service:
       name: azureserviceoperator-webhook-service
       namespace: '{{ .Values.global.namespace }}'
-      path: /validate-redhatopenshift-azure-com-v1api20260630preview-hcpopenshiftclustersexternalauth
+      path: /validate-redhatopenshift-azure-com-v1api20260901preview-hcpopenshiftclustersexternalauth
   failurePolicy: Fail
   matchPolicy: Exact
-  name: validate.v1api20260630preview.hcpopenshiftclustersexternalauths.redhatopenshift.azure.com
+  name: validate.v1api20260901preview.hcpopenshiftclustersexternalauths.redhatopenshift.azure.com
   rules:
   - apiGroups:
     - redhatopenshift.azure.com
     apiVersions:
-    - v1api20260630preview
+    - v1api20260901preview
     operations:
     - CREATE
     - UPDATE
@@ -74,15 +74,15 @@ webhooks:
     service:
       name: azureserviceoperator-webhook-service
       namespace: '{{ .Values.global.namespace }}'
-      path: /validate-redhatopenshift-azure-com-v1api20260630preview-hcpopenshiftclustersnodepool
+      path: /validate-redhatopenshift-azure-com-v1api20260901preview-hcpopenshiftclustersnodepool
   failurePolicy: Fail
   matchPolicy: Exact
-  name: validate.v1api20260630preview.hcpopenshiftclustersnodepools.redhatopenshift.azure.com
+  name: validate.v1api20260901preview.hcpopenshiftclustersnodepools.redhatopenshift.azure.com
   rules:
   - apiGroups:
     - redhatopenshift.azure.com
     apiVersions:
-    - v1api20260630preview
+    - v1api20260901preview
     operations:
     - CREATE
     - UPDATE
