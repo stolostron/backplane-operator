@@ -530,6 +530,9 @@ func (r *MultiClusterEngineReconciler) ensureServerFoundation(ctx context.Contex
 	namespacedName = types.NamespacedName{Name: "ocm-webhook", Namespace: backplaneConfig.Spec.TargetNamespace}
 	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
+	namespacedName = types.NamespacedName{Name: "managedcluster-import-controller-v2", Namespace: backplaneConfig.Spec.TargetNamespace}
+	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
+	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
 
 	templates, errs := renderer.RenderChart(toggle.ServerFoundationChartDir, backplaneConfig,
 		r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
@@ -574,6 +577,9 @@ func (r *MultiClusterEngineReconciler) ensureNoServerFoundation(ctx context.Cont
 	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
 	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 	namespacedName = types.NamespacedName{Name: "ocm-webhook", Namespace: backplaneConfig.Spec.TargetNamespace}
+	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
+	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
+	namespacedName = types.NamespacedName{Name: "managedcluster-import-controller-v2", Namespace: backplaneConfig.Spec.TargetNamespace}
 	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
 	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 
