@@ -6,7 +6,7 @@ metadata:
     controller-gen.kubebuilder.io/version: v0.19.0
   labels:
     app.kubernetes.io/name: azure-service-operator
-    app.kubernetes.io/version: v2.20.0-hcpclusters.1
+    app.kubernetes.io/version: v2.20.0-hcpclusters.2
   name: hcpopenshiftclustersnodepools.redhatopenshift.azure.com
 spec:
   conversion:
@@ -45,7 +45,7 @@ spec:
     - jsonPath: .status.conditions[?(@.type=='Ready')].message
       name: Message
       type: string
-    name: v1api20260901preview
+    name: v20260901preview
     schema:
       openAPIV3Schema:
         description: |-
@@ -820,11 +820,11 @@ spec:
     - jsonPath: .status.conditions[?(@.type=='Ready')].message
       name: Message
       type: string
-    name: v1api20260901previewstorage
+    name: v20260901previewstorage
     schema:
       openAPIV3Schema:
         description: |-
-          Storage version of v1api20260901preview.HcpOpenShiftClustersNodePool
+          Storage version of v20260901preview.HcpOpenShiftClustersNodePool
           Generator information:
           - Generated from: /redhatopenshift/resource-manager/Microsoft.RedHatOpenShift/hcpopenshiftclusters/preview/2026-09-01-preview/openapi.json
           - ARM URI: /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.RedHatOpenShift/hcpOpenShiftClusters/{hcpOpenShiftClusterName}/nodePools/{nodePoolName}
@@ -847,7 +847,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: Storage version of v1api20260901preview.HcpOpenShiftClustersNodePool_Spec
+            description: Storage version of v20260901preview.HcpOpenShiftClustersNodePool_Spec
             properties:
               $propertyBag:
                 additionalProperties:
@@ -863,7 +863,7 @@ spec:
                 type: string
               identity:
                 description: |-
-                  Storage version of v1api20260901preview.ManagedServiceIdentity
+                  Storage version of v20260901preview.ManagedServiceIdentity
                   Managed service identity (system assigned and/or user assigned identities)
                 properties:
                   $propertyBag:
@@ -878,7 +878,7 @@ spec:
                   userAssignedIdentities:
                     items:
                       description: |-
-                        Storage version of v1api20260901preview.UserAssignedIdentityDetails
+                        Storage version of v20260901preview.UserAssignedIdentityDetails
                         Information about the user assigned identity for the resource
                       properties:
                         $propertyBag:
@@ -917,7 +917,7 @@ spec:
                 type: string
               operatorSpec:
                 description: |-
-                  Storage version of v1api20260901preview.HcpOpenShiftClustersNodePoolOperatorSpec
+                  Storage version of v20260901preview.HcpOpenShiftClustersNodePoolOperatorSpec
                   Details for configuring operator behavior. Fields in this struct are interpreted by the operator directly rather than being passed to Azure
                 properties:
                   $propertyBag:
@@ -1027,7 +1027,7 @@ spec:
                 type: object
               properties:
                 description: |-
-                  Storage version of v1api20260901preview.NodePoolProperties
+                  Storage version of v20260901preview.NodePoolProperties
                   Represents the node pool properties
                 properties:
                   $propertyBag:
@@ -1041,7 +1041,7 @@ spec:
                     type: boolean
                   autoScaling:
                     description: |-
-                      Storage version of v1api20260901preview.NodePoolAutoScaling
+                      Storage version of v20260901preview.NodePoolAutoScaling
                       Node pool autoscaling
                     properties:
                       $propertyBag:
@@ -1059,7 +1059,7 @@ spec:
                   labels:
                     items:
                       description: |-
-                        Storage version of v1api20260901preview.Label
+                        Storage version of v20260901preview.Label
                         Label represents the Kubernetes label
                       properties:
                         $propertyBag:
@@ -1079,7 +1079,7 @@ spec:
                     type: integer
                   platform:
                     description: |-
-                      Storage version of v1api20260901preview.NodePoolPlatformProfile
+                      Storage version of v20260901preview.NodePoolPlatformProfile
                       Azure node pool platform configuration
                     properties:
                       $propertyBag:
@@ -1095,7 +1095,7 @@ spec:
                         type: boolean
                       osDisk:
                         description: |-
-                          Storage version of v1api20260901preview.OsDiskProfile
+                          Storage version of v20260901preview.OsDiskProfile
                           The settings and configuration options for OSDisk
                         properties:
                           $propertyBag:
@@ -1171,7 +1171,7 @@ spec:
                   taints:
                     items:
                       description: |-
-                        Storage version of v1api20260901preview.Taint
+                        Storage version of v20260901preview.Taint
                         Taint is controlling the node taint and its effects
                       properties:
                         $propertyBag:
@@ -1191,7 +1191,7 @@ spec:
                     type: array
                   version:
                     description: |-
-                      Storage version of v1api20260901preview.NodePoolVersionProfile
+                      Storage version of v20260901preview.NodePoolVersionProfile
                       Versions represents an OpenShift version.
                     properties:
                       $propertyBag:
@@ -1215,7 +1215,7 @@ spec:
             - owner
             type: object
           status:
-            description: Storage version of v1api20260901preview.HcpOpenShiftClustersNodePool_STATUS
+            description: Storage version of v20260901preview.HcpOpenShiftClustersNodePool_STATUS
             properties:
               $propertyBag:
                 additionalProperties:
@@ -1275,7 +1275,7 @@ spec:
                 type: string
               identity:
                 description: |-
-                  Storage version of v1api20260901preview.ManagedServiceIdentity_STATUS
+                  Storage version of v20260901preview.ManagedServiceIdentity_STATUS
                   Managed service identity (system assigned and/or user assigned identities)
                 properties:
                   $propertyBag:
@@ -1294,7 +1294,7 @@ spec:
                   userAssignedIdentities:
                     additionalProperties:
                       description: |-
-                        Storage version of v1api20260901preview.UserAssignedIdentity_STATUS
+                        Storage version of v20260901preview.UserAssignedIdentity_STATUS
                         User assigned identity properties
                       properties:
                         $propertyBag:
@@ -1317,7 +1317,7 @@ spec:
                 type: string
               properties:
                 description: |-
-                  Storage version of v1api20260901preview.NodePoolProperties_STATUS
+                  Storage version of v20260901preview.NodePoolProperties_STATUS
                   Represents the node pool properties
                 properties:
                   $propertyBag:
@@ -1331,7 +1331,7 @@ spec:
                     type: boolean
                   autoScaling:
                     description: |-
-                      Storage version of v1api20260901preview.NodePoolAutoScaling_STATUS
+                      Storage version of v20260901preview.NodePoolAutoScaling_STATUS
                       Node pool autoscaling
                     properties:
                       $propertyBag:
@@ -1349,7 +1349,7 @@ spec:
                   labels:
                     items:
                       description: |-
-                        Storage version of v1api20260901preview.Label_STATUS
+                        Storage version of v20260901preview.Label_STATUS
                         Label represents the Kubernetes label
                       properties:
                         $propertyBag:
@@ -1369,7 +1369,7 @@ spec:
                     type: integer
                   platform:
                     description: |-
-                      Storage version of v1api20260901preview.NodePoolPlatformProfile_STATUS
+                      Storage version of v20260901preview.NodePoolPlatformProfile_STATUS
                       Azure node pool platform configuration
                     properties:
                       $propertyBag:
@@ -1385,7 +1385,7 @@ spec:
                         type: boolean
                       osDisk:
                         description: |-
-                          Storage version of v1api20260901preview.OsDiskProfile_STATUS
+                          Storage version of v20260901preview.OsDiskProfile_STATUS
                           The settings and configuration options for OSDisk
                         properties:
                           $propertyBag:
@@ -1415,7 +1415,7 @@ spec:
                     type: integer
                   status:
                     description: |-
-                      Storage version of v1api20260901preview.ResourceStatus_STATUS
+                      Storage version of v20260901preview.ResourceStatus_STATUS
                       ResourceStatus represents the observed status of the resource.
                     properties:
                       $propertyBag:
@@ -1428,7 +1428,7 @@ spec:
                       conditions:
                         items:
                           description: |-
-                            Storage version of v1api20260901preview.Condition_STATUS
+                            Storage version of v20260901preview.Condition_STATUS
                             Condition represents an observation of a resource's state.
                           properties:
                             $propertyBag:
@@ -1454,7 +1454,7 @@ spec:
                   taints:
                     items:
                       description: |-
-                        Storage version of v1api20260901preview.Taint_STATUS
+                        Storage version of v20260901preview.Taint_STATUS
                         Taint is controlling the node taint and its effects
                       properties:
                         $propertyBag:
@@ -1474,7 +1474,7 @@ spec:
                     type: array
                   version:
                     description: |-
-                      Storage version of v1api20260901preview.NodePoolVersionProfile_STATUS
+                      Storage version of v20260901preview.NodePoolVersionProfile_STATUS
                       Versions represents an OpenShift version.
                     properties:
                       $propertyBag:
@@ -1492,7 +1492,7 @@ spec:
                 type: object
               systemData:
                 description: |-
-                  Storage version of v1api20260901preview.SystemData_STATUS
+                  Storage version of v20260901preview.SystemData_STATUS
                   Metadata pertaining to creation and last modification of the resource.
                 properties:
                   $propertyBag:
