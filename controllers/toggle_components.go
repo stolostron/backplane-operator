@@ -69,7 +69,10 @@ func (r *MultiClusterEngineReconciler) ensureConsoleMCE(ctx context.Context, mce
 	// templates but are no longer rendered (e.g. a resource removed from the chart). See
 	// managed_resources.go.
 	newManagedResources := extractManagedResources(templates)
-	oldManagedResources := r.getManagedResources(ctx, mce, backplanev1.ConsoleMCE)
+	oldManagedResources, err := r.getManagedResources(ctx, mce, backplanev1.ConsoleMCE)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 	if result, err := r.cleanupOrphanedManagedResources(ctx, mce, backplanev1.ConsoleMCE, oldManagedResources,
 		newManagedResources); result != (ctrl.Result{}) || err != nil {
 		return result, err
@@ -102,7 +105,7 @@ func (r *MultiClusterEngineReconciler) ensureConsoleMCE(ctx context.Context, mce
 
 	// Check console-mce deployment health before adding plugin
 	consoleDeployment := &appsv1.Deployment{}
-	err := r.Client.Get(ctx, namespacedName, consoleDeployment)
+	err = r.Client.Get(ctx, namespacedName, consoleDeployment)
 	if err != nil {
 		log.Error(err, "Failed to get console-mce deployment for addon. Requeuing.")
 		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
@@ -127,7 +130,10 @@ func (r *MultiClusterEngineReconciler) ensureNoConsoleMCE(ctx context.Context, m
 	// Snapshot the resources previously recorded for this component before removing the
 	// InternalEngineComponent tracking CR below, so orphaned resources can still be identified
 	// and cleaned up later in this function (see managed_resources.go).
-	oldManagedResources := r.getManagedResources(ctx, mce, backplanev1.ConsoleMCE)
+	oldManagedResources, err := r.getManagedResources(ctx, mce, backplanev1.ConsoleMCE)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 
 	// Ensure that the InternalHubComponent CR instance is deleted for component in MCE.
 	if result, err := r.ensureNoInternalEngineComponent(ctx, mce,
@@ -218,7 +224,10 @@ func (r *MultiClusterEngineReconciler) ensureManagedServiceAccount(ctx context.C
 	// templates but are no longer rendered (e.g. a resource removed from the chart). See
 	// managed_resources.go.
 	newManagedResources := extractManagedResources(templates)
-	oldManagedResources := r.getManagedResources(ctx, mce, backplanev1.ManagedServiceAccount)
+	oldManagedResources, err := r.getManagedResources(ctx, mce, backplanev1.ManagedServiceAccount)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 	if result, err := r.cleanupOrphanedManagedResources(ctx, mce, backplanev1.ManagedServiceAccount, oldManagedResources,
 		newManagedResources); result != (ctrl.Result{}) || err != nil {
 		return result, err
@@ -266,7 +275,10 @@ func (r *MultiClusterEngineReconciler) ensureNoManagedServiceAccount(ctx context
 	// Snapshot the resources previously recorded for this component before removing the
 	// InternalEngineComponent tracking CR below, so orphaned resources can still be identified
 	// and cleaned up later in this function (see managed_resources.go).
-	oldManagedResources := r.getManagedResources(ctx, mce, backplanev1.ManagedServiceAccount)
+	oldManagedResources, err := r.getManagedResources(ctx, mce, backplanev1.ManagedServiceAccount)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 
 	// Ensure that the InternalHubComponent CR instance is deleted for component in MCE.
 	if result, err := r.ensureNoInternalEngineComponent(ctx, mce,
@@ -343,7 +355,10 @@ func (r *MultiClusterEngineReconciler) ensureFleetNavigation(ctx context.Context
 	// templates but are no longer rendered (e.g. a resource removed from the chart). See
 	// managed_resources.go.
 	newManagedResources := extractManagedResources(templates)
-	oldManagedResources := r.getManagedResources(ctx, mce, backplanev1.FleetNavigation)
+	oldManagedResources, err := r.getManagedResources(ctx, mce, backplanev1.FleetNavigation)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 	if result, err := r.cleanupOrphanedManagedResources(ctx, mce, backplanev1.FleetNavigation, oldManagedResources,
 		newManagedResources); result != (ctrl.Result{}) || err != nil {
 		return result, err
@@ -383,7 +398,10 @@ func (r *MultiClusterEngineReconciler) ensureNoFleetNavigation(ctx context.Conte
 	// Snapshot the resources previously recorded for this component before removing the
 	// InternalEngineComponent tracking CR below, so orphaned resources can still be identified
 	// and cleaned up later in this function (see managed_resources.go).
-	oldManagedResources := r.getManagedResources(ctx, mce, backplanev1.FleetNavigation)
+	oldManagedResources, err := r.getManagedResources(ctx, mce, backplanev1.FleetNavigation)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 
 	if result, err := r.ensureNoInternalEngineComponent(ctx, mce,
 		backplanev1.FleetNavigation); (result != ctrl.Result{}) || err != nil {
@@ -518,7 +536,10 @@ func (r *MultiClusterEngineReconciler) ensureDiscovery(ctx context.Context, mce 
 	// templates but are no longer rendered (e.g. a resource removed from the chart). See
 	// managed_resources.go.
 	newManagedResources := extractManagedResources(templates)
-	oldManagedResources := r.getManagedResources(ctx, mce, backplanev1.Discovery)
+	oldManagedResources, err := r.getManagedResources(ctx, mce, backplanev1.Discovery)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 	if result, err := r.cleanupOrphanedManagedResources(ctx, mce, backplanev1.Discovery, oldManagedResources,
 		newManagedResources); result != (ctrl.Result{}) || err != nil {
 		return result, err
@@ -559,7 +580,10 @@ func (r *MultiClusterEngineReconciler) ensureNoDiscovery(ctx context.Context,
 	// Snapshot the resources previously recorded for this component before removing the
 	// InternalEngineComponent tracking CR below, so orphaned resources can still be identified
 	// and cleaned up later in this function (see managed_resources.go).
-	oldManagedResources := r.getManagedResources(ctx, mce, backplanev1.Discovery)
+	oldManagedResources, err := r.getManagedResources(ctx, mce, backplanev1.Discovery)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 
 	// Ensure that the InternalHubComponent CR instance is deleted for component in MCE.
 	if result, err := r.ensureNoInternalEngineComponent(ctx, mce,
@@ -633,7 +657,10 @@ func (r *MultiClusterEngineReconciler) ensureClusterAPI(ctx context.Context, mce
 	// templates but are no longer rendered (e.g. a resource removed from the chart). See
 	// managed_resources.go.
 	newManagedResources := extractManagedResources(templates)
-	oldManagedResources := r.getManagedResources(ctx, mce, backplanev1.ClusterAPI)
+	oldManagedResources, err := r.getManagedResources(ctx, mce, backplanev1.ClusterAPI)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 	if result, err := r.cleanupOrphanedManagedResources(ctx, mce, backplanev1.ClusterAPI, oldManagedResources,
 		newManagedResources); result != (ctrl.Result{}) || err != nil {
 		return result, err
@@ -674,7 +701,10 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterAPI(ctx context.Context,
 	// Snapshot the resources previously recorded for this component before removing the
 	// InternalEngineComponent tracking CR below, so orphaned resources can still be identified
 	// and cleaned up later in this function (see managed_resources.go).
-	oldManagedResources := r.getManagedResources(ctx, mce, backplanev1.ClusterAPI)
+	oldManagedResources, err := r.getManagedResources(ctx, mce, backplanev1.ClusterAPI)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 
 	// Ensure that the InternalHubComponent CR instance is deleted for component in MCE.
 	if result, err := r.ensureNoInternalEngineComponent(ctx, mce,
@@ -749,7 +779,10 @@ func (r *MultiClusterEngineReconciler) ensureClusterAPIProviderAWS(ctx context.C
 	// templates but are no longer rendered (e.g. a resource removed from the chart). See
 	// managed_resources.go.
 	newManagedResources := extractManagedResources(templates)
-	oldManagedResources := r.getManagedResources(ctx, mce, backplanev1.ClusterAPIProviderAWS)
+	oldManagedResources, err := r.getManagedResources(ctx, mce, backplanev1.ClusterAPIProviderAWS)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 	if result, err := r.cleanupOrphanedManagedResources(ctx, mce, backplanev1.ClusterAPIProviderAWS, oldManagedResources,
 		newManagedResources); result != (ctrl.Result{}) || err != nil {
 		return result, err
@@ -790,7 +823,10 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterAPIProviderAWS(ctx context
 	// Snapshot the resources previously recorded for this component before removing the
 	// InternalEngineComponent tracking CR below, so orphaned resources can still be identified
 	// and cleaned up later in this function (see managed_resources.go).
-	oldManagedResources := r.getManagedResources(ctx, mce, backplanev1.ClusterAPIProviderAWS)
+	oldManagedResources, err := r.getManagedResources(ctx, mce, backplanev1.ClusterAPIProviderAWS)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 
 	// Ensure that the InternalHubComponent CR instance is deleted for component in MCE.
 	if result, err := r.ensureNoInternalEngineComponent(ctx, mce,
@@ -869,7 +905,10 @@ func (r *MultiClusterEngineReconciler) ensureClusterAPIProviderAzure(ctx context
 	// templates but are no longer rendered (e.g. a resource removed from the chart). See
 	// managed_resources.go.
 	newManagedResources := extractManagedResources(templates)
-	oldManagedResources := r.getManagedResources(ctx, mce, backplanev1.ClusterAPIProviderAzurePreview)
+	oldManagedResources, err := r.getManagedResources(ctx, mce, backplanev1.ClusterAPIProviderAzurePreview)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 	if result, err := r.cleanupOrphanedManagedResources(ctx, mce, backplanev1.ClusterAPIProviderAzurePreview,
 		oldManagedResources, newManagedResources); result != (ctrl.Result{}) || err != nil {
 		return result, err
@@ -909,7 +948,10 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterAPIProviderAzure(ctx conte
 	// Snapshot the resources previously recorded for this component before removing the
 	// InternalEngineComponent tracking CR below, so orphaned resources can still be identified
 	// and cleaned up later in this function (see managed_resources.go).
-	oldManagedResources := r.getManagedResources(ctx, mce, backplanev1.ClusterAPIProviderAzurePreview)
+	oldManagedResources, err := r.getManagedResources(ctx, mce, backplanev1.ClusterAPIProviderAzurePreview)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 
 	namespacedName := types.NamespacedName{Name: "azureserviceoperator-controller-manager",
 		Namespace: mce.Spec.TargetNamespace}
@@ -993,7 +1035,10 @@ func (r *MultiClusterEngineReconciler) ensureClusterAPIProviderMetal(ctx context
 	// templates but are no longer rendered (e.g. a resource removed from the chart). See
 	// managed_resources.go.
 	newManagedResources := extractManagedResources(templates)
-	oldManagedResources := r.getManagedResources(ctx, mce, backplanev1.ClusterAPIProviderMetal)
+	oldManagedResources, err := r.getManagedResources(ctx, mce, backplanev1.ClusterAPIProviderMetal)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 	if result, err := r.cleanupOrphanedManagedResources(ctx, mce, backplanev1.ClusterAPIProviderMetal, oldManagedResources,
 		newManagedResources); result != (ctrl.Result{}) || err != nil {
 		return result, err
@@ -1034,7 +1079,10 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterAPIProviderMetal(ctx conte
 	// Snapshot the resources previously recorded for this component before removing the
 	// InternalEngineComponent tracking CR below, so orphaned resources can still be identified
 	// and cleaned up later in this function (see managed_resources.go).
-	oldManagedResources := r.getManagedResources(ctx, mce, backplanev1.ClusterAPIProviderMetal)
+	oldManagedResources, err := r.getManagedResources(ctx, mce, backplanev1.ClusterAPIProviderMetal)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 
 	// Ensure that the InternalHubComponent CR instance is deleted for component in MCE.
 	if result, err := r.ensureNoInternalEngineComponent(ctx, mce,
@@ -1111,7 +1159,10 @@ func (r *MultiClusterEngineReconciler) ensureClusterAPIProviderOA(ctx context.Co
 	// templates but are no longer rendered (e.g. a resource removed from the chart). See
 	// managed_resources.go.
 	newManagedResources := extractManagedResources(templates)
-	oldManagedResources := r.getManagedResources(ctx, mce, backplanev1.ClusterAPIProviderOA)
+	oldManagedResources, err := r.getManagedResources(ctx, mce, backplanev1.ClusterAPIProviderOA)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 	if result, err := r.cleanupOrphanedManagedResources(ctx, mce, backplanev1.ClusterAPIProviderOA, oldManagedResources,
 		newManagedResources); result != (ctrl.Result{}) || err != nil {
 		return result, err
@@ -1157,7 +1208,10 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterAPIProviderOA(ctx context.
 	// Snapshot the resources previously recorded for this component before removing the
 	// InternalEngineComponent tracking CR below, so orphaned resources can still be identified
 	// and cleaned up later in this function (see managed_resources.go).
-	oldManagedResources := r.getManagedResources(ctx, mce, backplanev1.ClusterAPIProviderOA)
+	oldManagedResources, err := r.getManagedResources(ctx, mce, backplanev1.ClusterAPIProviderOA)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 
 	// Ensure that the InternalHubComponent CR instance is deleted for component in MCE.
 	if result, err := r.ensureNoInternalEngineComponent(ctx, mce,
@@ -1229,7 +1283,10 @@ func (r *MultiClusterEngineReconciler) ensureHive(ctx context.Context, mce *back
 	// managed_resources.go. Note: this only covers the chart-rendered templates below, not the
 	// HiveConfig custom resource applied separately at the end of this function.
 	newManagedResources := extractManagedResources(templates)
-	oldManagedResources := r.getManagedResources(ctx, mce, backplanev1.Hive)
+	oldManagedResources, err := r.getManagedResources(ctx, mce, backplanev1.Hive)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 	if result, err := r.cleanupOrphanedManagedResources(ctx, mce, backplanev1.Hive, oldManagedResources,
 		newManagedResources); result != (ctrl.Result{}) || err != nil {
 		return result, err
@@ -1272,7 +1329,10 @@ func (r *MultiClusterEngineReconciler) ensureNoHive(ctx context.Context, mce *ba
 	// Snapshot the resources previously recorded for this component before removing the
 	// InternalEngineComponent tracking CR below, so orphaned resources can still be identified
 	// and cleaned up later in this function (see managed_resources.go).
-	oldManagedResources := r.getManagedResources(ctx, mce, backplanev1.Hive)
+	oldManagedResources, err := r.getManagedResources(ctx, mce, backplanev1.Hive)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 
 	// Ensure that the InternalHubComponent CR instance is deleted for component in MCE.
 	if result, err := r.ensureNoInternalEngineComponent(ctx, mce,
@@ -1305,7 +1365,7 @@ func (r *MultiClusterEngineReconciler) ensureNoHive(ctx context.Context, mce *ba
 
 	// Delete hivconfig
 	hiveConfig := hive.HiveConfig(mce)
-	err := r.Client.Get(ctx, types.NamespacedName{Name: "hive"}, hiveConfig)
+	err = r.Client.Get(ctx, types.NamespacedName{Name: "hive"}, hiveConfig)
 	if err == nil { // If resource exists, delete
 		err := r.Client.Delete(ctx, hiveConfig)
 		if err != nil && !apierrors.IsNotFound(err) {
@@ -1365,7 +1425,10 @@ func (r *MultiClusterEngineReconciler) ensureAssistedService(ctx context.Context
 	// templates but are no longer rendered (e.g. a resource removed from the chart). See
 	// managed_resources.go.
 	newManagedResources := extractManagedResources(templates)
-	oldManagedResources := r.getManagedResources(ctx, mce, backplanev1.AssistedService)
+	oldManagedResources, err := r.getManagedResources(ctx, mce, backplanev1.AssistedService)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 	if result, err := r.cleanupOrphanedManagedResources(ctx, mce, backplanev1.AssistedService, oldManagedResources,
 		newManagedResources); result != (ctrl.Result{}) || err != nil {
 		return result, err
@@ -1411,7 +1474,10 @@ func (r *MultiClusterEngineReconciler) ensureNoAssistedService(ctx context.Conte
 	// Snapshot the resources previously recorded for this component before removing the
 	// InternalEngineComponent tracking CR below, so orphaned resources can still be identified
 	// and cleaned up later in this function (see managed_resources.go).
-	oldManagedResources := r.getManagedResources(ctx, mce, backplanev1.AssistedService)
+	oldManagedResources, err := r.getManagedResources(ctx, mce, backplanev1.AssistedService)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 
 	// Ensure that the InternalHubComponent CR instance is deleted for component in MCE.
 	if result, err := r.ensureNoInternalEngineComponent(ctx, mce,
@@ -1499,7 +1565,10 @@ func (r *MultiClusterEngineReconciler) ensureServerFoundation(ctx context.Contex
 	// templates but are no longer rendered (e.g. a resource removed from the chart). See
 	// managed_resources.go.
 	newManagedResources := extractManagedResources(templates)
-	oldManagedResources := r.getManagedResources(ctx, mce, backplanev1.ServerFoundation)
+	oldManagedResources, err := r.getManagedResources(ctx, mce, backplanev1.ServerFoundation)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 	if result, err := r.cleanupOrphanedManagedResources(ctx, mce, backplanev1.ServerFoundation, oldManagedResources,
 		newManagedResources); result != (ctrl.Result{}) || err != nil {
 		return result, err
@@ -1539,7 +1608,10 @@ func (r *MultiClusterEngineReconciler) ensureNoServerFoundation(ctx context.Cont
 	// Snapshot the resources previously recorded for this component before removing the
 	// InternalEngineComponent tracking CR below, so orphaned resources can still be identified
 	// and cleaned up later in this function (see managed_resources.go).
-	oldManagedResources := r.getManagedResources(ctx, mce, backplanev1.ServerFoundation)
+	oldManagedResources, err := r.getManagedResources(ctx, mce, backplanev1.ServerFoundation)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 
 	// Ensure that the InternalHubComponent CR instance is created for component in MCE.
 	if result, err := r.ensureNoInternalEngineComponent(ctx, mce,
@@ -1628,7 +1700,10 @@ func (r *MultiClusterEngineReconciler) ensureImageBasedInstallOperator(ctx conte
 	// templates but are no longer rendered (e.g. a resource removed from the chart). See
 	// managed_resources.go.
 	newManagedResources := extractManagedResources(templates)
-	oldManagedResources := r.getManagedResources(ctx, mce, backplanev1.ImageBasedInstallOperator)
+	oldManagedResources, err := r.getManagedResources(ctx, mce, backplanev1.ImageBasedInstallOperator)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 	if result, err := r.cleanupOrphanedManagedResources(ctx, mce, backplanev1.ImageBasedInstallOperator,
 		oldManagedResources, newManagedResources); result != (ctrl.Result{}) || err != nil {
 		return result, err
@@ -1672,7 +1747,10 @@ func (r *MultiClusterEngineReconciler) ensureNoImageBasedInstallOperator(ctx con
 	// Snapshot the resources previously recorded for this component before removing the
 	// InternalEngineComponent tracking CR below, so orphaned resources can still be identified
 	// and cleaned up later in this function (see managed_resources.go).
-	oldManagedResources := r.getManagedResources(ctx, mce, backplanev1.ImageBasedInstallOperator)
+	oldManagedResources, err := r.getManagedResources(ctx, mce, backplanev1.ImageBasedInstallOperator)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 
 	// Ensure that the InternalHubComponent CR instance is deleted for component in MCE.
 	if result, err := r.ensureNoInternalEngineComponent(ctx, mce,
@@ -1761,7 +1839,10 @@ func (r *MultiClusterEngineReconciler) ensureClusterLifecycle(ctx context.Contex
 	// templates but are no longer rendered (e.g. a resource removed from the chart). See
 	// managed_resources.go.
 	newManagedResources := extractManagedResources(templates)
-	oldManagedResources := r.getManagedResources(ctx, mce, backplanev1.ClusterLifecycle)
+	oldManagedResources, err := r.getManagedResources(ctx, mce, backplanev1.ClusterLifecycle)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 	if result, err := r.cleanupOrphanedManagedResources(ctx, mce, backplanev1.ClusterLifecycle, oldManagedResources,
 		newManagedResources); result != (ctrl.Result{}) || err != nil {
 		return result, err
@@ -1801,7 +1882,10 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterLifecycle(ctx context.Cont
 	// Snapshot the resources previously recorded for this component before removing the
 	// InternalEngineComponent tracking CR below, so orphaned resources can still be identified
 	// and cleaned up later in this function (see managed_resources.go).
-	oldManagedResources := r.getManagedResources(ctx, mce, backplanev1.ClusterLifecycle)
+	oldManagedResources, err := r.getManagedResources(ctx, mce, backplanev1.ClusterLifecycle)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 
 	// Ensure that the InternalHubComponent CR instance is deleted for component in MCE.
 	if result, err := r.ensureNoInternalEngineComponent(ctx, mce,
@@ -1891,7 +1975,10 @@ func (r *MultiClusterEngineReconciler) ensureClusterManager(ctx context.Context,
 	// managed_resources.go. Note: this only covers the chart-rendered templates below, not the
 	// ClusterManager custom resource or TLS profile ConfigMaps applied separately below.
 	newManagedResources := extractManagedResources(templates)
-	oldManagedResources := r.getManagedResources(ctx, mce, backplanev1.ClusterManager)
+	oldManagedResources, err := r.getManagedResources(ctx, mce, backplanev1.ClusterManager)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 	if result, err := r.cleanupOrphanedManagedResources(ctx, mce, backplanev1.ClusterManager, oldManagedResources,
 		newManagedResources); result != (ctrl.Result{}) || err != nil {
 		return result, err
@@ -1928,7 +2015,7 @@ func (r *MultiClusterEngineReconciler) ensureClusterManager(ctx context.Context,
 		return ctrl.Result{}, errors.Wrapf(err, "Error setting controller reference on resource %s", cmTemplate.GetName())
 	}
 	force := true
-	err := r.Client.Patch(ctx, cmTemplate, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
+	err = r.Client.Patch(ctx, cmTemplate, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
 	if err != nil {
 		return ctrl.Result{}, errors.Wrapf(err, "error applying object Name: %s Kind: %s", cmTemplate.GetName(), cmTemplate.GetKind())
 	}
@@ -1951,7 +2038,10 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterManager(ctx context.Contex
 	// Snapshot the resources previously recorded for this component before removing the
 	// InternalEngineComponent tracking CR below, so orphaned resources can still be identified
 	// and cleaned up later in this function (see managed_resources.go).
-	oldManagedResources := r.getManagedResources(ctx, mce, backplanev1.ClusterManager)
+	oldManagedResources, err := r.getManagedResources(ctx, mce, backplanev1.ClusterManager)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 
 	// Ensure that the InternalHubComponent CR instance is deleted for component in MCE.
 	if result, err := r.ensureNoInternalEngineComponent(ctx, mce,
@@ -1994,7 +2084,7 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterManager(ctx context.Contex
 			Kind:    "ClusterManager",
 		},
 	)
-	err := r.Client.Get(ctx, types.NamespacedName{Name: "cluster-manager"}, clusterManager)
+	err = r.Client.Get(ctx, types.NamespacedName{Name: "cluster-manager"}, clusterManager)
 	if err == nil { // If resource exists, delete
 		err := r.Client.Delete(ctx, clusterManager)
 		if err != nil {
@@ -2057,7 +2147,10 @@ func (r *MultiClusterEngineReconciler) ensureClusterPermission(ctx context.Conte
 	// templates but are no longer rendered (e.g. a resource removed from the chart). See
 	// managed_resources.go.
 	newManagedResources := extractManagedResources(templates)
-	oldManagedResources := r.getManagedResources(ctx, mce, backplanev1.ClusterPermission)
+	oldManagedResources, err := r.getManagedResources(ctx, mce, backplanev1.ClusterPermission)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 	if result, err := r.cleanupOrphanedManagedResources(ctx, mce, backplanev1.ClusterPermission, oldManagedResources,
 		newManagedResources); result != (ctrl.Result{}) || err != nil {
 		return result, err
@@ -2099,7 +2192,10 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterPermission(ctx context.Con
 	// Snapshot the resources previously recorded for this component before removing the
 	// InternalEngineComponent tracking CR below, so orphaned resources can still be identified
 	// and cleaned up later in this function (see managed_resources.go).
-	oldManagedResources := r.getManagedResources(ctx, mce, backplanev1.ClusterPermission)
+	oldManagedResources, err := r.getManagedResources(ctx, mce, backplanev1.ClusterPermission)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 
 	// Ensure that the InternalHubComponent CR instance is deleted for component in MCE.
 	if result, err := r.ensureNoInternalEngineComponent(ctx, mce,
@@ -2178,7 +2274,10 @@ func (r *MultiClusterEngineReconciler) ensureHyperShift(ctx context.Context, mce
 	// templates but are no longer rendered (e.g. a resource removed from the chart). See
 	// managed_resources.go.
 	newManagedResources := extractManagedResources(templates)
-	oldManagedResources := r.getManagedResources(ctx, mce, backplanev1.HyperShift)
+	oldManagedResources, err := r.getManagedResources(ctx, mce, backplanev1.HyperShift)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 	if result, err := r.cleanupOrphanedManagedResources(ctx, mce, backplanev1.HyperShift, oldManagedResources,
 		newManagedResources); result != (ctrl.Result{}) || err != nil {
 		return result, err
@@ -2230,7 +2329,10 @@ func (r *MultiClusterEngineReconciler) ensureNoHyperShift(ctx context.Context,
 	// Snapshot the resources previously recorded for this component before removing the
 	// InternalEngineComponent tracking CR below, so orphaned resources can still be identified
 	// and cleaned up later in this function (see managed_resources.go).
-	oldManagedResources := r.getManagedResources(ctx, mce, backplanev1.HyperShift)
+	oldManagedResources, err := r.getManagedResources(ctx, mce, backplanev1.HyperShift)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 
 	// Ensure that the InternalHubComponent CR instance is deleted for component in MCE.
 	if result, err := r.ensureNoInternalEngineComponent(ctx, mce,
@@ -2480,7 +2582,10 @@ func (r *MultiClusterEngineReconciler) ensureClusterProxyAddon(ctx context.Conte
 	// templates but are no longer rendered (e.g. a resource removed from the chart). See
 	// managed_resources.go.
 	newManagedResources := extractManagedResources(templates)
-	oldManagedResources := r.getManagedResources(ctx, mce, backplanev1.ClusterProxyAddon)
+	oldManagedResources, err := r.getManagedResources(ctx, mce, backplanev1.ClusterProxyAddon)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 	if result, err := r.cleanupOrphanedManagedResources(ctx, mce, backplanev1.ClusterProxyAddon, oldManagedResources,
 		newManagedResources); result != (ctrl.Result{}) || err != nil {
 		return result, err
@@ -2534,7 +2639,10 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterProxyAddon(ctx context.Con
 	// Snapshot the resources previously recorded for this component before removing the
 	// InternalEngineComponent tracking CR below, so orphaned resources can still be identified
 	// and cleaned up later in this function (see managed_resources.go).
-	oldManagedResources := r.getManagedResources(ctx, mce, backplanev1.ClusterProxyAddon)
+	oldManagedResources, err := r.getManagedResources(ctx, mce, backplanev1.ClusterProxyAddon)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 
 	// Ensure that the InternalHubComponent CR instance is deleted for component in MCE.
 	if result, err := r.ensureNoInternalEngineComponent(ctx, mce,
@@ -2629,7 +2737,10 @@ func (r *MultiClusterEngineReconciler) ensureMaestro(ctx context.Context,
 	// disabled, since ensureNoMaestro removes the whole "maestro" namespace instead of individual
 	// templates.
 	newManagedResources := extractManagedResources(templates)
-	oldManagedResources := r.getManagedResources(ctx, mce, backplanev1.MaestroPreview)
+	oldManagedResources, err := r.getManagedResources(ctx, mce, backplanev1.MaestroPreview)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 	if result, err := r.cleanupOrphanedManagedResources(ctx, mce, backplanev1.MaestroPreview, oldManagedResources,
 		newManagedResources); result != (ctrl.Result{}) || err != nil {
 		return result, err

@@ -4,6 +4,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	promv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
@@ -158,8 +159,8 @@ func TestGetAndUpdateManagedResources(t *testing.T) {
 	r := &MultiClusterEngineReconciler{Client: fakeClient}
 
 	// No InternalEngineComponent exists yet - should return nil without error.
-	if got := r.getManagedResources(context.TODO(), mce, "console-mce"); got != nil {
-		t.Errorf("getManagedResources() with no CR = %v, want nil", got)
+	if got, err := r.getManagedResources(context.TODO(), mce, "console-mce"); got != nil || err != nil {
+		t.Errorf("getManagedResources() with no CR = (%v, %v), want (nil, nil)", got, err)
 	}
 
 	// updateManagedResources should be a no-op (not an error) when the CR doesn't exist yet.
@@ -184,7 +185,10 @@ func TestGetAndUpdateManagedResources(t *testing.T) {
 		t.Fatalf("updateManagedResources() returned error: %v", err)
 	}
 
-	got := r.getManagedResources(context.TODO(), mce, "console-mce")
+	got, err := r.getManagedResources(context.TODO(), mce, "console-mce")
+	if err != nil {
+		t.Fatalf("getManagedResources() returned error: %v", err)
+	}
 	if !managedResourcesEqual(got, initial) {
 		t.Errorf("getManagedResources() = %v, want %v", got, initial)
 	}
@@ -201,7 +205,10 @@ func TestGetAndUpdateManagedResources(t *testing.T) {
 		t.Fatalf("updateManagedResources() returned error: %v", err)
 	}
 
-	got = r.getManagedResources(context.TODO(), mce, "console-mce")
+	got, err = r.getManagedResources(context.TODO(), mce, "console-mce")
+	if err != nil {
+		t.Fatalf("getManagedResources() returned error: %v", err)
+	}
 	if !managedResourcesEqual(got, updated) {
 		t.Errorf("getManagedResources() after update = %v, want %v", got, updated)
 	}
@@ -303,6 +310,40 @@ func TestCleanupOrphanedManagedResources(t *testing.T) {
 			},
 		},
 		{
+			// A chart bumping a resource's apiVersion (e.g. a CRD moving from v1beta1 to v1) must
+			// not be treated as that resource being removed from the chart: the underlying
+			// Kubernetes object is identified by group/kind/namespace/name, not apiVersion, so
+			// deleting it here would cause an unnecessary delete-then-recreate cycle instead of an
+			// in-place update via applyTemplate.
+			name:      "resource with only an apiVersion change is not treated as orphaned",
+			component: "example",
+			oldResources: []backplanev1.ManagedResource{
+				newManagedResource("example.com/v1beta1", "Widget", "my-widget", "multicluster-engine"),
+			},
+			newResources: []backplanev1.ManagedResource{
+				newManagedResource("example.com/v1", "Widget", "my-widget", "multicluster-engine"),
+			},
+			setupClient: func(t *testing.T) client.Client {
+				widget := &unstructured.Unstructured{}
+				widget.SetAPIVersion("example.com/v1beta1")
+				widget.SetKind("Widget")
+				widget.SetName("my-widget")
+				widget.SetNamespace("multicluster-engine")
+				widget.SetLabels(map[string]string{"backplaneconfig.name": "mce"})
+				return fake.NewClientBuilder().WithScheme(s).WithObjects(widget).Build()
+			},
+			verify: func(t *testing.T, c client.Client) {
+				widget := &unstructured.Unstructured{}
+				widget.SetAPIVersion("example.com/v1beta1")
+				widget.SetKind("Widget")
+				err := c.Get(context.TODO(), types.NamespacedName{Name: "my-widget",
+					Namespace: "multicluster-engine"}, widget)
+				if err != nil {
+					t.Errorf("expected my-widget to survive a version-only chart change, got error: %v", err)
+				}
+			},
+		},
+		{
 			name:         "legacy console-mce ServiceMonitor is cleaned up even with no tracked history (ACM-40355)",
 			component:    backplanev1.ConsoleMCE,
 			oldResources: nil, // Simulates an InternalEngineComponent CR from before resource tracking existed.
@@ -382,5 +423,68 @@ func TestCleanupOrphanedManagedResources(t *testing.T) {
 				tt.verify(t, c)
 			}
 		})
+	}
+}
+
+// errorOnDeleteClient simulates a transient error deleting a specific named resource, while
+// deletions of any other resource proceed normally. Used to verify that
+// cleanupOrphanedManagedResources is best-effort: it must still attempt (and succeed at) deleting
+// every other orphan candidate instead of stopping at the first one that fails. Unlike MCH,
+// backplane-operator's deleteTemplate doesn't poll for finalizer-blocked termination - it just
+// calls Delete and returns - so a transient Delete error is the realistic failure mode here.
+type errorOnDeleteClient struct {
+	client.Client
+	failName string
+}
+
+func (c *errorOnDeleteClient) Delete(ctx context.Context, obj client.Object, opts ...client.DeleteOption) error {
+	if obj.GetName() == c.failName {
+		return fmt.Errorf("simulated transient delete error")
+	}
+	return c.Client.Delete(ctx, obj, opts...)
+}
+
+func TestCleanupOrphanedManagedResources_BestEffort(t *testing.T) {
+	s := newManagedResourcesTestScheme(t)
+
+	mce := &backplanev1.MultiClusterEngine{
+		ObjectMeta: metav1.ObjectMeta{Name: "mce"},
+		Spec:       backplanev1.MultiClusterEngineSpec{TargetNamespace: "multicluster-engine"},
+	}
+
+	labels := map[string]string{"backplaneconfig.name": "mce"}
+	failingDeploy := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{Name: "failing-deploy", Namespace: "multicluster-engine", Labels: labels},
+	}
+	cleanDeploy := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{Name: "clean-deploy", Namespace: "multicluster-engine", Labels: labels},
+	}
+
+	fakeClient := fake.NewClientBuilder().WithScheme(s).WithObjects(failingDeploy, cleanDeploy).Build()
+	c := &errorOnDeleteClient{Client: fakeClient, failName: "failing-deploy"}
+	r := &MultiClusterEngineReconciler{Client: c}
+
+	oldResources := []backplanev1.ManagedResource{
+		newManagedResource("apps/v1", "Deployment", "failing-deploy", "multicluster-engine"),
+		newManagedResource("apps/v1", "Deployment", "clean-deploy", "multicluster-engine"),
+	}
+
+	_, err := r.cleanupOrphanedManagedResources(context.TODO(), mce, "example", oldResources, nil)
+	if err == nil {
+		t.Fatalf("cleanupOrphanedManagedResources() expected error due to failing-deploy, got nil")
+	}
+
+	// The failing resource should still exist...
+	if err := c.Get(context.TODO(), types.NamespacedName{Name: "failing-deploy", Namespace: "multicluster-engine"},
+		&appsv1.Deployment{}); err != nil {
+		t.Errorf("expected failing-deploy to still exist after a failed delete, got error: %v", err)
+	}
+
+	// ...but clean-deploy must still have been deleted in the same pass, instead of being skipped
+	// because an earlier candidate failed.
+	err = c.Get(context.TODO(), types.NamespacedName{Name: "clean-deploy", Namespace: "multicluster-engine"},
+		&appsv1.Deployment{})
+	if err == nil {
+		t.Errorf("expected clean-deploy to be deleted even though failing-deploy errored")
 	}
 }

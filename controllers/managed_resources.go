@@ -5,6 +5,8 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"strings"
+	"time"
 
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 
@@ -46,9 +48,30 @@ var legacyManagedResources = map[string][]backplanev1.ManagedResource{
 	},
 }
 
-// managedResourceKey returns a string uniquely identifying a ManagedResource for set comparisons.
+// managedResourceKey returns a string uniquely identifying a ManagedResource, including its
+// APIVersion, for exact-match comparisons (see managedResourcesEqual).
 func managedResourceKey(resource backplanev1.ManagedResource) string {
 	return fmt.Sprintf("%s/%s/%s/%s", resource.APIVersion, resource.Kind, resource.Namespace, resource.Name)
+}
+
+// apiGroupFromAPIVersion extracts the API group from an apiVersion string (e.g. "apps/v1" ->
+// "apps", "v1" -> "" for the core group), ignoring the version component.
+func apiGroupFromAPIVersion(apiVersion string) string {
+	if idx := strings.Index(apiVersion, "/"); idx != -1 {
+		return apiVersion[:idx]
+	}
+	return ""
+}
+
+// managedResourceIdentityKey returns a version-independent identity for a ManagedResource (API
+// group + kind + namespace + name). Kubernetes objects are identified by group/kind/namespace/name;
+// the API version is just an alternate representation of the same underlying object. Using the
+// full APIVersion-sensitive key here would cause a pure version bump in a chart (e.g. a CRD moving
+// from v1beta1 to v1) to be misdetected as the resource being removed, triggering an unnecessary
+// delete-then-recreate cycle in cleanupOrphanedManagedResources instead of an in-place update.
+func managedResourceIdentityKey(resource backplanev1.ManagedResource) string {
+	return fmt.Sprintf("%s/%s/%s/%s", apiGroupFromAPIVersion(resource.APIVersion), resource.Kind,
+		resource.Namespace, resource.Name)
 }
 
 // extractManagedResources builds the list of resources represented by the given rendered
@@ -92,22 +115,24 @@ func managedResourcesEqual(a, b []backplanev1.ManagedResource) bool {
 }
 
 // getManagedResources returns the resources currently recorded on the component's
-// InternalEngineComponent CR. It returns nil (without error) if the CR does not exist, since
-// callers treat "no tracked resources" as an empty diff baseline rather than a failure.
+// InternalEngineComponent CR. It returns (nil, nil) if the CR does not exist, since callers treat
+// "no tracked resources" as an empty diff baseline rather than a failure. Any other error is
+// returned to the caller rather than swallowed, since silently treating a transient read failure
+// as "no history" could cause cleanupOrphanedManagedResources to miss real orphans, or worse, lose
+// the tracked history permanently if the caller goes on to delete the InternalEngineComponent CR.
 func (r *MultiClusterEngineReconciler) getManagedResources(ctx context.Context, mce *backplanev1.MultiClusterEngine,
-	component string) []backplanev1.ManagedResource {
+	component string) ([]backplanev1.ManagedResource, error) {
 
 	iec := &backplanev1.InternalEngineComponent{}
 	if err := r.Client.Get(ctx, types.NamespacedName{Name: component, Namespace: mce.Spec.TargetNamespace},
 		iec); err != nil {
-		if !apierrors.IsNotFound(err) {
-			log.Error(err, "failed to get InternalEngineComponent while reading managed resources",
-				"Component", component, "Namespace", mce.Spec.TargetNamespace)
+		if apierrors.IsNotFound(err) {
+			return nil, nil
 		}
-		return nil
+		return nil, fmt.Errorf("failed to get InternalEngineComponent %s/%s: %v", mce.Spec.TargetNamespace, component, err)
 	}
 
-	return iec.Spec.ManagedResources
+	return iec.Spec.ManagedResources, nil
 }
 
 // updateManagedResources patches the component's InternalEngineComponent CR with the current list
@@ -145,13 +170,22 @@ func (r *MultiClusterEngineReconciler) updateManagedResources(ctx context.Contex
 // templates but are no longer rendered. Deletion is delegated to deleteTemplate, which only
 // removes resources that still carry this operator's backplaneconfig.name ownership label, so
 // resources that were manually recreated (and therefore lack that label) are left untouched.
+//
+// This function is best-effort and does not stop at the first candidate that fails or needs a
+// requeue: on the disable path, the calling ensureNoXxx function must delete the
+// InternalEngineComponent tracking CR promptly (other operators watch for its removal as a
+// signal), so this reconcile is the only chance to use the resource history captured before that
+// CR is gone. Stopping early would leave every remaining candidate un-attempted, and a future
+// reconcile would have no history left to retry them with. Attempting every candidate in one pass
+// instead means only a genuinely finalizer-blocked resource is left for the caller to
+// report/requeue on; unrelated candidates are still cleaned up.
 func (r *MultiClusterEngineReconciler) cleanupOrphanedManagedResources(ctx context.Context,
 	mce *backplanev1.MultiClusterEngine, component string, oldResources,
 	newResources []backplanev1.ManagedResource) (ctrl.Result, error) {
 
 	current := make(map[string]struct{}, len(newResources))
 	for _, resource := range newResources {
-		current[managedResourceKey(resource)] = struct{}{}
+		current[managedResourceIdentityKey(resource)] = struct{}{}
 	}
 
 	// Merge in any known legacy resources for this component that predate resource tracking (see
@@ -165,9 +199,15 @@ func (r *MultiClusterEngineReconciler) cleanupOrphanedManagedResources(ctx conte
 		orphanCandidates = append(orphanCandidates, legacy)
 	}
 
+	var (
+		firstErr     error
+		needsRequeue bool
+		requeueAfter time.Duration
+	)
+
 	seenCandidates := make(map[string]struct{}, len(orphanCandidates))
 	for _, resource := range orphanCandidates {
-		key := managedResourceKey(resource)
+		key := managedResourceIdentityKey(resource)
 		if _, alreadyHandled := seenCandidates[key]; alreadyHandled {
 			continue
 		}
@@ -187,10 +227,28 @@ func (r *MultiClusterEngineReconciler) cleanupOrphanedManagedResources(ctx conte
 			"Component", component, "APIVersion", resource.APIVersion, "Kind", resource.Kind,
 			"Name", resource.Name, "Namespace", resource.Namespace)
 
-		if result, err := r.deleteTemplate(ctx, mce, stub); result != (ctrl.Result{}) || err != nil {
-			return result, err
+		result, err := r.deleteTemplate(ctx, mce, stub)
+		if err != nil {
+			log.Error(err, "failed to clean up orphaned managed resource; continuing with remaining resources",
+				"Component", component, "Kind", resource.Kind, "Name", resource.Name, "Namespace", resource.Namespace)
+			if firstErr == nil {
+				firstErr = err
+			}
+			continue
+		}
+		if result != (ctrl.Result{}) {
+			needsRequeue = true
+			if result.RequeueAfter > requeueAfter {
+				requeueAfter = result.RequeueAfter
+			}
 		}
 	}
 
+	if firstErr != nil {
+		return ctrl.Result{}, firstErr
+	}
+	if needsRequeue {
+		return ctrl.Result{RequeueAfter: requeueAfter}, nil
+	}
 	return ctrl.Result{}, nil
 }
