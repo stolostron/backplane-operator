@@ -8,7 +8,7 @@ agentImagePullSecret: ""
 enableAddOnDeploymentConfig: true
 hubDeployMode: AddOnTemplate
 prometheus:
-  enabled: true
+  enabled: false
 networkPolicies:
   enabled: true
 global: {}
