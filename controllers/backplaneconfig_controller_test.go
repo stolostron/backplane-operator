@@ -52,7 +52,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
@@ -3270,61 +3269,6 @@ func Test_CleanupVersionedAddOnTemplates(t *testing.T) {
 				}
 			}
 		})
-	}
-}
-
-func Test_AutoDisableMaestroPreview(t *testing.T) {
-	registerScheme()
-
-	mce := &backplanev1.MultiClusterEngine{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "test-mce-maestro",
-		},
-		Spec: backplanev1.MultiClusterEngineSpec{
-			TargetNamespace: "test-ns",
-			Overrides: &backplanev1.Overrides{
-				Components: []backplanev1.ComponentConfig{
-					{
-						Name:    backplanev1.MaestroPreview,
-						Enabled: true,
-					},
-				},
-			},
-		},
-	}
-
-	s := runtime.NewScheme()
-	_ = backplanev1.AddToScheme(s)
-	c := fake.NewClientBuilder().WithScheme(s).WithObjects(mce).Build()
-
-	r := &MultiClusterEngineReconciler{
-		Client:        c,
-		Scheme:        s,
-		Log:           logr.Discard(),
-		StatusManager: &status.StatusTracker{Client: c},
-	}
-
-	// Verify maestro-preview is initially enabled
-	if !mce.Enabled(backplanev1.MaestroPreview) {
-		t.Fatal("Expected maestro-preview to be enabled before reconcile")
-	}
-
-	result, err := r.Reconcile(context.TODO(), ctrl.Request{
-		NamespacedName: types.NamespacedName{Name: mce.Name},
-	})
-	if err != nil {
-		t.Fatalf("Reconcile returned error: %v", err)
-	}
-	if !result.Requeue {
-		t.Error("Expected Requeue=true after auto-disabling maestro-preview")
-	}
-
-	updatedMCE := &backplanev1.MultiClusterEngine{}
-	if err := c.Get(context.TODO(), types.NamespacedName{Name: mce.Name}, updatedMCE); err != nil {
-		t.Fatalf("Failed to get updated MCE: %v", err)
-	}
-	if updatedMCE.Enabled(backplanev1.MaestroPreview) {
-		t.Error("Expected maestro-preview to be disabled after reconcile")
 	}
 }
 

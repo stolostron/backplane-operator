@@ -204,17 +204,6 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 	// Check if any deprecated fields are present within the backplaneConfig spec.
 	r.CheckDeprecatedFieldUsage(backplaneConfig)
 
-	// Auto-disable maestro-preview if enabled
-	if backplaneConfig.Enabled(backplanev1.MaestroPreview) {
-		r.Log.Info("Auto-disabling maestro-preview component")
-		backplaneConfig.Disable(backplanev1.MaestroPreview)
-		if err := r.Client.Update(ctx, backplaneConfig); err != nil {
-			r.Log.Error(err, "Failed to disable maestro-preview")
-			return ctrl.Result{}, err
-		}
-		return ctrl.Result{Requeue: true}, nil
-	}
-
 	// reset status manager
 	r.StatusManager.Reset("")
 	for _, c := range backplaneConfig.Status.Conditions {
@@ -274,13 +263,6 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 			controllerutil.RemoveFinalizer(backplaneConfig, backplaneFinalizer)
 			if err := r.Client.Update(ctx, backplaneConfig); err != nil {
 				return ctrl.Result{}, err
-			}
-
-			// After the mce is deleted, clean up the maestro namespace if it exists and not externally managed
-			if !r.isComponentExternallyManaged(backplaneConfig, backplanev1.MaestroPreview) {
-				if err := r.deleteMaestroNamespace(ctx); err != nil {
-					return ctrl.Result{}, err
-				}
 			}
 		}
 
@@ -1047,7 +1029,6 @@ func (r *MultiClusterEngineReconciler) fetchChartOrCRDPath(component string) str
 		backplanev1.ImageBasedInstallOperator:      toggle.ImageBasedInstallOperatorChartDir,
 		backplanev1.ManagedServiceAccount:          toggle.ManagedServiceAccountChartDir,
 		backplanev1.ServerFoundation:               toggle.ServerFoundationChartDir,
-		backplanev1.MaestroPreview:                 toggle.MaestroChartDir,
 	}
 
 	if dir, exists := chartDirs[component]; exists {
@@ -1475,38 +1456,6 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 	} else {
 		log.Info(messages.SkippingExternallyManaged, "component",
 			backplanev1.ClusterAPIProviderOA)
-	}
-
-	if utils.DeployOnOCP() {
-		if !r.isComponentExternallyManaged(backplaneConfig, backplanev1.MaestroPreview) &&
-			!r.isComponentExternallyManaged(backplaneConfig, backplanev1.ClusterManager) {
-			if backplaneConfig.Enabled(backplanev1.MaestroPreview) {
-				result, err = r.ensureMaestro(ctx, backplaneConfig)
-				if result != (ctrl.Result{}) {
-					requeue = true
-				}
-				if err != nil {
-					errs[backplanev1.MaestroPreview] = err
-				}
-			} else {
-				result, err = r.ensureNoMaestro(ctx, backplaneConfig)
-				if result != (ctrl.Result{}) {
-					requeue = true
-				}
-				if err != nil {
-					errs[backplanev1.MaestroPreview] = err
-				}
-			}
-		} else {
-			if r.isComponentExternallyManaged(backplaneConfig, backplanev1.MaestroPreview) {
-				log.Info(messages.SkippingExternallyManaged, "component",
-					backplanev1.MaestroPreview)
-			}
-			if r.isComponentExternallyManaged(backplaneConfig, backplanev1.ClusterManager) {
-				log.Info(messages.SkippingExternallyManaged, "component",
-					backplanev1.ClusterManager)
-			}
-		}
 	}
 
 	if backplaneConfig.Enabled(backplanev1.LocalCluster) {
@@ -2257,7 +2206,6 @@ func (r *MultiClusterEngineReconciler) ensureNoAllInternalEngineComponents(ctx c
 		backplanev1.LocalCluster,
 		backplanev1.ManagedServiceAccount,
 		backplanev1.ServerFoundation,
-		backplanev1.MaestroPreview,
 	}
 
 	for _, v := range components {
