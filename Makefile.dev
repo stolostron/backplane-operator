@@ -34,6 +34,20 @@ endif
 # Bundle repo to validate against
 BUNDLE ?= mce-operator-bundle
 
+# Python venv setup (opt-in via USE_VENV, default true)
+# Avoids "externally-managed-environment" pip errors on newer Python installs
+# (e.g. Homebrew Python / PEP 668). Set USE_VENV=false to use system python3/pip3.
+VENV_DIR ?= .venv
+USE_VENV ?= true
+
+ifeq ($(USE_VENV),true)
+PYTHON_CMD := $(VENV_DIR)/bin/python3
+PIP_CMD := $(VENV_DIR)/bin/pip3
+else
+PYTHON_CMD := python3
+PIP_CMD := pip3
+endif
+
 ##@ Dev. targets
 
 .PHONY: subscriptions
@@ -42,14 +56,12 @@ subscriptions: ## Applies upstream community subscriptions (Hive, Cluster-manage
 	oc apply -k hack/subscriptions
 
 .PHONY: add-images
-add-images: ## Retrieves latest manifest and injects image definitions directly into the deployment template
-	pip3 install -r ./hack/bundle-automation/requirements.txt
-	python3 ./hack/scripts/dev-update-image-references.py
+add-images: install-requirements ## Retrieves latest manifest and injects image definitions directly into the deployment template
+	$(PYTHON_CMD) ./hack/scripts/dev-update-image-references.py
 
 .PHONY: add-images-local
-add-images-local:  ## Generates a local image manifest. Source this file to define necessary environment variables to run the operator locally
-	pip3 install -r ./hack/bundle-automation/requirements.txt
-	python3 ./hack/scripts/dev-update-image-references.py --local
+add-images-local: install-requirements  ## Generates a local image manifest. Source this file to define necessary environment variables to run the operator locally
+	$(PYTHON_CMD) ./hack/scripts/dev-update-image-references.py --local
 
 .PHONY: upstream-install
 upstream-install: ## Installs the upstream Backplane Operator by deploying a CatalogSource and Subscription
@@ -57,42 +69,49 @@ upstream-install: ## Installs the upstream Backplane Operator by deploying a Cat
 
 .PHONY: install-requirements
 install-requirements:
-	pip3 install -r hack/bundle-automation/requirements.txt
+ifeq ($(USE_VENV),true)
+	@if [ ! -x "$(VENV_DIR)/bin/python3" ]; then \
+		echo "Creating Python venv at $(VENV_DIR)..."; \
+		python3 -m venv $(VENV_DIR); \
+		$(VENV_DIR)/bin/pip3 install --upgrade pip; \
+	fi
+endif
+	$(PIP_CMD) install -r hack/bundle-automation/requirements.txt
 
 ## Lints the operator bundles
 .PHONY: lint-operator-bundles
 lint-operator-bundles: install-requirements
-	python3 ./hack/bundle-automation/generate-shell.py --lint-bundles --org $(ORG) --repo $(REPO) --branch $(BRANCH) --component "$(COMPONENT)" --config "$(CONFIG)"
+	$(PYTHON_CMD) ./hack/bundle-automation/generate-shell.py --lint-bundles --org $(ORG) --repo $(REPO) --branch $(BRANCH) --component "$(COMPONENT)" --config "$(CONFIG)"
 
 ## Regenerates the operator bundles
 .PHONY: refresh-image-aliases
 refresh-image-aliases: install-requirements
-	python3 ./hack/bundle-automation/generate-shell.py --refresh-image-aliases --org $(ORG) --repo $(REPO) --branch $(BRANCH) --pipeline-repo $(PIPELINE_REPO) --pipeline-branch $(PIPELINE_BRANCH) --component "$(COMPONENT)"
+	$(PYTHON_CMD) ./hack/bundle-automation/generate-shell.py --refresh-image-aliases --org $(ORG) --repo $(REPO) --branch $(BRANCH) --pipeline-repo $(PIPELINE_REPO) --pipeline-branch $(PIPELINE_BRANCH) --component "$(COMPONENT)"
 
 ## Regenerates the operator charts from bundles
 .PHONY: regenerate-charts-from-bundles
 regenerate-charts-from-bundles: install-requirements
-	python3 ./hack/bundle-automation/generate-shell.py --update-charts-from-bundles --org $(ORG) --repo $(REPO) --branch $(BRANCH) --component "$(COMPONENT)" --config "$(CONFIG)"
+	$(PYTHON_CMD) ./hack/bundle-automation/generate-shell.py --update-charts-from-bundles --org $(ORG) --repo $(REPO) --branch $(BRANCH) --component "$(COMPONENT)" --config "$(CONFIG)"
 
 ## Regenerates the operator bundles
 .PHONY: regenerate-operator-sha-commits
 regenerate-operator-sha-commits: install-requirements
-	python3 ./hack/bundle-automation/generate-shell.py --update-commits --org $(ORG) --repo $(REPO) --branch $(BRANCH) --pipeline-repo $(PIPELINE_REPO) --pipeline-branch $(PIPELINE_BRANCH) --component "$(COMPONENT)" --config "$(CONFIG)"
+	$(PYTHON_CMD) ./hack/bundle-automation/generate-shell.py --update-commits --org $(ORG) --repo $(REPO) --branch $(BRANCH) --pipeline-repo $(PIPELINE_REPO) --pipeline-branch $(PIPELINE_BRANCH) --component "$(COMPONENT)" --config "$(CONFIG)"
 
 ## Regenerates the charts
 .PHONY: regenerate-charts
 regenerate-charts: install-requirements
-	python3 ./hack/bundle-automation/generate-shell.py --update-charts --org $(ORG) --repo $(REPO) --branch $(BRANCH) --component "$(COMPONENT)" --config "$(CONFIG)"
+	$(PYTHON_CMD) ./hack/bundle-automation/generate-shell.py --update-charts --org $(ORG) --repo $(REPO) --branch $(BRANCH) --component "$(COMPONENT)" --config "$(CONFIG)"
 
 ## Regenerates the operator bundles
 .PHONY: copy-charts
 copy-charts: install-requirements
-	python3 ./hack/bundle-automation/generate-shell.py --copy-charts --org $(ORG) --repo $(REPO) --branch $(BRANCH) --component "$(COMPONENT)" --config "$(CONFIG)"
+	$(PYTHON_CMD) ./hack/bundle-automation/generate-shell.py --copy-charts --org $(ORG) --repo $(REPO) --branch $(BRANCH) --component "$(COMPONENT)" --config "$(CONFIG)"
 
 ## Onboard new OLM/Chart component
 .PHONY: onboard-new-component
 onboard-new-component: install-requirements
-	python3 ./hack/bundle-automation/generate-shell.py --onboard-new-component --org $(ORG) --repo $(REPO) --branch $(BRANCH) --component "$(COMPONENT)"
+	$(PYTHON_CMD) ./hack/bundle-automation/generate-shell.py --onboard-new-component --org $(ORG) --repo $(REPO) --branch $(BRANCH) --component "$(COMPONENT)"
 
 ## Validate that all required image keys exist in the bundle
 .PHONY: validate-image-keys
@@ -106,7 +125,7 @@ validate-image-keys: install-requirements
 	@echo "Checking out bundle branch: $(BUNDLE_BRANCH)"
 	@cd $(BUNDLE) && git checkout $(BUNDLE_BRANCH)
 	@echo "Successfully checked out branch: $$(cd $(BUNDLE) && git branch --show-current)"
-	@python3 ./hack/bundle-automation/generate-shell.py --validate-image-keys --org $(ORG) --repo $(REPO) --branch $(BRANCH) --bundle $(BUNDLE)
+	@$(PYTHON_CMD) ./hack/bundle-automation/generate-shell.py --validate-image-keys --org $(ORG) --repo $(REPO) --branch $(BRANCH) --bundle $(BUNDLE)
 	@echo "Cleaning up cloned bundle..."
 	@rm -rf $(BUNDLE)
 
