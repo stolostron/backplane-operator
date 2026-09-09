@@ -2569,6 +2569,7 @@ rules:
   - multicluster.x-k8s.io
   resources:
   - clusterprofiles
+  - placementdecisions
   verbs:
   - create
   - delete
