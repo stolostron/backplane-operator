@@ -143,23 +143,23 @@ spec:
     from:
       kind: DockerImage
       name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/work-rhel9:latest
-  - name: assisted-image-service
+  - name: assisted-image-service-rhel9
     from:
       kind: DockerImage
       name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-image-service-rhel9:latest
-  - name: assisted-installer
+  - name: assisted-installer-rhel9
     from:
       kind: DockerImage
       name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-installer-rhel9:latest
-  - name: assisted-installer-agent
+  - name: assisted-installer-agent-rhel9
     from:
       kind: DockerImage
       name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-installer-agent-rhel9:latest
-  - name: assisted-installer-controller
+  - name: assisted-installer-controller-rhel9
     from:
       kind: DockerImage
       name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-installer-controller-rhel9:latest
-  - name: assisted-service
+  - name: assisted-service-9-rhel9
     from:
       kind: DockerImage
       name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-service-9-rhel9:latest
