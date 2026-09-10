@@ -180,6 +180,10 @@ func (r *MultiClusterEngine) ValidateCreate(ctx context.Context, obj *MultiClust
 	if obj.Spec.Overrides != nil {
 		for _, c := range obj.Spec.Overrides.Components {
 			if !validComponent(c) {
+				if IsRemovedComponent(c.Name) {
+					return nil, fmt.Errorf("%w: %s was removed and can no longer be added to a new resource",
+						ErrInvalidComponent, c.Name)
+				}
 				return nil, fmt.Errorf("%w: %s is not a known component", ErrInvalidComponent, c.Name)
 			}
 		}
@@ -257,9 +261,15 @@ func (r *MultiClusterEngine) ValidateUpdate(ctx context.Context, oldObj, newObj 
 	}
 
 	// Validate components
+	var warnings admission.Warnings
 	if newObj.Spec.Overrides != nil {
 		for _, c := range newObj.Spec.Overrides.Components {
 			if !validComponent(c) {
+				if IsRemovedComponent(c.Name) {
+					warnings = append(warnings, fmt.Sprintf(
+						"component %s was removed and will be automatically removed from this resource", c.Name))
+					continue
+				}
 				return nil, fmt.Errorf("%w: %s is not a known component", ErrInvalidComponent, c.Name)
 			}
 		}
@@ -333,7 +343,7 @@ func (r *MultiClusterEngine) ValidateUpdate(ctx context.Context, oldObj, newObj 
 		}
 	}
 
-	return nil, nil
+	return warnings, nil
 }
 
 var cfg *rest.Config

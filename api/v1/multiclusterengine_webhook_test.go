@@ -105,6 +105,28 @@ var _ = Describe("Multiclusterengine webhook", func() {
 				}
 				Expect(k8sClient.Create(ctx, mce)).NotTo(BeNil(), "Invalid components not allowed in config")
 			})
+			By("because of a removed component", func() {
+				mce := &MultiClusterEngine{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:        fmt.Sprintf("%s-2", multiClusterEngineName),
+						Annotations: map[string]string{"deploymentmode": string(ModeHosted)},
+					},
+					Spec: MultiClusterEngineSpec{
+						TargetNamespace: "new",
+						Overrides: &Overrides{
+							Components: []ComponentConfig{
+								{
+									Name:    MaestroPreview,
+									Enabled: true,
+								},
+							},
+						},
+					},
+				}
+				err := k8sClient.Create(ctx, mce)
+				Expect(err).NotTo(BeNil(), "Removed components should not be permitted on new resources")
+				Expect(err.Error()).To(ContainSubstring("was removed"))
+			})
 		})
 
 		It("Should fail to update multiclusterengine", func() {
@@ -159,6 +181,30 @@ var _ = Describe("Multiclusterengine webhook", func() {
 				Expect(statusErr.ErrStatus.Code).To(Equal(int32(403)))
 				Expect(statusErr.ErrStatus.Message).To(ContainSubstring("local-cluster name"))
 				Expect(statusErr.ErrStatus.Message).To(ContainSubstring("35 characters"))
+			})
+		})
+
+		It("Should allow updating multiclusterengine with a removed component", func() {
+			mce := &MultiClusterEngine{}
+			Expect(k8sClient.Get(ctx, types.NamespacedName{Name: multiClusterEngineName}, mce)).To(Succeed())
+
+			By("setting a removed component, simulating an upgrade from a version where it still existed", func() {
+				mce.Spec.Overrides = &Overrides{
+					Components: []ComponentConfig{
+						{
+							Name:    MaestroPreview,
+							Enabled: true,
+						},
+					},
+				}
+				Expect(k8sClient.Update(ctx, mce)).To(Succeed(),
+					"removed components should be accepted on update so they can be auto-pruned by the operator")
+			})
+
+			By("cleaning up the removed component", func() {
+				Expect(k8sClient.Get(ctx, types.NamespacedName{Name: multiClusterEngineName}, mce)).To(Succeed())
+				mce.Spec.Overrides = &Overrides{}
+				Expect(k8sClient.Update(ctx, mce)).To(Succeed())
 			})
 		})
 

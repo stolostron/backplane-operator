@@ -2575,6 +2575,16 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 		}
 	}
 
+	// Automatically prune components that have been removed from MCE entirely.
+	// This allows clusters upgrading from a version where the component still
+	// existed to be cleanly migrated without requiring manual user intervention.
+	for _, removed := range backplanev1.RemovedComponents {
+		if m.Prune(removed) {
+			log.Info("Pruning removed component", "component", removed)
+			updateNecessary = true
+		}
+	}
+
 	if utils.DeployOnOCP() {
 		// Set and store cluster Ingress domain for use later
 		clusterIngressDomain, err := r.getClusterIngressDomain(ctx, m)
