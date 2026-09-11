@@ -48,6 +48,7 @@ const (
 	ManagedServiceAccount            = "managedserviceaccount"
 	ManagedServiceAccountPreview     = "managedserviceaccount-preview"
 	ServerFoundation                 = "server-foundation"
+	MaestroPreview                   = "maestro-preview" // Removed in MCE 5.1
 
 	// CRD directory names
 	AssistedServiceCRDDir            = "assisted-service"
@@ -158,6 +159,16 @@ var PreviewToStable = map[string]string{
 }
 
 /*
+RemovedComponents is a list of component names that have been completely removed from MCE.
+These components are no longer valid and are automatically pruned from existing MultiClusterEngine
+CRs during reconciliation, so that clusters upgrading from a version where the component still
+existed can be cleanly migrated without requiring manual user intervention.
+*/
+var RemovedComponents = []string{
+	MaestroPreview, // Removed in MCE 5.1
+}
+
+/*
 ComponentPresent checks if a component with the given name is present in the MultiClusterEngine's Overrides.
 Returns true if the component is present, otherwise false.
 */
@@ -263,6 +274,19 @@ Returns true if the component is valid, otherwise false.
 func validComponent(c ComponentConfig) bool {
 	for _, name := range AllComponents {
 		if c.Name == name {
+			return true
+		}
+	}
+	return false
+}
+
+/*
+IsRemovedComponent checks if the given component name is in the RemovedComponents list.
+Returns true if the component has been completely removed from MCE.
+*/
+func IsRemovedComponent(name string) bool {
+	for _, removed := range RemovedComponents {
+		if name == removed {
 			return true
 		}
 	}

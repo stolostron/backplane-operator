@@ -3276,3 +3276,59 @@ func Test_CleanupVersionedAddOnTemplates(t *testing.T) {
 func ptr(b bool) *bool {
 	return &b
 }
+
+// Test_setDefaults_PrunesRemovedComponents verifies that components which have been
+// completely removed from MCE (backplanev1.RemovedComponents) are automatically pruned
+// from a MultiClusterEngine's spec during reconciliation, so that clusters upgrading
+// from a version where the component still existed are cleanly migrated without
+// requiring manual user intervention.
+func Test_setDefaults_PrunesRemovedComponents(t *testing.T) {
+	registerScheme()
+
+	// setDefaults() branches into OCP-specific reconciliation (ingress domain,
+	// console URL, cluster version) when this is true. That path isn't relevant
+	// to removed-component pruning and isn't set up for this fake client, so
+	// disable it for the duration of this test and restore it afterward since
+	// it's shared global state.
+	previousDeployOnOCP := utils.DeployOnOCP()
+	utils.SetDeployOnOCP(false)
+	defer utils.SetDeployOnOCP(previousDeployOnOCP)
+
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).Build()
+	reconciler := &MultiClusterEngineReconciler{
+		Client:        fakeClient,
+		Scheme:        scheme.Scheme,
+		StatusManager: &status.StatusTracker{Client: fakeClient},
+	}
+
+	mce := &backplanev1.MultiClusterEngine{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test-mce-removed-component",
+		},
+		Spec: backplanev1.MultiClusterEngineSpec{
+			TargetNamespace: "test-ns",
+			Overrides: &backplanev1.Overrides{
+				Components: []backplanev1.ComponentConfig{
+					{Name: backplanev1.MaestroPreview, Enabled: true},
+				},
+			},
+		},
+	}
+
+	if err := fakeClient.Create(context.TODO(), mce); err != nil {
+		t.Fatalf("failed to create MultiClusterEngine: %v", err)
+	}
+
+	if !mce.ComponentPresent(backplanev1.MaestroPreview) {
+		t.Fatalf("expected removed component %q to be present before reconciliation", backplanev1.MaestroPreview)
+	}
+
+	if _, err := reconciler.setDefaults(context.TODO(), mce); err != nil {
+		t.Fatalf("setDefaults() error = %v", err)
+	}
+
+	if mce.ComponentPresent(backplanev1.MaestroPreview) {
+		t.Errorf("expected removed component %q to be pruned from spec, but it is still present",
+			backplanev1.MaestroPreview)
+	}
+}

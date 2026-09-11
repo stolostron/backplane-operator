@@ -17,3 +17,14 @@
 | local-cluster                    | Enables the import and self-management of the local hub cluster where the {mce-short} is deployed.                          | True    |
 | managedserviceaccount            | Synchronizes service accounts to managed clusters, and collects tokens as secret resources to give back to the hub cluster. | True    |
 | server-foundation                | Provides foundational services for server-side operations within the cluster environment.                                   | True    |
+
+## Removed components
+
+The following components have been completely removed from the operator. They are no longer valid
+values for `spec.overrides.components[].name`. If present on an existing `MultiClusterEngine` resource
+(e.g. after upgrading from a version where the component still existed), they are automatically pruned
+during reconciliation and do not require manual removal.
+
+| Name             | Removed in | Notes                                                        |
+|------------------|------------|---------------------------------------------------------------|
+| maestro-preview  | MCE 5.1    | Maestro was removed entirely; see ACM-40205 for details.      |
