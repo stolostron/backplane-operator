@@ -74,7 +74,13 @@ class ScriptExecutionError(Exception):
         super().__init__(f"Script {script_name} failed with exit code {returncode}")
 
 def clone_repository(git_url, repo_path, branch):
-    """Clones a Git repository to a specific path.
+    """Clones a single branch of a Git repository to a specific path.
+
+    Only the tip commit of the given branch is fetched (a shallow, single-
+    branch clone). This tooling only ever reads the current file contents on
+    one branch — it never inspects history, blames a line, or diffs against a
+    prior commit — so the full commit history isn't needed and skipping it
+    substantially reduces clone time/bandwidth for repos with long histories.
 
     Args:
         git_url (_type_): _description_
@@ -87,8 +93,7 @@ def clone_repository(git_url, repo_path, branch):
 
     logging.info(f"Cloning repository: {git_url} (branch={branch}) to {repo_path}")
     try:
-        repository = Repo.clone_from(git_url, repo_path)
-        repository.git.checkout(branch)
+        Repo.clone_from(git_url, repo_path, branch=branch, depth=1)
         logging.info(f"Git repository: {git_url} successfully cloned.")
 
     except Exception as e:
