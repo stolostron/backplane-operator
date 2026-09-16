@@ -132,6 +132,26 @@ if [[ $rc -ne 0 ]]; then
    exit 3
 fi
 
+# Hive's bundle-gen tool does not include the operator's NetworkPolicy in the
+# generated bundle (it is only read to populate the CSV in OperatorHub mode).
+# Copy it directly from the Hive repo so it gets picked up by the chart
+# generation tooling.
+hive_netpol_source="${hive_repo_spot}/config/operator/operator_netpol.yaml"
+netpol_output="${output_dir}/hive-operator-networkpolicy.yaml"
+
+if [[ -f "$hive_netpol_source" ]]; then
+   echo "Copying Hive NetworkPolicy to output directory."
+   cp -p "$hive_netpol_source" "$netpol_output"
+   rc=$?
+   if [[ $rc -ne 0 ]]; then
+      >&2 echo "Error: Failed to copy Hive NetworkPolicy (rc: $rc)."
+      exit 3
+   fi
+else
+   >&2 echo "Error: Hive NetworkPolicy not found at $hive_netpol_source"
+   exit 3
+fi
+
 echo "Hive bundle copied to $output_dir."
 
 rm -rf "$tmp_dir"
