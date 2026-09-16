@@ -50,6 +50,7 @@ spec:
         - --insecure-diagnostics=false
         - --disable-controllers=unmanaged
         - --tls-min-version=VersionTLS13
+        - --tls-cipher-suites=
         command:
         - /bin/cluster-api-provider-aws-controller-manager
         env:
