@@ -203,6 +203,26 @@ spec:
                       type: string
                     maxItems: 2
                     type: array
+                  machineNetwork:
+                    description: MachineNetwork is the list of IP address pools for
+                      machines.
+                    items:
+                      description: MachineNetworkEntry is a single IP address block
+                        for node IP blocks.
+                      properties:
+                        cidr:
+                          description: CIDR is the IP block address pool for machines
+                            within the cluster.
+                          maxLength: 43
+                          type: string
+                      required:
+                      - cidr
+                      type: object
+                    maxItems: 32
+                    type: array
+                    x-kubernetes-validations:
+                    - message: each machine network CIDR must be valid
+                      rule: self.all(x, isCIDR(x.cidr))
                   manifestsConfigMapRefs:
                     description: |-
                       ManifestsConfigMapRefs is an array of references to user-provided manifests ConfigMaps to
@@ -874,6 +894,26 @@ spec:
                       type: string
                     maxItems: 2
                     type: array
+                  machineNetwork:
+                    description: MachineNetwork is the list of IP address pools for
+                      machines.
+                    items:
+                      description: MachineNetworkEntry is a single IP address block
+                        for node IP blocks.
+                      properties:
+                        cidr:
+                          description: CIDR is the IP block address pool for machines
+                            within the cluster.
+                          maxLength: 43
+                          type: string
+                      required:
+                      - cidr
+                      type: object
+                    maxItems: 32
+                    type: array
+                    x-kubernetes-validations:
+                    - message: each machine network CIDR must be valid
+                      rule: self.all(x, isCIDR(x.cidr))
                   manifestsConfigMapRefs:
                     description: |-
                       ManifestsConfigMapRefs is an array of references to user-provided manifests ConfigMaps to
