@@ -19,6 +19,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path"
 	"path/filepath"
@@ -36,6 +37,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	k8syaml "k8s.io/apimachinery/pkg/util/yaml"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -420,25 +422,38 @@ func renderTemplates(chartPath string, backplaneConfig *v1.MultiClusterEngine, i
 			continue
 		}
 
-		unstructured := &unstructured.Unstructured{}
-		if err = yaml.Unmarshal([]byte(templateFile), unstructured); err != nil {
-			return nil, append(errs, fmt.Errorf("error converting file %s to unstructured", fileName))
+		// A single rendered template file may contain multiple YAML documents
+		// separated by "---" (e.g. networkpolicy.yaml renders one NetworkPolicy
+		// per controller). Decode every document in the stream instead of only
+		// the first one.
+		decoder := k8syaml.NewYAMLOrJSONDecoder(strings.NewReader(templateFile), 4096)
+		for {
+			obj := &unstructured.Unstructured{}
+			if err = decoder.Decode(obj); err != nil {
+				if err == io.EOF {
+					break
+				}
+				return nil, append(errs, fmt.Errorf("error converting file %s to unstructured: %w", fileName, err))
+			}
+
+			if obj.Object == nil {
+				continue
+			}
+
+			kind := obj.GetKind()
+			if kind == "" {
+				continue
+			}
+			utils.AddBackplaneConfigLabels(obj, backplaneConfig.Name)
+
+			// Add namespace to namespaced resources
+			switch kind {
+			case "Deployment", "ServiceAccount", "Role", "RoleBinding", "Service", "ConfigMap", "Route", "NetworkPolicy":
+				obj.SetNamespace(backplaneConfig.Spec.TargetNamespace)
+			}
+
+			templates = append(templates, obj)
 		}
-
-		kind := unstructured.GetKind()
-		if kind == "" {
-			continue
-
-		}
-		utils.AddBackplaneConfigLabels(unstructured, backplaneConfig.Name)
-
-		// Add namespace to namespaced resources
-		switch kind {
-		case "Deployment", "ServiceAccount", "Role", "RoleBinding", "Service", "ConfigMap", "Route", "NetworkPolicy":
-			unstructured.SetNamespace(backplaneConfig.Spec.TargetNamespace)
-		}
-
-		templates = append(templates, unstructured)
 	}
 
 	return templates, errs
