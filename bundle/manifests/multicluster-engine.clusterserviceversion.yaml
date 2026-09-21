@@ -34,7 +34,7 @@ metadata:
       "kind":"MultiClusterEngine","metadata":{"name":"engine"},"spec": {}}'
     operatorframework.io/suggested-namespace: multicluster-engine
     operators.openshift.io/infrastructure-features: '["disconnected", "proxy-aware", "fips"]'
-    operators.openshift.io/must-gather-image: registry.redhat.io/multicluster-engine/must-gather-rhel9@sha256:646318714a24ce1b11ea4548590999fa1ad6e1a18ebac8629b8ed1969c0993a8
+    operators.openshift.io/must-gather-image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/backplane-must-gather-rhel9:latest
     operators.openshift.io/valid-subscription: '["OpenShift Kubernetes Engine", "OpenShift
       Container Platform", "OpenShift Platform Plus"]'
     operators.operatorframework.io/builder: operator-sdk-v1.42.3
