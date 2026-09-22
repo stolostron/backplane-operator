@@ -767,14 +767,33 @@ func TestClusterLifecycleStateMetricsNetworkPolicies(t *testing.T) {
 			t.Fatalf("RenderChart failed: %v", errs)
 		}
 
-		// The cluster-lifecycle chart now renders a NetworkPolicy per controller
-		// (see networkpolicy.yaml), so only look for the CLSM policy by name here
-		// rather than failing on the presence of the other, unrelated policies.
+		// The cluster-lifecycle chart renders a NetworkPolicy per controller from a
+		// single multi-document networkpolicy.yaml, plus a separate CLSM policy file.
+		// Assert all of them are present to guard against the renderer only decoding
+		// the first document in a multi-document template file.
+		wantNames := map[string]bool{
+			npName:                                  false, // clusterlifecycle-state-metrics-network-policy
+			"cluster-curator-controller-policy":     false,
+			"clusterclaims-controller-policy":       false,
+			"cluster-image-set-controller-policy":   false,
+			"provider-credential-controller-policy": false,
+		}
 		var np *unstructured.Unstructured
 		for _, tmpl := range templates {
-			if tmpl.GetKind() == "NetworkPolicy" && tmpl.GetName() == npName {
+			if tmpl.GetKind() != "NetworkPolicy" {
+				continue
+			}
+			name := tmpl.GetName()
+			if _, ok := wantNames[name]; ok {
+				wantNames[name] = true
+			}
+			if name == npName {
 				np = tmpl
-				break
+			}
+		}
+		for name, found := range wantNames {
+			if !found {
+				t.Errorf("expected NetworkPolicy %s when networkPolicies.enabled=true", name)
 			}
 		}
 		if np == nil {
