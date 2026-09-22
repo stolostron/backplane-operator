@@ -1,0 +1,6 @@
+# bundle/mce-operator.package.yaml
+packageName: multicluster-engine
+channels:
+- name: stable-2.17
+  currentCSV: multicluster-engine.v2.17.0
+defaultChannel: stable-2.17
