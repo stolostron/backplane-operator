@@ -704,17 +704,23 @@ func TestNetworkPoliciesValueInjection(t *testing.T) {
 			t.Fatalf("RenderChart failed: %v", errs)
 		}
 
-		foundNP := false
+		expectedNPs := map[string]bool{
+			"hypershift-addon-manager-network-policy": false,
+			"hcp-cli-download-network-policy":         false,
+		}
 		for _, tmpl := range templates {
 			if tmpl.GetKind() == "NetworkPolicy" {
-				foundNP = true
-				if tmpl.GetName() != "hypershift-addon-manager-network-policy" {
+				if _, ok := expectedNPs[tmpl.GetName()]; ok {
+					expectedNPs[tmpl.GetName()] = true
+				} else {
 					t.Errorf("unexpected NetworkPolicy name: %s", tmpl.GetName())
 				}
 			}
 		}
-		if !foundNP {
-			t.Error("expected NetworkPolicy template when networkPolicies.enabled=true")
+		for name, found := range expectedNPs {
+			if !found {
+				t.Errorf("expected NetworkPolicy %s when networkPolicies.enabled=true", name)
+			}
 		}
 	})
 
