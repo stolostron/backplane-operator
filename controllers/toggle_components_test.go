@@ -20,6 +20,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	addonv1alpha1 "open-cluster-management.io/api/addon/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -635,55 +636,69 @@ func Test_ensureNetworkPoliciesFeatureGate(t *testing.T) {
 				return
 			}
 
-			updated := &unstructured.Unstructured{}
-			updated.SetGroupVersionKind(schema.GroupVersionKind{
-				Group: "operator.open-cluster-management.io", Version: "v1", Kind: "ClusterManager",
-			})
-			if getErr := cl.Get(ctx, types.NamespacedName{Name: "cluster-manager"}, updated); getErr != nil {
-				t.Fatalf("failed to get ClusterManager after reconcile: %v", getErr)
-			}
-
-			gates, _, _ := unstructured.NestedSlice(updated.Object, "spec", "registrationConfiguration", "featureGates")
-
-			// Verify NetworkPolicies gate is set to the desired mode
-			npFound := false
-			for _, g := range gates {
-				gate, ok := g.(map[string]interface{})
-				if !ok {
-					continue
-				}
-				if gate["feature"] == "NetworkPolicies" {
-					npFound = true
-					if gate["mode"] != tt.wantMode {
-						t.Errorf("NetworkPolicies mode: want %s, got %v", tt.wantMode, gate["mode"])
-					}
-				}
-			}
-			if !npFound {
-				t.Errorf("NetworkPolicies feature gate not found in featureGates")
-			}
-
-			// Verify preserved features are still present
-			for _, feat := range tt.preservedFeatures {
-				found := false
-				for _, g := range gates {
-					gate, ok := g.(map[string]interface{})
-					if ok && gate["feature"] == feat {
-						found = true
-						break
-					}
-				}
-				if !found {
-					t.Errorf("expected feature gate %q to be preserved but it was missing", feat)
-				}
-			}
-
-			// Verify foundation helper returns consistent mode
-			wantFndMode := string(foundation.NetworkPoliciesFeatureGateMode(tt.mce))
-			if tt.wantMode != wantFndMode {
-				t.Errorf("test wantMode %q inconsistent with foundation.NetworkPoliciesFeatureGateMode %q", tt.wantMode, wantFndMode)
-			}
+			assertClusterManagerGates(t, cl, ctx, tt.wantMode, tt.preservedFeatures, tt.mce)
 		})
+	}
+}
+
+// assertClusterManagerGates fetches the live ClusterManager from cl and verifies that:
+//   - the NetworkPolicies feature gate is set to wantMode
+//   - every feature name in preservedFeatures is still present
+//   - wantMode is consistent with foundation.NetworkPoliciesFeatureGateMode(mce)
+func assertClusterManagerGates(
+	t *testing.T,
+	cl client.Client,
+	ctx context.Context,
+	wantMode string,
+	preservedFeatures []string,
+	mce *backplanev1.MultiClusterEngine,
+) {
+	t.Helper()
+	updated := &unstructured.Unstructured{}
+	updated.SetGroupVersionKind(schema.GroupVersionKind{
+		Group: "operator.open-cluster-management.io", Version: "v1", Kind: "ClusterManager",
+	})
+	if err := cl.Get(ctx, types.NamespacedName{Name: "cluster-manager"}, updated); err != nil {
+		t.Fatalf("failed to get ClusterManager after reconcile: %v", err)
+	}
+
+	gates, _, _ := unstructured.NestedSlice(updated.Object, "spec", "registrationConfiguration", "featureGates")
+
+	npFound := false
+	for _, g := range gates {
+		gate, ok := g.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		if gate["feature"] == "NetworkPolicies" {
+			npFound = true
+			if gate["mode"] != wantMode {
+				t.Errorf("NetworkPolicies mode: want %s, got %v", wantMode, gate["mode"])
+			}
+		}
+	}
+	if !npFound {
+		t.Errorf("NetworkPolicies feature gate not found in featureGates")
+	}
+
+	for _, feat := range preservedFeatures {
+		found := false
+		for _, g := range gates {
+			gate, ok := g.(map[string]interface{})
+			if ok && gate["feature"] == feat {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("expected feature gate %q to be preserved but it was missing", feat)
+		}
+	}
+
+	wantFndMode := string(foundation.NetworkPoliciesFeatureGateMode(mce))
+	if wantMode != wantFndMode {
+		t.Errorf("test wantMode %q inconsistent with foundation.NetworkPoliciesFeatureGateMode %q",
+			wantMode, wantFndMode)
 	}
 }
 

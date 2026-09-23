@@ -1498,7 +1498,8 @@ func (r *MultiClusterEngineReconciler) ensureClusterManager(ctx context.Context,
 	}
 
 	force := true
-	err = r.Client.Patch(ctx, cmTemplate, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
+	patchOpts := &client.PatchOptions{Force: &force, FieldManager: "backplane-operator"}
+	err = r.Client.Patch(ctx, cmTemplate, client.Apply, patchOpts)
 	if err != nil {
 		return ctrl.Result{}, errors.Wrapf(err, "error applying object Name: %s Kind: %s", cmTemplate.GetName(), cmTemplate.GetKind())
 	}
@@ -1586,7 +1587,11 @@ func mergeFeatureGates(current, prior []interface{}) []interface{} {
 // on the ClusterManager returned by SSA Patch (cm), restoring any priorGates
 // that SSA pruned and leaving all other gates untouched.
 func (r *MultiClusterEngineReconciler) ensureNetworkPoliciesFeatureGate(
-	ctx context.Context, mce *backplanev1.MultiClusterEngine, cm *unstructured.Unstructured, priorGates []interface{}) error {
+	ctx context.Context,
+	mce *backplanev1.MultiClusterEngine,
+	cm *unstructured.Unstructured,
+	priorGates []interface{},
+) error {
 
 	if cm == nil {
 		return errors.New("ClusterManager object is nil")
@@ -1628,7 +1633,8 @@ func (r *MultiClusterEngineReconciler) ensureNetworkPoliciesFeatureGate(
 		return nil
 	}
 
-	if err := unstructured.SetNestedSlice(cm.Object, gates, "spec", "registrationConfiguration", "featureGates"); err != nil {
+	if err := unstructured.SetNestedSlice(cm.Object, gates,
+		"spec", "registrationConfiguration", "featureGates"); err != nil {
 		return errors.Wrapf(err, "failed to set registrationConfiguration.featureGates on ClusterManager")
 	}
 	if err := r.Client.Update(ctx, cm); err != nil {
