@@ -1489,10 +1489,29 @@ func (r *MultiClusterEngineReconciler) ensureClusterManager(ctx context.Context,
 	if err := ctrl.SetControllerReference(mce, cmTemplate, r.Scheme); err != nil {
 		return ctrl.Result{}, errors.Wrapf(err, "Error setting controller reference on resource %s", cmTemplate.GetName())
 	}
+	// Snapshot registration feature gates before SSA. The previous operator
+	// version owned registrationConfiguration.featureGates, so omitting that
+	// field from the new apply can prune gates that other components added
+	// (e.g. ManagedClusterAutoApproval). Restore them after the patch.
+	priorGates, err := r.snapshotClusterManagerFeatureGates(ctx)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
 	force := true
-	err := r.Client.Patch(ctx, cmTemplate, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
+	err = r.Client.Patch(ctx, cmTemplate, client.Apply, &client.PatchOptions{Force: &force, FieldManager: "backplane-operator"})
 	if err != nil {
 		return ctrl.Result{}, errors.Wrapf(err, "error applying object Name: %s Kind: %s", cmTemplate.GetName(), cmTemplate.GetKind())
+	}
+
+	// Manage the NetworkPolicies feature gate via a targeted read-modify-write so
+	// that SSA does not claim ownership of the entire registrationConfiguration
+	// featureGates array and inadvertently strip gates set by other components
+	// (e.g. ManagedClusterAutoApproval added by the Global Hub migration agent).
+	// Use the SSA Patch response (cmTemplate) instead of a cached Get so a
+	// just-created ClusterManager is visible on first reconcile.
+	if err := r.ensureNetworkPoliciesFeatureGate(ctx, mce, cmTemplate, priorGates); err != nil {
+		return ctrl.Result{}, err
 	}
 
 	// Ensure TLS profile ConfigMap exists in operator namespace where cluster-manager runs
@@ -1504,6 +1523,121 @@ func (r *MultiClusterEngineReconciler) ensureClusterManager(ctx context.Context,
 	}
 
 	return ctrl.Result{}, nil
+}
+
+// snapshotClusterManagerFeatureGates returns the current
+// spec.registrationConfiguration.featureGates from the live ClusterManager.
+// A missing ClusterManager is treated as an empty snapshot (new install).
+func (r *MultiClusterEngineReconciler) snapshotClusterManagerFeatureGates(
+	ctx context.Context) ([]interface{}, error) {
+
+	cm := &unstructured.Unstructured{}
+	cm.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "operator.open-cluster-management.io",
+		Version: "v1",
+		Kind:    "ClusterManager",
+	})
+	err := r.Client.Get(ctx, types.NamespacedName{Name: "cluster-manager"}, cm)
+	if apierrors.IsNotFound(err) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to read existing ClusterManager")
+	}
+
+	gates, _, err := unstructured.NestedSlice(cm.Object, "spec", "registrationConfiguration", "featureGates")
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to read existing feature gates")
+	}
+	return gates, nil
+}
+
+// mergeFeatureGates appends any prior gates whose feature name is not already
+// present in current. Current entries win when both lists contain the same feature.
+func mergeFeatureGates(current, prior []interface{}) []interface{} {
+	seen := make(map[string]struct{}, len(current)+len(prior))
+	out := make([]interface{}, 0, len(current)+len(prior))
+	for _, g := range current {
+		if gate, ok := g.(map[string]interface{}); ok {
+			if feat, ok := gate["feature"].(string); ok && feat != "" {
+				seen[feat] = struct{}{}
+			}
+		}
+		out = append(out, g)
+	}
+	for _, g := range prior {
+		gate, ok := g.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		feat, _ := gate["feature"].(string)
+		if feat == "" {
+			continue
+		}
+		if _, exists := seen[feat]; exists {
+			continue
+		}
+		out = append(out, g)
+		seen[feat] = struct{}{}
+	}
+	return out
+}
+
+// ensureNetworkPoliciesFeatureGate updates only the NetworkPolicies feature gate
+// on the ClusterManager returned by SSA Patch (cm), restoring any priorGates
+// that SSA pruned and leaving all other gates untouched.
+func (r *MultiClusterEngineReconciler) ensureNetworkPoliciesFeatureGate(
+	ctx context.Context, mce *backplanev1.MultiClusterEngine, cm *unstructured.Unstructured, priorGates []interface{}) error {
+
+	if cm == nil {
+		return errors.New("ClusterManager object is nil")
+	}
+
+	desiredMode := string(foundation.NetworkPoliciesFeatureGateMode(mce))
+
+	originalGates, _, _ := unstructured.NestedSlice(cm.Object, "spec", "registrationConfiguration", "featureGates")
+	gates := mergeFeatureGates(originalGates, priorGates)
+	needsUpdate := len(gates) != len(originalGates)
+
+	found := false
+	for i, g := range gates {
+		gate, ok := g.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		if gate["feature"] == "NetworkPolicies" {
+			found = true
+			if gate["mode"] != desiredMode {
+				gates[i] = map[string]interface{}{
+					"feature": "NetworkPolicies",
+					"mode":    desiredMode,
+				}
+				needsUpdate = true
+			}
+			break
+		}
+	}
+	if !found {
+		gates = append(gates, map[string]interface{}{
+			"feature": "NetworkPolicies",
+			"mode":    desiredMode,
+		})
+		needsUpdate = true
+	}
+
+	if !needsUpdate {
+		return nil
+	}
+
+	if err := unstructured.SetNestedSlice(cm.Object, gates, "spec", "registrationConfiguration", "featureGates"); err != nil {
+		return errors.Wrapf(err, "failed to set registrationConfiguration.featureGates on ClusterManager")
+	}
+	if err := r.Client.Update(ctx, cm); err != nil {
+		return errors.Wrapf(err, "failed to update ClusterManager registrationConfiguration.featureGates")
+	}
+	log.Info("Updated ClusterManager registrationConfiguration.featureGates",
+		"NetworkPolicies", desiredMode)
+	return nil
 }
 
 func (r *MultiClusterEngineReconciler) ensureNoClusterManager(ctx context.Context,

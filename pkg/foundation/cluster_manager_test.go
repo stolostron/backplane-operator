@@ -144,7 +144,14 @@ func TestClusterManager(t *testing.T) {
 	}
 }
 
-func TestClusterManagerNetworkPoliciesFeatureGate(t *testing.T) {
+// TestClusterManagerNoRegistrationConfiguration verifies that the SSA template
+// returned by ClusterManager() does NOT include registrationConfiguration.
+// The NetworkPolicies feature gate is intentionally omitted from the SSA
+// template to prevent SSA (with Force:true) from claiming ownership of the
+// entire featureGates array and stripping gates managed by other components
+// (e.g. ManagedClusterAutoApproval set by the Global Hub migration agent).
+// The gate is applied separately via a read-modify-write in ensureNetworkPoliciesFeatureGate.
+func TestClusterManagerNoRegistrationConfiguration(t *testing.T) {
 	images := map[string]string{
 		"registration":  "quay.io/stolostron/registration:test",
 		"work":          "quay.io/stolostron/work:test",
@@ -152,15 +159,35 @@ func TestClusterManagerNetworkPoliciesFeatureGate(t *testing.T) {
 		"addon_manager": "quay.io/stolostron/addon-manager:test",
 	}
 
+	mces := []*v1.MultiClusterEngine{
+		{},
+		{Spec: v1.MultiClusterEngineSpec{NetworkPolicies: &v1.NetworkPoliciesConfig{Enabled: true}}},
+		{Spec: v1.MultiClusterEngineSpec{NetworkPolicies: &v1.NetworkPoliciesConfig{Enabled: false}}},
+	}
+
+	for _, mce := range mces {
+		c := ClusterManager(mce, images)
+		_, found, err := unstructured.NestedMap(c.Object, "spec", "registrationConfiguration")
+		if err != nil {
+			t.Errorf("unexpected error reading registrationConfiguration: %v", err)
+		}
+		if found {
+			t.Errorf("ClusterManager SSA template must NOT include registrationConfiguration " +
+				"(it would cause SSA to wipe user-managed featureGates); found it in the template")
+		}
+	}
+}
+
+func TestNetworkPoliciesFeatureGateMode(t *testing.T) {
 	tests := []struct {
 		name         string
 		mce          *v1.MultiClusterEngine
-		expectedMode string
+		expectedMode ocmapiv1.FeatureGateModeType
 	}{
 		{
 			name:         "defaults to Enable when NetworkPolicies unset",
 			mce:          &v1.MultiClusterEngine{},
-			expectedMode: string(ocmapiv1.FeatureGateModeTypeEnable),
+			expectedMode: ocmapiv1.FeatureGateModeTypeEnable,
 		},
 		{
 			name: "Enable when NetworkPolicies.enabled=true",
@@ -169,7 +196,7 @@ func TestClusterManagerNetworkPoliciesFeatureGate(t *testing.T) {
 					NetworkPolicies: &v1.NetworkPoliciesConfig{Enabled: true},
 				},
 			},
-			expectedMode: string(ocmapiv1.FeatureGateModeTypeEnable),
+			expectedMode: ocmapiv1.FeatureGateModeTypeEnable,
 		},
 		{
 			name: "Disable when NetworkPolicies.enabled=false",
@@ -178,32 +205,15 @@ func TestClusterManagerNetworkPoliciesFeatureGate(t *testing.T) {
 					NetworkPolicies: &v1.NetworkPoliciesConfig{Enabled: false},
 				},
 			},
-			expectedMode: string(ocmapiv1.FeatureGateModeTypeDisable),
+			expectedMode: ocmapiv1.FeatureGateModeTypeDisable,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			c := ClusterManager(test.mce, images)
-
-			featureGates, found, err := unstructured.NestedSlice(
-				c.Object, "spec", "registrationConfiguration", "featureGates")
-			if err != nil || !found {
-				t.Fatalf("expected registrationConfiguration.featureGates not found: found=%v err=%v", found, err)
-			}
-			if len(featureGates) != 1 {
-				t.Fatalf("expected 1 registration feature gate, got %d", len(featureGates))
-			}
-
-			gate, ok := featureGates[0].(map[string]interface{})
-			if !ok {
-				t.Fatalf("expected registration feature gate to be a map, got %T", featureGates[0])
-			}
-			if gate["feature"] != "NetworkPolicies" {
-				t.Errorf("expected feature NetworkPolicies, got %v", gate["feature"])
-			}
-			if gate["mode"] != test.expectedMode {
-				t.Errorf("expected mode %s, got %v", test.expectedMode, gate["mode"])
+			got := NetworkPoliciesFeatureGateMode(test.mce)
+			if got != test.expectedMode {
+				t.Errorf("NetworkPoliciesFeatureGateMode: expected %s, got %s", test.expectedMode, got)
 			}
 		})
 	}
