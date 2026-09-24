@@ -1,0 +1,39 @@
+---
+updates:
+- file: "manifests/multicluster-engine.clusterserviceversion.yaml"
+  update_list:
+  - search: "2.17.3"
+    replace: "2.17.3"
+external-images:
+# Assisted Installer is not built on mce-2.17 (deferred). Names must match
+# bundle/image-references tag names. Digests are 2.11 placeholders until
+# assisted-installer publishes 2.17 images.
+- name: assisted-image-service-rhel9
+  search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-image-service-rhel9:latest"
+  replace: "registry.redhat.io/multicluster-engine/assisted-image-service-rhel9@sha256:48305470fa7e55e78165734d094022a14ac9d083573974036c1f40021c362ba1"
+- name: assisted-installer-rhel9
+  search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-installer-rhel9:latest"
+  replace: "registry.redhat.io/multicluster-engine/assisted-installer-rhel9@sha256:4dd8f3992fcc23dc8f1e14dbfe4e3c3e447b592d88152fbf5d92ccd469653377"
+- name: assisted-installer-agent-rhel9
+  search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-installer-agent-rhel9:latest"
+  replace: "registry.redhat.io/multicluster-engine/assisted-installer-agent-rhel9@sha256:72427b669fe6feb4b46bcabf100bbd633ffd13bd0d3583b2e544f5709f680b73"
+- name: assisted-installer-controller-rhel9
+  search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-installer-controller-rhel9:latest"
+  replace: "registry.redhat.io/multicluster-engine/assisted-installer-controller-rhel9@sha256:b3d2b3c7c5bef17dfea7985eb854a6fe77720dfc185a968adc2db831081546ee"
+- name: assisted-service-9-rhel9
+  search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-service-9-rhel9:latest"
+  replace: "registry.redhat.io/multicluster-engine/assisted-service-9-rhel9@sha256:eb11d23849d00fc2ec07284054335921158f00f6dd7e4347c54fd606e80c8a2e"
+# OCP payload images. MCE 2.17 aligns with OCP 4.22.
+- name: ose-cluster-api
+  search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/ose-cluster-api-rhel9:latest"
+  replace: "registry.redhat.io/openshift4/ose-cluster-api-rhel9:v4.22"
+- name: ose-baremetal-cluster-api-controllers
+  search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/ose-baremetal-cluster-api-controllers-rhel9:latest"
+  replace: "registry.redhat.io/openshift4/ose-baremetal-cluster-api-controllers-rhel9:v4.22"
+# Third-party images (same pins as backplane-5.0).
+- name: postgresql-15
+  search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/postgresql-15:latest"
+  replace: "registry.redhat.io/rhel9/postgresql-15@sha256:17d8f73eefb3492386bf1984ca32a6c5556d559ab19bdbccb5bc01bcf6d435ab"
+- name: postgresql-16
+  search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/postgresql-16:latest"
+  replace: "registry.redhat.io/rhel9/postgresql-16@sha256:160578ef9e4c872f8f06d407aceb65c5d874049bb56a14b62a09b52ecc1ca0a0"
