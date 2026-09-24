@@ -103,24 +103,6 @@ func ClusterManager(m *v1.MultiClusterEngine, overrides map[string]string) *unst
 		},
 	}
 
-	// Toggle OCM's operator-internal NetworkPolicies feature gate so the
-	// registration-operator applies (or removes) hub-namespace NPs for the
-	// components it embeds: registration, work, placement, addon-manager.
-	// Always set Enable/Disable so server-side apply clears a previously
-	// enabled gate when MCE networkPolicies are turned off.
-	networkPoliciesMode := ocmapiv1.FeatureGateModeTypeEnable
-	if m.Spec.NetworkPolicies != nil && !m.Spec.NetworkPolicies.Enabled {
-		networkPoliciesMode = ocmapiv1.FeatureGateModeTypeDisable
-	}
-	cm.Spec.RegistrationConfiguration = &ocmapiv1.RegistrationHubConfiguration{
-		FeatureGates: []ocmapiv1.FeatureGate{
-			{
-				Feature: "NetworkPolicies",
-				Mode:    networkPoliciesMode,
-			},
-		},
-	}
-
 	utils.AddBackplaneConfigLabels(cm, m.GetName())
 	unstructured, err := utils.CoreToUnstructured(cm)
 	if err != nil {
@@ -128,6 +110,17 @@ func ClusterManager(m *v1.MultiClusterEngine, overrides map[string]string) *unst
 	}
 
 	return unstructured
+}
+
+// NetworkPoliciesFeatureGateMode returns the desired OCM NetworkPolicies feature-gate
+// mode based on the MCE spec. It is exported so the reconciler can apply the gate
+// via a targeted read-modify-write rather than letting SSA claim the entire
+// registrationConfiguration.featureGates array.
+func NetworkPoliciesFeatureGateMode(m *v1.MultiClusterEngine) ocmapiv1.FeatureGateModeType {
+	if m.Spec.NetworkPolicies != nil && !m.Spec.NetworkPolicies.Enabled {
+		return ocmapiv1.FeatureGateModeTypeDisable
+	}
+	return ocmapiv1.FeatureGateModeTypeEnable
 }
 
 // CanInstallAddons returns true if addons can be installed
