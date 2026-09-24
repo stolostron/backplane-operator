@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
+	"github.com/stolostron/backplane-operator/pkg/foundation"
 	"github.com/stolostron/backplane-operator/pkg/status"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -19,6 +20,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	addonv1alpha1 "open-cluster-management.io/api/addon/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -516,6 +518,258 @@ func Test_applyTemplateWrappedError(t *testing.T) {
 	// Verify the error message mentions CRD not installed
 	if err.Error() == "" {
 		t.Error("Error message should not be empty")
+	}
+}
+
+func Test_ensureNetworkPoliciesFeatureGate(t *testing.T) {
+	scheme := runtime.NewScheme()
+	corev1.AddToScheme(scheme)
+	backplanev1.AddToScheme(scheme)
+
+	ctx := context.TODO()
+
+	newCM := func(gates ...map[string]interface{}) *unstructured.Unstructured {
+		obj := map[string]interface{}{
+			"apiVersion": "operator.open-cluster-management.io/v1",
+			"kind":       "ClusterManager",
+			"metadata":   map[string]interface{}{"name": "cluster-manager"},
+			"spec":       map[string]interface{}{},
+		}
+		if len(gates) > 0 {
+			gs := make([]interface{}, len(gates))
+			for i, g := range gates {
+				gs[i] = g
+			}
+			obj["spec"].(map[string]interface{})["registrationConfiguration"] = map[string]interface{}{
+				"featureGates": gs,
+			}
+		}
+		return &unstructured.Unstructured{Object: obj}
+	}
+
+	tests := []struct {
+		name              string
+		mce               *backplanev1.MultiClusterEngine
+		existingCM        *unstructured.Unstructured
+		priorGates        []interface{}
+		expectError       bool
+		wantMode          string
+		preservedFeatures []string
+	}{
+		{
+			name:       "adds NetworkPolicies gate when featureGates is empty",
+			mce:        &backplanev1.MultiClusterEngine{},
+			existingCM: newCM(),
+			wantMode:   "Enable",
+		},
+		{
+			name: "adds NetworkPolicies gate and preserves other gates",
+			mce:  &backplanev1.MultiClusterEngine{},
+			existingCM: newCM(
+				map[string]interface{}{"feature": "ManagedClusterAutoApproval", "mode": "Enable"},
+			),
+			wantMode:          "Enable",
+			preservedFeatures: []string{"ManagedClusterAutoApproval"},
+		},
+		{
+			name: "no update when NetworkPolicies gate already correct",
+			mce:  &backplanev1.MultiClusterEngine{},
+			existingCM: newCM(
+				map[string]interface{}{"feature": "NetworkPolicies", "mode": "Enable"},
+			),
+			wantMode: "Enable",
+		},
+		{
+			name: "updates NetworkPolicies mode from Enable to Disable and preserves other gates",
+			mce: &backplanev1.MultiClusterEngine{
+				Spec: backplanev1.MultiClusterEngineSpec{
+					NetworkPolicies: &backplanev1.NetworkPoliciesConfig{Enabled: false},
+				},
+			},
+			existingCM: newCM(
+				map[string]interface{}{"feature": "NetworkPolicies", "mode": "Enable"},
+				map[string]interface{}{"feature": "ManagedClusterAutoApproval", "mode": "Enable"},
+				map[string]interface{}{"feature": "ClusterImporter", "mode": "Enable"},
+			),
+			wantMode:          "Disable",
+			preservedFeatures: []string{"ManagedClusterAutoApproval", "ClusterImporter"},
+		},
+		{
+			name:       "restores SSA-pruned gates from the pre-patch snapshot",
+			mce:        &backplanev1.MultiClusterEngine{},
+			existingCM: newCM(),
+			priorGates: []interface{}{
+				map[string]interface{}{"feature": "ManagedClusterAutoApproval", "mode": "Enable"},
+				map[string]interface{}{"feature": "ClusterImporter", "mode": "Enable"},
+			},
+			wantMode:          "Enable",
+			preservedFeatures: []string{"ManagedClusterAutoApproval", "ClusterImporter"},
+		},
+		{
+			name:        "error when ClusterManager object is nil",
+			mce:         &backplanev1.MultiClusterEngine{},
+			existingCM:  nil,
+			expectError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var objs []runtime.Object
+			if tt.existingCM != nil {
+				objs = append(objs, tt.existingCM)
+			}
+
+			cl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(objs...).Build()
+			r := &MultiClusterEngineReconciler{Client: cl, Scheme: scheme}
+
+			err := r.ensureNetworkPoliciesFeatureGate(ctx, tt.mce, tt.existingCM, tt.priorGates)
+
+			if tt.expectError {
+				if err == nil {
+					t.Errorf("expected error, got nil")
+				}
+				return
+			}
+			if err != nil {
+				t.Errorf("unexpected error: %v", err)
+				return
+			}
+
+			assertClusterManagerGates(t, cl, ctx, tt.wantMode, tt.preservedFeatures, tt.mce)
+		})
+	}
+}
+
+// assertClusterManagerGates fetches the live ClusterManager from cl and verifies that:
+//   - the NetworkPolicies feature gate is set to wantMode
+//   - every feature name in preservedFeatures is still present
+//   - wantMode is consistent with foundation.NetworkPoliciesFeatureGateMode(mce)
+func assertClusterManagerGates(
+	t *testing.T,
+	cl client.Client,
+	ctx context.Context,
+	wantMode string,
+	preservedFeatures []string,
+	mce *backplanev1.MultiClusterEngine,
+) {
+	t.Helper()
+	updated := &unstructured.Unstructured{}
+	updated.SetGroupVersionKind(schema.GroupVersionKind{
+		Group: "operator.open-cluster-management.io", Version: "v1", Kind: "ClusterManager",
+	})
+	if err := cl.Get(ctx, types.NamespacedName{Name: "cluster-manager"}, updated); err != nil {
+		t.Fatalf("failed to get ClusterManager after reconcile: %v", err)
+	}
+
+	gates, _, _ := unstructured.NestedSlice(updated.Object, "spec", "registrationConfiguration", "featureGates")
+
+	npFound := false
+	for _, g := range gates {
+		gate, ok := g.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		if gate["feature"] == "NetworkPolicies" {
+			npFound = true
+			if gate["mode"] != wantMode {
+				t.Errorf("NetworkPolicies mode: want %s, got %v", wantMode, gate["mode"])
+			}
+		}
+	}
+	if !npFound {
+		t.Errorf("NetworkPolicies feature gate not found in featureGates")
+	}
+
+	for _, feat := range preservedFeatures {
+		found := false
+		for _, g := range gates {
+			gate, ok := g.(map[string]interface{})
+			if ok && gate["feature"] == feat {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("expected feature gate %q to be preserved but it was missing", feat)
+		}
+	}
+
+	wantFndMode := string(foundation.NetworkPoliciesFeatureGateMode(mce))
+	if wantMode != wantFndMode {
+		t.Errorf("test wantMode %q inconsistent with foundation.NetworkPoliciesFeatureGateMode %q",
+			wantMode, wantFndMode)
+	}
+}
+
+func Test_snapshotClusterManagerFeatureGates(t *testing.T) {
+	scheme := runtime.NewScheme()
+	corev1.AddToScheme(scheme)
+	backplanev1.AddToScheme(scheme)
+	ctx := context.TODO()
+
+	t.Run("empty snapshot when ClusterManager is missing", func(t *testing.T) {
+		cl := fake.NewClientBuilder().WithScheme(scheme).Build()
+		r := &MultiClusterEngineReconciler{Client: cl, Scheme: scheme}
+		gates, err := r.snapshotClusterManagerFeatureGates(ctx)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(gates) != 0 {
+			t.Errorf("expected empty snapshot, got %v", gates)
+		}
+	})
+
+	t.Run("returns existing feature gates", func(t *testing.T) {
+		cm := &unstructured.Unstructured{
+			Object: map[string]interface{}{
+				"apiVersion": "operator.open-cluster-management.io/v1",
+				"kind":       "ClusterManager",
+				"metadata":   map[string]interface{}{"name": "cluster-manager"},
+				"spec": map[string]interface{}{
+					"registrationConfiguration": map[string]interface{}{
+						"featureGates": []interface{}{
+							map[string]interface{}{"feature": "ManagedClusterAutoApproval", "mode": "Enable"},
+						},
+					},
+				},
+			},
+		}
+		cl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(cm).Build()
+		r := &MultiClusterEngineReconciler{Client: cl, Scheme: scheme}
+		gates, err := r.snapshotClusterManagerFeatureGates(ctx)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(gates) != 1 {
+			t.Fatalf("expected 1 gate, got %d", len(gates))
+		}
+		gate, _ := gates[0].(map[string]interface{})
+		if gate["feature"] != "ManagedClusterAutoApproval" {
+			t.Errorf("expected ManagedClusterAutoApproval, got %v", gate["feature"])
+		}
+	})
+}
+
+func Test_mergeFeatureGates(t *testing.T) {
+	current := []interface{}{
+		map[string]interface{}{"feature": "NetworkPolicies", "mode": "Enable"},
+	}
+	prior := []interface{}{
+		map[string]interface{}{"feature": "NetworkPolicies", "mode": "Disable"},
+		map[string]interface{}{"feature": "ManagedClusterAutoApproval", "mode": "Enable"},
+	}
+	got := mergeFeatureGates(current, prior)
+	if len(got) != 2 {
+		t.Fatalf("expected 2 gates, got %d", len(got))
+	}
+	first, _ := got[0].(map[string]interface{})
+	if first["feature"] != "NetworkPolicies" || first["mode"] != "Enable" {
+		t.Errorf("current NetworkPolicies should win, got %v", first)
+	}
+	second, _ := got[1].(map[string]interface{})
+	if second["feature"] != "ManagedClusterAutoApproval" {
+		t.Errorf("expected restored ManagedClusterAutoApproval, got %v", second)
 	}
 }
 
