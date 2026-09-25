@@ -2461,9 +2461,15 @@ func (r *MultiClusterEngineReconciler) enableClusterManagerGRPCServer(ctx contex
 		spec = make(map[string]interface{})
 	}
 
-	spec["registrationConfiguration"] = map[string]interface{}{
-		"registrationDrivers": expectedDrivers,
+	// Preserve existing registrationConfiguration fields (e.g. featureGates set by
+	// other components such as the Global Hub migration agent) and only update
+	// registrationDrivers. Replacing the entire map would wipe those fields.
+	existingRegConfig, _, _ := unstructured.NestedMap(clusterManager.Object, "spec", "registrationConfiguration")
+	if existingRegConfig == nil {
+		existingRegConfig = make(map[string]interface{})
 	}
+	existingRegConfig["registrationDrivers"] = expectedDrivers
+	spec["registrationConfiguration"] = existingRegConfig
 	spec["serverConfiguration"] = map[string]interface{}{
 		"endpointsExposure": []interface{}{
 			map[string]interface{}{
@@ -2571,11 +2577,29 @@ func (r *MultiClusterEngineReconciler) disableClusterManagerGRPCServer(ctx conte
 		return nil
 	}
 
-	// Remove the gRPC-related configurations
+	// Remove the gRPC-related configurations.
+	// Only delete registrationDrivers from registrationConfiguration rather than
+	// the entire field, so that featureGates set by other components (e.g.
+	// ManagedClusterAutoApproval added by the Global Hub migration agent) are
+	// preserved. Remove the whole registrationConfiguration only when it would
+	// otherwise be left empty.
 	modified := false
-	if _, exists := spec["registrationConfiguration"]; exists {
-		delete(spec, "registrationConfiguration")
-		modified = true
+	if regConfig, exists := spec["registrationConfiguration"]; exists {
+		if regMap, ok := regConfig.(map[string]interface{}); ok {
+			if _, hasDrivers := regMap["registrationDrivers"]; hasDrivers {
+				delete(regMap, "registrationDrivers")
+				if len(regMap) == 0 {
+					delete(spec, "registrationConfiguration")
+				} else {
+					spec["registrationConfiguration"] = regMap
+				}
+				modified = true
+			}
+		} else {
+			// registrationConfiguration is present but not a map — remove it
+			delete(spec, "registrationConfiguration")
+			modified = true
+		}
 	}
 	if _, exists := spec["serverConfiguration"]; exists {
 		delete(spec, "serverConfiguration")
