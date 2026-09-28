@@ -809,6 +809,91 @@ func Test_enableClusterManagerGRPCServer(t *testing.T) {
 	}
 }
 
+// Test_enableClusterManagerGRPCServer_preservesFeatureGates verifies that
+// featureGates already present in registrationConfiguration are not wiped
+// when enableClusterManagerGRPCServer updates registrationDrivers (ACM-42608).
+func Test_enableClusterManagerGRPCServer_preservesFeatureGates(t *testing.T) {
+	t.Setenv("UNIT_TEST", "true")
+
+	scheme := runtime.NewScheme()
+	if err := corev1.AddToScheme(scheme); err != nil {
+		t.Fatalf("failed to add corev1 to scheme: %v", err)
+	}
+	if err := backplanev1.AddToScheme(scheme); err != nil {
+		t.Fatalf("failed to add backplanev1 to scheme: %v", err)
+	}
+	ctx := context.TODO()
+
+	existingCM := &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"apiVersion": "operator.open-cluster-management.io/v1",
+			"kind":       "ClusterManager",
+			"metadata":   map[string]interface{}{"name": "cluster-manager"},
+			"spec": map[string]interface{}{
+				"registrationConfiguration": map[string]interface{}{
+					"featureGates": []interface{}{
+						map[string]interface{}{
+							"feature": "ManagedClusterAutoApproval",
+							"mode":    "Enable",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	cl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(existingCM).Build()
+	r := &MultiClusterEngineReconciler{
+		Client: cl,
+		Scheme: scheme,
+		CacheSpec: CacheSpec{
+			ImageOverrides: map[string]string{
+				"cloudevents_conductor": "quay.io/test/conductor:latest",
+			},
+		},
+	}
+
+	mce := &backplanev1.MultiClusterEngine{
+		ObjectMeta: metav1.ObjectMeta{Name: "test-mce"},
+		Spec:       backplanev1.MultiClusterEngineSpec{TargetNamespace: "test-namespace"},
+	}
+
+	if err := r.enableClusterManagerGRPCServer(ctx, mce); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	updated := &unstructured.Unstructured{}
+	updated.SetGroupVersionKind(schema.GroupVersionKind{
+		Group: "operator.open-cluster-management.io", Version: "v1", Kind: "ClusterManager",
+	})
+	if err := cl.Get(ctx, types.NamespacedName{Name: "cluster-manager"}, updated); err != nil {
+		t.Fatalf("failed to get ClusterManager: %v", err)
+	}
+
+	// registrationDrivers must be set
+	drivers, _, _ := unstructured.NestedSlice(updated.Object, "spec", "registrationConfiguration", "registrationDrivers")
+	expectedDrivers := []interface{}{
+		map[string]interface{}{"authType": "csr"},
+		map[string]interface{}{"authType": "grpc"},
+	}
+	if !driversMatch(drivers, expectedDrivers) {
+		t.Errorf("registrationDrivers not configured correctly: want [{authType:csr},{authType:grpc}], got %v", drivers)
+	}
+
+	// featureGates must still be present
+	gates, _, _ := unstructured.NestedSlice(updated.Object, "spec", "registrationConfiguration", "featureGates")
+	found := false
+	for _, g := range gates {
+		if gate, ok := g.(map[string]interface{}); ok && gate["feature"] == "ManagedClusterAutoApproval" {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Error("ManagedClusterAutoApproval featureGate was wiped by enableClusterManagerGRPCServer")
+	}
+}
+
 func Test_disableClusterManagerGRPCServer(t *testing.T) {
 	scheme := runtime.NewScheme()
 	corev1.AddToScheme(scheme)
@@ -820,6 +905,7 @@ func Test_disableClusterManagerGRPCServer(t *testing.T) {
 		name                   string
 		existingClusterManager *unstructured.Unstructured
 		expectUpdate           bool
+		expectRegConfigKept    bool // true when registrationConfiguration should survive (featureGates preserved)
 		expectError            bool
 		errorContains          string
 	}{
@@ -934,6 +1020,33 @@ func Test_disableClusterManagerGRPCServer(t *testing.T) {
 			expectError:  false,
 		},
 		{
+			// Verifies ACM-42608: registrationConfiguration that contains only
+			// featureGates (no registrationDrivers) must not trigger an update.
+			name: "No update when only featureGates remain in registrationConfiguration",
+			existingClusterManager: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "operator.open-cluster-management.io/v1",
+					"kind":       "ClusterManager",
+					"metadata": map[string]interface{}{
+						"name": "cluster-manager",
+					},
+					"spec": map[string]interface{}{
+						"registrationConfiguration": map[string]interface{}{
+							"featureGates": []interface{}{
+								map[string]interface{}{
+									"feature": "ManagedClusterAutoApproval",
+									"mode":    "Enable",
+								},
+							},
+						},
+					},
+				},
+			},
+			expectUpdate:        false,
+			expectRegConfigKept: true,
+			expectError:         false,
+		},
+		{
 			name: "No error when spec not found",
 			existingClusterManager: &unstructured.Unstructured{
 				Object: map[string]interface{}{
@@ -1006,10 +1119,12 @@ func Test_disableClusterManagerGRPCServer(t *testing.T) {
 					return
 				}
 
-				// Verify registrationConfiguration is removed
+			// Verify registrationConfiguration is removed (unless featureGates were preserved)
+			if !tt.expectRegConfigKept {
 				if _, exists := spec["registrationConfiguration"]; exists {
 					t.Error("registrationConfiguration should be removed but still exists")
 				}
+			}
 
 				// Verify serverConfiguration is removed
 				if _, exists := spec["serverConfiguration"]; exists {
@@ -1028,6 +1143,85 @@ func Test_disableClusterManagerGRPCServer(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// Test_disableClusterManagerGRPCServer_preservesFeatureGates verifies that
+// featureGates in registrationConfiguration survive disableClusterManagerGRPCServer
+// (ACM-42608). Only registrationDrivers should be removed; if other fields remain,
+// the registrationConfiguration map itself must be kept.
+func Test_disableClusterManagerGRPCServer_preservesFeatureGates(t *testing.T) {
+	scheme := runtime.NewScheme()
+	if err := corev1.AddToScheme(scheme); err != nil {
+		t.Fatalf("failed to add corev1 to scheme: %v", err)
+	}
+	if err := backplanev1.AddToScheme(scheme); err != nil {
+		t.Fatalf("failed to add backplanev1 to scheme: %v", err)
+	}
+	ctx := context.TODO()
+
+	existingCM := &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"apiVersion": "operator.open-cluster-management.io/v1",
+			"kind":       "ClusterManager",
+			"metadata":   map[string]interface{}{"name": "cluster-manager"},
+			"spec": map[string]interface{}{
+				"registrationConfiguration": map[string]interface{}{
+					"registrationDrivers": []interface{}{
+						map[string]interface{}{"authType": "csr"},
+						map[string]interface{}{"authType": "grpc"},
+					},
+					"featureGates": []interface{}{
+						map[string]interface{}{
+							"feature": "ManagedClusterAutoApproval",
+							"mode":    "Enable",
+						},
+					},
+				},
+				"serverConfiguration": map[string]interface{}{
+					"imagePullSpec": "quay.io/test/conductor:latest",
+				},
+			},
+		},
+	}
+
+	cl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(existingCM).Build()
+	r := &MultiClusterEngineReconciler{Client: cl, Scheme: scheme}
+
+	if err := r.disableClusterManagerGRPCServer(ctx); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	updated := &unstructured.Unstructured{}
+	updated.SetGroupVersionKind(schema.GroupVersionKind{
+		Group: "operator.open-cluster-management.io", Version: "v1", Kind: "ClusterManager",
+	})
+	if err := cl.Get(ctx, types.NamespacedName{Name: "cluster-manager"}, updated); err != nil {
+		t.Fatalf("failed to get ClusterManager: %v", err)
+	}
+
+	// registrationDrivers must be gone (disableClusterManagerGRPCServer should remove it)
+	if drivers, _, _ := unstructured.NestedSlice(updated.Object, "spec", "registrationConfiguration", "registrationDrivers"); len(drivers) > 0 {
+		t.Errorf("registrationDrivers should be absent after disable but still present: %v", drivers)
+	}
+
+	// serverConfiguration must be gone
+	spec, _, _ := unstructured.NestedMap(updated.Object, "spec")
+	if _, exists := spec["serverConfiguration"]; exists {
+		t.Error("serverConfiguration should be removed but still exists")
+	}
+
+	// featureGates must still be present inside registrationConfiguration
+	gates, _, _ := unstructured.NestedSlice(updated.Object, "spec", "registrationConfiguration", "featureGates")
+	found := false
+	for _, g := range gates {
+		if gate, ok := g.(map[string]interface{}); ok && gate["feature"] == "ManagedClusterAutoApproval" {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Error("ManagedClusterAutoApproval featureGate was wiped by disableClusterManagerGRPCServer")
 	}
 }
 
