@@ -333,6 +333,98 @@ func (r *MultiClusterEngineReconciler) ensureNoFleetNavigation(ctx context.Conte
 	return ctrl.Result{}, nil
 }
 
+// ensureCertManagerAddon renders and applies the cert-manager-addon chart, which registers an
+// AddOnTemplate-based OCM addon that installs the "cert-manager Operator for Red Hat OpenShift"
+// (via OLM Subscription, package openshift-cert-manager-operator, redhat-operators catalog) onto
+// OpenShift managed clusters. This uses Red Hat-built images end-to-end (pulled by OLM from the
+// operator's own CSV) rather than community quay.io/jetstack images, and relies on OLM to install
+// the operator's CRDs — no Job-based CRD install step is needed.
+func (r *MultiClusterEngineReconciler) ensureCertManagerAddon(ctx context.Context,
+	mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+
+	r.StatusManager.RemoveComponent(toggle.DisabledStatus(types.NamespacedName{Name: backplanev1.CertManagerAddon,
+		Namespace: mce.Spec.TargetNamespace}, []*unstructured.Unstructured{}))
+
+	r.StatusManager.AddComponent(status.NewPresentStatus(types.NamespacedName{Name: backplanev1.CertManagerAddon},
+		clusterManagementAddOnGVK))
+
+	// Ensure that the InternalHubComponent CR instance is created for component in MCE.
+	if result, err := r.ensureInternalEngineComponent(ctx, mce, backplanev1.CertManagerAddon); err != nil {
+		return result, err
+	}
+
+	// Renders all templates from charts
+	chartPath := r.fetchChartOrCRDPath(backplanev1.CertManagerAddon)
+	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
+
+	if len(errs) > 0 {
+		for _, err := range errs {
+			log.Info(err.Error())
+		}
+		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+	}
+
+	// Applies all templates
+	missingCRDErrorOccured := false
+	for _, template := range templates {
+		applyReleaseVersionAnnotation(template)
+		result, err := r.applyTemplate(ctx, mce, template)
+		if err != nil {
+			if apimeta.IsNoMatchError(errors.Unwrap(err)) || apierrors.IsNotFound(err) {
+				// addon CRD does not yet exist. Replace status.
+				log.Info("Couldn't apply template for cert-manager-addon due to missing CRD", "error is", err.Error())
+
+				missingCRDErrorOccured = true
+				r.StatusManager.AddComponent(clusterManagementAddOnNotFoundStatus(backplanev1.CertManagerAddon,
+					mce.Spec.TargetNamespace))
+			} else {
+				return result, err
+			}
+		}
+	}
+
+	if missingCRDErrorOccured {
+		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+	}
+	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterEngineReconciler) ensureNoCertManagerAddon(ctx context.Context,
+	mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+
+	// Ensure that the InternalHubComponent CR instance is deleted for component in MCE.
+	if result, err := r.ensureNoInternalEngineComponent(ctx, mce,
+		backplanev1.CertManagerAddon); (result != ctrl.Result{}) || err != nil {
+		return result, err
+	}
+
+	// Renders all templates from charts
+	chartPath := r.fetchChartOrCRDPath(backplanev1.CertManagerAddon)
+	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
+	if len(errs) > 0 {
+		for _, err := range errs {
+			log.Info(err.Error())
+		}
+		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+	}
+
+	r.StatusManager.AddComponent(toggle.DisabledStatus(types.NamespacedName{Name: backplanev1.CertManagerAddon,
+		Namespace: mce.Spec.TargetNamespace}, []*unstructured.Unstructured{}))
+
+	// Deletes all templates
+	for _, template := range templates {
+		if template.GetKind() == foundation.ClusterManagementAddonKind && !foundation.CanInstallAddons(ctx, r.Client) {
+			continue
+		}
+		result, err := r.deleteTemplate(ctx, mce, template)
+		if err != nil {
+			log.Error(err, "Failed to delete cert-manager-addon template")
+			return result, err
+		}
+	}
+	return ctrl.Result{}, nil
+}
+
 // addPluginToConsoleResource ...
 func (r *MultiClusterEngineReconciler) addPluginToConsoleResource(ctx context.Context) (ctrl.Result, error) {
 	console := &operatorv1.Console{}
