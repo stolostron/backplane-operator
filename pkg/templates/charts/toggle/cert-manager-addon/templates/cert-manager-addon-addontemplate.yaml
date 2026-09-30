@@ -6,17 +6,27 @@ spec:
   addonName: cert-manager-addon
   agentSpec:
     manifestConfigs:
-      # Track the Subscription with CreateOnly — OLM owns spec/status after creation (e.g. it may
-      # rewrite fields during upgrades); do not let ManifestWork's default Update strategy fight
-      # with OLM on every reconcile. Mirrors the CreateOnly pattern used for the upstream
-      # community addon's CRD-install Job.
+      # Use ServerSideApply for the Subscription so AODC changes (installPlanApproval, channel,
+      # catalogSource) propagate to managed clusters. Ignore OLM-managed fields (status, currentCSV,
+      # installedCSV, installPlanRef) so the work agent does not fight OLM on every reconcile.
       - resourceIdentifier:
           group: operators.coreos.com
           resource: subscriptions
-          namespace: cert-manager-operator
+          namespace: openshift-cert-manager-operator
           name: openshift-cert-manager-operator
         updateStrategy:
-          type: CreateOnly
+          type: ServerSideApply
+          serverSideApply:
+            force: true
+            # Ignore fields that OLM mutates after install — the hub only owns the install config
+            # (channel, source, installPlanApproval); OLM owns lifecycle fields.
+            ignoreFields:
+              - condition: OnSpokePresent
+                jsonPaths:
+                  - .status
+                  - .spec.currentCSV
+                  - .spec.installedCSV
+                  - .spec.installPlanRef
     workload:
       manifests:
         # ============================================================
@@ -27,14 +37,17 @@ spec:
         # installs the cert-manager CRDs as part of its own ClusterServiceVersion — no
         # community quay.io/jetstack images and no separate CRD-install Job are needed.
         #
-        # Namespace is orphaned on addon delete so leftover Certificate CRs/secrets created by
-        # the operand elsewhere in the cluster are not implicated by removing this namespace.
+        # Safe Orphan: All OLM resources are orphaned on addon delete so:
+        #   - Pre-existing cert-manager installs are not disrupted
+        #   - Certificate CRs/secrets created by the operand elsewhere in the cluster survive
+        #   - OLM can continue managing the operator lifecycle independently
         # ============================================================
         - apiVersion: v1
           kind: Namespace
           metadata:
-            name: cert-manager-operator
+            name: openshift-cert-manager-operator
             annotations:
+              # Orphan on addon removal — do not delete namespace or its contents
               addon.open-cluster-management.io/deletion-orphan: ""
             labels:
               pod-security.kubernetes.io/enforce: restricted
@@ -45,17 +58,23 @@ spec:
           kind: OperatorGroup
           metadata:
             name: openshift-cert-manager-operator
-            namespace: cert-manager-operator
+            namespace: openshift-cert-manager-operator
+            annotations:
+              # Orphan on addon removal — preserve OLM configuration
+              addon.open-cluster-management.io/deletion-orphan: ""
           spec:
             targetNamespaces:
-              - cert-manager-operator
+              - openshift-cert-manager-operator
             upgradeStrategy: Default
 
         - apiVersion: operators.coreos.com/v1alpha1
           kind: Subscription
           metadata:
             name: openshift-cert-manager-operator
-            namespace: cert-manager-operator
+            namespace: openshift-cert-manager-operator
+            annotations:
+              # Orphan on addon removal — OLM continues managing the operator independently
+              addon.open-cluster-management.io/deletion-orphan: ""
           spec:
             channel: '{{ `{{channel}}` }}'
             name: openshift-cert-manager-operator
@@ -97,3 +116,126 @@ spec:
             - kind: ServiceAccount
               name: klusterlet-work-sa
               namespace: open-cluster-management-agent
+
+        # ============================================================
+        # Guarded Teardown: Pre-delete confirmation guard.
+        # When the ManagedClusterAddOn is deleted, this Job runs BEFORE any resources
+        # are removed. The Job checks for explicit user confirmation via a ConfigMap.
+        # If the ConfigMap "cert-manager-addon-confirm-delete" does not exist (or does
+        # not contain confirm: "yes"), the Job fails and addon deletion is blocked.
+        #
+        # To proceed with deletion, the user must create the confirmation ConfigMap:
+        #   kubectl create configmap cert-manager-addon-confirm-delete \
+        #     --from-literal=confirm=yes -n openshift-cert-manager-operator
+        # ============================================================
+        - apiVersion: v1
+          kind: ServiceAccount
+          metadata:
+            name: cert-manager-addon-predelete
+            namespace: openshift-cert-manager-operator
+            annotations:
+              addon.open-cluster-management.io/addon-pre-delete: ""
+
+        - apiVersion: rbac.authorization.k8s.io/v1
+          kind: Role
+          metadata:
+            name: cert-manager-addon-predelete
+            namespace: openshift-cert-manager-operator
+            annotations:
+              addon.open-cluster-management.io/addon-pre-delete: ""
+          rules:
+            - apiGroups: [""]
+              resources: ["configmaps"]
+              verbs: ["get", "list"]
+            - apiGroups: ["cert-manager.io"]
+              resources: ["certificates", "certificaterequests", "issuers", "clusterissuers"]
+              verbs: ["get", "list"]
+
+        - apiVersion: rbac.authorization.k8s.io/v1
+          kind: RoleBinding
+          metadata:
+            name: cert-manager-addon-predelete
+            namespace: openshift-cert-manager-operator
+            annotations:
+              addon.open-cluster-management.io/addon-pre-delete: ""
+          roleRef:
+            apiGroup: rbac.authorization.k8s.io
+            kind: Role
+            name: cert-manager-addon-predelete
+          subjects:
+            - kind: ServiceAccount
+              name: cert-manager-addon-predelete
+              namespace: openshift-cert-manager-operator
+
+        - apiVersion: batch/v1
+          kind: Job
+          metadata:
+            name: cert-manager-addon-predelete
+            namespace: openshift-cert-manager-operator
+            annotations:
+              # This annotation tells OCM to run this Job BEFORE deleting the addon
+              addon.open-cluster-management.io/addon-pre-delete: ""
+          spec:
+            activeDeadlineSeconds: 300
+            backoffLimit: 0
+            ttlSecondsAfterFinished: 300
+            manualSelector: true
+            selector:
+              matchLabels:
+                job-name: cert-manager-addon-predelete
+            template:
+              metadata:
+                labels:
+                  job-name: cert-manager-addon-predelete
+              spec:
+                restartPolicy: Never
+                serviceAccountName: cert-manager-addon-predelete
+                securityContext:
+                  runAsNonRoot: true
+                  seccompProfile:
+                    type: RuntimeDefault
+                containers:
+                - name: confirm-delete
+                  image: registry.redhat.io/openshift4/ose-cli:latest
+                  command:
+                  - /bin/bash
+                  - -c
+                  - |
+                    echo "============================================================"
+                    echo "cert-manager-addon PRE-DELETE CONFIRMATION CHECK"
+                    echo "============================================================"
+                    echo ""
+                    echo "Checking for confirmation ConfigMap..."
+                    
+                    # Check if confirmation ConfigMap exists
+                    if kubectl get configmap cert-manager-addon-confirm-delete -n openshift-cert-manager-operator -o jsonpath='{.data.confirm}' 2>/dev/null | grep -q "^yes$"; then
+                      echo "✓ Confirmation found. Proceeding with addon removal."
+                      echo ""
+                      echo "NOTE: Due to deletion-orphan annotations, the following are PRESERVED:"
+                      echo "  - cert-manager operator and its operands"
+                      echo "  - All Certificate CRs and issued TLS secrets"
+                      echo "  - CRDs (managed by OLM)"
+                      echo ""
+                      echo "The addon will be unregistered from ACM/MCE, but cert-manager"
+                      echo "continues to operate independently on this cluster."
+                      exit 0
+                    fi
+                    
+                    echo "✗ Confirmation NOT found."
+                    echo ""
+                    echo "To confirm addon removal, create the confirmation ConfigMap:"
+                    echo ""
+                    echo "  kubectl create configmap cert-manager-addon-confirm-delete \\"
+                    echo "    --from-literal=confirm=yes \\"
+                    echo "    -n openshift-cert-manager-operator"
+                    echo ""
+                    echo "Then retry deleting the ManagedClusterAddOn."
+                    echo ""
+                    echo "============================================================"
+                    exit 1
+                  securityContext:
+                    allowPrivilegeEscalation: false
+                    capabilities:
+                      drop: ["ALL"]
+                    readOnlyRootFilesystem: true
+                    runAsNonRoot: true
