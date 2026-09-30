@@ -14,7 +14,7 @@ spec:
   - name: backplane-rhel9-operator
     from:
       kind: DockerImage
-      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/backplane-operator:latest
+      name: quay.io/stolostron/backplane-operator:latest
   - name: must-gather-rhel9
     from:
       kind: DockerImage
