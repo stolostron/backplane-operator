@@ -1,3 +1,4 @@
+# Label managed clusters with "cert-manager-addon=enabled" to deploy.
 apiVersion: cluster.open-cluster-management.io/v1beta1
 kind: Placement
 metadata:
@@ -5,20 +6,19 @@ metadata:
   namespace: open-cluster-management-global-set
 spec:
   clusterSets:
-  - global
+    - global
   predicates:
-  # OLM's redhat-operators CatalogSource, and therefore the cert-manager Operator for Red Hat
-  # OpenShift package, is only available on OpenShift managed clusters — restrict rollout so
-  # non-OpenShift managed clusters (if any are grouped in the "global" ManagedClusterSet) never
-  # get a ManagedClusterAddOn they cannot satisfy.
-  - requiredClusterSelector:
-      labelSelector:
-        matchExpressions:
-        - key: vendor
-          operator: In
-          values:
-          - OpenShift
-        - key: cert-manager-addon
-          operator: NotIn
-          values:
-          - disabled
+    - requiredClusterSelector:
+        labelSelector:
+          matchExpressions:
+            - key: cert-manager-addon
+              operator: In
+              values:
+                - enabled
+            - key: cert-manager-addon
+              operator: NotIn
+              values:
+                - disabled
+  tolerations:
+    - key: cluster.open-cluster-management.io/unreachable
+      operator: Exists

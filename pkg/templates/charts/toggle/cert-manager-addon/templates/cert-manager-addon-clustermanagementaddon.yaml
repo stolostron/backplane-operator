@@ -6,23 +6,30 @@ metadata:
   name: cert-manager-addon
 spec:
   addOnMeta:
-    description: Installs the cert-manager Operator for Red Hat OpenShift (via OLM,
-      redhat-operators catalog) on managed clusters to manage TLS certificate lifecycle.
+    description: Deploys cert-manager to manage TLS certificates on managed clusters.
     displayName: Cert-Manager Addon
-  installStrategy:
-    placements:
-    - name: cert-manager-addon
-      namespace: open-cluster-management-global-set
-      rolloutStrategy:
-        type: All
-    type: Placements
   supportedConfigs:
-  - defaultConfig:
-      name: cert-manager-addon
-      namespace: {{ .Values.global.namespace }}
-    group: addon.open-cluster-management.io
-    resource: addondeploymentconfigs
-  - defaultConfig:
-      name: cert-manager-addon
-    group: addon.open-cluster-management.io
-    resource: addontemplates
+    - group: addon.open-cluster-management.io
+      resource: addontemplates
+      defaultConfig:
+        name: cert-manager-addon
+    - group: addon.open-cluster-management.io
+      resource: addondeploymentconfigs
+      defaultConfig:
+        name: cert-manager-addon
+        namespace: {{ .Values.global.namespace }}
+  installStrategy:
+    type: Placements
+    placements:
+      - name: cert-manager-addon
+        namespace: open-cluster-management-global-set
+        configs:
+          - group: addon.open-cluster-management.io
+            resource: addontemplates
+            name: cert-manager-addon
+          - group: addon.open-cluster-management.io
+            resource: addondeploymentconfigs
+            name: cert-manager-addon
+            namespace: {{ .Values.global.namespace }}
+        rolloutStrategy:
+          type: All

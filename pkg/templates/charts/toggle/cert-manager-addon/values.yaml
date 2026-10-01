@@ -3,17 +3,19 @@ global:
   namespace: default
   olmVersion: v0
   pullSecret: null
+  pullPolicy: IfNotPresent
   templateOverrides: {}
   networkPolicies:
     enabled: true
+  imageOverrides:
+    # Red Hat supported images (default). For community images, use
+    # image-overrides-configmap annotation. See docs/override-images.md
+    cert_manager_controller: "registry.redhat.io/cert-manager/cert-manager-controller-rhel9:v1.14.4"
+    cert_manager_webhook: "registry.redhat.io/cert-manager/cert-manager-webhook-rhel9:v1.14.4"
+    cert_manager_cainjector: "registry.redhat.io/cert-manager/cert-manager-cainjector-rhel9:v1.14.4"
+    cert_manager_kubectl: "registry.redhat.io/openshift4/ose-cli:v4.17"
 hubconfig:
   nodeSelector: null
   tolerations: []
   ocpVersion: 4.12.0
 org: open-cluster-management
-# NOTE: the renderer (pkg/rendering/renderer.go) only exposes .Values.global, .Values.hubconfig
-# and .Values.org to chart templates — arbitrary custom top-level keys added here are NOT loaded.
-# The cert-manager Operator defaults (catalogSource: redhat-operators, channel: stable-v1, etc.)
-# are therefore set directly in templates/cert-manager-addon-addondeploymentconfig.yaml. To
-# customize them post-install (e.g. disconnected clusters with a mirrored CatalogSource), edit
-# the rendered AddOnDeploymentConfig on the hub directly.
