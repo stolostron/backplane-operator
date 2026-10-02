@@ -1,0 +1,11 @@
+---
+external-images:
+- name: ose-cluster-api
+  search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/ose-cluster-api-rhel9:latest"
+  replace: "registry.redhat.io/openshift4/ose-cluster-api-rhel9:v4.20"
+- name: ose-baremetal-cluster-api-controllers
+  search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/ose-baremetal-cluster-api-controllers-rhel9:latest"
+  replace: "registry.redhat.io/openshift4/ose-baremetal-cluster-api-controllers-rhel9:v4.20"
+- name: postgresql-12
+  search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/postgresql-12:latest"
+  replace: "registry.redhat.io/rhel8/postgresql-12:latest"
