@@ -26,8 +26,8 @@ metadata:
     features.operators.openshift.io/token-auth-aws: 'false'
     features.operators.openshift.io/token-auth-azure: 'false'
     features.operators.openshift.io/token-auth-gcp: 'false'
-    olm.properties: '[{"type": "olm.maxOpenShiftVersion", "value": "4.22"}]'
-    olm.skipRange: '>=2.9.0 <2.10.8'
+    olm.properties: '[{"type": "olm.maxOpenShiftVersion", "value": "4.21"}]'
+    olm.skipRange: '>=2.8.0 <2.10.8'
     operators.openshift.io/must-gather-image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/backplane-must-gather-rhel9:latest
   name: multicluster-engine.v2.10.8
   namespace: placeholder
