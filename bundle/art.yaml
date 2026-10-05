@@ -1,4 +1,9 @@
 ---
+updates:
+- file: "manifests/multicluster-engine.clusterserviceversion.yaml"
+  update_list:
+  - search: "2.10.8"
+    replace: "2.10.8"
 external-images:
 - name: ose-cluster-api
   search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/ose-cluster-api-rhel9:latest"
