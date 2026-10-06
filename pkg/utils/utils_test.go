@@ -1145,10 +1145,10 @@ func TestGetAPIServerTLSProfile_UnitTest(t *testing.T) {
 		t.Errorf("GetAPIServerTLSProfile() MinTLSVersion = %v, want VersionTLS12", got.MinTLSVersion)
 	}
 
-	// Check it has the expected number of ciphers for Intermediate profile
-	expectedCipherCount := 11
-	if len(got.Ciphers) != expectedCipherCount {
-		t.Errorf("GetAPIServerTLSProfile() returned %d ciphers, want %d for Intermediate profile", len(got.Ciphers), expectedCipherCount)
+	// Check it matches the Intermediate profile defined by openshift/api
+	expected := configv1.TLSProfiles[configv1.TLSProfileIntermediateType]
+	if len(got.Ciphers) != len(expected.Ciphers) {
+		t.Errorf("GetAPIServerTLSProfile() returned %d ciphers, want %d for Intermediate profile", len(got.Ciphers), len(expected.Ciphers))
 	}
 }
 
@@ -1172,10 +1172,10 @@ func TestGetAPIServerTLSProfile_NonOCP(t *testing.T) {
 		t.Errorf("GetAPIServerTLSProfile() MinTLSVersion = %v, want VersionTLS12", got.MinTLSVersion)
 	}
 
-	// Check it has the expected number of ciphers for Intermediate profile
-	expectedCipherCount := 11
-	if len(got.Ciphers) != expectedCipherCount {
-		t.Errorf("GetAPIServerTLSProfile() returned %d ciphers, want %d for Intermediate profile", len(got.Ciphers), expectedCipherCount)
+	// Check it matches the Intermediate profile defined by openshift/api
+	expected := configv1.TLSProfiles[configv1.TLSProfileIntermediateType]
+	if len(got.Ciphers) != len(expected.Ciphers) {
+		t.Errorf("GetAPIServerTLSProfile() returned %d ciphers, want %d for Intermediate profile", len(got.Ciphers), len(expected.Ciphers))
 	}
 }
 

@@ -16,13 +16,13 @@ require (
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.76.0
 	go.uber.org/zap v1.27.1
 	helm.sh/helm/v3 v3.20.2
-	k8s.io/api v0.36.2
+	k8s.io/api v0.36.5
 	k8s.io/apiextensions-apiserver v0.36.0
-	k8s.io/apimachinery v0.36.2
-	k8s.io/client-go v0.36.0
-	k8s.io/kube-aggregator v0.35.2
-	open-cluster-management.io/api v1.2.1-0.20260401094502-0bf966f2e990
-	open-cluster-management.io/sdk-go v0.13.1-0.20240607073142-990fcdba50a6
+	k8s.io/apimachinery v0.36.5
+	k8s.io/client-go v0.36.5
+	k8s.io/kube-aggregator v0.36.5
+	open-cluster-management.io/api v1.4.0
+	open-cluster-management.io/sdk-go v1.4.0
 	sigs.k8s.io/controller-runtime v0.24.1
 	sigs.k8s.io/yaml v1.6.0
 )
@@ -97,7 +97,7 @@ require (
 	google.golang.org/protobuf v1.36.12-0.20260120151049-f2248ac996af // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.13.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
-	k8s.io/apiserver v0.36.0 // indirect
+	k8s.io/apiserver v0.36.5 // indirect
 	k8s.io/klog/v2 v2.140.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20260721132016-d427ff9ee9ad // indirect
 	k8s.io/utils v0.0.0-20260707023825-cf1189d6abe3 // indirect
