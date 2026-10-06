@@ -15,6 +15,16 @@ metadata:
       ]
     capabilities: Basic Install
     createdAt: "2026-02-05T19:18:08Z"
+    features.operators.openshift.io/cnf: "false"
+    features.operators.openshift.io/cni: "false"
+    features.operators.openshift.io/csi: "false"
+    features.operators.openshift.io/disconnected: "true"
+    features.operators.openshift.io/fips-compliant: "true"
+    features.operators.openshift.io/proxy-aware: "true"
+    features.operators.openshift.io/tls-profiles: "false"
+    features.operators.openshift.io/token-auth-aws: "false"
+    features.operators.openshift.io/token-auth-azure: "false"
+    features.operators.openshift.io/token-auth-gcp: "false"
     operators.operatorframework.io/builder: operator-sdk-v1.41.1
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
   name: multicluster-engine.v0.0.1
@@ -2621,6 +2631,7 @@ spec:
           - networking.k8s.io
           resources:
           - ingresses
+          - networkpolicies
           verbs:
           - create
           - delete
@@ -2629,14 +2640,6 @@ spec:
           - patch
           - update
           - watch
-        - apiGroups:
-          - networking.k8s.io
-          resources:
-          - networkpolicies
-          verbs:
-          - create
-          - get
-          - update
         - apiGroups:
           - notificationhubs.azure.com
           resources:
