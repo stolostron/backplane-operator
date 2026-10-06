@@ -835,3 +835,91 @@ spec:
                   name: cert-manager-webhook
                   namespace: cert-manager
                   path: /mutate
+
+        # Pre-delete confirmation guard
+        # Delete MCA without ConfigMap cert-manager-addon-confirm-delete (confirm=yes) → Job fails → deletion blocked
+        # Create confirm ConfigMap → Job succeeds → MCA deletes; orphaned resources remain
+        - apiVersion: v1
+          kind: ServiceAccount
+          metadata:
+            name: cert-manager-addon-predelete
+            namespace: cert-manager
+            annotations:
+              addon.open-cluster-management.io/addon-pre-delete: ""
+
+        - apiVersion: rbac.authorization.k8s.io/v1
+          kind: Role
+          metadata:
+            name: cert-manager-addon-predelete
+            namespace: cert-manager
+            annotations:
+              addon.open-cluster-management.io/addon-pre-delete: ""
+          rules:
+            - apiGroups: [""]
+              resources: ["configmaps"]
+              verbs: ["get", "list"]
+
+        - apiVersion: rbac.authorization.k8s.io/v1
+          kind: RoleBinding
+          metadata:
+            name: cert-manager-addon-predelete
+            namespace: cert-manager
+            annotations:
+              addon.open-cluster-management.io/addon-pre-delete: ""
+          roleRef:
+            apiGroup: rbac.authorization.k8s.io
+            kind: Role
+            name: cert-manager-addon-predelete
+          subjects:
+            - kind: ServiceAccount
+              name: cert-manager-addon-predelete
+              namespace: cert-manager
+
+        - apiVersion: batch/v1
+          kind: Job
+          metadata:
+            name: cert-manager-addon-predelete
+            namespace: cert-manager
+            annotations:
+              addon.open-cluster-management.io/addon-pre-delete: ""
+          spec:
+            activeDeadlineSeconds: 300
+            backoffLimit: 0
+            ttlSecondsAfterFinished: 300
+            manualSelector: true
+            selector:
+              matchLabels:
+                job-name: cert-manager-addon-predelete
+            template:
+              metadata:
+                labels:
+                  job-name: cert-manager-addon-predelete
+              spec:
+                restartPolicy: Never
+                serviceAccountName: cert-manager-addon-predelete
+                securityContext:
+                  runAsNonRoot: true
+                  seccompProfile:
+                    type: RuntimeDefault
+                containers:
+                  - name: confirm-delete
+                    image: '{{ .Values.global.imageOverrides.cert_manager_kubectl }}'
+                    command:
+                      - /bin/bash
+                      - -c
+                      - |
+                        echo "cert-manager-addon PRE-DELETE CONFIRMATION CHECK"
+                        if kubectl get configmap cert-manager-addon-confirm-delete -n cert-manager -o jsonpath='{.data.confirm}' 2>/dev/null | grep -q "^yes$"; then
+                          echo "Confirmation found. Proceeding with addon removal."
+                          echo "NOTE: cert-manager resources are orphaned and will continue running."
+                          exit 0
+                        fi
+                        echo "Confirmation NOT found."
+                        echo "To confirm removal, create: kubectl create configmap cert-manager-addon-confirm-delete --from-literal=confirm=yes -n cert-manager"
+                        exit 1
+                    securityContext:
+                      allowPrivilegeEscalation: false
+                      capabilities:
+                        drop: ["ALL"]
+                      readOnlyRootFilesystem: true
+                      runAsNonRoot: true
