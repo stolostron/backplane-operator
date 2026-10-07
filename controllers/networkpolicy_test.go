@@ -78,6 +78,36 @@ var _ = Describe("NetworkPolicy Controller", Ordered, func() {
 		}
 	})
 
+	// ensureNetworkPolicies lists through the manager's cache-backed client,
+	// while specs create objects via the direct k8sClient. Wait until both
+	// clients observe the same set before invoking it, otherwise a stale
+	// cached List can miss just-created NetworkPolicies.
+	waitForCachedNetworkPolicies := func(ctx context.Context) {
+		Eventually(func() bool {
+			cached := &networkingv1.NetworkPolicyList{}
+			if err := reconciler.Client.List(ctx, cached, client.InNamespace(targetNS)); err != nil {
+				return false
+			}
+			direct := &networkingv1.NetworkPolicyList{}
+			if err := k8sClient.List(ctx, direct, client.InNamespace(targetNS)); err != nil {
+				return false
+			}
+			if len(cached.Items) != len(direct.Items) {
+				return false
+			}
+			seen := map[string]bool{}
+			for _, item := range cached.Items {
+				seen[item.Namespace+"/"+item.Name] = true
+			}
+			for _, item := range direct.Items {
+				if !seen[item.Namespace+"/"+item.Name] {
+					return false
+				}
+			}
+			return true
+		}).Should(BeTrue())
+	}
+
 	Context("when NetworkPolicies are disabled", func() {
 		It("should delete all MCE-created NetworkPolicies", func() {
 			ctx := context.Background()
@@ -96,6 +126,8 @@ var _ = Describe("NetworkPolicy Controller", Ordered, func() {
 
 			// Disable NetworkPolicies
 			mce.Spec.NetworkPolicies.Enabled = false
+
+			waitForCachedNetworkPolicies(ctx)
 
 			// Run ensureNetworkPolicies
 			result, err := reconciler.ensureNetworkPolicies(ctx, mce)
@@ -124,6 +156,8 @@ var _ = Describe("NetworkPolicy Controller", Ordered, func() {
 
 			// Disable NetworkPolicies
 			mce.Spec.NetworkPolicies.Enabled = false
+
+			waitForCachedNetworkPolicies(ctx)
 
 			// Run ensureNetworkPolicies
 			result, err := reconciler.ensureNetworkPolicies(ctx, mce)
@@ -158,6 +192,8 @@ var _ = Describe("NetworkPolicy Controller", Ordered, func() {
 
 			// Disable NetworkPolicies for this MCE
 			mce.Spec.NetworkPolicies.Enabled = false
+
+			waitForCachedNetworkPolicies(ctx)
 
 			// Run ensureNetworkPolicies
 			result, err := reconciler.ensureNetworkPolicies(ctx, mce)
@@ -201,6 +237,8 @@ var _ = Describe("NetworkPolicy Controller", Ordered, func() {
 
 			// Keep NetworkPolicies enabled
 			mce.Spec.NetworkPolicies.Enabled = true
+
+			waitForCachedNetworkPolicies(ctx)
 
 			result, err := reconciler.ensureNetworkPolicies(ctx, mce)
 			Expect(err).ToNot(HaveOccurred())
