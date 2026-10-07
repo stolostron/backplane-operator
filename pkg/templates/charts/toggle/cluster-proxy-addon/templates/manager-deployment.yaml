@@ -33,6 +33,8 @@ spec:
         chart: cluster-proxy-addon-2.1.0
     spec:
       serviceAccount: cluster-proxy
+      # ACM addition: upstream shutdown can take up to 30s; allow cleanup to finish before SIGKILL.
+      terminationGracePeriodSeconds: 40
       # ACM addition: explicitly deny host-level namespace sharing. Not in upstream.
       hostNetwork: false
       hostPID: false
