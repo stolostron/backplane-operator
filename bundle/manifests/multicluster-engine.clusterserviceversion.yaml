@@ -28,7 +28,8 @@ metadata:
     operators.openshift.io/must-gather-image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/backplane-must-gather-rhel9:latest
     operators.operatorframework.io/builder: operator-sdk-v1.41.1
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
-  name: multicluster-engine.v0.0.1
+    olm.skipRange: '>=2.10.0 <2.17.4'
+  name: multicluster-engine.v2.17.4
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -3518,6 +3519,8 @@ spec:
                   value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/postgresql-15:latest
                 - name: OPERAND_IMAGE_POSTGRESQL_16
                   value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/postgresql-16:latest
+                - name: OPERATOR_VERSION
+                  value: "2.17.4"
                 image: quay.io/stolostron/backplane-operator:latest
                 imagePullPolicy: IfNotPresent
                 livenessProbe:
@@ -3705,4 +3708,4 @@ spec:
     image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/postgresql-15:latest
   - name: postgresql_16
     image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/postgresql-16:latest
-  version: 0.0.1
+  version: 2.17.4
