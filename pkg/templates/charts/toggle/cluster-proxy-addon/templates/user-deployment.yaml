@@ -34,6 +34,8 @@ spec:
       # ACM override: upstream uses deprecated serviceAccount field.
       # ACM uses the current serviceAccountName field.
       serviceAccountName: cluster-proxy
+      # ACM addition: upstream shutdown can take up to 30s; allow cleanup to finish before SIGKILL.
+      terminationGracePeriodSeconds: 40
       # ACM addition: explicitly deny host-level namespace sharing. Not in upstream.
       hostNetwork: false
       hostPID: false
@@ -146,6 +148,9 @@ spec:
             - --service-proxy-ca-cert=/proxy-ca/ca.crt
             # ACM override: upstream uses  <spokeAddonNamespace>  (default "open-cluster-management-cluster-proxy").
             - --agent-install-namespace=open-cluster-management-agent-addon
+            # ACM sync: upstream exposes the allowlist ConfigMap and HTTP/2 settings through Helm values.
+            # Backplane retains the binary default ConfigMap name and HTTP/2 behavior instead of adding
+            # unsupported renderer fields; the allowlist remains externally managed.
           env:
             - name: POD_NAMESPACE
               valueFrom:
@@ -181,6 +186,12 @@ spec:
               port: 8000
             initialDelaySeconds: 2
             periodSeconds: 10
+          # ACM sync: retain the upstream user-server readiness probe.
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8000
+            periodSeconds: 2
           volumeMounts:
             - name: user-tls-vol
               mountPath: /user-tls
