@@ -284,6 +284,92 @@ func TestRender(t *testing.T) {
 
 }
 
+func TestClusterProxyManagedProxyConfigurationArgs(t *testing.T) {
+	t.Setenv("DIRECTORY_OVERRIDE", "../../")
+	t.Setenv("ACM_HUB_OCP_VERSION", "4.12.0")
+	t.Setenv("ACM_CLUSTER_INGRESS_DOMAIN", "example.com")
+
+	testImages := map[string]string{}
+	for _, image := range utils.GetTestImages() {
+		testImages[image] = "quay.io/test/test:Test"
+	}
+
+	tests := []struct {
+		name           string
+		availability   backplane.AvailabilityType
+		proxyAgentArgs []string
+	}{
+		{
+			name:           "basic availability",
+			availability:   backplane.HABasic,
+			proxyAgentArgs: []string{"--keepalive-time=30s"},
+		},
+		{
+			name:           "high availability",
+			availability:   backplane.HAHigh,
+			proxyAgentArgs: []string{"--sync-forever", "--keepalive-time=30s"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mce := &backplane.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{Name: "testBackplane"},
+				Spec: backplane.MultiClusterEngineSpec{
+					AvailabilityConfig: tt.availability,
+					TargetNamespace:    "default",
+				},
+			}
+
+			templates, errs := RenderChart(
+				"pkg/templates/charts/toggle/cluster-proxy-addon",
+				mce,
+				testImages,
+				map[string]string{},
+			)
+			if len(errs) > 0 {
+				t.Fatalf("failed to render cluster-proxy-addon: %v", errs)
+			}
+
+			var managedProxy *unstructured.Unstructured
+			for _, template := range templates {
+				if template.GetKind() == "ManagedProxyConfiguration" && template.GetName() == "cluster-proxy" {
+					managedProxy = template
+					break
+				}
+			}
+			if managedProxy == nil {
+				t.Fatal("ManagedProxyConfiguration cluster-proxy was not rendered")
+			}
+
+			proxyAgentArgs, found, err := unstructured.NestedStringSlice(
+				managedProxy.Object, "spec", "proxyAgent", "additionalArgs")
+			if err != nil {
+				t.Fatalf("read proxy-agent additionalArgs: %v", err)
+			}
+			if !found {
+				t.Fatal("proxy-agent additionalArgs were not rendered")
+			}
+			if !reflect.DeepEqual(proxyAgentArgs, tt.proxyAgentArgs) {
+				t.Fatalf("proxy-agent additionalArgs = %v, want %v", proxyAgentArgs, tt.proxyAgentArgs)
+			}
+
+			proxyServerArgs, found, err := unstructured.NestedStringSlice(
+				managedProxy.Object, "spec", "proxyServer", "additionalArgs")
+			if err != nil {
+				t.Fatalf("read proxy-server additionalArgs: %v", err)
+			}
+			if !found {
+				t.Fatal("proxy-server additionalArgs were not rendered")
+			}
+			wantProxyServerArgs := []string{"--keepalive-time=30s"}
+			if !reflect.DeepEqual(proxyServerArgs, wantProxyServerArgs) {
+				t.Fatalf("proxy-server additionalArgs = %v, want %v", proxyServerArgs, wantProxyServerArgs)
+			}
+		})
+	}
+}
+
 func TestNonOCPRender(t *testing.T) {
 
 	os.Setenv("DIRECTORY_OVERRIDE", "../../")
