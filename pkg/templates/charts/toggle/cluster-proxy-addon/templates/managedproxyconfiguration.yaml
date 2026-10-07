@@ -54,6 +54,13 @@ spec:
     # ACM override: proxyAgent replicas hardcoded to 1.
     # Upstream uses  <replicas>  (same as proxyServer replicas).
     replicas: 1
+    # ACM addition: configure proxy-agent reconnect defaults. The HA condition
+    # follows proxy-server replica count while ACM keeps one proxy-agent replica.
+    additionalArgs:
+      {{- if gt (int .Values.hubconfig.replicaCount) 1 }}
+      - --sync-forever
+      {{- end }}
+      - --keepalive-time=30s
     # ACM addition: OpenShift service CA ConfigMap for service-proxy TLS verification. Not in upstream.
     additionalServiceCAConfigMap: openshift-service-ca.crt
     # ACM addition: pull secret for proxy-agent image on managed clusters. Not in upstream.
