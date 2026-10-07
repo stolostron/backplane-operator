@@ -37,6 +37,13 @@ spec:
   proxyAgent:
     image: '{{ .Values.global.imageOverrides.cluster_proxy }}'
     replicas: 1
+    # ACM addition: configure proxy-agent reconnect defaults. The HA condition
+    # follows proxy-server replica count while ACM keeps one proxy-agent replica.
+    additionalArgs:
+      {{- if gt (int .Values.hubconfig.replicaCount) 1 }}
+      - --sync-forever
+      {{- end }}
+      - --keepalive-time=30s
     additionalServiceCAConfigMap: openshift-service-ca.crt
     imagePullSecrets:
     - "open-cluster-management-image-pull-credentials"
