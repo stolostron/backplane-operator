@@ -482,6 +482,50 @@ spec:
                   The value(x) should be: 5s <= x <= 1h.
                 pattern: ^([0-9]+(s|m|h))+$
                 type: string
+              resourceRequirements:
+                description: |-
+                  ResourceRequirements specify QoS classes of deployments managed by the klusterlet.
+                  It applies to all the containers in the klusterlet agent deployments (registration-agent, work-agent).
+                  If not set, the default resource requirements will be used.
+                properties:
+                  resourceRequirements:
+                    description: ResourceRequirements defines resource requests and
+                      limits when Type is ResourceQosClassResourceRequirement
+                    properties:
+                      limits:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          x-kubernetes-int-or-string: true
+                        description: |-
+                          Limits describes the maximum amount of compute resources allowed.
+                          More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                        type: object
+                      requests:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          x-kubernetes-int-or-string: true
+                        description: |-
+                          Requests describes the minimum amount of compute resources required.
+                          If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+                          otherwise to an implementation-defined value. Requests cannot exceed Limits.
+                          More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                        type: object
+                    type: object
+                  type:
+                    default: Default
+                    description: Type is the QoS class for klusterlet agent deployments.
+                    enum:
+                    - Default
+                    - BestEffort
+                    - ResourceRequirement
+                    type: string
+                required:
+                - type
+                type: object
             type: object
           status:
             description: Status defines the observed state of KlusterletConfig
