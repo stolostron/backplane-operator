@@ -8,3 +8,18 @@ spec:
   customizedVariables:
     - name: certManagerCrdsUrl
       value: "https://github.com/cert-manager/cert-manager/releases/download/v1.14.4/cert-manager.crds.yaml"
+  nodePlacement:
+    {{- with .Values.hubconfig.tolerations }}
+    tolerations:
+    {{- range . }}
+    - {{ if .Key }} key: {{ .Key }} {{- end }}
+      {{ if .Operator }} operator: {{ .Operator }} {{- end }}
+      {{ if .Value }} value: {{ .Value }} {{- end }}
+      {{ if .Effect }} effect: {{ .Effect }} {{- end }}
+      {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
+      {{- end }}
+    {{- end }}
+    {{- with .Values.hubconfig.nodeSelector }}
+    nodeSelector:
+{{ toYaml . | indent 6 }}
+    {{- end }}
