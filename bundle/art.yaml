@@ -1,0 +1,22 @@
+---
+updates:
+- file: "manifests/multicluster-engine.clusterserviceversion.yaml"
+  update_list:
+  - search: "2.8.13"
+    replace: "2.8.13"
+external-images:
+- name: ose-cluster-api
+  search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/ose-cluster-api-rhel9:latest"
+  replace: "registry.redhat.io/openshift4/ose-cluster-api-rhel9:v4.18"
+- name: ose-baremetal-cluster-api-controllers
+  search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/ose-baremetal-cluster-api-controllers-rhel9:latest"
+  replace: "registry.redhat.io/openshift4/ose-baremetal-cluster-api-controllers-rhel9:v4.18"
+- name: ose-aws-cluster-api-controllers
+  search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/ose-aws-cluster-api-controllers-rhel9:latest"
+  replace: "registry.redhat.io/openshift4/ose-aws-cluster-api-controllers-rhel9:v4.18"
+- name: postgresql-12
+  search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/postgresql-12:latest"
+  replace: "registry.redhat.io/rhel8/postgresql-12:latest"
+- name: assisted-service-el8
+  search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-service-el8:latest"
+  replace: "registry.redhat.io/multicluster-engine/assisted-service-8-rhel8@sha256:9243ac96395774c0c8173eb6f72158e29752825314198e2b6dc2f98b4d7b9cfd"
