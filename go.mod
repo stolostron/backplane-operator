@@ -1,6 +1,6 @@
 module github.com/stolostron/backplane-operator
 
-go 1.26.3
+go 1.26.7
 
 require (
 	github.com/Masterminds/goutils v1.1.1
