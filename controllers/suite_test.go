@@ -33,6 +33,7 @@ import (
 	operatorsapiv2 "github.com/operator-framework/api/pkg/operators/v2"
 	admissionregistration "k8s.io/api/admissionregistration/v1"
 	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 
 	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
@@ -53,6 +54,25 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
+
+// addToSchemeIgnoringDuplicate wraps scheme registration to handle conflicts between envtest's
+// unstructured CRD registrations and typed AddToScheme calls.
+// When both register the same GVK, k8s.io/apimachinery@v0.36 panics with "Double registration".
+// We recover from this specific panic because the manager uses a separate scheme with only typed
+// registrations, so the test scheme double-registration is harmless.
+func addToSchemeIgnoringDuplicate(addToScheme func(*runtime.Scheme) error, s *runtime.Scheme) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			errStr := fmt.Sprintf("%v", r)
+			if strings.Contains(errStr, "Double registration") {
+				err = nil
+				return
+			}
+			panic(r) // Re-panic if it's a different error
+		}
+	}()
+	return addToScheme(s)
+}
 
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
 // http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
@@ -103,38 +123,38 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
 
-	err = v1.AddToScheme(scheme.Scheme)
+	err = addToSchemeIgnoringDuplicate(v1.AddToScheme, scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
-	err = scheme.AddToScheme(scheme.Scheme)
+	err = addToSchemeIgnoringDuplicate(scheme.AddToScheme, scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
-	err = apiregistrationv1.AddToScheme(scheme.Scheme)
+	err = addToSchemeIgnoringDuplicate(apiregistrationv1.AddToScheme, scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
-	Expect(operatorsapiv2.AddToScheme(scheme.Scheme)).Should(Succeed())
+	Expect(addToSchemeIgnoringDuplicate(operatorsapiv2.AddToScheme, scheme.Scheme)).Should(Succeed())
 
-	err = admissionregistration.AddToScheme(scheme.Scheme)
+	err = addToSchemeIgnoringDuplicate(admissionregistration.AddToScheme, scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
-	err = apixv1.AddToScheme(scheme.Scheme)
+	err = addToSchemeIgnoringDuplicate(apixv1.AddToScheme, scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
-	err = hiveconfig.AddToScheme(scheme.Scheme)
+	err = addToSchemeIgnoringDuplicate(hiveconfig.AddToScheme, scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
-	Expect(olmv1.AddToScheme(scheme.Scheme)).Should(Succeed())
+	Expect(addToSchemeIgnoringDuplicate(olmv1.AddToScheme, scheme.Scheme)).Should(Succeed())
 
-	err = clustermanager.AddToScheme(scheme.Scheme)
+	err = addToSchemeIgnoringDuplicate(clustermanager.AddToScheme, scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
-	err = monitoringv1.AddToScheme(scheme.Scheme)
+	err = addToSchemeIgnoringDuplicate(monitoringv1.AddToScheme, scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
-	err = configv1.AddToScheme(scheme.Scheme)
+	err = addToSchemeIgnoringDuplicate(configv1.AddToScheme, scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
-	err = operatorv1.AddToScheme(scheme.Scheme)
+	err = addToSchemeIgnoringDuplicate(operatorv1.AddToScheme, scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	err = os.Setenv("POD_NAMESPACE", "default")
@@ -157,8 +177,38 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
 
+	// Create a fresh scheme for the manager with typed registrations only.
+	// scheme.Scheme may have had some registrations skipped (via addToSchemeIgnoringDuplicate)
+	// when envtest's unstructured CRD entries conflicted. The manager needs all typed types
+	// registered so its watches work correctly (e.g. ClusterManager).
+	mgrScheme := runtime.NewScheme()
+	err = v1.AddToScheme(mgrScheme)
+	Expect(err).NotTo(HaveOccurred())
+	err = scheme.AddToScheme(mgrScheme)
+	Expect(err).NotTo(HaveOccurred())
+	err = apiregistrationv1.AddToScheme(mgrScheme)
+	Expect(err).NotTo(HaveOccurred())
+	err = operatorsapiv2.AddToScheme(mgrScheme)
+	Expect(err).NotTo(HaveOccurred())
+	err = admissionregistration.AddToScheme(mgrScheme)
+	Expect(err).NotTo(HaveOccurred())
+	err = apixv1.AddToScheme(mgrScheme)
+	Expect(err).NotTo(HaveOccurred())
+	err = hiveconfig.AddToScheme(mgrScheme)
+	Expect(err).NotTo(HaveOccurred())
+	err = olmv1.AddToScheme(mgrScheme)
+	Expect(err).NotTo(HaveOccurred())
+	err = clustermanager.AddToScheme(mgrScheme)
+	Expect(err).NotTo(HaveOccurred())
+	err = monitoringv1.AddToScheme(mgrScheme)
+	Expect(err).NotTo(HaveOccurred())
+	err = configv1.AddToScheme(mgrScheme)
+	Expect(err).NotTo(HaveOccurred())
+	err = operatorv1.AddToScheme(mgrScheme)
+	Expect(err).NotTo(HaveOccurred())
+
 	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
-		Scheme: scheme.Scheme,
+		Scheme: mgrScheme,
 		Metrics: metricsserver.Options{
 			BindAddress: "0",
 		},
