@@ -177,8 +177,38 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
 
+	// Create a fresh scheme for the manager with typed registrations only.
+	// scheme.Scheme may have had some registrations skipped (via addToSchemeIgnoringDuplicate)
+	// when envtest's unstructured CRD entries conflicted. The manager needs all typed types
+	// registered so its watches work correctly (e.g. ClusterManager).
+	mgrScheme := runtime.NewScheme()
+	err = v1.AddToScheme(mgrScheme)
+	Expect(err).NotTo(HaveOccurred())
+	err = scheme.AddToScheme(mgrScheme)
+	Expect(err).NotTo(HaveOccurred())
+	err = apiregistrationv1.AddToScheme(mgrScheme)
+	Expect(err).NotTo(HaveOccurred())
+	err = operatorsapiv2.AddToScheme(mgrScheme)
+	Expect(err).NotTo(HaveOccurred())
+	err = admissionregistration.AddToScheme(mgrScheme)
+	Expect(err).NotTo(HaveOccurred())
+	err = apixv1.AddToScheme(mgrScheme)
+	Expect(err).NotTo(HaveOccurred())
+	err = hiveconfig.AddToScheme(mgrScheme)
+	Expect(err).NotTo(HaveOccurred())
+	err = olmv1.AddToScheme(mgrScheme)
+	Expect(err).NotTo(HaveOccurred())
+	err = clustermanager.AddToScheme(mgrScheme)
+	Expect(err).NotTo(HaveOccurred())
+	err = monitoringv1.AddToScheme(mgrScheme)
+	Expect(err).NotTo(HaveOccurred())
+	err = configv1.AddToScheme(mgrScheme)
+	Expect(err).NotTo(HaveOccurred())
+	err = operatorv1.AddToScheme(mgrScheme)
+	Expect(err).NotTo(HaveOccurred())
+
 	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
-		Scheme: scheme.Scheme,
+		Scheme: mgrScheme,
 		Metrics: metricsserver.Options{
 			BindAddress: "0",
 		},
