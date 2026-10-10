@@ -23,6 +23,7 @@ import (
 
 const (
 	AssistedServiceChartDir            = "pkg/templates/charts/toggle/assisted-service"
+	CertManagerAddonChartDir           = "pkg/templates/charts/toggle/cert-manager-addon"
 	ClusterAPIChartDir                 = "pkg/templates/charts/toggle/cluster-api"
 	ClusterAPIK8SChartDir              = "pkg/templates/charts/toggle/cluster-api-k8s"
 	ClusterAPIProviderAWSChartDir      = "pkg/templates/charts/toggle/cluster-api-provider-aws"
