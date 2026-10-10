@@ -1012,6 +1012,7 @@ func (r *MultiClusterEngineReconciler) fetchChartOrCRDPath(component string) str
 
 	chartDirs := map[string]string{
 		backplanev1.AssistedService:                toggle.AssistedServiceChartDir,
+		backplanev1.CertManagerAddon:               toggle.CertManagerAddonChartDir,
 		backplanev1.ClusterAPI:                     clusterAPIChartLoc,
 		backplanev1.ClusterAPIProviderAWS:          toggle.ClusterAPIProviderAWSChartDir,
 		backplanev1.ClusterAPIProviderAzurePreview: clusterAPIAzureChartLoc,
@@ -1087,6 +1088,28 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 		}
 	} else {
 		log.Info(messages.SkippingExternallyManaged, "component", backplanev1.FleetNavigation)
+	}
+
+	if !r.isComponentExternallyManaged(backplaneConfig, backplanev1.CertManagerAddon) {
+		if backplaneConfig.Enabled(backplanev1.CertManagerAddon) && foundation.CanInstallAddons(ctx, r.Client) {
+			result, err := r.ensureCertManagerAddon(ctx, backplaneConfig)
+			if result != (ctrl.Result{}) {
+				requeue = true
+			}
+			if err != nil {
+				errs[backplanev1.CertManagerAddon] = err
+			}
+		} else {
+			result, err := r.ensureNoCertManagerAddon(ctx, backplaneConfig)
+			if result != (ctrl.Result{}) {
+				requeue = true
+			}
+			if err != nil {
+				errs[backplanev1.CertManagerAddon] = err
+			}
+		}
+	} else {
+		log.Info(messages.SkippingExternallyManaged, "component", backplanev1.CertManagerAddon)
 	}
 
 	if !r.isComponentExternallyManaged(backplaneConfig, backplanev1.ImageBasedInstallOperator) {
@@ -2188,6 +2211,7 @@ func (r *MultiClusterEngineReconciler) ensureNoAllInternalEngineComponents(ctx c
 
 	components := []string{
 		backplanev1.AssistedService,
+		backplanev1.CertManagerAddon,
 		backplanev1.ClusterAPI,
 		backplanev1.ClusterAPIProviderAWS,
 		backplanev1.ClusterAPIProviderAzurePreview,

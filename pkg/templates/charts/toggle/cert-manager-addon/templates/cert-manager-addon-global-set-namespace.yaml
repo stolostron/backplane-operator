@@ -1,0 +1,11 @@
+# Namespace for global Placements and ManagedClusterSetBindings. This namespace is typically
+# created by MCE infrastructure, but we ensure it exists here for completeness.
+#
+# This resource is idempotent — if it already exists, Kubernetes will not error.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: open-cluster-management-global-set
+  labels:
+    # Standard ACM/MCE namespace label
+    cluster.open-cluster-management.io/managedCluster: ""
