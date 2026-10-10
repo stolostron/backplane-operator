@@ -362,3 +362,108 @@ webhooks:
     resources:
     - trustedaccessrolebindings
   sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-containerservice-azure-com-v20260501-identitybinding
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20260501.identitybindings.containerservice.azure.com
+  rules:
+  - apiGroups:
+    - containerservice.azure.com
+    apiVersions:
+    - v20260501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - identitybindings
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-containerservice-azure-com-v20260501-maintenanceconfiguration
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20260501.maintenanceconfigurations.containerservice.azure.com
+  rules:
+  - apiGroups:
+    - containerservice.azure.com
+    apiVersions:
+    - v20260501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - maintenanceconfigurations
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-containerservice-azure-com-v20260501-managedcluster
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20260501.managedclusters.containerservice.azure.com
+  rules:
+  - apiGroups:
+    - containerservice.azure.com
+    apiVersions:
+    - v20260501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - managedclusters
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-containerservice-azure-com-v20260501-managedclustersagentpool
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20260501.managedclustersagentpools.containerservice.azure.com
+  rules:
+  - apiGroups:
+    - containerservice.azure.com
+    apiVersions:
+    - v20260501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - managedclustersagentpools
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-containerservice-azure-com-v20260501-trustedaccessrolebinding
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20260501.trustedaccessrolebindings.containerservice.azure.com
+  rules:
+  - apiGroups:
+    - containerservice.azure.com
+    apiVersions:
+    - v20260501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - trustedaccessrolebindings
+  sideEffects: None

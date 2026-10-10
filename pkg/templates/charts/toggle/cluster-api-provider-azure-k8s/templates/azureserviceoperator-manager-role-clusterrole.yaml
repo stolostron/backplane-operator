@@ -523,6 +523,7 @@ rules:
   - fleetsmembers
   - fleetsupdateruns
   - fleetsupdatestrategies
+  - identitybindings
   - maintenanceconfigurations
   - managedclusters
   - managedclustersagentpools
@@ -548,6 +549,8 @@ rules:
   - fleetsupdateruns/status
   - fleetsupdatestrategies/finalizers
   - fleetsupdatestrategies/status
+  - identitybindings/finalizers
+  - identitybindings/status
   - maintenanceconfigurations/finalizers
   - maintenanceconfigurations/status
   - managedclusters/finalizers
@@ -643,33 +646,6 @@ rules:
   - backupvaultsbackupinstances/status
   - backupvaultsbackuppolicies/finalizers
   - backupvaultsbackuppolicies/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - dbformariadb.azure.com
-  resources:
-  - configurations
-  - databases
-  - servers
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - dbformariadb.azure.com
-  resources:
-  - configurations/finalizers
-  - configurations/status
-  - databases/finalizers
-  - databases/status
-  - servers/finalizers
-  - servers/status
   verbs:
   - get
   - patch
@@ -881,6 +857,8 @@ rules:
   - domains
   - domainstopics
   - eventsubscriptions
+  - namespaces
+  - namespacetopics
   - topics
   verbs:
   - create
@@ -899,6 +877,10 @@ rules:
   - domainstopics/status
   - eventsubscriptions/finalizers
   - eventsubscriptions/status
+  - namespaces/finalizers
+  - namespaces/status
+  - namespacetopics/finalizers
+  - namespacetopics/status
   - topics/finalizers
   - topics/status
   verbs:
