@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   labels:
     app.kubernetes.io/name: azure-service-operator
-    app.kubernetes.io/version: v2.20.0-hcpclusters.2
+    app.kubernetes.io/version: v2.22.0-hcpclusters.0
     control-plane: azureserviceoperator-controller-manager
   name: azureserviceoperator-controller-manager
 spec:
@@ -20,7 +20,7 @@ spec:
         kubectl.kubernetes.io/default-container: manager
       labels:
         app.kubernetes.io/name: azure-service-operator
-        app.kubernetes.io/version: v2.20.0-hcpclusters.2
+        app.kubernetes.io/version: v2.22.0-hcpclusters.0
         control-plane: azureserviceoperator-controller-manager
         ocm-antiaffinity-selector: azureserviceoperator-controller-manager
     spec:
@@ -52,8 +52,11 @@ spec:
         - --profiling-metrics=false
         - --health-addr=:8081
         - --enable-leader-election
+        - --leader-lease-duration=15s
+        - --leader-renew-deadline=10s
+        - --leader-retry-period=2s
         - --v=2
-        - --crd-pattern=resources.azure.com/*;containerservice.azure.com/*;keyvault.azure.com/*;managedidentity.azure.com/*;eventhub.azure.com/*;network.azure.com/*;authorization.azure.com/*
+        - --crd-pattern=containerservice.azure.com/FleetsMember;containerservice.azure.com/MaintenanceConfiguration;containerservice.azure.com/ManagedCluster;containerservice.azure.com/ManagedClustersAgentPool;kubernetesconfiguration.azure.com/Extension;network.azure.com/BastionHost;network.azure.com/NatGateway;network.azure.com/PrivateEndpoint;network.azure.com/PrivateLinkService;network.azure.com/VirtualNetwork;network.azure.com/VirtualNetworksSubnet;resources.azure.com/ResourceGroup;resources.azure.com/*;containerservice.azure.com/*;keyvault.azure.com/*;managedidentity.azure.com/*;eventhub.azure.com/*;network.azure.com/*;authorization.azure.com/*
         - --crd-labels=
         - --webhook-port=9443
         - --webhook-cert-dir=/tmp/k8s-webhook-server/serving-certs
@@ -212,9 +215,12 @@ spec:
         image: '{{ .Values.global.imageOverrides.azure_service_operator_rhel9 }}'
         imagePullPolicy: '{{ .Values.global.pullPolicy }}'
         livenessProbe:
+          failureThreshold: 3
           httpGet:
             path: /healthz
             port: 8081
+          periodSeconds: 10
+          timeoutSeconds: 1
         name: manager
         ports:
         - containerPort: 9443
@@ -227,9 +233,12 @@ spec:
           name: metrics-port
           protocol: TCP
         readinessProbe:
+          failureThreshold: 3
           httpGet:
             path: /readyz
             port: 8081
+          periodSeconds: 10
+          timeoutSeconds: 1
         resources:
           limits:
             cpu: 500m

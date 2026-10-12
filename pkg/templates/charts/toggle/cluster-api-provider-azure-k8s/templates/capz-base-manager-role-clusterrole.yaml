@@ -324,6 +324,7 @@ rules:
   - natgateways
   - networksecuritygroups
   - privateendpoints
+  - privatelinkservices
   - virtualnetworks
   - virtualnetworkssubnets
   verbs:
@@ -340,6 +341,7 @@ rules:
   - bastionhosts/status
   - natgateways/status
   - privateendpoints/status
+  - privatelinkservices/status
   - virtualnetworks/status
   - virtualnetworkssubnets/status
   verbs:
