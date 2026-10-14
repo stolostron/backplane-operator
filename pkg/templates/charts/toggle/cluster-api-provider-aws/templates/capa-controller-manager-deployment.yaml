@@ -112,6 +112,8 @@ spec:
           readOnly: true
         - mountPath: /home/.aws
           name: credentials
+        - mountPath: /etc/pki/ca-trust/extracted/pem/
+          name: trusted-ca-bundle
       hostIPC: false
       hostNetwork: false
       hostPID: false
@@ -154,3 +156,11 @@ spec:
       - name: credentials
         secret:
           secretName: capa-manager-bootstrap-credentials
+      - configMap:
+          defaultMode: 440
+          items:
+          - key: ca-bundle.crt
+            path: tls-ca-bundle.pem
+          name: trusted-ca-bundle
+          optional: true
+        name: trusted-ca-bundle
