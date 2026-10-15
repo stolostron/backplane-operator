@@ -1,0 +1,16 @@
+---
+updates:
+- file: "manifests/multicluster-engine.clusterserviceversion.yaml"
+  update_list:
+  - search: "2.6.17"
+    replace: "2.6.17"
+external-images:
+- name: ose-cluster-api
+  search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/ose-cluster-api-rhel9:latest"
+  replace: "registry.redhat.io/openshift4/ose-cluster-api-rhel9:v4.16"
+- name: postgresql-12
+  search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/postgresql-12:latest"
+  replace: "registry.redhat.io/rhel8/postgresql-12:1-1789954358"
+- name: assisted-service-el8
+  search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-service-el8:latest"
+  replace: "registry.redhat.io/multicluster-engine/assisted-service-8-rhel8@sha256:4f94b0e0ddc3e945688ae66fbdb65d61f2bc3df6dc5db139bfd5272d64785dd5"
