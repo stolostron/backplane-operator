@@ -48,3 +48,7 @@ mce-operator-bundle/
 # Scanner and security analysis artifacts
 .scannerwork/
 gosec.json
+
+# ART builds monitor
+__pycache__/
+tools/art-monitor/__pycache__
