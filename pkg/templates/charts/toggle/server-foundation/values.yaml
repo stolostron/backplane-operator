@@ -12,8 +12,8 @@ global:
   upgrading: false
   eusUpgrading: false
 hubconfig:
-  nodeSelector: {}
-  proxyConfigs: {}
+  nodeSelector: null
+  proxyConfigs: null
   replicaCount: 1
   tolerations: []
   ocpVersion: "4.12.0"
