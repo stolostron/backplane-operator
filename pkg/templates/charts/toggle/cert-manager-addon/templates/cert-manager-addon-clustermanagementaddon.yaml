@@ -1,0 +1,35 @@
+apiVersion: addon.open-cluster-management.io/v1alpha1
+kind: ClusterManagementAddOn
+metadata:
+  annotations:
+    addon.open-cluster-management.io/lifecycle: addon-manager
+  name: cert-manager-addon
+spec:
+  addOnMeta:
+    description: Deploys cert-manager to manage TLS certificates on managed clusters.
+    displayName: Cert-Manager Addon
+  supportedConfigs:
+    - group: addon.open-cluster-management.io
+      resource: addontemplates
+      defaultConfig:
+        name: cert-manager-addon
+    - group: addon.open-cluster-management.io
+      resource: addondeploymentconfigs
+      defaultConfig:
+        name: cert-manager-addon
+        namespace: {{ .Values.global.namespace }}
+  installStrategy:
+    type: Placements
+    placements:
+      - name: cert-manager-addon
+        namespace: open-cluster-management-global-set
+        configs:
+          - group: addon.open-cluster-management.io
+            resource: addontemplates
+            name: cert-manager-addon
+          - group: addon.open-cluster-management.io
+            resource: addondeploymentconfigs
+            name: cert-manager-addon
+            namespace: {{ .Values.global.namespace }}
+        rolloutStrategy:
+          type: All

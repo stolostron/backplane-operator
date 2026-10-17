@@ -66,6 +66,7 @@ var onComponents = []string{
 }
 
 var offComponents = []string{
+	backplanev1.CertManagerAddon,
 	backplanev1.ClusterAPI,
 	backplanev1.ClusterAPIProviderAWS,
 	backplanev1.ClusterAPIProviderAzurePreview,
@@ -218,6 +219,7 @@ func GetTestImages() []string {
 		"cluster_image_set_controller", "cluster_permission", "cluster_proxy", "cluster_proxy_addon", "clusterclaims_controller",
 		"clusterlifecycle_state_metrics", "console_mce", "discovery_operator", "hypershift_addon_operator",
 		"hypershift_operator", "hypershift_cli", "image_based_install_operator", "ip_address_manager", "kube_rbac_proxy_mce",
+		"cert_manager_controller", "cert_manager_webhook", "cert_manager_cainjector", "cert_manager_kubectl",
 		"managed_serviceaccount", "managedcluster_import_controller", "mce_capi_webhook_config_rhel9",
 		"multicloud_manager", "openshift_hive", "ose_aws_cluster_api_controllers_rhel9",
 		"ose_baremetal_cluster_api_controllers_rhel9", "ose_cluster_api_rhel9", "postgresql_16",

@@ -1,0 +1,24 @@
+# Label managed clusters with "cert-manager-addon=enabled" to deploy.
+apiVersion: cluster.open-cluster-management.io/v1beta1
+kind: Placement
+metadata:
+  name: cert-manager-addon
+  namespace: open-cluster-management-global-set
+spec:
+  clusterSets:
+    - global
+  predicates:
+    - requiredClusterSelector:
+        labelSelector:
+          matchExpressions:
+            - key: cert-manager-addon
+              operator: In
+              values:
+                - enabled
+            - key: cert-manager-addon
+              operator: NotIn
+              values:
+                - disabled
+  tolerations:
+    - key: cluster.open-cluster-management.io/unreachable
+      operator: Exists
