@@ -1,0 +1,19 @@
+global:
+  deployOnOCP: true
+  namespace: default
+  olmVersion: v0
+  pullSecret: null
+  templateOverrides: {}
+  networkPolicies:
+    enabled: true
+hubconfig:
+  nodeSelector: null
+  tolerations: []
+  ocpVersion: 4.12.0
+org: open-cluster-management
+# NOTE: the renderer (pkg/rendering/renderer.go) only exposes .Values.global, .Values.hubconfig
+# and .Values.org to chart templates — arbitrary custom top-level keys added here are NOT loaded.
+# The cert-manager Operator defaults (catalogSource: redhat-operators, channel: stable-v1, etc.)
+# are therefore set directly in templates/cert-manager-addon-addondeploymentconfig.yaml. To
+# customize them post-install (e.g. disconnected clusters with a mirrored CatalogSource), edit
+# the rendered AddOnDeploymentConfig on the hub directly.

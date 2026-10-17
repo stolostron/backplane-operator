@@ -1,0 +1,19 @@
+apiVersion: addon.open-cluster-management.io/v1alpha1
+kind: AddOnDeploymentConfig
+metadata:
+  name: cert-manager-addon
+  namespace: {{ .Values.global.namespace }}
+spec:
+  # AddOnTemplate references these customizedVariables by name (OCM customizedVariables are
+  # always strings). For disconnected/mirrored environments, edit this AddOnDeploymentConfig
+  # directly on the hub — e.g. point catalogSource at an internal CatalogSource that mirrors the
+  # openshift-cert-manager-operator package.
+  customizedVariables:
+  - name: catalogSource
+    value: redhat-operators
+  - name: catalogSourceNamespace
+    value: openshift-marketplace
+  - name: channel
+    value: stable-v1
+  - name: installPlanApproval
+    value: Automatic

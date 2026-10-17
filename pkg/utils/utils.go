@@ -66,6 +66,7 @@ var onComponents = []string{
 }
 
 var offComponents = []string{
+	backplanev1.CertManagerAddon,
 	backplanev1.ClusterAPI,
 	backplanev1.ClusterAPIProviderAWS,
 	backplanev1.ClusterAPIProviderAzurePreview,
