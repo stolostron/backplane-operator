@@ -4,7 +4,7 @@ global:
 hubconfig:
   nodeSelector: null
   probeConfig: null
-  proxyConfigs: {}
+  proxyConfigs: null
   replicaCount: 1
   tolerations: []
 org: open-cluster-management
