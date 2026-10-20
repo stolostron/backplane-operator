@@ -54,43 +54,43 @@
   "mce-5.0": {
     "4.22": {
       "tag": "mce-5.0__v4.22__backplane-rhel9-operator",
-      "digest": "sha256:f2ab2ac1c7e0552e1d0790b5d66d324d916fa1f183fe2b12f10102f1205ca4ee",
-      "last_modified": "Mon, 19 Oct 2026 14:48:07 -0000",
-      "start_ts": 1792421287,
-      "nvr": "backplane-operator-fbc-5.0.0-20261019144028.ocp4.22",
-      "build_date": "2026-10-19T14:44:21Z",
+      "digest": "sha256:00a0f5018b5f5a17c58ff83571769fa6e299540fb337c37b2fb50335ad1bf387",
+      "last_modified": "Tue, 20 Oct 2026 07:58:07 -0000",
+      "start_ts": 1792483087,
+      "nvr": "backplane-operator-fbc-5.0.0-20261020075101.ocp4.22",
+      "build_date": "2026-10-20T07:55:05Z",
       "source_repo": "https://github.com/stolostron/backplane-operator",
-      "commit_id": "f926d1c3bd2734667fd04d619d74129ef6680b86"
+      "commit_id": "75d66622c67f536a9b02057110555d518983d33b"
     },
     "4.23": {
       "tag": "mce-5.0__v4.23__backplane-rhel9-operator",
-      "digest": "sha256:ff78356e65b9db88dc3e9c472669ee4f64cd29b8e73fcc00e19ac925b108f630",
-      "last_modified": "Mon, 19 Oct 2026 14:46:37 -0000",
-      "start_ts": 1792421197,
-      "nvr": "backplane-operator-fbc-5.0.0-20261019144042.ocp4.23",
-      "build_date": "2026-10-19T14:43:42Z",
+      "digest": "sha256:4f1369ca0bfe705f448cdb3854a11512dfc59d9cf55b63511e5f8bc7c14f69d8",
+      "last_modified": "Tue, 20 Oct 2026 07:56:45 -0000",
+      "start_ts": 1792483005,
+      "nvr": "backplane-operator-fbc-5.0.0-20261020075109.ocp4.23",
+      "build_date": "2026-10-20T07:53:51Z",
       "source_repo": "https://github.com/stolostron/backplane-operator",
-      "commit_id": "f926d1c3bd2734667fd04d619d74129ef6680b86"
+      "commit_id": "75d66622c67f536a9b02057110555d518983d33b"
     },
     "5.0": {
       "tag": "mce-5.0__v5.0__backplane-rhel9-operator",
-      "digest": "sha256:4c1744acdec58483ffb1d151be925ba5c189dc9b2239edbf03fcc711c6f76ee9",
-      "last_modified": "Mon, 19 Oct 2026 14:47:00 -0000",
-      "start_ts": 1792421220,
-      "nvr": "backplane-operator-fbc-5.0.0-20261019144049.ocp5.0",
-      "build_date": "2026-10-19T14:44:10Z",
+      "digest": "sha256:23a51a7df97e6a416e421f9af5e355d5404d0d46acf07a0057ca2e7e2e988d48",
+      "last_modified": "Tue, 20 Oct 2026 07:57:28 -0000",
+      "start_ts": 1792483048,
+      "nvr": "backplane-operator-fbc-5.0.0-20261020075121.ocp5.0",
+      "build_date": "2026-10-20T07:54:36Z",
       "source_repo": "https://github.com/stolostron/backplane-operator",
-      "commit_id": "f926d1c3bd2734667fd04d619d74129ef6680b86"
+      "commit_id": "75d66622c67f536a9b02057110555d518983d33b"
     },
     "5.1": {
       "tag": "mce-5.0__v5.1__backplane-rhel9-operator",
-      "digest": "sha256:51d58bbc5318a5ec38ef4cd196a9aaecb07f68e856e237879d600d2c397e0aa1",
-      "last_modified": "Mon, 19 Oct 2026 14:46:38 -0000",
-      "start_ts": 1792421198,
-      "nvr": "backplane-operator-fbc-5.0.0-20261019144102.ocp5.1",
-      "build_date": "2026-10-19T14:43:46Z",
+      "digest": "sha256:ee2cecbe04780de15c1ae87f2a7adabdf910ce1f6ee1ed8c230a4185f2bf1a78",
+      "last_modified": "Tue, 20 Oct 2026 07:56:58 -0000",
+      "start_ts": 1792483018,
+      "nvr": "backplane-operator-fbc-5.0.0-20261020075131.ocp5.1",
+      "build_date": "2026-10-20T07:54:04Z",
       "source_repo": "https://github.com/stolostron/backplane-operator",
-      "commit_id": "f926d1c3bd2734667fd04d619d74129ef6680b86"
+      "commit_id": "75d66622c67f536a9b02057110555d518983d33b"
     }
   },
   "mce-2.10": {
