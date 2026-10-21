@@ -27,6 +27,8 @@ components:
     github_ref: https://github.com/openshift/assisted-service.git
     operators:
     - bundlePath: deploy/olm-catalog/manifests/
+      envImageMappings:
+        DATABASE_IMAGE_PG15: postgresql_15
       imageMappings:
         assisted-image-service: assisted_image_service
         assisted-installer: assisted_installer
