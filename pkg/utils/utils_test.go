@@ -128,7 +128,7 @@ func Test_GetTestImages(t *testing.T) {
 	}{
 		{
 			name: "should return correct number of test images",
-			want: 88,
+			want: 90,
 		},
 	}
 

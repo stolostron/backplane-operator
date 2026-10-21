@@ -171,6 +171,10 @@ spec:
     from:
       kind: DockerImage
       name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/ose-baremetal-cluster-api-controllers-rhel9:latest
+  - name: postgresql-13
+    from:
+      kind: DockerImage
+      name: image-registry.openshift-image-registry.svc:5000/multicluster-engine/postgresql-13:latest
   - name: postgresql-15
     from:
       kind: DockerImage
