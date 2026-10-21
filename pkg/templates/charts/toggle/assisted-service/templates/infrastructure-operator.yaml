@@ -59,9 +59,9 @@ spec:
         - name: DATABASE_IMAGE_VERSION
           value: '16'
         - name: DATABASE_IMAGE_PG13
-          value: quay.io/sclorg/postgresql-13-c9s:latest
+          value: '{{ .Values.global.imageOverrides.postgresql_13 }}'
         - name: DATABASE_IMAGE_PG15
-          value: quay.io/sclorg/postgresql-15-c9s:latest
+          value: '{{ .Values.global.imageOverrides.postgresql_15 }}'
         - name: AGENT_IMAGE
           value: '{{ .Values.global.imageOverrides.assisted_installer_agent }}'
         - name: CONTROLLER_IMAGE
