@@ -36,7 +36,7 @@ jobs:
     strategy:
       fail-fast: false # If one jobs fail, we still want the other jobs to run.
       matrix:
-        python-version: [3.9]
+        python-version: ["3.13"]
         go-version: ["1.26"]
         branch: ['main', 'backplane-2.6', 'backplane-2.8', 'backplane-2.9', 'backplane-2.10', 'backplane-2.11', 'backplane-2.17', 'backplane-5.0']
 
@@ -49,7 +49,7 @@ jobs:
           ref: ${{ matrix.branch }}
           
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
 
