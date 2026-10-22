@@ -26,3 +26,8 @@ spec:
 {{- else }}
           - local-cluster
 {{- end }}
+  tolerations:
+  - key: cluster.open-cluster-management.io/unreachable
+    operator: Equal
+  - key: cluster.open-cluster-management.io/unavailable
+    operator: Equal
