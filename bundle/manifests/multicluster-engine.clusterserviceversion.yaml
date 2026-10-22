@@ -1849,6 +1849,16 @@ spec:
                       fieldPath: metadata.namespace
                 - name: OPERAND_IMAGE_ADDON_MANAGER
                   value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/addon-manager-rhel9:latest
+                - name: OPERAND_IMAGE_ASSISTED_IMAGE_SERVICE
+                  value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-image-service-rhel9:latest
+                - name: OPERAND_IMAGE_ASSISTED_INSTALLER
+                  value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-installer-rhel9:latest
+                - name: OPERAND_IMAGE_ASSISTED_INSTALLER_AGENT
+                  value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-installer-agent-rhel9:latest
+                - name: OPERAND_IMAGE_ASSISTED_INSTALLER_CONTROLLER
+                  value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-installer-controller-rhel9:latest
+                - name: OPERAND_IMAGE_ASSISTED_SERVICE_9
+                  value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-service-9-rhel9:latest
                 - name: OPERAND_IMAGE_BACKPLANE_MUST_GATHER
                   value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/backplane-must-gather-rhel9:latest
                 - name: OPERAND_IMAGE_CLUSTER_API_PROVIDER_OPENSHIFT_ASSISTED_BOOTSTRAP
@@ -2021,6 +2031,16 @@ spec:
   relatedImages:
   - name: addon_manager
     image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/addon-manager-rhel9:latest
+  - name: assisted_image_service
+    image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-image-service-rhel9:latest
+  - name: assisted_installer
+    image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-installer-rhel9:latest
+  - name: assisted_installer_agent
+    image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-installer-agent-rhel9:latest
+  - name: assisted_installer_controller
+    image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-installer-controller-rhel9:latest
+  - name: assisted_service_9
+    image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-service-9-rhel9:latest
   - name: backplane_must_gather
     image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/backplane-must-gather-rhel9:latest
   - name: cluster_api_provider_openshift_assisted_bootstrap
