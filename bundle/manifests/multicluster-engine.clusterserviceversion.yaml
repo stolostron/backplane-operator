@@ -3526,6 +3526,8 @@ spec:
                   value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/ose-cluster-api-rhel9:latest
                 - name: OPERAND_IMAGE_OSE_BAREMETAL_CLUSTER_API_CONTROLLERS_RHEL9
                   value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/ose-baremetal-cluster-api-controllers-rhel9:latest
+                - name: OPERAND_IMAGE_POSTGRESQL_13
+                  value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/postgresql-13:latest
                 - name: OPERAND_IMAGE_POSTGRESQL_15
                   value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/postgresql-15:latest
                 - name: OPERAND_IMAGE_POSTGRESQL_16
@@ -3715,6 +3717,8 @@ spec:
     image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/ose-cluster-api-rhel9:latest
   - name: ose_baremetal_cluster_api_controllers_rhel9
     image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/ose-baremetal-cluster-api-controllers-rhel9:latest
+  - name: postgresql_13
+    image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/postgresql-13:latest
   - name: postgresql_15
     image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/postgresql-15:latest
   - name: postgresql_16
