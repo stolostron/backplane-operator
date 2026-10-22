@@ -1,0 +1,43 @@
+# Copyright Contributors to the Open Cluster Management project
+
+# Default values for console-mce-chart
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+global:
+  imageOverrides:
+    console_mce: ""
+  templateOverrides: {}
+  networkPolicies:
+    enabled: true
+  # Available template overrides:
+  # console_mce_deployment_container_memory_request: <memory-value>
+  # console_mce_deployment_container_memory_limit: <memory-value>
+  # console_mce_deployment_container_cpu_request: <cpu-value>
+  # console_mce_deployment_container_cpu_limit: <cpu-value>
+  #
+  # Readiness probe overrides:
+  # console_mce_deployment_container_readiness_probe_timeout_seconds: <seconds>
+  # console_mce_deployment_container_readiness_probe_initial_delay_seconds: <seconds>
+  # console_mce_deployment_container_readiness_probe_period_seconds: <seconds>
+  # console_mce_deployment_container_readiness_probe_success_threshold: <count>
+  # console_mce_deployment_container_readiness_probe_failure_threshold: <count>
+  #
+  # Liveness probe overrides:
+  # console_mce_deployment_container_liveness_probe_timeout_seconds: <seconds>
+  # console_mce_deployment_container_liveness_probe_initial_delay_seconds: <seconds>
+  # console_mce_deployment_container_liveness_probe_period_seconds: <seconds>
+  # console_mce_deployment_container_liveness_probe_success_threshold: <count>
+  # console_mce_deployment_container_liveness_probe_failure_threshold: <count>
+  pullPolicy: Always
+  namespace: default
+  olmVersion: v0
+  pullSecret: null
+hubconfig:
+  nodeSelector: null
+  proxyConfigs: {}
+  replicaCount: 1
+  tolerations: []
+  ocpVersion: "4.12.0"
+  probeConfig: null
+org: open-cluster-management

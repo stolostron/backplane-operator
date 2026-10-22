@@ -1,0 +1,15 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: hypershift-addon-hcp-proxy
+  namespace: {{ .Values.global.namespace }}
+  annotations:
+    service.beta.openshift.io/serving-cert-secret-name: hypershift-addon-hcp-proxy-tls
+spec:
+  ports:
+    - name: https
+      port: 443
+      protocol: TCP
+      targetPort: 9443
+  selector:
+    app: hypershift-addon-manager

@@ -1,0 +1,30 @@
+{{- if .Values.global.networkPolicies.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  labels:
+    app.kubernetes.io/name: azure-service-operator
+    control-plane: azureserviceoperator-controller-manager
+  name: azureserviceoperator-controller-manager
+  namespace: '{{ default "capz-system" .Values.global.namespace }}'
+spec:
+  egress:
+  - {}
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          network.openshift.io/policy-group: monitoring
+    ports:
+    - port: 8443
+      protocol: TCP
+  - ports:
+    - port: 9443
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      control-plane: azureserviceoperator-controller-manager
+  policyTypes:
+  - Ingress
+  - Egress
+{{- end }}

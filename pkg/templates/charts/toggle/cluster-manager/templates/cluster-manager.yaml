@@ -1,0 +1,122 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cluster-manager
+  namespace: '{{ .Values.global.namespace }}'
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: cluster-manager
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: cluster-manager
+        ocm-antiaffinity-selector: cluster-manager
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - cluster-manager
+              topologyKey: topology.kubernetes.io/zone
+            weight: 70
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - cluster-manager
+              topologyKey: kubernetes.io/hostname
+            weight: 35
+      containers:
+      - args:
+        - /registration-operator
+        - hub
+        - --image-pull-secret-name=open-cluster-management-image-pull-credentials
+        env:
+{{- if .Values.hubconfig.proxyConfigs }}
+        - name: HTTP_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
+        - name: HTTPS_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.HTTPS_PROXY }}
+        - name: NO_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
+{{- end }}
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: AGENT_IMAGE
+          value: '{{ .Values.global.imageOverrides.registration_operator }}'
+        image: '{{ .Values.global.imageOverrides.registration_operator }}'
+        imagePullPolicy: '{{ .Values.global.pullPolicy }}'
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8443
+            scheme: HTTPS
+          initialDelaySeconds: 2
+          periodSeconds: 10
+        name: registration-operator
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8443
+            scheme: HTTPS
+          initialDelaySeconds: 2
+        resources:
+          requests:
+            cpu: 2m
+            memory: 16Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+        volumeMounts:
+        - mountPath: /tmp
+          name: tmpdir
+      hostIPC: false
+      hostNetwork: false
+      hostPID: false
+{{- if .Values.global.pullSecret }}
+      imagePullSecrets:
+      - name: {{ .Values.global.pullSecret }}
+{{- end }}
+{{- with .Values.hubconfig.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+{{- end }}
+      securityContext:
+        runAsNonRoot: true
+{{- if .Values.global.deployOnOCP }}
+{{- if semverCompare ">=4.11.0" .Values.hubconfig.ocpVersion }}
+        seccompProfile:
+          type: RuntimeDefault
+{{- end }}
+{{- end }}
+      serviceAccountName: cluster-manager
+{{- with .Values.hubconfig.tolerations }}
+      tolerations:
+      {{- range . }}
+      - {{ if .Key }} key: {{ .Key }} {{- end }}
+        {{ if .Operator }} operator: {{ .Operator }} {{- end }}
+        {{ if .Value }} value: {{ .Value }} {{- end }}
+        {{ if .Effect }} effect: {{ .Effect }} {{- end }}
+        {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
+        {{- end }}
+{{- end }}
+      volumes:
+      - emptyDir: {}
+        name: tmpdir

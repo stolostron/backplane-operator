@@ -1,0 +1,217 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: capz-system/azureserviceoperator-serving-cert
+  name: azureserviceoperator-eventhub-vwh
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-eventhub-azure-com-v1api20211101-namespace
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20211101.namespaces.eventhub.azure.com
+  rules:
+  - apiGroups:
+    - eventhub.azure.com
+    apiVersions:
+    - v1api20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - namespaces
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-eventhub-azure-com-v1api20211101-namespacesauthorizationrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20211101.namespacesauthorizationrules.eventhub.azure.com
+  rules:
+  - apiGroups:
+    - eventhub.azure.com
+    apiVersions:
+    - v1api20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - namespacesauthorizationrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-eventhub-azure-com-v1api20211101-namespaceseventhub
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20211101.namespaceseventhubs.eventhub.azure.com
+  rules:
+  - apiGroups:
+    - eventhub.azure.com
+    apiVersions:
+    - v1api20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - namespaceseventhubs
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-eventhub-azure-com-v1api20211101-namespaceseventhubsauthorizationrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20211101.namespaceseventhubsauthorizationrules.eventhub.azure.com
+  rules:
+  - apiGroups:
+    - eventhub.azure.com
+    apiVersions:
+    - v1api20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - namespaceseventhubsauthorizationrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-eventhub-azure-com-v1api20211101-namespaceseventhubsconsumergroup
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20211101.namespaceseventhubsconsumergroups.eventhub.azure.com
+  rules:
+  - apiGroups:
+    - eventhub.azure.com
+    apiVersions:
+    - v1api20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - namespaceseventhubsconsumergroups
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-eventhub-azure-com-v1api20240101-namespace
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240101.namespaces.eventhub.azure.com
+  rules:
+  - apiGroups:
+    - eventhub.azure.com
+    apiVersions:
+    - v1api20240101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - namespaces
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-eventhub-azure-com-v1api20240101-namespacesauthorizationrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240101.namespacesauthorizationrules.eventhub.azure.com
+  rules:
+  - apiGroups:
+    - eventhub.azure.com
+    apiVersions:
+    - v1api20240101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - namespacesauthorizationrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-eventhub-azure-com-v1api20240101-namespaceseventhub
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240101.namespaceseventhubs.eventhub.azure.com
+  rules:
+  - apiGroups:
+    - eventhub.azure.com
+    apiVersions:
+    - v1api20240101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - namespaceseventhubs
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-eventhub-azure-com-v1api20240101-namespaceseventhubsauthorizationrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240101.namespaceseventhubsauthorizationrules.eventhub.azure.com
+  rules:
+  - apiGroups:
+    - eventhub.azure.com
+    apiVersions:
+    - v1api20240101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - namespaceseventhubsauthorizationrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-eventhub-azure-com-v1api20240101-namespaceseventhubsconsumergroup
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240101.namespaceseventhubsconsumergroups.eventhub.azure.com
+  rules:
+  - apiGroups:
+    - eventhub.azure.com
+    apiVersions:
+    - v1api20240101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - namespaceseventhubsconsumergroups
+  sideEffects: None

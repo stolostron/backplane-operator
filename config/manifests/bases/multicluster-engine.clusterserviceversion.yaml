@@ -1,0 +1,100 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: '[]'
+    capabilities: Basic Install
+  name: multicluster-engine.v0.0.0
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: |-
+        MultiClusterEngine defines the configuration for an instance
+        of a multicluster engine, a central point providing the foundational components for managing multiple Kubernetes-based clusters. The deployment of the multicluster engine components is
+        determined based on the configuration that is defined in this resource.
+      displayName: MultiCluster Engine
+      kind: MultiClusterEngine
+      name: multiclusterengines.multicluster.openshift.io
+      specDescriptors:
+      - description: 'Specifies deployment replication for improved availability.
+          Options are: Basic and High (default)'
+        displayName: Availability Configuration
+        path: availabilityConfig
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:select:High
+        - urn:alm:descriptor:com.tectonic.ui:select:Basic
+      - description: Override pull secret for accessing MultiClusterEngine operand
+          and endpoint images
+        displayName: Image Pull Secret
+        path: imagePullSecret
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes:Secret
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: The name of the local-cluster resource
+        displayName: Local Cluster Name
+        path: localClusterName
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes:text
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: NetworkPolicies configures NetworkPolicy deployment for MCE components
+        displayName: NetworkPolicies Configuration
+        path: networkPolicies
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: Developer Overrides
+        displayName: Developer Overrides
+        path: overrides
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: 'Provides optional configuration for components, the list of
+          which can be found here: https://github.com/stolostron/backplane-operator/tree/main/docs/available-components.md'
+        displayName: Component Configuration
+        path: overrides.components
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: Namespace to install Assisted Installer operator
+        displayName: Custom Infrastructure Operator Namespace
+        path: overrides.infrastructureCustomNamespace
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: Location where MCE resources will be placed
+        displayName: Target Namespace
+        path: targetNamespace
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes:text
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+      version: v1
+  description: Provides the components making up the multiclusterengine
+  displayName: MultiCluster Engine
+  icon:
+  - base64data: ""
+    mediatype: ""
+  install:
+    spec:
+      deployments: null
+    strategy: ""
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - multiclusterengine
+  links:
+  - name: Multicluster Engine
+    url: https://multicluster-engine.domain
+  maintainers:
+  - email: acm-contact@redhat.com
+    name: Red Hat
+  maturity: alpha
+  provider:
+    name: Red Hat
+    url: https://multicluster-engine.domain
+  version: 0.0.0

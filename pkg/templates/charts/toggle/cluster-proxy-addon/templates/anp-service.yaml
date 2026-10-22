@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: cluster-proxy-addon-anp
+  labels:
+    chart: cluster-proxy-addon-2.1.0
+    component: cluster-proxy-addon-anp-server
+spec:
+  ports:
+  - name: anp-port
+    port: 8091
+    protocol: TCP
+  selector:
+    proxy.open-cluster-management.io/component-name: proxy-server

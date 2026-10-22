@@ -1,0 +1,15 @@
+# Copyright Contributors to the Open Cluster Management project
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    rbac.authorization.k8s.io/aggregate-to-ocm-cluster-manager-admin: "true"
+  name: multicluster-engine:assisted-installer:cluster-manager-admin-aggregate
+rules:
+- apiGroups: [ "metal3.io" ]
+  resources: [ "baremetalhosts" ]
+  verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]
+- apiGroups: [ "agent-install.openshift.io" ]
+  resources: [ "agents", "infraenvs" ]
+  verbs: ["create", "get", "list", "watch", "update", "delete", "deletecollection", "patch"]

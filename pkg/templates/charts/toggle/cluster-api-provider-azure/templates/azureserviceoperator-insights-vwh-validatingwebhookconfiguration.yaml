@@ -1,0 +1,385 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+    service.beta.openshift.io/inject-cabundle: 'true'
+  name: azureserviceoperator-insights-vwh
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-insights-azure-com-v1api20171001-pricingplan
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20171001.pricingplans.insights.azure.com
+  rules:
+  - apiGroups:
+    - insights.azure.com
+    apiVersions:
+    - v1api20171001
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - pricingplans
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-insights-azure-com-v1api20180301-metricalert
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20180301.metricalerts.insights.azure.com
+  rules:
+  - apiGroups:
+    - insights.azure.com
+    apiVersions:
+    - v1api20180301
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - metricalerts
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-insights-azure-com-v1api20180501preview-webtest
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20180501preview.webtests.insights.azure.com
+  rules:
+  - apiGroups:
+    - insights.azure.com
+    apiVersions:
+    - v1api20180501preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - webtests
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-insights-azure-com-v1api20200202-component
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20200202.components.insights.azure.com
+  rules:
+  - apiGroups:
+    - insights.azure.com
+    apiVersions:
+    - v1api20200202
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - components
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-insights-azure-com-v1api20201001-activitylogalert
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20201001.activitylogalerts.insights.azure.com
+  rules:
+  - apiGroups:
+    - insights.azure.com
+    apiVersions:
+    - v1api20201001
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - activitylogalerts
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-insights-azure-com-v1api20210501preview-diagnosticsetting
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20210501preview.diagnosticsettings.insights.azure.com
+  rules:
+  - apiGroups:
+    - insights.azure.com
+    apiVersions:
+    - v1api20210501preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - diagnosticsettings
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-insights-azure-com-v1api20220615-scheduledqueryrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20220615.scheduledqueryrules.insights.azure.com
+  rules:
+  - apiGroups:
+    - insights.azure.com
+    apiVersions:
+    - v1api20220615
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - scheduledqueryrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-insights-azure-com-v1api20220615-webtest
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20220615.webtests.insights.azure.com
+  rules:
+  - apiGroups:
+    - insights.azure.com
+    apiVersions:
+    - v1api20220615
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - webtests
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-insights-azure-com-v1api20221001-autoscalesetting
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20221001.autoscalesettings.insights.azure.com
+  rules:
+  - apiGroups:
+    - insights.azure.com
+    apiVersions:
+    - v1api20221001
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - autoscalesettings
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-insights-azure-com-v1api20230101-actiongroup
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20230101.actiongroups.insights.azure.com
+  rules:
+  - apiGroups:
+    - insights.azure.com
+    apiVersions:
+    - v1api20230101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - actiongroups
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-insights-azure-com-v1api20230311-datacollectionendpoint
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20230311.datacollectionendpoints.insights.azure.com
+  rules:
+  - apiGroups:
+    - insights.azure.com
+    apiVersions:
+    - v1api20230311
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - datacollectionendpoints
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-insights-azure-com-v1api20230311-datacollectionruleassociation
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20230311.datacollectionruleassociations.insights.azure.com
+  rules:
+  - apiGroups:
+    - insights.azure.com
+    apiVersions:
+    - v1api20230311
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - datacollectionruleassociations
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-insights-azure-com-v1api20230311-datacollectionrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20230311.datacollectionrules.insights.azure.com
+  rules:
+  - apiGroups:
+    - insights.azure.com
+    apiVersions:
+    - v1api20230311
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - datacollectionrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-insights-azure-com-v1api20230601-workbook
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20230601.workbooks.insights.azure.com
+  rules:
+  - apiGroups:
+    - insights.azure.com
+    apiVersions:
+    - v1api20230601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - workbooks
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-insights-azure-com-v1api20240311-datacollectionendpoint
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240311.datacollectionendpoints.insights.azure.com
+  rules:
+  - apiGroups:
+    - insights.azure.com
+    apiVersions:
+    - v1api20240311
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - datacollectionendpoints
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-insights-azure-com-v1api20240311-datacollectionruleassociation
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240311.datacollectionruleassociations.insights.azure.com
+  rules:
+  - apiGroups:
+    - insights.azure.com
+    apiVersions:
+    - v1api20240311
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - datacollectionruleassociations
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-insights-azure-com-v1api20240311-datacollectionrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240311.datacollectionrules.insights.azure.com
+  rules:
+  - apiGroups:
+    - insights.azure.com
+    apiVersions:
+    - v1api20240311
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - datacollectionrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-insights-azure-com-v1api20250101preview-scheduledqueryrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20250101preview.scheduledqueryrules.insights.azure.com
+  rules:
+  - apiGroups:
+    - insights.azure.com
+    apiVersions:
+    - v1api20250101preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - scheduledqueryrules
+  sideEffects: None

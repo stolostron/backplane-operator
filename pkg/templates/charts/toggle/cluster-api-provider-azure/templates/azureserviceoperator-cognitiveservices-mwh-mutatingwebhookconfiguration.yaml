@@ -1,0 +1,112 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  annotations:
+    service.beta.openshift.io/inject-cabundle: 'true'
+  name: azureserviceoperator-cognitiveservices-mwh
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /mutate-cognitiveservices-azure-com-v1api20250601-account
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20250601.accounts.cognitiveservices.azure.com
+  rules:
+  - apiGroups:
+    - cognitiveservices.azure.com
+    apiVersions:
+    - v1api20250601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - accounts
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /mutate-cognitiveservices-azure-com-v1api20250601-deployment
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20250601.deployments.cognitiveservices.azure.com
+  rules:
+  - apiGroups:
+    - cognitiveservices.azure.com
+    apiVersions:
+    - v1api20250601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - deployments
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /mutate-cognitiveservices-azure-com-v20250601-account
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20250601.accounts.cognitiveservices.azure.com
+  rules:
+  - apiGroups:
+    - cognitiveservices.azure.com
+    apiVersions:
+    - v20250601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - accounts
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /mutate-cognitiveservices-azure-com-v20250601-deployment
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20250601.deployments.cognitiveservices.azure.com
+  rules:
+  - apiGroups:
+    - cognitiveservices.azure.com
+    apiVersions:
+    - v20250601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - deployments
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /mutate-cognitiveservices-azure-com-v20250601-project
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20250601.projects.cognitiveservices.azure.com
+  rules:
+  - apiGroups:
+    - cognitiveservices.azure.com
+    apiVersions:
+    - v20250601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - projects
+  sideEffects: None

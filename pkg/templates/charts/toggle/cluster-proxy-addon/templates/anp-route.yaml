@@ -1,0 +1,19 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: cluster-proxy-addon-anp
+  labels:
+    chart: cluster-proxy-addon-2.1.0
+    component: cluster-proxy-addon-anp-server
+  annotations:
+      haproxy.router.openshift.io/timeout: 60s
+      haproxy.router.openshift.io/balance: roundrobin
+spec:
+  host: cluster-proxy-anp.{{ .Values.hubconfig.clusterIngressDomain }}
+  port:
+    targetPort: anp-port
+  tls:
+    termination: passthrough
+  to:
+    kind: Service
+    name: cluster-proxy-addon-anp

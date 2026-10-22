@@ -1,0 +1,55 @@
+# Component Onboarding Template for Cluster API
+# This template shows how cluster-api would be onboarded if it were a new component
+# Version: 1.0
+
+metadata:
+  name: "cluster-api"
+  displayName: "Cluster API"
+  description: "Kubernetes Cluster API for cluster lifecycle management"
+
+component:
+  isPreview: false
+  previewVariant: "cluster-api-preview"
+  deploymentName: "capi-controller-manager"
+  hasPlatformVariants: true
+
+  platformVariants:
+    ocp:
+      chartDir: "pkg/templates/charts/toggle/cluster-api"
+      crdDir: "cluster-api"
+    k8s:
+      chartDir: "pkg/templates/charts/toggle/cluster-api-k8s"
+      crdDir: "cluster-api-k8s"
+
+source:
+  type: "helm-chart"
+
+  repository:
+    url: "https://github.com/stolostron/cluster-api-installer.git"
+    branch: "backplane-5.0"
+
+  helmChart:
+    path: "charts/cluster-api"
+
+  imageMappings:
+    ose-cluster-api-rhel9: "ose_cluster_api_rhel9"
+    mce-capi-webhook-config-rhel9: "mce_capi_webhook_config_rhel9"
+
+  inclusions:
+    - "pullSecretOverride"
+
+  escapeTemplateVariables:
+    - "CLUSTER_NAME"
+    - "HUB_KUBECONFIG"
+    - "INSTALL_NAMESPACE"
+
+  skipRBACOverrides: true
+  updateChartVersion: true
+  autoInstallForAllClusters: false
+
+integration:
+  supportsExternalManagement: true
+  exclusions: []
+  ignoreWebhookDefinitions: false
+  preserveFiles: []
+  webhookPaths: []

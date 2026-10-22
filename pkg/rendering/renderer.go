@@ -1,0 +1,613 @@
+// Copyright Contributors to the Open Cluster Management project
+
+// Package renderer provides Helm chart rendering functionality for
+// MultiClusterEngine components.
+//
+// This package handles template rendering, value injection, and chart version
+// management for all MCE components deployed by the operator. It supports:
+//   - Rendering Helm charts with custom values
+//   - Injecting image overrides
+//   - Managing chart dependencies
+//   - CRD discovery and installation
+//
+// The main entry point is the RenderChart function, which takes a chart path
+// and configuration and returns rendered Kubernetes manifests.
+package renderer
+
+import (
+	"context"
+	"encoding/base64"
+	"encoding/json"
+	"fmt"
+	"io"
+	"os"
+	"path"
+	"path/filepath"
+	"reflect"
+	"strconv"
+	"strings"
+
+	loader "helm.sh/helm/v3/pkg/chart/loader"
+	"helm.sh/helm/v3/pkg/chartutil"
+
+	v1 "github.com/stolostron/backplane-operator/api/v1"
+	"github.com/stolostron/backplane-operator/pkg/utils"
+	"helm.sh/helm/v3/pkg/engine"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+	k8syaml "k8s.io/apimachinery/pkg/util/yaml"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/yaml"
+)
+
+const (
+	AlwaysChartsDir = "pkg/templates/charts/always"
+)
+
+type Values struct {
+	Global    Global    `json:"global" structs:"global"`
+	HubConfig HubConfig `json:"hubconfig" structs:"hubconfig"`
+	Org       string    `json:"org" structs:"org"`
+	// EnableServiceProxy: upstream default false. ACM sets true (commit efb29e7b, Nov 2025).
+	// Used by user-deployment.yaml and user-service.yaml conditionals AND --enable-service-proxy arg.
+	EnableServiceProxy bool `json:"enableServiceProxy" structs:"enableServiceProxy"`
+	// EnableKubeApiProxy: upstream default true. ACM sets false (commit bc36de88, Jan 2023).
+	// ACM accesses managed cluster kube-apiserver through the service proxy (user-server Route,
+	// EnableServiceProxy=true) rather than the kube-api proxy (ExternalName Service on managed
+	// clusters). See ACM docs: cluster_proxy_addon_use.adoc.
+	// Used by --enable-kube-api-proxy arg in manager-deployment.yaml.
+	EnableKubeApiProxy bool `json:"enableKubeApiProxy" structs:"enableKubeApiProxy"`
+	// EnableImpersonation: upstream default true. ACM always enables.
+	// Used by {{- if .Values.enableImpersonation }} conditional in clusterrole.yaml.
+	EnableImpersonation bool `json:"enableImpersonation" structs:"enableImpersonation"`
+}
+
+type Global struct {
+	ImageOverrides      map[string]string    `json:"imageOverrides" structs:"imageOverrides"`
+	Upgrading           bool                 `json:"upgrading" structs:"upgrading"`
+	EusUpgrading        bool                 `json:"eusUpgrading" structs:"eusUpgrading"`
+	TemplateOverrides   map[string]string    `json:"templateOverrides" structs:"templateOverrides"`
+	PullPolicy          string               `json:"pullPolicy" structs:"pullPolicy"`
+	PullSecret          string               `json:"pullSecret" structs:"pullSecret"`
+	Namespace           string               `json:"namespace" structs:"namespace"`
+	ConfigSecret        string               `json:"configSecret" structs:"configSecret"`
+	DeployOnOCP         bool                 `json:"deployOnOCP" structs:"deployOnOCP"`
+	ServingCertCABundle string               `json:"servingCertCABundle" structs:"servingCertCABundle"`
+	NetworkPolicies     NetworkPoliciesValue `json:"networkPolicies" structs:"networkPolicies"`
+}
+
+type NetworkPoliciesValue struct {
+	Enabled bool `json:"enabled" structs:"enabled"`
+}
+
+type HubConfig struct {
+	NodeSelector         map[string]string `json:"nodeSelector" structs:"nodeSelector"`
+	ProxyConfigs         map[string]string `json:"proxyConfigs" structs:"proxyConfigs"`
+	ReplicaCount         int               `json:"replicaCount" structs:"replicaCount"`
+	Tolerations          []Toleration      `json:"tolerations" structs:"tolerations"`
+	ProbeConfig          *ProbeConfig      `json:"probeConfig" structs:"probeConfig"`
+	OCPVersion           string            `json:"ocpVersion" structs:"ocpVersion"`
+	MCHNamespace         string            `json:"mCHNamespace" structs:"mCHNamespace"`
+	ClusterIngressDomain string            `json:"clusterIngressDomain" structs:"clusterIngressDomain"`
+	HubType              string            `json:"hubType" structs:"hubType"`
+	EnableFlightCtl      bool              `json:"enableFlightCtl" structs:"enableFlightCtl"`
+	ConsoleURL           string            `json:"consoleURL" structs:"consoleURL"`
+	LocalClusterName     string            `json:"localClusterName" structs:"localClusterName"`
+}
+
+type ProbeConfig struct {
+	TimeoutSeconds   *int32 `json:"timeoutSeconds,omitempty"`
+	FailureThreshold *int32 `json:"failureThreshold,omitempty"`
+	SuccessThreshold *int32 `json:"successThreshold,omitempty"`
+}
+
+type Toleration struct {
+	Key               string                    `json:"Key" protobuf:"bytes,1,opt,name=key"`
+	Operator          corev1.TolerationOperator `json:"Operator" protobuf:"bytes,2,opt,name=operator,casttype=TolerationOperator"`
+	Value             string                    `json:"Value" protobuf:"bytes,3,opt,name=value"`
+	Effect            corev1.TaintEffect        `json:"Effect" protobuf:"bytes,4,opt,name=effect,casttype=TaintEffect"`
+	TolerationSeconds *int64                    `json:"TolerationSeconds" protobuf:"varint,5,opt,name=tolerationSeconds"`
+}
+
+func convertTolerations(tols []corev1.Toleration) []Toleration {
+	var tolerations []Toleration
+	for _, t := range tols {
+		tolerations = append(tolerations, Toleration{
+			Key:               t.Key,
+			Operator:          t.Operator,
+			Value:             t.Value,
+			Effect:            t.Effect,
+			TolerationSeconds: t.TolerationSeconds,
+		})
+	}
+	return tolerations
+}
+
+// parseProbeConfigFromAnnotations reads probe config from MCE annotations
+func parseProbeConfigFromAnnotations(mce *v1.MultiClusterEngine) *ProbeConfig {
+	if mce.Annotations == nil {
+		return nil
+	}
+
+	log := log.Log.WithName("reconcile")
+	var config ProbeConfig
+	hasAny := false
+
+	if val, ok := mce.Annotations[utils.AnnotationProbeTimeoutSeconds]; ok {
+		timeout, err := strconv.ParseInt(val, 10, 32)
+		if err != nil {
+			log.Info(fmt.Sprintf("Invalid probe-timeout-seconds annotation value %q: %v", val, err))
+		} else if timeout <= 0 {
+			log.Info(fmt.Sprintf("Invalid probe-timeout-seconds annotation value %q: must be positive", val))
+		} else {
+			timeout32 := int32(timeout)
+			config.TimeoutSeconds = &timeout32
+			hasAny = true
+		}
+	}
+
+	if val, ok := mce.Annotations[utils.AnnotationProbeFailureThreshold]; ok {
+		threshold, err := strconv.ParseInt(val, 10, 32)
+		if err != nil {
+			log.Info(fmt.Sprintf("Invalid probe-failure-threshold annotation value %q: %v", val, err))
+		} else if threshold <= 0 {
+			log.Info(fmt.Sprintf("Invalid probe-failure-threshold annotation value %q: must be positive", val))
+		} else {
+			threshold32 := int32(threshold)
+			config.FailureThreshold = &threshold32
+			hasAny = true
+		}
+	}
+
+	if val, ok := mce.Annotations[utils.AnnotationProbeSuccessThreshold]; ok {
+		threshold, err := strconv.ParseInt(val, 10, 32)
+		if err != nil {
+			log.Info(fmt.Sprintf("Invalid probe-success-threshold annotation value %q: %v", val, err))
+		} else if threshold <= 0 {
+			log.Info(fmt.Sprintf("Invalid probe-success-threshold annotation value %q: must be positive", val))
+		} else {
+			threshold32 := int32(threshold)
+			config.SuccessThreshold = &threshold32
+			hasAny = true
+		}
+	}
+
+	if !hasAny {
+		return nil
+	}
+
+	return &config
+}
+
+func (u *Toleration) MarshalJSON() ([]byte, error) {
+	v := reflect.ValueOf(u)
+	values := make([]string, reflect.Indirect(v).NumField())
+	var operator corev1.TolerationOperator = u.Operator
+	var effect corev1.TaintEffect = u.Effect
+
+	// Marshal all Toleration fields that are a number or true/false into a string
+	for i := 0; i < reflect.Indirect(v).NumField(); i++ {
+		switch reflect.Indirect(v).Field(i).Kind() {
+		case reflect.String:
+			if str, ok := reflect.Indirect(v).Field(i).Interface().(string); ok {
+				if _, err := strconv.Atoi(str); err == nil {
+					values[i] = fmt.Sprintf("'%s'", str)
+				} else if _, err := strconv.ParseFloat(str, 64); err == nil {
+					values[i] = fmt.Sprintf("'%s'", str)
+				} else if _, err := strconv.ParseBool(str); err == nil {
+					values[i] = fmt.Sprintf("'%s'", str)
+				} else {
+					values[i] = str
+				}
+			}
+			if tol, ok := reflect.Indirect(v).Field(i).Interface().(corev1.TolerationOperator); ok {
+				str := string(tol)
+				if _, err := strconv.Atoi(str); err == nil {
+					operator = corev1.TolerationOperator(fmt.Sprintf("'%s'", str))
+				} else if _, err := strconv.ParseFloat(str, 64); err == nil {
+					operator = corev1.TolerationOperator(fmt.Sprintf("'%s'", str))
+				} else if _, err := strconv.ParseBool(str); err == nil {
+					operator = corev1.TolerationOperator(fmt.Sprintf("'%s'", str))
+				}
+			}
+			if eff, ok := reflect.Indirect(v).Field(i).Interface().(corev1.TaintEffect); ok {
+				str := string(eff)
+				if _, err := strconv.Atoi(str); err == nil {
+					effect = corev1.TaintEffect(fmt.Sprintf("'%s'", str))
+				} else if _, err := strconv.ParseFloat(str, 64); err == nil {
+					effect = corev1.TaintEffect(fmt.Sprintf("'%s'", str))
+				} else if _, err := strconv.ParseBool(str); err == nil {
+					effect = corev1.TaintEffect(fmt.Sprintf("'%s'", str))
+				}
+			}
+		}
+
+	}
+
+	return json.Marshal(&struct {
+		Key               string                    `json:"Key" protobuf:"bytes,1,opt,name=key"`
+		Operator          corev1.TolerationOperator `json:"Operator" protobuf:"bytes,2,opt,name=operator,casttype=TolerationOperator"`
+		Value             string                    `json:"Value" protobuf:"bytes,3,opt,name=value"`
+		Effect            corev1.TaintEffect        `json:"Effect" protobuf:"bytes,4,opt,name=effect,casttype=TaintEffect"`
+		TolerationSeconds *int64                    `json:"TolerationSeconds" protobuf:"varint,5,opt,name=tolerationSeconds"`
+	}{
+		Key:               values[0],
+		Operator:          operator,
+		Value:             values[2],
+		Effect:            effect,
+		TolerationSeconds: u.TolerationSeconds,
+	})
+}
+
+func (val *Values) ToValues() (chartutil.Values, error) {
+	inrec, err := json.Marshal(val)
+	if err != nil {
+		return nil, err
+	}
+	vals, err := chartutil.ReadValues(inrec)
+	if err != nil {
+		return vals, err
+	}
+	return vals, nil
+}
+
+func RenderCRDs(crdDir string, backplaneConfig *v1.MultiClusterEngine, skipDirs []string) (
+	[]*unstructured.Unstructured, []error) {
+	var crds []*unstructured.Unstructured
+	errs := []error{}
+
+	if val, ok := os.LookupEnv("DIRECTORY_OVERRIDE"); ok {
+		crdDir = path.Join(val, crdDir)
+	}
+
+	// Read CRD files
+	err := filepath.Walk(crdDir, func(filePath string, info os.FileInfo, err error) error {
+		if err != nil {
+			fmt.Println(err.Error())
+			return err
+		}
+
+		crd := &unstructured.Unstructured{}
+		if info == nil || info.IsDir() {
+			return nil
+		}
+
+		// Check if this file is in a directory that should be skipped
+		for _, skipDir := range skipDirs {
+			// Get the relative path from crdDir to the file
+			relPath, err := filepath.Rel(crdDir, filePath)
+			if err != nil {
+				continue
+			}
+
+			// Get the immediate parent directory of the file
+			fileDir := filepath.Dir(relPath)
+
+			// Check if the file's directory matches the skip directory
+			if fileDir == skipDir {
+				// Skip this file as it belongs to a component that should be skipped
+				return nil
+			}
+		}
+
+		bytesFile, e := os.ReadFile(filepath.Clean(filePath)) // #nosec G304,G122 -- filePath from filepath.Walk within operator's own template directory
+		if e != nil {
+			errs = append(errs, fmt.Errorf("%s - error reading file: %v", info.Name(), err.Error()))
+		}
+
+		if err = yaml.Unmarshal(bytesFile, crd); err != nil {
+			errs = append(errs, fmt.Errorf("%s - error unmarshalling file to unstructured: %v", info.Name(), err.Error()))
+		}
+
+		// Log which directory this CRD is being rendered from
+		// relPath, _ := filepath.Rel(crdDir, filePath)
+		// sourceDir := filepath.Dir(relPath)
+		// fmt.Printf("Rendering CRD %s from directory: %s\n", crd.GetName(), sourceDir)
+
+		if backplaneConfig != nil {
+			_, conversion, _ := unstructured.NestedMap(crd.Object, "spec", "conversion", "webhook", "clientConfig", "service")
+			if conversion {
+				crd.Object["spec"].(map[string]interface{})["conversion"].(map[string]interface{})["webhook"].(map[string]interface{})["clientConfig"].(map[string]interface{})["service"].(map[string]interface{})["namespace"] = backplaneConfig.Spec.TargetNamespace
+			}
+		}
+		crds = append(crds, crd)
+		return nil
+	})
+	if err != nil {
+		return crds, errs
+	}
+
+	return crds, errs
+}
+
+func RenderCharts(chartDir string, backplaneConfig *v1.MultiClusterEngine, images map[string]string,
+	templateOverrides map[string]string) ([]*unstructured.Unstructured, []error) {
+
+	log := log.Log.WithName("reconcile")
+	var templates []*unstructured.Unstructured
+	errs := []error{}
+
+	if val, ok := os.LookupEnv("DIRECTORY_OVERRIDE"); ok {
+		chartDir = path.Join(val, chartDir)
+	}
+
+	charts, err := os.ReadDir(chartDir)
+	if err != nil {
+		errs = append(errs, err)
+	}
+
+	for _, chart := range charts {
+		chartPath := filepath.Join(chartDir, chart.Name())
+		chartTemplates, errs := renderTemplates(chartPath, backplaneConfig, images, templateOverrides)
+
+		if len(errs) > 0 {
+			for _, err := range errs {
+				log.Info(err.Error())
+			}
+			return nil, errs
+		}
+		templates = append(templates, chartTemplates...)
+	}
+	return templates, nil
+}
+
+func RenderChart(chartPath string, backplaneConfig *v1.MultiClusterEngine, images map[string]string,
+	templates map[string]string) ([]*unstructured.Unstructured, []error) {
+
+	log := log.Log.WithName("reconcile")
+	errs := []error{}
+	if val, ok := os.LookupEnv("DIRECTORY_OVERRIDE"); ok {
+		chartPath = path.Join(val, chartPath)
+	}
+
+	chartTemplates, errs := renderTemplates(chartPath, backplaneConfig, images, templates)
+	if len(errs) > 0 {
+		for _, err := range errs {
+			log.Info(err.Error())
+		}
+		return nil, errs
+	}
+	return chartTemplates, nil
+
+}
+
+// RenderChartWithNamespace wraps the RenderChart function, overriding the target namespace
+func RenderChartWithNamespace(chartPath string, backplaneConfig *v1.MultiClusterEngine,
+	images map[string]string, templates map[string]string, namespace string) ([]*unstructured.Unstructured, []error) {
+
+	mce := backplaneConfig.DeepCopy()
+	mce.Spec.TargetNamespace = namespace
+	return RenderChart(chartPath, mce, images, templates)
+}
+
+func renderTemplates(chartPath string, backplaneConfig *v1.MultiClusterEngine, images map[string]string,
+	templateOverrides map[string]string) ([]*unstructured.Unstructured, []error) {
+
+	log := log.Log.WithName("reconcile")
+	var templates []*unstructured.Unstructured
+	errs := []error{}
+
+	chart, err := loader.Load(chartPath)
+	if err != nil {
+		log.Info(fmt.Sprintf("error loading chart from path: %s", chartPath))
+		return nil, append(errs, err)
+	}
+
+	valuesYaml := &Values{}
+	injectValuesOverrides(valuesYaml, backplaneConfig, images, templateOverrides)
+	helmEngine := engine.Engine{
+		Strict:   true,
+		LintMode: false,
+	}
+
+	vals, err := valuesYaml.ToValues()
+	if err != nil {
+		log.Info(fmt.Sprintf("error rendering chart: %s", chart.Name()))
+		return nil, append(errs, err)
+	}
+
+	rawTemplates, err := helmEngine.Render(chart, chartutil.Values{"Values": vals.AsMap()})
+	if err != nil {
+		log.Info(fmt.Sprintf("error rendering chart: %s", chart.Name()))
+		return nil, append(errs, err)
+	}
+
+	for fileName, templateFile := range rawTemplates {
+		if len(templateFile) == 0 {
+			continue
+		}
+
+		// A single rendered template file may contain multiple YAML documents
+		// separated by "---" (e.g. networkpolicy.yaml renders one NetworkPolicy
+		// per controller). Decode every document in the stream instead of only
+		// the first one.
+		decoder := k8syaml.NewYAMLOrJSONDecoder(strings.NewReader(templateFile), 4096)
+		for {
+			obj := &unstructured.Unstructured{}
+			if err = decoder.Decode(obj); err != nil {
+				if err == io.EOF {
+					break
+				}
+				return nil, append(errs, fmt.Errorf("error converting file %s to unstructured: %w", fileName, err))
+			}
+
+			if obj.Object == nil {
+				continue
+			}
+
+			kind := obj.GetKind()
+			if kind == "" {
+				continue
+			}
+			utils.AddBackplaneConfigLabels(obj, backplaneConfig.Name)
+
+			// Add namespace to namespaced resources
+			switch kind {
+			case "Deployment", "ServiceAccount", "Role", "RoleBinding", "Service", "ConfigMap", "Route", "NetworkPolicy":
+				obj.SetNamespace(backplaneConfig.Spec.TargetNamespace)
+			}
+
+			templates = append(templates, obj)
+		}
+	}
+
+	return templates, errs
+}
+
+func injectValuesOverrides(values *Values, backplaneConfig *v1.MultiClusterEngine, images map[string]string,
+	templates map[string]string) {
+
+	values.Global.ImageOverrides = images
+
+	values.Global.Upgrading = utils.IsUpgrading(backplaneConfig)
+
+	values.Global.EusUpgrading = utils.IsEUSUpgrading(backplaneConfig)
+
+	values.Global.TemplateOverrides = templates
+
+	values.Global.PullPolicy = string(utils.GetImagePullPolicy(backplaneConfig))
+
+	values.Global.Namespace = backplaneConfig.Spec.TargetNamespace
+
+	values.Global.PullSecret = backplaneConfig.Spec.ImagePullSecret
+
+	values.Global.DeployOnOCP = utils.DeployOnOCP()
+	if !values.Global.DeployOnOCP {
+		servingCertCABundle, err := utils.GetServingCertCABundle()
+		if err != nil {
+			fmt.Printf("error getting serving cert ca bundle: %s\n", err)
+		} else {
+			values.Global.ServingCertCABundle = base64.StdEncoding.EncodeToString([]byte(servingCertCABundle))
+		}
+	}
+
+	if v1.IsInHostedMode(backplaneConfig) {
+		secretNN, err := utils.GetHostedCredentialsSecret(backplaneConfig)
+		if err == nil {
+			values.Global.ConfigSecret = secretNN.Name
+		}
+	}
+
+	// Inject NetworkPolicies configuration
+	networkPoliciesEnabled := true
+	if backplaneConfig.Spec.NetworkPolicies != nil {
+		networkPoliciesEnabled = backplaneConfig.Spec.NetworkPolicies.Enabled
+	}
+	values.Global.NetworkPolicies = NetworkPoliciesValue{
+		Enabled: networkPoliciesEnabled,
+	}
+
+	values.HubConfig.ReplicaCount = utils.DefaultReplicaCount(backplaneConfig)
+
+	values.HubConfig.MCHNamespace = utils.GetMCHNamespace(backplaneConfig)
+
+	values.HubConfig.NodeSelector = backplaneConfig.Spec.NodeSelector
+
+	if len(backplaneConfig.Spec.Tolerations) > 0 {
+		values.HubConfig.Tolerations = convertTolerations(backplaneConfig.Spec.Tolerations)
+	} else {
+		values.HubConfig.Tolerations = convertTolerations(utils.DefaultTolerations())
+	}
+
+	values.HubConfig.ProbeConfig = parseProbeConfigFromAnnotations(backplaneConfig)
+
+	values.Org = "open-cluster-management"
+
+	values.HubConfig.OCPVersion = os.Getenv("ACM_HUB_OCP_VERSION")
+
+	values.HubConfig.ClusterIngressDomain = os.Getenv("ACM_CLUSTER_INGRESS_DOMAIN")
+
+	values.HubConfig.ConsoleURL = os.Getenv("ACM_HUB_CONSOLE_URL")
+
+	values.HubConfig.LocalClusterName = backplaneConfig.Spec.LocalClusterName
+
+	values.HubConfig.HubType = utils.GetHubType(backplaneConfig)
+
+	enableEdgeManagement := utils.GetEdgeManagerEnabled(backplaneConfig)
+
+	if enableEdgeManagement == "true" {
+		values.HubConfig.EnableFlightCtl = true
+	} else {
+		values.HubConfig.EnableFlightCtl = false
+	}
+
+	if utils.ProxyEnvVarsAreSet() {
+		proxyVar := map[string]string{}
+		proxyVar["HTTP_PROXY"] = os.Getenv("HTTP_PROXY")
+		proxyVar["HTTPS_PROXY"] = os.Getenv("HTTPS_PROXY")
+		proxyVar["NO_PROXY"] = os.Getenv("NO_PROXY")
+		values.HubConfig.ProxyConfigs = proxyVar
+	}
+
+	// cluster-proxy ACM overrides -- see pkg/templates/charts/toggle/cluster-proxy-addon/
+	// for comments in templates explaining each override vs upstream default.
+	// Upstream default: false. ACM enables service proxy (commit efb29e7b, Nov 2025).
+	values.EnableServiceProxy = true
+	// Upstream default: true. ACM disables kube-api proxy (commit bc36de88, Jan 2023).
+	values.EnableKubeApiProxy = false
+	// Upstream default: true. ACM always enables impersonation.
+	values.EnableImpersonation = true
+}
+
+// EnsureTLSProfileConfigMaps creates or updates the TLS profile ConfigMap in the specified namespaces.
+// It reads the TLS security profile from the OpenShift APIServer resource and populates the ConfigMap
+// with minTLSVersion and cipherSuites in each namespace.
+func EnsureTLSProfileConfigMaps(
+	ctx context.Context,
+	cl client.Client,
+	mce *v1.MultiClusterEngine,
+	namespaces []string,
+	scheme *runtime.Scheme,
+) error {
+	// Get the TLS profile from the APIServer resource once
+	tlsProfile, err := utils.GetAPIServerTLSProfile(ctx, cl)
+	if err != nil {
+		return fmt.Errorf("failed to get APIServer TLS profile: %w", err)
+	}
+
+	// Convert ciphers from OpenSSL format to IANA format once
+	ianaCiphers, err := utils.ConvertCipherSuitesToIANA(tlsProfile.Ciphers)
+	if err != nil {
+		return fmt.Errorf("failed to convert cipher suites to IANA format: %w", err)
+	}
+
+	// Create or update ConfigMap in each namespace
+	for _, namespace := range namespaces {
+		log := log.FromContext(ctx).WithValues("ConfigMap", "ocm-tls-profile", "Namespace", namespace)
+
+		configMap := &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "ocm-tls-profile",
+				Namespace: namespace,
+			},
+		}
+
+		_, err = controllerutil.CreateOrUpdate(ctx, cl, configMap, func() error {
+			// Set the data
+			configMap.Data = map[string]string{
+				"minTLSVersion": string(tlsProfile.MinTLSVersion),
+				"cipherSuites":  strings.Join(ianaCiphers, ","),
+			}
+
+			// Set controller reference
+			if err := ctrl.SetControllerReference(mce, configMap, scheme); err != nil {
+				return fmt.Errorf("failed to set controller reference: %w", err)
+			}
+
+			return nil
+		})
+
+		if err != nil {
+			return fmt.Errorf("failed to create or update TLS profile ConfigMap in namespace %s: %w", namespace, err)
+		}
+
+		log.Info("Ensured TLS profile ConfigMap")
+	}
+
+	return nil
+}

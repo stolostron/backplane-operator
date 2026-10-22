@@ -1,0 +1,154 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+    service.beta.openshift.io/inject-cabundle: 'true'
+  name: azureserviceoperator-machinelearningservices-vwh
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-machinelearningservices-azure-com-v1api20210701-workspace
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20210701.workspaces.machinelearningservices.azure.com
+  rules:
+  - apiGroups:
+    - machinelearningservices.azure.com
+    apiVersions:
+    - v1api20210701
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - workspaces
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-machinelearningservices-azure-com-v1api20210701-workspacescompute
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20210701.workspacescomputes.machinelearningservices.azure.com
+  rules:
+  - apiGroups:
+    - machinelearningservices.azure.com
+    apiVersions:
+    - v1api20210701
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - workspacescomputes
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-machinelearningservices-azure-com-v1api20210701-workspacesconnection
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20210701.workspacesconnections.machinelearningservices.azure.com
+  rules:
+  - apiGroups:
+    - machinelearningservices.azure.com
+    apiVersions:
+    - v1api20210701
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - workspacesconnections
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-machinelearningservices-azure-com-v1api20240401-registry
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240401.registries.machinelearningservices.azure.com
+  rules:
+  - apiGroups:
+    - machinelearningservices.azure.com
+    apiVersions:
+    - v1api20240401
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - registries
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-machinelearningservices-azure-com-v1api20240401-workspace
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240401.workspaces.machinelearningservices.azure.com
+  rules:
+  - apiGroups:
+    - machinelearningservices.azure.com
+    apiVersions:
+    - v1api20240401
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - workspaces
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-machinelearningservices-azure-com-v1api20240401-workspacescompute
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240401.workspacescomputes.machinelearningservices.azure.com
+  rules:
+  - apiGroups:
+    - machinelearningservices.azure.com
+    apiVersions:
+    - v1api20240401
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - workspacescomputes
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-machinelearningservices-azure-com-v1api20240401-workspacesconnection
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20240401.workspacesconnections.machinelearningservices.azure.com
+  rules:
+  - apiGroups:
+    - machinelearningservices.azure.com
+    apiVersions:
+    - v1api20240401
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - workspacesconnections
+  sideEffects: None

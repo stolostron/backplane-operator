@@ -1,0 +1,49 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  annotations:
+    service.beta.openshift.io/inject-cabundle: 'true'
+  name: azureserviceoperator-datafactory-mwh
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /mutate-datafactory-azure-com-v1api20180601-factory
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20180601.factories.datafactory.azure.com
+  rules:
+  - apiGroups:
+    - datafactory.azure.com
+    apiVersions:
+    - v1api20180601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - factories
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /mutate-datafactory-azure-com-v20180601-factory
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20180601.factories.datafactory.azure.com
+  rules:
+  - apiGroups:
+    - datafactory.azure.com
+    apiVersions:
+    - v20180601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - factories
+  sideEffects: None

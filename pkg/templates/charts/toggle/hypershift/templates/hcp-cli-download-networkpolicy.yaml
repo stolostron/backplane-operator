@@ -1,0 +1,52 @@
+# Copyright Contributors to the Open Cluster Management project
+#
+# NetworkPolicy for hcp-cli-download pod.
+#
+# All requests (ingress and egress) are handled on port 8080 through the
+# OpenShift ingress router.
+#
+{{- if .Values.global.networkPolicies.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: hcp-cli-download-network-policy
+  labels:
+    app: hcp-cli-download
+spec:
+  podSelector:
+    matchLabels:
+      app: hcp-cli-download
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              policy-group.network.openshift.io/ingress: ""
+      ports:
+        - protocol: TCP
+          port: 8080
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              policy-group.network.openshift.io/host-network: ""
+      ports:
+        - protocol: TCP
+          port: 8080
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              policy-group.network.openshift.io/ingress: ""
+      ports:
+        - protocol: TCP
+          port: 8080
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              policy-group.network.openshift.io/host-network: ""
+      ports:
+        - protocol: TCP
+          port: 8080
+{{- end }}

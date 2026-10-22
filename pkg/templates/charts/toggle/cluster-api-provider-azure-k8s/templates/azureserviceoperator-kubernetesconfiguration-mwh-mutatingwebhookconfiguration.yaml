@@ -1,0 +1,91 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: capz-system/azureserviceoperator-serving-cert
+  name: azureserviceoperator-kubernetesconfiguration-mwh
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-kubernetesconfiguration-azure-com-v1api20230501-extension
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20230501.extensions.kubernetesconfiguration.azure.com
+  rules:
+  - apiGroups:
+    - kubernetesconfiguration.azure.com
+    apiVersions:
+    - v1api20230501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - extensions
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-kubernetesconfiguration-azure-com-v1api20230501-fluxconfiguration
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20230501.fluxconfigurations.kubernetesconfiguration.azure.com
+  rules:
+  - apiGroups:
+    - kubernetesconfiguration.azure.com
+    apiVersions:
+    - v1api20230501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - fluxconfigurations
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-kubernetesconfiguration-azure-com-v1api20241101-extension
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20241101.extensions.kubernetesconfiguration.azure.com
+  rules:
+  - apiGroups:
+    - kubernetesconfiguration.azure.com
+    apiVersions:
+    - v1api20241101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - extensions
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-kubernetesconfiguration-azure-com-v1api20241101-fluxconfiguration
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20241101.fluxconfigurations.kubernetesconfiguration.azure.com
+  rules:
+  - apiGroups:
+    - kubernetesconfiguration.azure.com
+    apiVersions:
+    - v1api20241101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - fluxconfigurations
+  sideEffects: None

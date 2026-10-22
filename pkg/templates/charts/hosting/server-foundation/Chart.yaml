@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Red Hat, Inc.
+# Copyright Contributors to the Open Cluster Management project
+
+apiVersion: v2
+appVersion: 2.7.0
+description: server foundation components.
+name: server-foundation
+type: application
+version: 2.7.0

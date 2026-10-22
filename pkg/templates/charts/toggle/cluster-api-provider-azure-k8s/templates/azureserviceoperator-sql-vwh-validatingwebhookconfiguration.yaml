@@ -1,0 +1,1498 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: capz-system/azureserviceoperator-serving-cert
+  name: azureserviceoperator-sql-vwh
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v1-user
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1.users.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - users
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v1api20211101-server
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20211101.servers.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v1api20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - servers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v1api20211101-serversadministrator
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20211101.serversadministrators.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v1api20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversadministrators
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v1api20211101-serversadvancedthreatprotectionsetting
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20211101.serversadvancedthreatprotectionsettings.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v1api20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversadvancedthreatprotectionsettings
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v1api20211101-serversauditingsetting
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20211101.serversauditingsettings.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v1api20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversauditingsettings
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v1api20211101-serversazureadonlyauthentication
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20211101.serversazureadonlyauthentications.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v1api20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversazureadonlyauthentications
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v1api20211101-serversconnectionpolicy
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20211101.serversconnectionpolicies.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v1api20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversconnectionpolicies
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v1api20211101-serversdatabase
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20211101.serversdatabases.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v1api20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversdatabases
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v1api20211101-serversdatabasesadvancedthreatprotectionsetting
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20211101.serversdatabasesadvancedthreatprotectionsettings.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v1api20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversdatabasesadvancedthreatprotectionsettings
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v1api20211101-serversdatabasesauditingsetting
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20211101.serversdatabasesauditingsettings.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v1api20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversdatabasesauditingsettings
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v1api20211101-serversdatabasesbackuplongtermretentionpolicy
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20211101.serversdatabasesbackuplongtermretentionpolicies.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v1api20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversdatabasesbackuplongtermretentionpolicies
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v1api20211101-serversdatabasesbackupshorttermretentionpolicy
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20211101.serversdatabasesbackupshorttermretentionpolicies.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v1api20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversdatabasesbackupshorttermretentionpolicies
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v1api20211101-serversdatabasessecurityalertpolicy
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20211101.serversdatabasessecurityalertpolicies.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v1api20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversdatabasessecurityalertpolicies
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v1api20211101-serversdatabasestransparentdataencryption
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20211101.serversdatabasestransparentdataencryptions.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v1api20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversdatabasestransparentdataencryptions
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v1api20211101-serversdatabasesvulnerabilityassessment
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20211101.serversdatabasesvulnerabilityassessments.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v1api20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversdatabasesvulnerabilityassessments
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v1api20211101-serverselasticpool
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20211101.serverselasticpools.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v1api20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serverselasticpools
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v1api20211101-serversfailovergroup
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20211101.serversfailovergroups.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v1api20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversfailovergroups
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v1api20211101-serversfirewallrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20211101.serversfirewallrules.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v1api20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversfirewallrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v1api20211101-serversipv6firewallrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20211101.serversipv6firewallrules.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v1api20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversipv6firewallrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v1api20211101-serversoutboundfirewallrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20211101.serversoutboundfirewallrules.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v1api20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversoutboundfirewallrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v1api20211101-serverssecurityalertpolicy
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20211101.serverssecurityalertpolicies.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v1api20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serverssecurityalertpolicies
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v1api20211101-serversvirtualnetworkrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20211101.serversvirtualnetworkrules.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v1api20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversvirtualnetworkrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v1api20211101-serversvulnerabilityassessment
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20211101.serversvulnerabilityassessments.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v1api20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversvulnerabilityassessments
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v20211101-server
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20211101.servers.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - servers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v20211101-serversadministrator
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20211101.serversadministrators.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversadministrators
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v20211101-serversadvancedthreatprotectionsetting
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20211101.serversadvancedthreatprotectionsettings.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversadvancedthreatprotectionsettings
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v20211101-serversauditingsetting
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20211101.serversauditingsettings.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversauditingsettings
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v20211101-serversazureadonlyauthentication
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20211101.serversazureadonlyauthentications.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversazureadonlyauthentications
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v20211101-serversconnectionpolicy
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20211101.serversconnectionpolicies.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversconnectionpolicies
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v20211101-serversdatabase
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20211101.serversdatabases.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversdatabases
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v20211101-serversdatabasesadvancedthreatprotectionsetting
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20211101.serversdatabasesadvancedthreatprotectionsettings.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversdatabasesadvancedthreatprotectionsettings
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v20211101-serversdatabasesauditingsetting
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20211101.serversdatabasesauditingsettings.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversdatabasesauditingsettings
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v20211101-serversdatabasesbackuplongtermretentionpolicy
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20211101.serversdatabasesbackuplongtermretentionpolicies.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversdatabasesbackuplongtermretentionpolicies
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v20211101-serversdatabasesbackupshorttermretentionpolicy
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20211101.serversdatabasesbackupshorttermretentionpolicies.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversdatabasesbackupshorttermretentionpolicies
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v20211101-serversdatabasessecurityalertpolicy
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20211101.serversdatabasessecurityalertpolicies.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversdatabasessecurityalertpolicies
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v20211101-serversdatabasestransparentdataencryption
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20211101.serversdatabasestransparentdataencryptions.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversdatabasestransparentdataencryptions
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v20211101-serversdatabasesvulnerabilityassessment
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20211101.serversdatabasesvulnerabilityassessments.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversdatabasesvulnerabilityassessments
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v20211101-serverselasticpool
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20211101.serverselasticpools.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serverselasticpools
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v20211101-serversencryptionprotector
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20211101.serversencryptionprotectors.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversencryptionprotectors
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v20211101-serversfailovergroup
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20211101.serversfailovergroups.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversfailovergroups
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v20211101-serversfirewallrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20211101.serversfirewallrules.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversfirewallrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v20211101-serversipv6firewallrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20211101.serversipv6firewallrules.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversipv6firewallrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v20211101-serverskey
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20211101.serverskeys.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serverskeys
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v20211101-serversoutboundfirewallrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20211101.serversoutboundfirewallrules.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversoutboundfirewallrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v20211101-serverssecurityalertpolicy
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20211101.serverssecurityalertpolicies.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serverssecurityalertpolicies
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v20211101-serversvirtualnetworkrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20211101.serversvirtualnetworkrules.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversvirtualnetworkrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v20211101-serversvulnerabilityassessment
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20211101.serversvulnerabilityassessments.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v20211101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversvulnerabilityassessments
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v20250101-server
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250101.servers.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v20250101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - servers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v20250101-serversadministrator
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250101.serversadministrators.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v20250101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversadministrators
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v20250101-serversadvancedthreatprotectionsetting
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250101.serversadvancedthreatprotectionsettings.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v20250101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversadvancedthreatprotectionsettings
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v20250101-serversauditingsetting
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250101.serversauditingsettings.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v20250101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversauditingsettings
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v20250101-serversazureadonlyauthentication
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250101.serversazureadonlyauthentications.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v20250101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversazureadonlyauthentications
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v20250101-serversconnectionpolicy
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250101.serversconnectionpolicies.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v20250101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversconnectionpolicies
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v20250101-serversdatabase
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250101.serversdatabases.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v20250101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversdatabases
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v20250101-serversdatabasesadvancedthreatprotectionsetting
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250101.serversdatabasesadvancedthreatprotectionsettings.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v20250101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversdatabasesadvancedthreatprotectionsettings
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v20250101-serversdatabasesauditingsetting
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250101.serversdatabasesauditingsettings.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v20250101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversdatabasesauditingsettings
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v20250101-serversdatabasesbackuplongtermretentionpolicy
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250101.serversdatabasesbackuplongtermretentionpolicies.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v20250101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversdatabasesbackuplongtermretentionpolicies
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v20250101-serversdatabasesbackupshorttermretentionpolicy
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250101.serversdatabasesbackupshorttermretentionpolicies.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v20250101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversdatabasesbackupshorttermretentionpolicies
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v20250101-serversdatabasessecurityalertpolicy
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250101.serversdatabasessecurityalertpolicies.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v20250101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversdatabasessecurityalertpolicies
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v20250101-serversdatabasestransparentdataencryption
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250101.serversdatabasestransparentdataencryptions.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v20250101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversdatabasestransparentdataencryptions
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v20250101-serversdatabasesvulnerabilityassessment
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250101.serversdatabasesvulnerabilityassessments.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v20250101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversdatabasesvulnerabilityassessments
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v20250101-serverselasticpool
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250101.serverselasticpools.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v20250101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serverselasticpools
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v20250101-serversencryptionprotector
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250101.serversencryptionprotectors.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v20250101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversencryptionprotectors
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v20250101-serversfailovergroup
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250101.serversfailovergroups.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v20250101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversfailovergroups
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v20250101-serversfirewallrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250101.serversfirewallrules.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v20250101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversfirewallrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v20250101-serversipv6firewallrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250101.serversipv6firewallrules.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v20250101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversipv6firewallrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v20250101-serverskey
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250101.serverskeys.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v20250101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serverskeys
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v20250101-serversoutboundfirewallrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250101.serversoutboundfirewallrules.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v20250101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversoutboundfirewallrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v20250101-serverssecurityalertpolicy
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250101.serverssecurityalertpolicies.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v20250101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serverssecurityalertpolicies
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v20250101-serversvirtualnetworkrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250101.serversvirtualnetworkrules.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v20250101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversvirtualnetworkrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-sql-azure-com-v20250101-serversvulnerabilityassessment
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250101.serversvulnerabilityassessments.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v20250101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serversvulnerabilityassessments
+  sideEffects: None

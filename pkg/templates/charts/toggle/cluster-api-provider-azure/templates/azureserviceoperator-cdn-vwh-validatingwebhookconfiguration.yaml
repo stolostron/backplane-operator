@@ -1,0 +1,511 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+    service.beta.openshift.io/inject-cabundle: 'true'
+  name: azureserviceoperator-cdn-vwh
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-cdn-azure-com-v1api20210601-profile
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20210601.profiles.cdn.azure.com
+  rules:
+  - apiGroups:
+    - cdn.azure.com
+    apiVersions:
+    - v1api20210601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - profiles
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-cdn-azure-com-v1api20210601-profilesendpoint
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20210601.profilesendpoints.cdn.azure.com
+  rules:
+  - apiGroups:
+    - cdn.azure.com
+    apiVersions:
+    - v1api20210601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - profilesendpoints
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-cdn-azure-com-v1api20230501-afdcustomdomain
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20230501.afdcustomdomains.cdn.azure.com
+  rules:
+  - apiGroups:
+    - cdn.azure.com
+    apiVersions:
+    - v1api20230501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - afdcustomdomains
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-cdn-azure-com-v1api20230501-afdendpoint
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20230501.afdendpoints.cdn.azure.com
+  rules:
+  - apiGroups:
+    - cdn.azure.com
+    apiVersions:
+    - v1api20230501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - afdendpoints
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-cdn-azure-com-v1api20230501-afdorigingroup
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20230501.afdorigingroups.cdn.azure.com
+  rules:
+  - apiGroups:
+    - cdn.azure.com
+    apiVersions:
+    - v1api20230501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - afdorigingroups
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-cdn-azure-com-v1api20230501-afdorigin
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20230501.afdorigins.cdn.azure.com
+  rules:
+  - apiGroups:
+    - cdn.azure.com
+    apiVersions:
+    - v1api20230501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - afdorigins
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-cdn-azure-com-v1api20230501-profile
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20230501.profiles.cdn.azure.com
+  rules:
+  - apiGroups:
+    - cdn.azure.com
+    apiVersions:
+    - v1api20230501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - profiles
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-cdn-azure-com-v1api20230501-route
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20230501.routes.cdn.azure.com
+  rules:
+  - apiGroups:
+    - cdn.azure.com
+    apiVersions:
+    - v1api20230501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - routes
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-cdn-azure-com-v1api20230501-rule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20230501.rules.cdn.azure.com
+  rules:
+  - apiGroups:
+    - cdn.azure.com
+    apiVersions:
+    - v1api20230501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - rules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-cdn-azure-com-v1api20230501-ruleset
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20230501.rulesets.cdn.azure.com
+  rules:
+  - apiGroups:
+    - cdn.azure.com
+    apiVersions:
+    - v1api20230501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - rulesets
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-cdn-azure-com-v1api20230501-secret
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20230501.secrets.cdn.azure.com
+  rules:
+  - apiGroups:
+    - cdn.azure.com
+    apiVersions:
+    - v1api20230501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - secrets
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-cdn-azure-com-v1api20230501-securitypolicy
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20230501.securitypolicies.cdn.azure.com
+  rules:
+  - apiGroups:
+    - cdn.azure.com
+    apiVersions:
+    - v1api20230501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - securitypolicies
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-cdn-azure-com-v20210601-profile
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20210601.profiles.cdn.azure.com
+  rules:
+  - apiGroups:
+    - cdn.azure.com
+    apiVersions:
+    - v20210601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - profiles
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-cdn-azure-com-v20210601-profilesendpoint
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20210601.profilesendpoints.cdn.azure.com
+  rules:
+  - apiGroups:
+    - cdn.azure.com
+    apiVersions:
+    - v20210601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - profilesendpoints
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-cdn-azure-com-v20230501-afdcustomdomain
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20230501.afdcustomdomains.cdn.azure.com
+  rules:
+  - apiGroups:
+    - cdn.azure.com
+    apiVersions:
+    - v20230501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - afdcustomdomains
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-cdn-azure-com-v20230501-afdendpoint
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20230501.afdendpoints.cdn.azure.com
+  rules:
+  - apiGroups:
+    - cdn.azure.com
+    apiVersions:
+    - v20230501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - afdendpoints
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-cdn-azure-com-v20230501-afdorigingroup
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20230501.afdorigingroups.cdn.azure.com
+  rules:
+  - apiGroups:
+    - cdn.azure.com
+    apiVersions:
+    - v20230501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - afdorigingroups
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-cdn-azure-com-v20230501-afdorigin
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20230501.afdorigins.cdn.azure.com
+  rules:
+  - apiGroups:
+    - cdn.azure.com
+    apiVersions:
+    - v20230501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - afdorigins
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-cdn-azure-com-v20230501-profile
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20230501.profiles.cdn.azure.com
+  rules:
+  - apiGroups:
+    - cdn.azure.com
+    apiVersions:
+    - v20230501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - profiles
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-cdn-azure-com-v20230501-route
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20230501.routes.cdn.azure.com
+  rules:
+  - apiGroups:
+    - cdn.azure.com
+    apiVersions:
+    - v20230501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - routes
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-cdn-azure-com-v20230501-rule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20230501.rules.cdn.azure.com
+  rules:
+  - apiGroups:
+    - cdn.azure.com
+    apiVersions:
+    - v20230501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - rules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-cdn-azure-com-v20230501-ruleset
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20230501.rulesets.cdn.azure.com
+  rules:
+  - apiGroups:
+    - cdn.azure.com
+    apiVersions:
+    - v20230501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - rulesets
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-cdn-azure-com-v20230501-secret
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20230501.secrets.cdn.azure.com
+  rules:
+  - apiGroups:
+    - cdn.azure.com
+    apiVersions:
+    - v20230501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - secrets
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-cdn-azure-com-v20230501-securitypolicy
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20230501.securitypolicies.cdn.azure.com
+  rules:
+  - apiGroups:
+    - cdn.azure.com
+    apiVersions:
+    - v20230501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - securitypolicies
+  sideEffects: None

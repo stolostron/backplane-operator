@@ -1,0 +1,22 @@
+global:
+  imageOverrides:
+    cluster_curator_controller: quay.io/test/test:test
+    cluster_image_set_controller: quay.io/test/test:test
+    clusterclaims_controller: quay.io/test/test:test
+    clusterlifecycle_state_metrics: quay.io/test/test:test
+    provider_credential_controller: quay.io/test/test:test
+  templateOverrides: {}
+  networkPolicies:
+    enabled: true
+  pullSecret: ""
+  namespace: default
+  olmVersion: v0
+  deployOnOCP: ""
+hubconfig:
+  nodeSelector: {}
+  proxyConfigs: {}
+  replicaCount: 1
+  tolerations: []
+  ocpVersion: "4.12.0"
+  probeConfig: null
+org: open-cluster-management

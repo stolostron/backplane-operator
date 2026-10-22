@@ -1,0 +1,153 @@
+{{- if .Values.global.deployOnOCP }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ocm-proxyserver
+spec:
+  replicas: {{ .Values.hubconfig.replicaCount }}
+  selector:
+    matchLabels:
+      control-plane: ocm-proxyserver
+      ocm-antiaffinity-selector: ocm-proxyserver
+  template:
+    metadata:
+      labels:
+        control-plane: ocm-proxyserver
+        ocm-antiaffinity-selector: ocm-proxyserver
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - ocm-proxyserver
+              topologyKey: topology.kubernetes.io/zone
+            weight: 70
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - ocm-proxyserver
+              topologyKey: kubernetes.io/hostname
+            weight: 35
+      containers:
+      - args:
+        - /proxyserver
+        - --secure-port=6443
+        - --tls-cert-file=/var/run/apiservice/tls.crt
+        - --tls-private-key-file=/var/run/apiservice/tls.key
+        - --proxy-service-cafile=/var/run/clusterproxy/service-ca.crt
+        - --proxy-service-name=cluster-proxy-addon-user
+        - --proxy-service-port=9092
+        env:
+{{- if .Values.hubconfig.proxyConfigs }}
+        - name: HTTP_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
+        - name: HTTPS_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.HTTPS_PROXY }}
+        - name: NO_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
+{{- end }}
+        image: '{{ .Values.global.imageOverrides.multicloud_manager }}'
+        imagePullPolicy: '{{ .Values.global.pullPolicy }}'
+        name: ocm-proxyserver
+        livenessProbe:
+          exec:
+            command:
+            - ls
+          initialDelaySeconds: 15
+          periodSeconds: 15
+{{- if .Values.hubconfig.probeConfig }}
+{{- if .Values.hubconfig.probeConfig.timeoutSeconds }}
+          timeoutSeconds: {{ .Values.hubconfig.probeConfig.timeoutSeconds }}
+{{- end }}
+{{- if .Values.hubconfig.probeConfig.failureThreshold }}
+          failureThreshold: {{ .Values.hubconfig.probeConfig.failureThreshold }}
+{{- end }}
+{{- if .Values.hubconfig.probeConfig.successThreshold }}
+          successThreshold: {{ .Values.hubconfig.probeConfig.successThreshold }}
+{{- end }}
+{{- end }}
+        readinessProbe:
+          exec:
+            command:
+            - ls
+          initialDelaySeconds: 15
+          periodSeconds: 15
+{{- if .Values.hubconfig.probeConfig }}
+{{- if .Values.hubconfig.probeConfig.timeoutSeconds }}
+          timeoutSeconds: {{ .Values.hubconfig.probeConfig.timeoutSeconds }}
+{{- end }}
+{{- if .Values.hubconfig.probeConfig.failureThreshold }}
+          failureThreshold: {{ .Values.hubconfig.probeConfig.failureThreshold }}
+{{- end }}
+{{- if .Values.hubconfig.probeConfig.successThreshold }}
+          successThreshold: {{ .Values.hubconfig.probeConfig.successThreshold }}
+{{- end }}
+{{- end }}
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /var/run/apiservice
+          name: apiservice-certs
+        - mountPath: /var/run/clusterproxy
+          name: cluster-proxy-service-ca
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      serviceAccount: ocm-foundation-sa
+      serviceAccountName: ocm-foundation-sa
+      terminationGracePeriodSeconds: 30
+      hostIPC: false
+      hostNetwork: false
+      hostPID: false
+{{- if .Values.global.pullSecret }}
+      imagePullSecrets:
+      - name: {{ .Values.global.pullSecret }}
+{{- end }}
+{{- with .Values.hubconfig.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+{{- end }}
+{{- with .Values.hubconfig.tolerations }}
+      tolerations:
+      {{- range . }}
+      - {{ if .Key }} key: {{ .Key }} {{- end }}
+        {{ if .Operator }} operator: {{ .Operator }} {{- end }}
+        {{ if .Value }} value: {{ .Value }} {{- end }}
+        {{ if .Effect }} effect: {{ .Effect }} {{- end }}
+        {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
+        {{- end }}
+{{- end }}
+      securityContext:
+        runAsNonRoot: true
+        {{- if semverCompare ">=4.11.0" .Values.hubconfig.ocpVersion }}
+        seccompProfile:
+          type: RuntimeDefault
+        {{- end }}
+      serviceAccountName: ocm-foundation-sa
+      volumes:
+      - name: apiservice-certs
+        secret:
+          defaultMode: 420
+          secretName: ocm-proxyserver
+      - name: cluster-proxy-service-ca
+        configMap:
+          defaultMode: 420
+          name: openshift-service-ca.crt
+{{- end }}

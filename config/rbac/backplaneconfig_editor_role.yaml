@@ -1,0 +1,24 @@
+# permissions for end users to edit backplaneconfigs.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: backplaneconfig-editor-role
+rules:
+- apiGroups:
+  - backplane.open-cluster-management.io
+  resources:
+  - backplaneconfigs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - backplane.open-cluster-management.io
+  resources:
+  - backplaneconfigs/status
+  verbs:
+  - get

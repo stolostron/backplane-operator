@@ -1,0 +1,339 @@
+# Copyright Contributors to the Open Cluster Management project
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ .Values.org }}:{{ .Chart.Name }}:clusterrole
+rules:
+
+- apiGroups:
+  - rbac.open-cluster-management.io
+  resources:
+  - clusterpermissions
+  - multiclusterroleassignments
+  verbs:
+  - get
+  - list
+  - watch
+  
+- apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create
+
+- apiGroups:
+  - operators.coreos.com
+  resources:
+  - subscriptions
+  verbs:
+  - get
+  - list
+  - watch
+
+- apiGroups:
+  - olm.operatorframework.io
+  resources:
+  - clusterextensions
+  verbs:
+  - get
+  - list
+  - watch
+
+- apiGroups:
+  - operator.open-cluster-management.io
+  resources:
+  - multiclusterhubs
+  verbs:
+  - get
+  - list
+  - watch
+
+- verbs:
+  - list
+  - get
+  - watch
+  apiGroups:
+  - config.openshift.io
+  resources:
+  - apiservers
+  - authentications
+
+- verbs:
+  - list
+  - get
+  - watch
+  apiGroups:
+  - config.openshift.io
+  - console.openshift.io
+  - project.openshift.io
+  - tower.ansible.com
+  resources:
+  - infrastructures
+  - consolelinks
+  - projects
+  - featuregates
+  - ansiblejobs
+  - ansibleworkflows
+  - clusterversions
+
+- verbs:
+  - list
+  - watch
+  apiGroups:
+  - ''
+  resources:
+  - services
+
+- verbs:
+  - list
+  - watch
+  apiGroups:
+  - ''
+  resources:
+  - configmaps
+  - jobs
+  - namespaces
+  - pods
+  - secrets
+
+- verbs:
+  - list
+  - watch
+  apiGroups:
+  - certificates.k8s.io
+  resources:
+  - certificatesigningrequests
+
+- verbs:
+  - list
+  - watch
+  apiGroups:
+  - hive.openshift.io
+  resources:
+  - clusterclaims
+  - clusterdeployments
+  - clusterpools
+  - clusterimagesets
+  - clusterprovisions
+  - clusterdeprovisions
+  - machinepools
+
+- verbs:
+  - list
+  - watch
+  apiGroups:
+  - addon.open-cluster-management.io
+  resources:
+  - clustermanagementaddons
+  - managedclusteraddons
+
+- verbs:
+  - list
+  - watch
+  apiGroups:
+  - cluster.open-cluster-management.io
+  resources:
+  - managedclusters
+  - managedclustersets
+  - managedclustersetbindings
+  - clustercurators
+  - placements
+  - placementdecisions
+
+- verbs:
+  - list
+  - watch
+  apiGroups:
+  - internal.open-cluster-management.io
+  resources:
+  - managedclusterinfos
+
+- verbs:
+  - list
+  - watch
+  apiGroups:
+  - discovery.open-cluster-management.io
+  resources:
+  - discoveryconfigs
+  - discoveredclusters
+
+- verbs:
+  - list
+  - watch
+  apiGroups:
+  - wgpolicyk8s.io
+  resources:
+  - policyreports
+
+- verbs:
+  - list
+  - watch
+  apiGroups:
+  - submarineraddon.open-cluster-management.io
+  resources:
+  - submarinerconfigs
+
+- verbs:
+  - list
+  - watch
+  apiGroups:
+  - extensions.hive.openshift.io
+  resources:
+  - agentclusterinstalls
+
+- verbs:
+  - list
+  - watch
+  apiGroups:
+  - agent-install.openshift.io
+  resources:
+  - agents
+  - infraenvs
+  - nmstateconfigs
+  - agentserviceconfigs
+
+- verbs:
+  - list
+  - watch
+  apiGroups:
+  - storage.k8s.io
+  resources:
+  - storageclasses
+
+- verbs:
+  - list
+  - watch
+  apiGroups:
+  - metal3.io
+  resources:
+  - baremetalhosts
+  - provisionings
+
+- apiGroups:
+  - app.k8s.io
+  resources:
+  - applications
+  verbs:
+  - list
+  - watch
+
+- apiGroups:
+  - apps.open-cluster-management.io
+  resources:
+  - channels
+  - gitopsclusters
+  - helmreleases
+  - placementrules
+  - subscriptions
+  - subscriptionreports
+  - multiclusterapplicationsetreports
+  verbs:
+  - list
+  - watch
+
+- apiGroups:
+  - argoproj.io
+  resources:
+  - applications
+  - applicationsets
+  - argocds
+  verbs:
+  - list
+  - watch
+
+- apiGroups:
+  - policy.open-cluster-management.io
+  resources:
+  - placementbindings
+  - policies
+  - policyautomations
+  - policysets
+  verbs:
+  - list
+  - watch
+
+- verbs:
+  - create
+  - get
+  - list
+  - patch
+  - watch
+  apiGroups:
+  - console.open-cluster-management.io
+  resources:
+  - userpreferences
+
+- verbs:
+  - list
+  - watch
+  apiGroups:
+  - hypershift.openshift.io
+  resources:
+  - hostedclusters
+  - nodepools
+
+- verbs:
+  - list
+  - watch
+  apiGroups:
+  - capi-provider.agent-install.openshift.io
+  resources:
+  - agentmachines
+
+- verbs:
+  - list
+  - watch
+  - get
+  apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+
+- verbs:
+    - list
+  apiGroups:
+    - apps
+  resources:
+    - deployments
+
+- verbs:
+    - create
+  apiGroups:
+    - view.open-cluster-management.io
+  resources:
+    - managedclusterviews
+
+- apiGroups:
+  - multicluster.openshift.io
+  verbs:
+  - list
+  - watch
+  resources:
+  - multiclusterengines
+
+- apiGroups:
+    - search.open-cluster-management.io
+  verbs:
+    - list
+    - watch
+  resources:
+    - searches
+
+- apiGroups:
+  - user.openshift.io
+  resources:
+  - users
+  - groups
+  verbs:
+  - get
+  - list
+  - watch
+
+- apiGroups:
+  - clusterview.open-cluster-management.io
+  verbs:
+    - get
+    - list
+  resources:
+    - userpermissions

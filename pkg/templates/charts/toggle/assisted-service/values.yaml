@@ -1,0 +1,23 @@
+global:
+  deployOnOCP: true
+  imageOverrides:
+    assisted_image_service: ''
+    assisted_installer: ''
+    assisted_installer_agent: ''
+    assisted_installer_controller: ''
+    assisted_service_9: ''
+    postgresql_16: ''
+  namespace: default
+  networkPolicies:
+    enabled: true
+  olmVersion: v0
+  pullSecret: null
+  templateOverrides: {}
+hubconfig:
+  nodeSelector: null
+  ocpVersion: 4.12.0
+  probeConfig: null
+  proxyConfigs: {}
+  replicaCount: 1
+  tolerations: []
+org: open-cluster-management

@@ -1,0 +1,131 @@
+# Copyright Contributors to the Open Cluster Management project
+---
+{{- if .Values.global.deployOnOCP }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ .Values.org }}.cluster-lifecycle.cluster-curator
+rules:
+- apiGroups: ["tower.ansible.com","batch",""]
+  resources: ["ansiblejobs","jobs","secrets","serviceaccounts"]
+  verbs: ["create"]
+
+- apiGroups: ["batch", "hive.openshift.io", "tower.ansible.com",""]
+  resources: ["ansiblejobs","jobs","clusterdeployments","serviceaccounts", "machinepools"]
+  verbs: ["get"]
+
+# Delete the cluster-installer ServiceAccount once curation completes, so it
+# cannot be used to mint tokens between curations (post-curation RBAC cleanup).
+- apiGroups: [""]
+  resources: ["serviceaccounts"]
+  verbs: ["delete"]
+
+- apiGroups: ["rbac.authorization.k8s.io",""]
+  resources: ["roles", "clusterroles", "namespaces"]
+  verbs: ["create","get"]
+
+# rolebindings/curator and clusterrolebindings/curator-crb are also deleted as
+# part of the same post-curation RBAC cleanup. Update is needed because the
+# shared clusterrolebindings/curator-crb singleton is upserted: its subject
+# namespace is patched in place when a different Hypershift cluster's curation
+# takes it over, rather than deleting and recreating it.
+- apiGroups: ["rbac.authorization.k8s.io"]
+  resources: ["rolebindings", "clusterrolebindings"]
+  verbs: ["create","get","update","delete"]
+
+- apiGroups: ["hive.openshift.io"]
+  resources: ["clusterdeployments"]
+  verbs: ["patch","delete","update"]
+
+- apiGroups: ["internal.open-cluster-management.io",""]
+  resources: ["managedclusterinfos","pods","secrets"]
+  verbs: ["get"]
+
+- apiGroups: ["view.open-cluster-management.io"]
+  resources: ["managedclusterviews"]
+  verbs: ["get", "create", "update", "delete"]
+
+- apiGroups: ["action.open-cluster-management.io"]
+  resources: ["managedclusteractions"]
+  verbs: ["get", "create", "update", "delete"]
+
+# Only used by the controller
+
+- apiGroups: [""]
+  resources: ["namespaces"]
+  verbs: ["delete"]
+
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["list"]
+
+# ClusterCurator apiGroup
+- apiGroups:
+  - cluster.open-cluster-management.io
+  resources:
+  - clustercurators
+  - managedclusters
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.open-cluster-management.io
+  resources:
+  - clustercurators/status
+  verbs:
+  - get
+  - patch
+  - update
+
+# Leader election
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - configmaps/status
+  verbs:
+  - get
+  - update
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - get
+  - create
+  - update
+- apiGroups:
+  - hypershift.openshift.io
+  resources:
+  - hostedclusters
+  - nodepools
+  verbs:
+  - get
+  - patch
+  - delete
+  - update
+  - list
+{{- end }}

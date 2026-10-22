@@ -1,0 +1,28 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+    service.beta.openshift.io/inject-cabundle: 'true'
+  name: azureserviceoperator-resources-vwh
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-resources-azure-com-v1api20200601-resourcegroup
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20200601.resourcegroups.resources.azure.com
+  rules:
+  - apiGroups:
+    - resources.azure.com
+    apiVersions:
+    - v1api20200601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - resourcegroups
+  sideEffects: None

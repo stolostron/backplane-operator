@@ -1,0 +1,36 @@
+apiVersion: addon.open-cluster-management.io/v1alpha1
+kind: AddOnDeploymentConfig
+metadata:
+  name: hypershift-addon-deploy-config
+  namespace: {{ .Values.global.namespace }}
+spec:
+  customizedVariables:
+  - name: hcMaxNumber
+    value: "80"
+  - name: hcThresholdNumber
+    value: "60"
+{{- if not .Values.global.deployOnOCP }}
+  - name: disableMetrics
+    value: "true"
+  - name: disableHOManagement
+    value: "true"
+  - name: aroHcp
+    value: "true"
+  - name: autoImportDisabled
+    value: "true"
+{{- end }}
+  nodePlacement:
+    {{- with .Values.hubconfig.tolerations }}
+    tolerations:
+    {{- range . }}
+    - {{ if .Key }} key: {{ .Key }} {{- end }}
+      {{ if .Operator }} operator: {{ .Operator }} {{- end }}
+      {{ if .Value }} value: {{ .Value }} {{- end }}
+      {{ if .Effect }} effect: {{ .Effect }} {{- end }}
+      {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
+      {{- end }}
+    {{- end }}
+    {{- with .Values.hubconfig.nodeSelector }}
+    nodeSelector:
+{{ toYaml . | indent 6 }}
+    {{- end }}

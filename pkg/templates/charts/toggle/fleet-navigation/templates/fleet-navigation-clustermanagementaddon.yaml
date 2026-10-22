@@ -1,0 +1,27 @@
+apiVersion: addon.open-cluster-management.io/v1alpha1
+kind: ClusterManagementAddOn
+metadata:
+  annotations:
+    addon.open-cluster-management.io/lifecycle: addon-manager
+  name: fleet-navigation
+spec:
+  addOnMeta:
+    description: fleet-navigation
+    displayName: fleet-navigation
+  installStrategy:
+    placements:
+    - name: fleet-navigation
+      namespace: open-cluster-management-global-set
+      rolloutStrategy:
+        type: All
+    type: Placements
+  supportedConfigs:
+  - defaultConfig:
+      name: fleet-navigation
+      namespace: {{ .Values.global.namespace }}
+    group: addon.open-cluster-management.io
+    resource: addondeploymentconfigs
+  - defaultConfig:
+      name: fleet-navigation
+    group: addon.open-cluster-management.io
+    resource: addontemplates

@@ -1,0 +1,91 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+    service.beta.openshift.io/inject-cabundle: 'true'
+  name: azureserviceoperator-kubernetesconfiguration-vwh
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-kubernetesconfiguration-azure-com-v1api20230501-extension
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20230501.extensions.kubernetesconfiguration.azure.com
+  rules:
+  - apiGroups:
+    - kubernetesconfiguration.azure.com
+    apiVersions:
+    - v1api20230501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - extensions
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-kubernetesconfiguration-azure-com-v1api20230501-fluxconfiguration
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20230501.fluxconfigurations.kubernetesconfiguration.azure.com
+  rules:
+  - apiGroups:
+    - kubernetesconfiguration.azure.com
+    apiVersions:
+    - v1api20230501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - fluxconfigurations
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-kubernetesconfiguration-azure-com-v1api20241101-extension
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20241101.extensions.kubernetesconfiguration.azure.com
+  rules:
+  - apiGroups:
+    - kubernetesconfiguration.azure.com
+    apiVersions:
+    - v1api20241101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - extensions
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-kubernetesconfiguration-azure-com-v1api20241101-fluxconfiguration
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20241101.fluxconfigurations.kubernetesconfiguration.azure.com
+  rules:
+  - apiGroups:
+    - kubernetesconfiguration.azure.com
+    apiVersions:
+    - v1api20241101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - fluxconfigurations
+  sideEffects: None

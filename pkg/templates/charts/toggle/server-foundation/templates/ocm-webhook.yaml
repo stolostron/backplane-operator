@@ -1,0 +1,141 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ocm-webhook
+spec:
+  replicas: {{ .Values.hubconfig.replicaCount }}
+  selector:
+    matchLabels:
+      control-plane: ocm-webhook
+      ocm-antiaffinity-selector: ocm-webhook
+  template:
+    metadata:
+      labels:
+        control-plane: ocm-webhook
+        ocm-antiaffinity-selector: ocm-webhook
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - ocm-webhook
+              topologyKey: topology.kubernetes.io/zone
+            weight: 70
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - ocm-webhook
+              topologyKey: kubernetes.io/hostname
+            weight: 35
+      containers:
+      - args:
+        - /webhook
+        - --tls-cert-file=/var/run/ocm-webhook/tls.crt
+        - --tls-private-key-file=/var/run/ocm-webhook/tls.key
+        env:
+{{- if .Values.hubconfig.proxyConfigs }}
+        - name: HTTP_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
+        - name: HTTPS_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.HTTPS_PROXY }}
+        - name: NO_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
+{{- end }}
+        image: '{{ .Values.global.imageOverrides.multicloud_manager }}'
+        imagePullPolicy: '{{ .Values.global.pullPolicy }}'
+        name: ocm-webhook
+        ports:
+        - containerPort: 8000
+          protocol: TCP
+        livenessProbe:
+          exec:
+            command:
+            - ls
+          initialDelaySeconds: 15
+          periodSeconds: 15
+{{- if .Values.hubconfig.probeConfig }}
+{{- if .Values.hubconfig.probeConfig.timeoutSeconds }}
+          timeoutSeconds: {{ .Values.hubconfig.probeConfig.timeoutSeconds }}
+{{- end }}
+{{- if .Values.hubconfig.probeConfig.failureThreshold }}
+          failureThreshold: {{ .Values.hubconfig.probeConfig.failureThreshold }}
+{{- end }}
+{{- if .Values.hubconfig.probeConfig.successThreshold }}
+          successThreshold: {{ .Values.hubconfig.probeConfig.successThreshold }}
+{{- end }}
+{{- end }}
+        readinessProbe:
+          exec:
+            command:
+            - ls
+          initialDelaySeconds: 15
+          periodSeconds: 15
+{{- if .Values.hubconfig.probeConfig }}
+{{- if .Values.hubconfig.probeConfig.timeoutSeconds }}
+          timeoutSeconds: {{ .Values.hubconfig.probeConfig.timeoutSeconds }}
+{{- end }}
+{{- if .Values.hubconfig.probeConfig.failureThreshold }}
+          failureThreshold: {{ .Values.hubconfig.probeConfig.failureThreshold }}
+{{- end }}
+{{- if .Values.hubconfig.probeConfig.successThreshold }}
+          successThreshold: {{ .Values.hubconfig.probeConfig.successThreshold }}
+{{- end }}
+{{- end }}
+        resources:
+          requests:
+            cpu: 50m
+            memory: 128Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+        volumeMounts:
+          - name: webhook-cert
+            mountPath: /var/run/ocm-webhook
+      hostIPC: false
+      hostNetwork: false
+      hostPID: false
+{{- if .Values.global.pullSecret }}
+      imagePullSecrets:
+      - name: {{ .Values.global.pullSecret }}
+{{- end }}
+{{- with .Values.hubconfig.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+{{- end }}
+      securityContext:
+        runAsNonRoot: true
+        {{- if .Values.global.deployOnOCP }}
+        {{- if semverCompare ">=4.11.0" .Values.hubconfig.ocpVersion }}
+        seccompProfile:
+          type: RuntimeDefault
+        {{- end }}
+        {{- end }}
+      serviceAccountName: ocm-foundation-sa
+      terminationGracePeriodSeconds: 10
+{{- with .Values.hubconfig.tolerations }}
+      tolerations:
+      {{- range . }}
+      - {{ if .Key }} key: {{ .Key }} {{- end }}
+        {{ if .Operator }} operator: {{ .Operator }} {{- end }}
+        {{ if .Value }} value: {{ .Value }} {{- end }}
+        {{ if .Effect }} effect: {{ .Effect }} {{- end }}
+        {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
+        {{- end }}
+{{- end }}
+      volumes:
+      - name: webhook-cert
+        secret:
+          secretName: ocm-webhook
+          defaultMode: 420

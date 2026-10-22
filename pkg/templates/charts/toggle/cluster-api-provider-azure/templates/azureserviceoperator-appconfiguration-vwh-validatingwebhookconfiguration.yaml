@@ -1,0 +1,133 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+    service.beta.openshift.io/inject-cabundle: 'true'
+  name: azureserviceoperator-appconfiguration-vwh
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-appconfiguration-azure-com-v1api20220501-configurationstore
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20220501.configurationstores.appconfiguration.azure.com
+  rules:
+  - apiGroups:
+    - appconfiguration.azure.com
+    apiVersions:
+    - v1api20220501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - configurationstores
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-appconfiguration-azure-com-v20220501-configurationstore
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20220501.configurationstores.appconfiguration.azure.com
+  rules:
+  - apiGroups:
+    - appconfiguration.azure.com
+    apiVersions:
+    - v20220501
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - configurationstores
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-appconfiguration-azure-com-v20240601-configurationstore
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20240601.configurationstores.appconfiguration.azure.com
+  rules:
+  - apiGroups:
+    - appconfiguration.azure.com
+    apiVersions:
+    - v20240601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - configurationstores
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-appconfiguration-azure-com-v20240601-keyvalue
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20240601.keyvalues.appconfiguration.azure.com
+  rules:
+  - apiGroups:
+    - appconfiguration.azure.com
+    apiVersions:
+    - v20240601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - keyvalues
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-appconfiguration-azure-com-v20240601-replica
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20240601.replicas.appconfiguration.azure.com
+  rules:
+  - apiGroups:
+    - appconfiguration.azure.com
+    apiVersions:
+    - v20240601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - replicas
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-appconfiguration-azure-com-v20240601-snapshot
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20240601.snapshots.appconfiguration.azure.com
+  rules:
+  - apiGroups:
+    - appconfiguration.azure.com
+    apiVersions:
+    - v20240601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - snapshots
+  sideEffects: None

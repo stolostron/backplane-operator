@@ -1,0 +1,435 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.17.0
+  creationTimestamp: null
+  labels:
+    contracts.hive.openshift.io/clusterinstall: "true"
+  name: imageclusterinstalls.extensions.hive.openshift.io
+spec:
+  group: extensions.hive.openshift.io
+  names:
+    kind: ImageClusterInstall
+    listKind: ImageClusterInstallList
+    plural: imageclusterinstalls
+    shortNames:
+    - ici
+    singular: imageclusterinstall
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.conditions[?(@.type=='RequirementsMet')].reason
+      name: RequirementsMet
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Completed')].reason
+      name: Completed
+      type: string
+    - jsonPath: .spec.bareMetalHostRef.name
+      name: BareMetalHostRef
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: ImageClusterInstall is the Schema for the imageclusterinstall
+          API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: ImageClusterInstallSpec defines the desired state of ImageClusterInstall
+            properties:
+              additionalNTPSources:
+                description: |-
+                  AdditionalNTPSources is a list of NTP sources (hostname or IP) to be added to all cluster
+                  hosts. They are added to any NTP sources that were configured through other means.
+                items:
+                  type: string
+                type: array
+              bareMetalHostRef:
+                description: BareMetalHostRef identifies a BareMetalHost object to
+                  be used to attach the configuration to the host.
+                properties:
+                  name:
+                    description: Name identifies the BareMetalHost within a namespace
+                    type: string
+                  namespace:
+                    description: Namespace identifies the namespace containing the
+                      referenced BareMetalHost
+                    type: string
+                required:
+                - name
+                - namespace
+                type: object
+              caBundleRef:
+                description: |-
+                  CABundle is a reference to a config map containing the new bundle of trusted certificates for the host.
+                  The tls-ca-bundle.pem entry in the config map will be written to /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem
+                properties:
+                  name:
+                    default: ""
+                    description: |-
+                      Name of the referent.
+                      This field is effectively required, but due to backwards compatibility is
+                      allowed to be empty. Instances of this type with an empty value here are
+                      almost certainly wrong.
+                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                    type: string
+                type: object
+                x-kubernetes-map-type: atomic
+              clusterDeploymentRef:
+                description: ClusterDeploymentRef is a reference to the ClusterDeployment.
+                properties:
+                  name:
+                    default: ""
+                    description: |-
+                      Name of the referent.
+                      This field is effectively required, but due to backwards compatibility is
+                      allowed to be empty. Instances of this type with an empty value here are
+                      almost certainly wrong.
+                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                    type: string
+                type: object
+                x-kubernetes-map-type: atomic
+              clusterMetadata:
+                description: |-
+                  ClusterMetadata contains metadata information about the installed cluster.
+                  This must be set as soon as all the information is available.
+                properties:
+                  adminKubeconfigSecretRef:
+                    description: AdminKubeconfigSecretRef references the secret containing
+                      the admin kubeconfig for this cluster.
+                    properties:
+                      name:
+                        default: ""
+                        description: |-
+                          Name of the referent.
+                          This field is effectively required, but due to backwards compatibility is
+                          allowed to be empty. Instances of this type with an empty value here are
+                          almost certainly wrong.
+                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                        type: string
+                    type: object
+                    x-kubernetes-map-type: atomic
+                  adminPasswordSecretRef:
+                    description: AdminPasswordSecretRef references the secret containing
+                      the admin username/password which can be used to login to this
+                      cluster.
+                    properties:
+                      name:
+                        default: ""
+                        description: |-
+                          Name of the referent.
+                          This field is effectively required, but due to backwards compatibility is
+                          allowed to be empty. Instances of this type with an empty value here are
+                          almost certainly wrong.
+                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                        type: string
+                    type: object
+                    x-kubernetes-map-type: atomic
+                  clusterID:
+                    description: ClusterID is a globally unique identifier for this
+                      cluster generated during installation. Used for reporting metrics
+                      among other places.
+                    type: string
+                  infraID:
+                    description: InfraID is an identifier for this cluster generated
+                      during installation and used for tagging/naming resources in
+                      cloud providers.
+                    type: string
+                  metadataJSONSecretRef:
+                    description: |-
+                      MetadataJSONSecretRef references the secret containing the metadata.json emitted by the
+                      installer, potentially scrubbed for sensitive data.
+                    properties:
+                      name:
+                        default: ""
+                        description: |-
+                          Name of the referent.
+                          This field is effectively required, but due to backwards compatibility is
+                          allowed to be empty. Instances of this type with an empty value here are
+                          almost certainly wrong.
+                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                        type: string
+                    type: object
+                    x-kubernetes-map-type: atomic
+                  platform:
+                    description: |-
+                      Platform holds platform-specific cluster metadata.
+                      Deprecated. Use the Secret referenced by MetadataJSONSecretRef instead. We may stop
+                      populating this section in the future.
+                    properties:
+                      aws:
+                        description: AWS holds AWS-specific cluster metadata
+                        properties:
+                          hostedZoneRole:
+                            description: |-
+                              HostedZoneRole is the role to assume when performing operations
+                              on a hosted zone owned by another account.
+                              Deprecated. Use the Secret referenced by ClusterMetadata.MetadataJSONSecretRef instead. We
+                              may stop populating this section in the future.
+                            type: string
+                        type: object
+                      azure:
+                        description: Azure holds azure-specific cluster metadata
+                        properties:
+                          resourceGroupName:
+                            description: |-
+                              ResourceGroupName is the name of the resource group in which the cluster resources were created.
+                              Deprecated. Use the Secret referenced by ClusterMetadata.MetadataJSONSecretRef instead. We
+                              may stop populating this section in the future.
+                            type: string
+                        required:
+                        - resourceGroupName
+                        type: object
+                      gcp:
+                        description: GCP holds GCP-specific cluster metadata
+                        properties:
+                          networkProjectID:
+                            description: |-
+                              NetworkProjectID is used for shared VPC setups
+                              Deprecated. Use the Secret referenced by ClusterMetadata.MetadataJSONSecretRef instead. We
+                              may stop populating this section in the future.
+                            type: string
+                        type: object
+                    type: object
+                required:
+                - adminKubeconfigSecretRef
+                - clusterID
+                - infraID
+                type: object
+              extraManifestsRefs:
+                description: ExtraManifestsRefs is list of config map references containing
+                  additional manifests to be applied to the relocated cluster.
+                items:
+                  description: |-
+                    LocalObjectReference contains enough information to let you locate the
+                    referenced object inside the same namespace.
+                  properties:
+                    name:
+                      default: ""
+                      description: |-
+                        Name of the referent.
+                        This field is effectively required, but due to backwards compatibility is
+                        allowed to be empty. Instances of this type with an empty value here are
+                        almost certainly wrong.
+                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      type: string
+                  type: object
+                  x-kubernetes-map-type: atomic
+                type: array
+              hostname:
+                description: Hostname is the desired hostname for the host
+                type: string
+              imageDigestSources:
+                description: ImageDigestSources lists sources/repositories for the
+                  release-image content.
+                items:
+                  description: ImageDigestMirrors holds cluster-wide information about
+                    how to handle mirrors in the registries config.
+                  properties:
+                    mirrorSourcePolicy:
+                      description: |-
+                        mirrorSourcePolicy defines the fallback policy if fails to pull image from the mirrors.
+                        If unset, the image will continue to be pulled from the the repository in the pull spec.
+                        sourcePolicy is valid configuration only when one or more mirrors are in the mirror list.
+                      enum:
+                      - NeverContactSource
+                      - AllowContactingSource
+                      type: string
+                    mirrors:
+                      description: |-
+                        mirrors is zero or more locations that may also contain the same images. No mirror will be configured if not specified.
+                        Images can be pulled from these mirrors only if they are referenced by their digests.
+                        The mirrored location is obtained by replacing the part of the input reference that
+                        matches source by the mirrors entry, e.g. for registry.redhat.io/product/repo reference,
+                        a (source, mirror) pair *.redhat.io, mirror.local/redhat causes a mirror.local/redhat/product/repo
+                        repository to be used.
+                        The order of mirrors in this list is treated as the user's desired priority, while source
+                        is by default considered lower priority than all mirrors.
+                        If no mirror is specified or all image pulls from the mirror list fail, the image will continue to be
+                        pulled from the repository in the pull spec unless explicitly prohibited by "mirrorSourcePolicy"
+                        Other cluster configuration, including (but not limited to) other imageDigestMirrors objects,
+                        may impact the exact order mirrors are contacted in, or some mirrors may be contacted
+                        in parallel, so this should be considered a preference rather than a guarantee of ordering.
+                        "mirrors" uses one of the following formats:
+                        host[:port]
+                        host[:port]/namespace[/namespace…]
+                        host[:port]/namespace[/namespace…]/repo
+                        for more information about the format, see the document about the location field:
+                        https://github.com/containers/image/blob/main/docs/containers-registries.conf.5.md#choosing-a-registry-toml-table
+                      items:
+                        pattern: ^((?:[a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9])(?:(?:\.(?:[a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]))+)?(?::[0-9]+)?)(?:(?:/[a-z0-9]+(?:(?:(?:[._]|__|[-]*)[a-z0-9]+)+)?)+)?$
+                        type: string
+                      type: array
+                      x-kubernetes-list-type: set
+                    source:
+                      description: |-
+                        source matches the repository that users refer to, e.g. in image pull specifications. Setting source to a registry hostname
+                        e.g. docker.io. quay.io, or registry.redhat.io, will match the image pull specification of corressponding registry.
+                        "source" uses one of the following formats:
+                        host[:port]
+                        host[:port]/namespace[/namespace…]
+                        host[:port]/namespace[/namespace…]/repo
+                        [*.]host
+                        for more information about the format, see the document about the location field:
+                        https://github.com/containers/image/blob/main/docs/containers-registries.conf.5.md#choosing-a-registry-toml-table
+                      pattern: ^\*(?:\.(?:[a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]))+$|^((?:[a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9])(?:(?:\.(?:[a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]))+)?(?::[0-9]+)?)(?:(?:/[a-z0-9]+(?:(?:(?:[._]|__|[-]*)[a-z0-9]+)+)?)+)?$
+                      type: string
+                  required:
+                  - source
+                  type: object
+                type: array
+              imageSetRef:
+                description: ImageSetRef is a reference to a ClusterImageSet.
+                properties:
+                  name:
+                    description: Name is the name of the ClusterImageSet that this
+                      refers to
+                    type: string
+                required:
+                - name
+                type: object
+              machineNetwork:
+                description: |-
+                  MachineNetwork is the subnet provided by user for the ocp cluster.
+                  This will be used to create the node network and choose ip address for the node.
+                  Equivalent to install-config.yaml's machineNetwork.
+                  Deprecated: Use MachineNetworks instead.
+                type: string
+              machineNetworks:
+                description: |-
+                  MachineNetworks is the list of IP address pools for machines.
+                  This enables dual-stack support by allowing multiple networks.
+                  If both MachineNetwork and MachineNetworks are specified, MachineNetwork should match
+                  the first element of MachineNetworks.
+                  Use instead of MachineNetwork.
+                items:
+                  description: MachineNetworkEntry is a single IP address block for
+                    node IP blocks.
+                  properties:
+                    cidr:
+                      description: CIDR is the IP block address pool for machines
+                        within the cluster.
+                      type: string
+                  required:
+                  - cidr
+                  type: object
+                type: array
+              nodeIP:
+                description: |-
+                  NodeIP is the desired IP for the host
+                  Deprecated: this field is ignored (will be removed in a future release).
+                type: string
+              proxy:
+                description: Proxy defines the proxy settings to be applied in relocated
+                  cluster
+                properties:
+                  httpProxy:
+                    description: HTTPProxy is the URL of the proxy for HTTP requests.
+                    type: string
+                  httpsProxy:
+                    description: HTTPSProxy is the URL of the proxy for HTTPS requests.
+                    type: string
+                  noProxy:
+                    description: |-
+                      NoProxy is a comma-separated list of domains and CIDRs for which the proxy should not be
+                      used.
+                    type: string
+                type: object
+              sshKey:
+                description: |-
+                  SSHKey is the public Secure Shell (SSH) key to provide access to
+                  instances. Equivalent to install-config.yaml's sshKey.
+                  This key will be added to the host to allow ssh access
+                type: string
+            required:
+            - imageSetRef
+            type: object
+          status:
+            description: ImageClusterInstallStatus defines the observed state of ImageClusterInstall
+            properties:
+              bareMetalHostRef:
+                properties:
+                  name:
+                    description: Name identifies the BareMetalHost within a namespace
+                    type: string
+                  namespace:
+                    description: Namespace identifies the namespace containing the
+                      referenced BareMetalHost
+                    type: string
+                required:
+                - name
+                - namespace
+                type: object
+              bootTime:
+                description: BootTime indicates the time at which the host was requested
+                  to boot. Used to determine install timeouts.
+                format: date-time
+                type: string
+              conditions:
+                description: Conditions is a list of conditions associated with syncing
+                  to the cluster.
+                items:
+                  description: ClusterInstallCondition contains details for the current
+                    condition of a cluster install.
+                  properties:
+                    lastProbeTime:
+                      description: LastProbeTime is the last time we probed the condition.
+                      format: date-time
+                      type: string
+                    lastTransitionTime:
+                      description: LastTransitionTime is the last time the condition
+                        transitioned from one status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: Message is a human-readable message indicating
+                        details about last transition.
+                      type: string
+                    reason:
+                      description: Reason is a unique, one-word, CamelCase reason
+                        for the condition's last transition.
+                      type: string
+                    status:
+                      description: Status is the status of the condition.
+                      type: string
+                    type:
+                      description: Type is the type of the condition.
+                      type: string
+                  required:
+                  - status
+                  - type
+                  type: object
+                type: array
+              installRestarts:
+                description: InstallRestarts is the total count of container restarts
+                  on the clusters install job.
+                type: integer
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: null
+  storedVersions: null

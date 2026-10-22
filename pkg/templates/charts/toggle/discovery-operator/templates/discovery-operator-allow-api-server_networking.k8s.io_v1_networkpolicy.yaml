@@ -1,0 +1,19 @@
+{{- if .Values.global.networkPolicies.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: discovery-operator-allow-api-server
+  namespace: '{{ .Values.global.namespace }}'
+spec:
+  egress:
+  - ports:
+    - port: 443
+      protocol: TCP
+    - port: 6443
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app: discovery-operator
+  policyTypes:
+  - Egress
+{{- end }}

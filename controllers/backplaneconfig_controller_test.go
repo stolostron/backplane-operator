@@ -1,0 +1,3334 @@
+// Copyright Contributors to the Open Cluster Management project
+
+/*
+Copyright 2021.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+package controllers
+
+import (
+	"context"
+	"fmt"
+	"os"
+	"reflect"
+	"sort"
+	"strings"
+	"sync"
+	"testing"
+	"time"
+
+	apixv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes/scheme"
+
+	"github.com/go-logr/logr"
+	configv1 "github.com/openshift/api/config/v1"
+
+	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
+	"github.com/stolostron/backplane-operator/pkg/status"
+	"github.com/stolostron/backplane-operator/pkg/utils"
+
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	addonv1alpha1 "open-cluster-management.io/api/addon/v1alpha1"
+
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
+
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	//+kubebuilder:scaffold:imports
+)
+
+// Define utility constants for object names and testing timeouts/durations and intervals.
+const (
+	BackplaneConfigName        = "test-backplaneconfig"
+	BackplaneConfigTestName    = "Backplane Config"
+	BackplaneOperatorNamespace = "default"
+	DestinationNamespace       = "test"
+	JobName                    = "test-job"
+
+	timeout  = time.Second * 20
+	duration = time.Second * 10
+	interval = time.Millisecond * 250
+)
+
+var (
+	mockClient = fake.NewClientBuilder().Build()
+	recon      = MultiClusterEngineReconciler{
+		Client:        mockClient,
+		Scheme:        scheme.Scheme,
+		StatusManager: &status.StatusTracker{Client: mockClient},
+	}
+)
+
+type testList []struct {
+	Name           string
+	NamespacedName types.NamespacedName
+	ResourceType   client.Object
+	Expected       error
+}
+
+var _ = Describe("BackplaneConfig controller", func() {
+	var (
+		clusterManager         *unstructured.Unstructured
+		hiveConfig             *unstructured.Unstructured
+		clusterManagementAddon *unstructured.Unstructured
+		addonTemplate          *unstructured.Unstructured
+		addonDeploymentConfig  *unstructured.Unstructured
+		tests                  testList
+		msaTests               testList
+		secondTests            testList
+	)
+
+	AfterEach(func() {
+		log.Info("----- AFTER EACH -----")
+		err := k8sClient.Delete(context.Background(), &backplanev1.MultiClusterEngine{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: BackplaneConfigName,
+			},
+		})
+		Expect(err == nil || errors.IsNotFound(err)).To(BeTrue())
+		Eventually(func() bool {
+			foundMCE := &backplanev1.MultiClusterEngine{}
+			err := k8sClient.Get(context.TODO(), types.NamespacedName{Name: BackplaneConfigName}, foundMCE)
+			return errors.IsNotFound(err)
+		}, timeout, interval).Should(BeTrue())
+		Expect(k8sClient.Delete(context.Background(), &configv1.ClusterVersion{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "version",
+			},
+		})).To(Succeed())
+		Expect(k8sClient.Delete(context.Background(), &configv1.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "cluster",
+			},
+		})).To(Succeed())
+		Expect(k8sClient.Delete(context.Background(), &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "testsecret",
+				Namespace: DestinationNamespace,
+			},
+		})).To(Succeed())
+	})
+
+	BeforeEach(func() {
+		log.Info("----- BEFORE EACH -----")
+		// Create openshift-monitoring namespace because metrics stands up prometheus endpoint here
+		err := k8sClient.Create(context.Background(), &corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "openshift-monitoring",
+			},
+			Spec: corev1.NamespaceSpec{},
+		})
+		if err != nil && !errors.IsAlreadyExists(err) {
+			Expect(err).To(BeNil())
+		}
+
+		// Create target namespace
+		err = k8sClient.Create(context.Background(), &corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: DestinationNamespace,
+			},
+			Spec: corev1.NamespaceSpec{},
+		})
+		if err != nil && !errors.IsAlreadyExists(err) {
+			Expect(err).To(BeNil())
+		}
+		// Create ClusterVersion
+		// Attempted to Store Version in status. Unable to get it to stick.
+		Expect(k8sClient.Create(context.Background(), &configv1.ClusterVersion{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "version",
+			},
+			Spec: configv1.ClusterVersionSpec{
+				Channel:   "stable-4.9",
+				ClusterID: "12345678910",
+			},
+		})).To(Succeed())
+
+		// Create ClusterIngress
+		// Attempted to Store Version in status. Unable to get it to stick.
+		Expect(k8sClient.Create(context.Background(), &configv1.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "cluster",
+			},
+			Spec: configv1.IngressSpec{
+				Domain: "apps.installer-test-cluster.dev00.red-chesterfield.com",
+			},
+		})).To(Succeed())
+
+		// Create test secret in target namespace
+		testsecret := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "testsecret",
+				Namespace: DestinationNamespace,
+			},
+		}
+		Eventually(func() error {
+			err := k8sClient.Create(context.TODO(), testsecret)
+			if errors.IsAlreadyExists(err) {
+				return nil
+			}
+			return err
+		}, timeout, interval).Should(Succeed())
+
+		clusterManager = &unstructured.Unstructured{}
+		clusterManager.SetGroupVersionKind(schema.GroupVersionKind{
+			Group:   "operator.open-cluster-management.io",
+			Version: "v1",
+			Kind:    "ClusterManager",
+		})
+
+		hiveConfig = &unstructured.Unstructured{}
+		hiveConfig.SetGroupVersionKind(schema.GroupVersionKind{
+			Group:   "hive.openshift.io",
+			Version: "v1",
+			Kind:    "HiveConfig",
+		})
+
+		clusterManagementAddon = &unstructured.Unstructured{}
+		clusterManagementAddon.SetGroupVersionKind(schema.GroupVersionKind{
+			Group:   "addon.open-cluster-management.io",
+			Version: "v1alpha1",
+			Kind:    "ClusterManagementAddOn",
+		})
+
+		addonTemplate = &unstructured.Unstructured{}
+		addonTemplate.SetGroupVersionKind(schema.GroupVersionKind{
+			Group:   "addon.open-cluster-management.io",
+			Version: "v1alpha1",
+			Kind:    "AddOnTemplate",
+		})
+
+		addonDeploymentConfig = &unstructured.Unstructured{}
+		addonDeploymentConfig.SetGroupVersionKind(schema.GroupVersionKind{
+			Group:   "addon.open-cluster-management.io",
+			Version: "v1alpha1",
+			Kind:    "AddOnDeploymentConfig",
+		})
+
+		tests = testList{
+			{
+				Name:           BackplaneConfigTestName,
+				NamespacedName: types.NamespacedName{Name: BackplaneConfigName},
+				ResourceType:   &backplanev1.MultiClusterEngine{},
+				Expected:       nil,
+			},
+			{
+				Name:           "OCM Webhook",
+				NamespacedName: types.NamespacedName{Name: "ocm-webhook", Namespace: DestinationNamespace},
+				ResourceType:   &appsv1.Deployment{},
+				Expected:       nil,
+			},
+			{
+				Name:           "OCM Controller",
+				NamespacedName: types.NamespacedName{Name: "ocm-controller", Namespace: DestinationNamespace},
+				ResourceType:   &appsv1.Deployment{},
+				Expected:       nil,
+			},
+			{
+				Name:           "OCM Proxy Server",
+				NamespacedName: types.NamespacedName{Name: "ocm-proxyserver", Namespace: DestinationNamespace},
+				ResourceType:   &appsv1.Deployment{},
+				Expected:       nil,
+			},
+			{
+				Name:           "Cluster Manager Deployment",
+				NamespacedName: types.NamespacedName{Name: "cluster-manager", Namespace: DestinationNamespace},
+				ResourceType:   &appsv1.Deployment{},
+				Expected:       nil,
+			},
+			{
+				Name:           "Hive Operator Deployment",
+				NamespacedName: types.NamespacedName{Name: "hive-operator", Namespace: DestinationNamespace},
+				ResourceType:   &appsv1.Deployment{},
+				Expected:       nil,
+			},
+			{
+				Name:           "Discovery Operator Deployment",
+				NamespacedName: types.NamespacedName{Name: "discovery-operator", Namespace: DestinationNamespace},
+				ResourceType:   &appsv1.Deployment{},
+				Expected:       nil,
+			},
+			{
+				Name:           "Managed Cluster Import Controller",
+				NamespacedName: types.NamespacedName{Name: "managedcluster-import-controller-v2", Namespace: DestinationNamespace},
+				ResourceType:   &appsv1.Deployment{},
+				Expected:       nil,
+			},
+			{
+				Name:           "Cluster Curator Controller",
+				NamespacedName: types.NamespacedName{Name: "cluster-curator-controller", Namespace: DestinationNamespace},
+				ResourceType:   &appsv1.Deployment{},
+				Expected:       nil,
+			},
+			{
+				Name:           "Cluster Claims Controller",
+				NamespacedName: types.NamespacedName{Name: "clusterclaims-controller", Namespace: DestinationNamespace},
+				ResourceType:   &appsv1.Deployment{},
+				Expected:       nil,
+			},
+			{
+				Name:           "ClusterLifecycle State Metrics",
+				NamespacedName: types.NamespacedName{Name: "clusterlifecycle-state-metrics-v2", Namespace: DestinationNamespace},
+				ResourceType:   &appsv1.Deployment{},
+				Expected:       nil,
+			},
+			{
+				Name:           "Provider Credentials Controller",
+				NamespacedName: types.NamespacedName{Name: "provider-credential-controller", Namespace: DestinationNamespace},
+				ResourceType:   &appsv1.Deployment{},
+				Expected:       nil,
+			},
+			{
+				Name:           "Assisted Installer",
+				NamespacedName: types.NamespacedName{Name: "infrastructure-operator", Namespace: DestinationNamespace},
+				ResourceType:   &appsv1.Deployment{},
+				Expected:       nil,
+			},
+			{
+				Name:           "Cluster Manager",
+				NamespacedName: types.NamespacedName{Name: "cluster-manager"},
+				ResourceType:   clusterManager,
+				Expected:       nil,
+			},
+			{
+				Name:           "Hive Config",
+				NamespacedName: types.NamespacedName{Name: "hive"},
+				ResourceType:   hiveConfig,
+				Expected:       nil,
+			},
+			{
+				Name:           "worker-manager ClusterManagementAddon",
+				NamespacedName: types.NamespacedName{Name: "work-manager"},
+				ResourceType:   clusterManagementAddon,
+				Expected:       nil,
+			},
+			{
+				Name:           "Cluster Proxy Addon Manager",
+				NamespacedName: types.NamespacedName{Name: "cluster-proxy-addon-manager", Namespace: DestinationNamespace},
+				ResourceType:   &appsv1.Deployment{},
+				Expected:       nil,
+			},
+			{
+				Name:           "Cluster Proxy Addon User",
+				NamespacedName: types.NamespacedName{Name: "cluster-proxy-addon-user", Namespace: DestinationNamespace},
+				ResourceType:   &appsv1.Deployment{},
+				Expected:       nil,
+			},
+		}
+
+		msaTests = testList{
+			{
+				Name:           "Managed-ServiceAccount Addon Template",
+				NamespacedName: types.NamespacedName{Name: "managed-serviceaccount"},
+				ResourceType:   addonTemplate,
+				Expected:       nil,
+			},
+			{
+				Name:           "Managed-ServiceAccount agent registration clusterrole",
+				NamespacedName: types.NamespacedName{Name: "managed-serviceaccount-addon-agent"},
+				ResourceType:   &rbacv1.ClusterRole{},
+				Expected:       nil,
+			},
+			{
+				Name:           "Managed-ServiceAccount addon manager clusterrolebinding",
+				NamespacedName: types.NamespacedName{Name: "open-cluster-management-addon-manager-managed-serviceaccount"},
+				ResourceType:   &rbacv1.ClusterRoleBinding{},
+				Expected:       nil,
+			},
+			{
+				Name:           "Managed-ServiceAccount ClusterManagementAddon",
+				NamespacedName: types.NamespacedName{Name: "managed-serviceaccount"},
+				ResourceType:   clusterManagementAddon,
+				Expected:       nil,
+			},
+		}
+		secondTests = testList{
+			{
+				Name:           BackplaneConfigTestName,
+				NamespacedName: types.NamespacedName{Name: BackplaneConfigName},
+				ResourceType:   &backplanev1.MultiClusterEngine{},
+				Expected:       nil,
+			},
+			// {
+			// 	Name:           "MCEConsole",
+			// 	NamespacedName: types.NamespacedName{Name: "console-mce-console", Namespace: DestinationNamespace},
+			// 	ResourceType:   &appsv1.Deployment{},
+			// 	Expected:       nil,
+			// },
+		}
+		log.Info("----- TEST CASE -----")
+	})
+
+	When("deleting a BackplaneConfig", func() {
+		Context("and a finalizer is on an InternalEngineComponent", func() {
+			It("should deploy sub components", func() {
+				createCtx := context.Background()
+				By("creating the backplane config with everything enabled")
+				backplaneConfig := &backplanev1.MultiClusterEngine{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "multicluster.openshift.io/v1",
+						Kind:       "MultiClusterEngine",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: BackplaneConfigName,
+					},
+					Spec: backplanev1.MultiClusterEngineSpec{
+						TargetNamespace: DestinationNamespace,
+						NetworkPolicies: &backplanev1.NetworkPoliciesConfig{Enabled: true},
+						ImagePullSecret: "testsecret",
+						Overrides: &backplanev1.Overrides{
+							Components: []backplanev1.ComponentConfig{
+								{
+									Name:    backplanev1.AssistedService,
+									Enabled: true,
+								},
+								{
+									Name:    backplanev1.ClusterAPI,
+									Enabled: true,
+								},
+								{
+									Name:    backplanev1.ClusterAPIProviderAWS,
+									Enabled: true,
+								},
+								{
+									Name:    backplanev1.ClusterAPIProviderAzurePreview,
+									Enabled: true,
+								},
+								{
+									Name:    backplanev1.ClusterAPIProviderMetal,
+									Enabled: true,
+								},
+								{
+									Name:    backplanev1.ClusterAPIProviderOA,
+									Enabled: true,
+								},
+								{
+									Name:    backplanev1.ClusterLifecycle,
+									Enabled: true,
+								},
+								{
+									Name:    backplanev1.ClusterManager,
+									Enabled: true,
+								},
+								{
+									Name:    backplanev1.ClusterPermission,
+									Enabled: true,
+								},
+								{
+									Name:    backplanev1.ClusterProxyAddon,
+									Enabled: true,
+								},
+								{
+									Name:    backplanev1.ConsoleMCE,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.Discovery,
+									Enabled: true,
+								},
+								{
+									Name:    backplanev1.FleetNavigation,
+									Enabled: true,
+								},
+								{
+									Name:    backplanev1.Hive,
+									Enabled: true,
+								},
+								{
+									Name:    backplanev1.HyperShift,
+									Enabled: true,
+								},
+								{
+									Name:    backplanev1.HypershiftLocalHosting,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.ManagedServiceAccount,
+									Enabled: true,
+								},
+								{
+									Name:    backplanev1.ServerFoundation,
+									Enabled: true,
+								},
+								{
+									Name:    backplanev1.ImageBasedInstallOperator,
+									Enabled: true,
+								},
+							},
+						},
+					},
+				}
+				Expect(k8sClient.Create(createCtx, backplaneConfig)).Should(Succeed())
+
+				By("ensuring the InternalEngineComponent CRD is created")
+				ctx := context.Background()
+				iecCRD := &apixv1.CustomResourceDefinition{}
+
+				Eventually(k8sClient.Get(ctx, types.NamespacedName{Name: "internalenginecomponents.multicluster.openshift.io"}, iecCRD)).Should(Succeed())
+
+				By("ensuring togglable components")
+				_, err := reconciler.ensureToggleableComponents(ctx, backplaneConfig)
+				Expect(err).To(BeNil())
+
+				By("ensuring each enabled component's CR is created")
+				for _, mcecomponent := range backplanev1.MCEComponents {
+					if backplaneConfig.Enabled(mcecomponent) {
+						By(fmt.Sprintf("ensuring %s CR is created", mcecomponent))
+						Eventually(k8sClient.Get(ctx, types.NamespacedName{Name: mcecomponent, Namespace: backplaneConfig.Spec.TargetNamespace}, &backplanev1.InternalEngineComponent{})).Should(Succeed())
+					}
+				}
+
+				By("ensuring each disabled component's CR is not present")
+				for _, mcecomponent := range backplanev1.MCEComponents {
+					if !backplaneConfig.Enabled(mcecomponent) {
+						By(fmt.Sprintf("ensuring %s CR is not present", mcecomponent))
+						Eventually(k8sClient.Get(ctx, types.NamespacedName{Name: mcecomponent, Namespace: backplaneConfig.Spec.TargetNamespace}, &backplanev1.InternalEngineComponent{})).Should(Not(Succeed()))
+					}
+				}
+
+				By("adding a finalizer to the Discovery component")
+				componentCR := &backplanev1.InternalEngineComponent{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "multicluster.openshift.io/v1",
+						Kind:       "InternalEngineComponent",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:       backplanev1.Discovery,
+						Namespace:  backplaneConfig.Spec.TargetNamespace,
+						Finalizers: []string{"test"},
+					},
+				}
+
+				force := true
+				Expect(k8sClient.Patch(context.Background(), componentCR, client.Apply, &client.PatchOptions{Force: &force, FieldManager: BackplaneConfigName})).To(Succeed())
+
+				discoveryIEC := &backplanev1.InternalEngineComponent{}
+				Eventually(k8sClient.Get(context.Background(), types.NamespacedName{Name: backplanev1.Discovery, Namespace: backplaneConfig.Spec.TargetNamespace}, discoveryIEC)).Should(Succeed())
+				By("making sure that the finalizer is set")
+				Expect(len(discoveryIEC.Finalizers) > 0).To(BeTrue())
+				Expect(discoveryIEC.Finalizers[0] == "test").To(BeTrue())
+
+				By("deleting the backplane config")
+				Expect(k8sClient.Delete(context.Background(), &backplanev1.MultiClusterEngine{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: BackplaneConfigName,
+					},
+				})).To(Succeed())
+
+				By("expecting the non-finalized InternalEngineComponents to not exist")
+				for _, mcecomponent := range backplanev1.MCEComponents {
+					if mcecomponent != backplanev1.Discovery { // don't check discovery. It has a finalizer
+						By(fmt.Sprintf("ensuring %s CR is not present", mcecomponent))
+
+						Eventually(func() bool {
+							foundCR := &backplanev1.InternalEngineComponent{}
+							err := k8sClient.Get(context.Background(), types.NamespacedName{Name: mcecomponent, Namespace: backplaneConfig.Spec.DeepCopy().TargetNamespace}, foundCR)
+							log.Info(fmt.Sprintf("component retrieved: %v", foundCR))
+							return errors.IsNotFound(err)
+						}, timeout, interval).Should(BeTrue())
+
+					}
+				}
+				By("expecting the finalized Discovery InternalEngineComponent to still exist")
+				Eventually(k8sClient.Get(ctx, types.NamespacedName{Name: backplanev1.Discovery, Namespace: backplaneConfig.Spec.TargetNamespace}, &backplanev1.InternalEngineComponent{}), timeout, interval).Should(Succeed())
+
+				By("expecting the backplane operator to still exist")
+				Eventually(k8sClient.Get(ctx, types.NamespacedName{Name: BackplaneConfigName, Namespace: backplaneConfig.Spec.TargetNamespace}, &backplanev1.MultiClusterEngine{}), timeout, interval).Should(Succeed())
+
+				By("cleaning up when the finalizer is removed")
+				By("deleting the final InternalEngineComponent")
+				componentCR = &backplanev1.InternalEngineComponent{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "multicluster.openshift.io/v1",
+						Kind:       "InternalEngineComponent",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:       backplanev1.Discovery,
+						Namespace:  backplaneConfig.Spec.TargetNamespace,
+						Finalizers: []string{},
+					},
+				}
+				Expect(k8sClient.Patch(context.Background(), componentCR, client.Apply, &client.PatchOptions{Force: &force, FieldManager: BackplaneConfigName})).To(Succeed())
+				Eventually(func() bool {
+					err := k8sClient.Get(ctx, types.NamespacedName{Name: backplanev1.Discovery, Namespace: backplaneConfig.Spec.TargetNamespace}, &backplanev1.InternalEngineComponent{})
+					return errors.IsNotFound(err)
+				}, timeout, interval).Should(BeTrue())
+				Eventually(func() bool {
+					err := k8sClient.Get(ctx, types.NamespacedName{Name: BackplaneConfigName, Namespace: backplaneConfig.Spec.TargetNamespace}, &backplanev1.MultiClusterEngine{})
+					return errors.IsNotFound(err)
+				}, timeout, interval).Should(BeTrue())
+			})
+		})
+
+		Context("ensuring No InternalEngineComponent CRs", func() {
+			It("should deploy sub components", func() {
+				createCtx := context.Background()
+				By("creating the backplane config with everything disabled")
+				backplaneConfig := &backplanev1.MultiClusterEngine{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "multicluster.openshift.io/v1",
+						Kind:       "MultiClusterEngine",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: BackplaneConfigName,
+					},
+					Spec: backplanev1.MultiClusterEngineSpec{
+						TargetNamespace: DestinationNamespace,
+						NetworkPolicies: &backplanev1.NetworkPoliciesConfig{Enabled: true},
+						ImagePullSecret: "testsecret",
+						Overrides: &backplanev1.Overrides{
+							Components: []backplanev1.ComponentConfig{
+								{
+									Name:    backplanev1.AssistedService,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.ClusterAPIProviderAWS,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.ClusterAPIProviderAzurePreview,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.ClusterAPI,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.ClusterAPIProviderMetal,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.ClusterAPIProviderOA,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.ClusterLifecycle,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.ClusterManager,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.ClusterPermission,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.ClusterProxyAddon,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.ConsoleMCE,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.Discovery,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.FleetNavigation,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.Hive,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.HyperShift,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.HypershiftLocalHosting,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.ManagedServiceAccount,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.ServerFoundation,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.ImageBasedInstallOperator,
+									Enabled: false,
+								},
+							},
+						},
+					},
+				}
+				Expect(k8sClient.Create(createCtx, backplaneConfig)).Should(Succeed())
+
+				By("ensuring the InternalEngineComponent CRD is created")
+				ctx := context.Background()
+				iecCRD := &apixv1.CustomResourceDefinition{}
+
+				Eventually(k8sClient.Get(ctx, types.NamespacedName{Name: "internalenginecomponents.multicluster.openshift.io"}, iecCRD)).Should(Succeed())
+
+				By("ensuring togglable components")
+				_, err := reconciler.ensureToggleableComponents(ctx, backplaneConfig)
+				Expect(err).To(BeNil())
+
+				By("ensuring each enabled component's CR is created")
+				for _, mcecomponent := range backplanev1.MCEComponents {
+					if backplaneConfig.Enabled(mcecomponent) {
+						By(fmt.Sprintf("ensuring %s CR is created", mcecomponent))
+						Eventually(k8sClient.Get(ctx, types.NamespacedName{Name: mcecomponent, Namespace: backplaneConfig.Spec.TargetNamespace}, &backplanev1.InternalEngineComponent{})).Should(Succeed())
+					}
+				}
+
+				By("ensuring each disabled component's CR is not present")
+				for _, mcecomponent := range backplanev1.MCEComponents {
+					if !backplaneConfig.Enabled(mcecomponent) {
+						By(fmt.Sprintf("ensuring %s CR is not present", mcecomponent))
+						component := &backplanev1.InternalEngineComponent{}
+						err := k8sClient.Get(ctx, types.NamespacedName{Name: mcecomponent, Namespace: backplaneConfig.Spec.TargetNamespace}, component)
+						log.Info(fmt.Sprintf("component and error: %v :: %v", component, err))
+						Expect(err).NotTo(BeNil())
+					}
+				}
+			})
+		})
+	})
+
+	When("creating a new BackplaneConfig", func() {
+		Context("and no image pull policy is specified", func() {
+			It("should deploy sub components", func() {
+				createCtx := context.Background()
+				backplaneConfig := &backplanev1.MultiClusterEngine{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "multicluster.openshift.io/v1",
+						Kind:       "MultiClusterEngine",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: BackplaneConfigName,
+					},
+					Spec: backplanev1.MultiClusterEngineSpec{
+						TargetNamespace: DestinationNamespace,
+						NetworkPolicies: &backplanev1.NetworkPoliciesConfig{Enabled: true},
+						ImagePullSecret: "testsecret",
+					},
+				}
+
+				By("creating the backplane config")
+				Expect(k8sClient.Create(createCtx, backplaneConfig)).Should(Succeed())
+
+				By("ensuring that no openshift.io/cluster-monitoring label is enabled if MCE does not exist")
+				backplaneConfig2 := &backplanev1.MultiClusterEngine{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "multicluster.openshift.io/v1",
+						Kind:       "MultiClusterEngine",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: BackplaneConfigName,
+					},
+					Spec: backplanev1.MultiClusterEngineSpec{
+						TargetNamespace: "test-n2",
+						NetworkPolicies: &backplanev1.NetworkPoliciesConfig{Enabled: true},
+					},
+				}
+
+				_, err := reconciler.ensureOpenShiftNamespaceLabel(createCtx, backplaneConfig2)
+				Expect(err).To(Not(BeNil()))
+
+				By("ensuring each deployment and config is created")
+				for _, test := range tests {
+					By(fmt.Sprintf("ensuring %s is created", test.Name))
+					Eventually(func() bool {
+						ctx := context.Background()
+						err := k8sClient.Get(ctx, test.NamespacedName, test.ResourceType)
+						return err == test.Expected
+					}, timeout, interval).Should(BeTrue())
+				}
+
+				By("ensuring each deployment and config has an owner reference")
+				for _, test := range tests {
+					if test.Name == BackplaneConfigTestName {
+						continue // config itself won't have ownerreference
+					}
+					By(fmt.Sprintf("ensuring %s has an ownerreference set", test.Name))
+					Eventually(func(g Gomega) {
+						ctx := context.Background()
+						g.Expect(k8sClient.Get(ctx, test.NamespacedName, test.ResourceType)).To(Succeed())
+						g.Expect(len(test.ResourceType.GetOwnerReferences())).To(
+							Equal(1),
+							fmt.Sprintf("Missing ownerreference on %s", test.Name),
+						)
+						g.Expect(test.ResourceType.GetOwnerReferences()[0].Name).To(Equal(BackplaneConfigName))
+					}, timeout, interval).Should(Succeed())
+				}
+
+				By("ensuring each deployment has its imagePullPolicy set to IfNotPresent")
+				for _, test := range tests {
+					res, ok := test.ResourceType.(*appsv1.Deployment)
+					if !ok {
+						continue // only deployments will have an image pull policy
+					}
+					By(fmt.Sprintf("ensuring %s has its imagePullPolicy set to IfNotPresent", test.Name))
+					Eventually(func(g Gomega) {
+						ctx := context.Background()
+						g.Expect(k8sClient.Get(ctx, test.NamespacedName, res)).To(Succeed())
+						g.Expect(len(res.Spec.Template.Spec.Containers)).To(
+							Not(Equal(0)),
+							fmt.Sprintf("no containers in %s", test.Name),
+						)
+						g.Expect(res.Spec.Template.Spec.Containers[0].ImagePullPolicy).To(
+							Equal(corev1.PullIfNotPresent),
+						)
+					}, timeout, interval).Should(Succeed())
+				}
+
+				By("ensuring the ServiceMonitor resource is recreated if deleted")
+				Eventually(func() error {
+					ctx := context.Background()
+					u := &unstructured.Unstructured{}
+					u.SetName("clusterlifecycle-state-metrics-v2")
+					u.SetNamespace(DestinationNamespace)
+					u.SetGroupVersionKind(schema.GroupVersionKind{
+						Group:   "monitoring.coreos.com",
+						Kind:    "ServiceMonitor",
+						Version: "v1",
+					})
+					return k8sClient.Delete(ctx, u)
+				}, timeout, interval).Should(Succeed())
+				Eventually(func() error {
+					ctx := context.Background()
+					namespacedName := types.NamespacedName{
+						Name:      "clusterlifecycle-state-metrics-v2",
+						Namespace: DestinationNamespace,
+					}
+					resourceType := &monitoringv1.ServiceMonitor{}
+					return k8sClient.Get(ctx, namespacedName, resourceType)
+				}, timeout, interval).Should(Succeed())
+
+				By("ensuring the trusted-ca-bundle ConfigMap is created")
+				Eventually(func(g Gomega) {
+					ctx := context.Background()
+					namespacedName := types.NamespacedName{
+						Name:      defaultTrustBundleName,
+						Namespace: DestinationNamespace,
+					}
+					res := &corev1.ConfigMap{}
+					g.Expect(k8sClient.Get(ctx, namespacedName, res)).To(Succeed())
+				}, timeout, interval).Should(Succeed())
+
+				By("Pausing MCE to pause reconcilation")
+				Eventually(func() bool {
+					annotations := backplaneConfig.GetAnnotations()
+					if annotations == nil {
+						annotations = make(map[string]string)
+					}
+
+					annotations[utils.AnnotationMCEPause] = "true"
+					backplaneConfig.Annotations = annotations
+					_ = k8sClient.Update(ctx, backplaneConfig)
+
+					return utils.IsPaused(backplaneConfig)
+				}, timeout, interval).Should(BeTrue())
+			})
+		})
+
+		Context("and OCP Console is disabled", func() {
+			It("should deploy sub components", func() {
+				os.Setenv("ACM_HUB_OCP_VERSION", "4.12.0")
+				defer os.Unsetenv("ACM_HUB_OCP_VERSION")
+				createCtx := context.Background()
+				By("creating the backplane config")
+				backplaneConfig := &backplanev1.MultiClusterEngine{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "multicluster.openshift.io/v1",
+						Kind:       "MultiClusterEngine",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: BackplaneConfigName,
+					},
+					Spec: backplanev1.MultiClusterEngineSpec{
+						TargetNamespace: DestinationNamespace,
+						NetworkPolicies: &backplanev1.NetworkPoliciesConfig{Enabled: true},
+						ImagePullSecret: "testsecret",
+					},
+				}
+				Expect(k8sClient.Create(createCtx, backplaneConfig)).Should(Succeed())
+
+				By("ensuring each deployment and config is created")
+				for _, test := range tests {
+					By(fmt.Sprintf("ensuring %s is created", test.Name))
+					Eventually(func() bool {
+						ctx := context.Background()
+						err := k8sClient.Get(ctx, test.NamespacedName, test.ResourceType)
+						return err == test.Expected
+					}, timeout, interval).Should(BeTrue())
+				}
+			})
+		})
+
+		Context("ensuring InternalEngineComponent CRs", func() {
+			It("should deploy sub components", func() {
+				createCtx := context.Background()
+				By("creating the backplane config with everything enabled")
+				os.Setenv("ACM_HUB_OCP_VERSION", "4.12.0")
+				defer os.Unsetenv("ACM_HUB_OCP_VERSION")
+				backplaneConfig := &backplanev1.MultiClusterEngine{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "multicluster.openshift.io/v1",
+						Kind:       "MultiClusterEngine",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: BackplaneConfigName,
+					},
+					Spec: backplanev1.MultiClusterEngineSpec{
+						TargetNamespace: DestinationNamespace,
+						NetworkPolicies: &backplanev1.NetworkPoliciesConfig{Enabled: true},
+						ImagePullSecret: "testsecret",
+						Overrides: &backplanev1.Overrides{
+							Components: []backplanev1.ComponentConfig{
+								{
+									Name:    backplanev1.AssistedService,
+									Enabled: true,
+								},
+								{
+									Name:    backplanev1.ClusterAPIProviderAzurePreview,
+									Enabled: true,
+								},
+								{
+									Name:    backplanev1.ClusterAPIProviderMetal,
+									Enabled: true,
+								},
+								{
+									Name:    backplanev1.ClusterAPIProviderOA,
+									Enabled: true,
+								},
+								{
+									Name:    backplanev1.ClusterAPI,
+									Enabled: true,
+								},
+								// EnvTest does not support namespace deletion; therefore, if we try to re-enable this component, the test will fail.
+								// https: //book.kubebuilder.io/reference/envtest
+								// {
+								// 	Name:    backplanev1.ClusterAPIProviderAWS,
+								// 	Enabled: false,
+								// },
+								{
+									Name:    backplanev1.ClusterLifecycle,
+									Enabled: true,
+								},
+								{
+									Name:    backplanev1.ClusterManager,
+									Enabled: true,
+								},
+								{
+									Name:    backplanev1.ClusterPermission,
+									Enabled: true,
+								},
+								{
+									Name:    backplanev1.ClusterProxyAddon,
+									Enabled: true,
+								},
+								{
+									Name:    backplanev1.ConsoleMCE,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.Discovery,
+									Enabled: true,
+								},
+								{
+									Name:    backplanev1.FleetNavigation,
+									Enabled: true,
+								},
+								{
+									Name:    backplanev1.Hive,
+									Enabled: true,
+								},
+								{
+									Name:    backplanev1.HyperShift,
+									Enabled: true,
+								},
+								{
+									Name:    backplanev1.HypershiftLocalHosting,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.ManagedServiceAccount,
+									Enabled: true,
+								},
+								{
+									Name:    backplanev1.ServerFoundation,
+									Enabled: true,
+								},
+								{
+									Name:    backplanev1.ImageBasedInstallOperator,
+									Enabled: true,
+								},
+							},
+						},
+					},
+				}
+				Expect(k8sClient.Create(createCtx, backplaneConfig)).Should(Succeed())
+
+				By("ensuring the InternalEngineComponent CRD is created")
+				ctx := context.Background()
+				iecCRD := &apixv1.CustomResourceDefinition{}
+
+				Eventually(k8sClient.Get(ctx, types.NamespacedName{Name: "internalenginecomponents.multicluster.openshift.io"}, iecCRD)).Should(Succeed())
+
+				By("ensuring togglable components")
+				_, err := reconciler.ensureToggleableComponents(ctx, backplaneConfig)
+				Expect(err).To(BeNil())
+
+				By("ensuring each enabled component's CR is created")
+				for _, mcecomponent := range backplanev1.MCEComponents {
+					if backplaneConfig.Enabled(mcecomponent) {
+						By(fmt.Sprintf("ensuring %s CR is created", mcecomponent))
+						iec := &backplanev1.InternalEngineComponent{}
+						err := k8sClient.Get(ctx, types.NamespacedName{Name: mcecomponent,
+							Namespace: backplaneConfig.Spec.TargetNamespace}, iec)
+
+						log.Info("iec", "Name", iec.GetName(), "Namespace", iec.GetNamespace())
+						Eventually(err).Should(BeNil())
+					}
+				}
+
+				By("ensuring each disabled component's CR is not present")
+				for _, mcecomponent := range backplanev1.MCEComponents {
+					if !backplaneConfig.Enabled(mcecomponent) {
+						By(fmt.Sprintf("ensuring %s CR is not present", mcecomponent))
+						Eventually(k8sClient.Get(ctx, types.NamespacedName{Name: mcecomponent, Namespace: backplaneConfig.Spec.TargetNamespace}, &backplanev1.InternalEngineComponent{})).Should(Not(Succeed()))
+					}
+				}
+			})
+		})
+
+		Context("ensuring No InternalEngineComponent CRs", func() {
+			It("should deploy sub components", func() {
+				createCtx := context.Background()
+				By("creating the backplane config with everything enabled")
+				backplaneConfig := &backplanev1.MultiClusterEngine{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "multicluster.openshift.io/v1",
+						Kind:       "MultiClusterEngine",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: BackplaneConfigName,
+					},
+					Spec: backplanev1.MultiClusterEngineSpec{
+						TargetNamespace: DestinationNamespace,
+						NetworkPolicies: &backplanev1.NetworkPoliciesConfig{Enabled: true},
+						ImagePullSecret: "testsecret",
+						Overrides: &backplanev1.Overrides{
+							Components: []backplanev1.ComponentConfig{
+								{
+									Name:    backplanev1.AssistedService,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.ClusterAPI,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.ClusterAPIProviderAWS,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.ClusterAPIProviderAzurePreview,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.ClusterAPIProviderMetal,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.ClusterAPIProviderOA,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.ClusterLifecycle,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.ClusterManager,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.ClusterPermission,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.ClusterProxyAddon,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.ConsoleMCE,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.Discovery,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.FleetNavigation,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.Hive,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.HyperShift,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.HypershiftLocalHosting,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.ManagedServiceAccount,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.ServerFoundation,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.ImageBasedInstallOperator,
+									Enabled: false,
+								},
+							},
+						},
+					},
+				}
+				Expect(k8sClient.Create(createCtx, backplaneConfig)).Should(Succeed())
+
+				By("ensuring the InternalEngineComponent CRD is created")
+				ctx := context.Background()
+				iecCRD := &apixv1.CustomResourceDefinition{}
+
+				Eventually(k8sClient.Get(ctx, types.NamespacedName{Name: "internalenginecomponents.multicluster.openshift.io"}, iecCRD)).Should(Succeed())
+
+				By("ensuring togglable components")
+				_, err := reconciler.ensureToggleableComponents(ctx, backplaneConfig)
+				Expect(err).To(BeNil())
+
+				By("ensuring each enabled component's CR is created")
+				for _, mcecomponent := range backplanev1.MCEComponents {
+					if backplaneConfig.Enabled(mcecomponent) {
+						By(fmt.Sprintf("ensuring %s CR is created", mcecomponent))
+						Eventually(k8sClient.Get(ctx, types.NamespacedName{Name: mcecomponent, Namespace: backplaneConfig.Spec.TargetNamespace}, &backplanev1.InternalEngineComponent{})).Should(Succeed())
+					}
+				}
+
+				By("ensuring each disabled component's CR is not present")
+				for _, mcecomponent := range backplanev1.MCEComponents {
+					if !backplaneConfig.Enabled(mcecomponent) {
+						By(fmt.Sprintf("ensuring %s CR is not present", mcecomponent))
+						component := &backplanev1.InternalEngineComponent{}
+						err := k8sClient.Get(ctx, types.NamespacedName{Name: mcecomponent, Namespace: backplaneConfig.Spec.TargetNamespace}, component)
+						log.Info(fmt.Sprintf("component and error: %v :: %v", component, err))
+						Expect(err).NotTo(BeNil())
+					}
+				}
+			})
+		})
+		Context("2nd attempt", func() {
+			It("should deploy sub components", func() {
+				createCtx := context.Background()
+				By("creating the backplane config")
+				backplaneConfig := &backplanev1.MultiClusterEngine{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "multicluster.openshift.io/v1",
+						Kind:       "MultiClusterEngine",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: BackplaneConfigName,
+					},
+					Spec: backplanev1.MultiClusterEngineSpec{
+						TargetNamespace: DestinationNamespace,
+						NetworkPolicies: &backplanev1.NetworkPoliciesConfig{Enabled: true},
+						ImagePullSecret: "testsecret",
+						Overrides: &backplanev1.Overrides{
+							Components: []backplanev1.ComponentConfig{
+								{
+									Name:    backplanev1.ConsoleMCE,
+									Enabled: true,
+								},
+								{
+									Name:    backplanev1.ServerFoundation,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.HyperShift,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.Hive,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.ClusterManager,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.ClusterLifecycle,
+									Enabled: false,
+								},
+								{
+									Name:    backplanev1.ManagedServiceAccount,
+									Enabled: false,
+								},
+							},
+						},
+					},
+				}
+				Expect(k8sClient.Create(createCtx, backplaneConfig)).Should(Succeed())
+
+				By("ensuring each deployment and config is created")
+				for _, test := range secondTests {
+					By(fmt.Sprintf("ensuring %s is created", test.Name))
+					Eventually(func() bool {
+						ctx := context.Background()
+						err := k8sClient.Get(ctx, test.NamespacedName, test.ResourceType)
+						return err == test.Expected
+					}, timeout, interval).Should(BeTrue())
+				}
+
+			})
+		})
+
+		Context("and an image pull policy is specified in an override", func() {
+			It("should deploy sub components with the image pull policy in the override", func() {
+				By("creating the backplane config with an image pull policy override")
+				backplaneConfig := &backplanev1.MultiClusterEngine{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "multicluster.openshift.io/v1",
+						Kind:       "MultiClusterEngine",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: BackplaneConfigName,
+					},
+					Spec: backplanev1.MultiClusterEngineSpec{
+						TargetNamespace: DestinationNamespace,
+						NetworkPolicies: &backplanev1.NetworkPoliciesConfig{Enabled: true},
+						ImagePullSecret: "testsecret",
+						Overrides: &backplanev1.Overrides{
+							ImagePullPolicy: corev1.PullAlways,
+						},
+					},
+				}
+				createCtx := context.Background()
+				Expect(k8sClient.Create(createCtx, backplaneConfig)).Should(Succeed())
+				_, err := reconciler.ensureNoClusterManager(createCtx, backplaneConfig)
+				Expect(err).To(BeNil())
+				_, err = reconciler.ensureNoClusterLifecycle(createCtx, backplaneConfig)
+				Expect(err).To(BeNil())
+				_, err = reconciler.ensureNoManagedServiceAccount(createCtx, backplaneConfig)
+				Expect(err).To(BeNil())
+				_, err = reconciler.ensureNoHive(createCtx, backplaneConfig)
+				Expect(err).To(BeNil())
+				_, err = reconciler.ensureNoHyperShift(createCtx, backplaneConfig)
+				Expect(err).To(BeNil())
+				_, err = reconciler.ensureNoServerFoundation(createCtx, backplaneConfig)
+				Expect(err).To(BeNil())
+
+				By("ensuring each deployment and config is created")
+				for _, test := range tests {
+					By(fmt.Sprintf("ensuring %s is created", test.Name))
+					Eventually(func() bool {
+						ctx := context.Background()
+						err := k8sClient.Get(ctx, test.NamespacedName, test.ResourceType)
+						return err == test.Expected
+					}, timeout, interval).Should(BeTrue())
+				}
+
+				By("ensuring each deployment has its imagePullPolicy set to Always (the override)")
+				for _, test := range tests {
+					res, ok := test.ResourceType.(*appsv1.Deployment)
+					if !ok {
+						continue // only deployments will have an image pull policy
+					}
+					By(fmt.Sprintf("ensuring %s has its imagePullPolicy set to Always", test.Name))
+					Eventually(func(g Gomega) {
+						ctx := context.Background()
+						g.Expect(k8sClient.Get(ctx, test.NamespacedName, res)).To(Succeed())
+						g.Expect(len(res.Spec.Template.Spec.Containers)).To(
+							Not(Equal(0)),
+							fmt.Sprintf("no containers in %s", test.Name),
+						)
+						g.Expect(res.Spec.Template.Spec.Containers[0].ImagePullPolicy).To(
+							Equal(corev1.PullAlways),
+						)
+					}, timeout, interval).Should(Succeed())
+				}
+			})
+		})
+
+		Context("nonOCP", func() {
+			It("should deploy sub components", func() {
+				createCtx := context.Background()
+				utils.SetDeployOnOCP(false)
+				By("creating the backplane config")
+				backplaneConfig := &backplanev1.MultiClusterEngine{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "multicluster.openshift.io/v1",
+						Kind:       "MultiClusterEngine",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: BackplaneConfigName,
+					},
+					Spec: backplanev1.MultiClusterEngineSpec{
+						TargetNamespace: DestinationNamespace,
+						NetworkPolicies: &backplanev1.NetworkPoliciesConfig{Enabled: true},
+						ImagePullSecret: "testsecret",
+						Overrides: &backplanev1.Overrides{
+							Components: []backplanev1.ComponentConfig{},
+						},
+					},
+				}
+				Expect(k8sClient.Create(createCtx, backplaneConfig)).Should(Succeed())
+
+				// By("ensuring each deployment and config is created")
+				// for _, test := range secondTests {
+				// 	By(fmt.Sprintf("ensuring %s is created", test.Name))
+				// 	Eventually(func() bool {
+				// 		ctx := context.Background()
+				// 		err := k8sClient.Get(ctx, test.NamespacedName, test.ResourceType)
+				// 		return err == test.Expected
+				// 	}, timeout, interval).Should(BeTrue())
+				// }
+
+			})
+		})
+
+		Context("and enable ManagedServiceAccount", func() {
+			It("should deploy sub components", func() {
+				By("creating the backplane config")
+				utils.SetDeployOnOCP(true)
+				backplaneConfig := &backplanev1.MultiClusterEngine{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "multicluster.openshift.io/v1",
+						Kind:       "MultiClusterEngine",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: BackplaneConfigName,
+					},
+					Spec: backplanev1.MultiClusterEngineSpec{
+						TargetNamespace: DestinationNamespace,
+						Overrides: &backplanev1.Overrides{
+							Components: []backplanev1.ComponentConfig{
+								{
+									Name:    backplanev1.ManagedServiceAccount,
+									Enabled: true,
+								},
+							},
+						},
+					},
+				}
+				createCtx := context.Background()
+				Expect(k8sClient.Create(createCtx, backplaneConfig)).Should(Succeed())
+				withMSATests := append(tests, msaTests...)
+				By("ensuring each deployment and config is created")
+				for _, test := range withMSATests {
+					By(fmt.Sprintf("ensuring %s is created", test.Name))
+					if test.ResourceType == addonTemplate {
+						// the name of the addon template increases with each version,
+						// managed-serviceaccount-2.4, managed-serviceaccount-2.5, etc.
+						continue
+					}
+					Eventually(func() bool {
+						ctx := context.Background()
+						err := k8sClient.Get(ctx, test.NamespacedName, test.ResourceType)
+						return err == test.Expected
+					}, timeout, interval).Should(BeTrue())
+				}
+
+				By("ensuring each deployment and config has an owner reference")
+				for _, test := range withMSATests {
+					if test.Name == BackplaneConfigTestName {
+						continue // config itself won't have ownerreference
+					}
+					By(fmt.Sprintf("ensuring %s has an ownerreference set", test.Name))
+					if test.ResourceType == addonTemplate {
+						// the name of the addon template increases with each version,
+						// managed-serviceaccount-2.4, managed-serviceaccount-2.5, etc.
+						continue
+					}
+					Eventually(func(g Gomega) {
+						ctx := context.Background()
+						g.Expect(k8sClient.Get(ctx, test.NamespacedName, test.ResourceType)).To(Succeed())
+						g.Expect(len(test.ResourceType.GetOwnerReferences())).To(
+							Equal(1),
+							fmt.Sprintf("Missing ownerreference on %s", test.Name),
+						)
+						g.Expect(test.ResourceType.GetOwnerReferences()[0].Name).To(Equal(BackplaneConfigName))
+					}, timeout, interval).Should(Succeed())
+				}
+
+				By("ensuring each addon template is created and has an owner reference")
+				for _, test := range withMSATests {
+					if test.ResourceType != addonTemplate {
+						continue
+					}
+
+					By(fmt.Sprintf("ensuring %s is created and has an ownerreference set", test.Name))
+					// the name of the addon template increases with each version,
+					// managed-serviceaccount-2.4, managed-serviceaccount-2.5, etc.
+					Eventually(func() error {
+						ctx := context.Background()
+						ats := &unstructured.UnstructuredList{}
+						ats.SetGroupVersionKind(schema.GroupVersionKind{
+							Group:   "addon.open-cluster-management.io",
+							Version: "v1alpha1",
+							Kind:    "AddOnTemplateList",
+						})
+						err := k8sClient.List(ctx, ats)
+						if err != test.Expected {
+							return err
+						}
+						for _, at := range ats.Items {
+							if strings.HasPrefix(at.GetName(), test.NamespacedName.Name) {
+								Expect(len(at.GetOwnerReferences())).To(
+									Equal(1),
+									fmt.Sprintf("Missing ownerreference on %s", test.Name),
+								)
+								Expect(at.GetOwnerReferences()[0].Name).To(Equal(BackplaneConfigName))
+								return nil
+							}
+						}
+						return fmt.Errorf("addon template %s not found", test.NamespacedName.Name)
+					}, timeout, interval).ShouldNot(HaveOccurred())
+				}
+
+			})
+		})
+
+		Context("and images are overriden using annotations", func() {
+			It("should deploy images with a custom image repository", func() {
+				imageRepo := "quay.io/testrepo"
+				By("creating the backplane config with the image repository annotation")
+				backplaneConfig := &backplanev1.MultiClusterEngine{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "multicluster.openshift.io/v1",
+						Kind:       "MultiClusterEngine",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: BackplaneConfigName,
+						Annotations: map[string]string{
+							"imageRepository": imageRepo,
+						},
+					},
+					Spec: backplanev1.MultiClusterEngineSpec{
+						TargetNamespace: DestinationNamespace,
+						NetworkPolicies: &backplanev1.NetworkPoliciesConfig{Enabled: true},
+						ImagePullSecret: "testsecret",
+					},
+				}
+				createCtx := context.Background()
+				Expect(k8sClient.Create(createCtx, backplaneConfig)).Should(Succeed())
+
+				By("ensuring each deployment and config is created")
+				for _, test := range tests {
+					By(fmt.Sprintf("ensuring %s is created", test.Name))
+					Eventually(func() bool {
+						ctx := context.Background()
+						err := k8sClient.Get(ctx, test.NamespacedName, test.ResourceType)
+						return err == test.Expected
+					}, timeout, interval).Should(BeTrue())
+				}
+
+				By("ensuring each deployment has its image repository overridden")
+				for _, test := range tests {
+					res, ok := test.ResourceType.(*appsv1.Deployment)
+					if !ok {
+						continue // only deployments will have an image pull policy
+					}
+					By(fmt.Sprintf("ensuring %s has its image using %s", test.Name, imageRepo))
+					Eventually(func(g Gomega) {
+						ctx := context.Background()
+						g.Expect(k8sClient.Get(ctx, test.NamespacedName, res)).To(Succeed())
+						g.Expect(res.Spec.Template.Spec.Containers[0].Image).To(
+							HavePrefix(imageRepo),
+							fmt.Sprintf("Image does not have expected repository"),
+						)
+					}, timeout, interval).Should(Succeed())
+				}
+			})
+
+			It("should replace images as defined in a configmap", func() {
+				By("creating a configmap with an image override")
+				testCM := &corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test",
+						Namespace: BackplaneOperatorNamespace,
+					},
+					Data: map[string]string{
+						"overrides.json": `[
+							{
+								"image-name": "discovery-operator",
+								"image-remote": "quay.io/stolostron",
+								"image-digest": "sha256:9dc4d072dcd06eda3fda19a15f4b84677fbbbde2a476b4817272cde4724f02cc",
+								"image-key": "discovery_operator"
+								}
+						]`,
+					},
+				}
+				Expect(k8sClient.Create(context.TODO(), testCM)).To(Succeed())
+
+				By("creating the backplane config with the configmap override annotation")
+				backplaneConfig := &backplanev1.MultiClusterEngine{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "multicluster.openshift.io/v1",
+						Kind:       "MultiClusterEngine",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: BackplaneConfigName,
+						Annotations: map[string]string{
+							"imageOverridesCM": "test",
+						},
+					},
+					Spec: backplanev1.MultiClusterEngineSpec{
+						TargetNamespace: DestinationNamespace,
+						NetworkPolicies: &backplanev1.NetworkPoliciesConfig{Enabled: true},
+						ImagePullSecret: "testsecret",
+					},
+				}
+				createCtx := context.Background()
+				Expect(k8sClient.Create(createCtx, backplaneConfig)).Should(Succeed())
+
+				By("ensuring the deployment image is overridden")
+				Eventually(func(g Gomega) {
+					ctx := context.Background()
+					discoveryNN := types.NamespacedName{Name: "discovery-operator", Namespace: DestinationNamespace}
+					res := &appsv1.Deployment{}
+					g.Expect(k8sClient.Get(ctx, discoveryNN, res)).To(Succeed())
+					g.Expect(res.Spec.Template.Spec.Containers[0].Image).To(
+						Equal("quay.io/stolostron/discovery-operator@sha256:9dc4d072dcd06eda3fda19a15f4b84677fbbbde2a476b4817272cde4724f02cc"),
+						fmt.Sprintf("Image does not match that defined in configmap"),
+					)
+				}, timeout, interval).Should(Succeed())
+			})
+		})
+
+		Context("and imagePullSecret is missing", func() {
+			It("should error due to missing secret", func() {
+				By("creating the backplane config with nonexistant secret")
+				backplaneConfig := &backplanev1.MultiClusterEngine{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "multicluster.openshift.io/v1",
+						Kind:       "MultiClusterEngine",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: BackplaneConfigName,
+					},
+					Spec: backplanev1.MultiClusterEngineSpec{
+						TargetNamespace: DestinationNamespace,
+						ImagePullSecret: "nonexistant",
+					},
+				}
+				createCtx := context.Background()
+				Expect(k8sClient.Create(createCtx, backplaneConfig)).Should(Succeed())
+
+				By("ensuring MCE reports error in Phase")
+				Eventually(func(g Gomega) {
+					multiClusterEngine := types.NamespacedName{
+						Name: BackplaneConfigName,
+					}
+					existingMCE := &backplanev1.MultiClusterEngine{}
+					g.Expect(k8sClient.Get(context.TODO(), multiClusterEngine, existingMCE)).To(Succeed(), "Failed to get MCE")
+
+					g.Expect(existingMCE.Status.Phase).To(Equal(backplanev1.MultiClusterEnginePhaseError))
+				}, timeout, interval).Should(Succeed())
+
+			})
+		})
+
+		Context("and OCP is below minimum version", func() {
+			It("should error due to bad OCP version", func() {
+				By("creating the backplane config with nonexistant secret")
+				os.Setenv("ACM_HUB_OCP_VERSION", "4.9.0")
+				defer os.Unsetenv("ACM_HUB_OCP_VERSION")
+				backplaneConfig := &backplanev1.MultiClusterEngine{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "multicluster.openshift.io/v1",
+						Kind:       "MultiClusterEngine",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: BackplaneConfigName,
+					},
+					Spec: backplanev1.MultiClusterEngineSpec{
+						TargetNamespace: DestinationNamespace,
+						NetworkPolicies: &backplanev1.NetworkPoliciesConfig{Enabled: true},
+						ImagePullSecret: "testsecret",
+					},
+				}
+				createCtx := context.Background()
+				Expect(k8sClient.Create(createCtx, backplaneConfig)).Should(Succeed())
+
+				By("ensuring MCE reports error in Phase")
+				Eventually(func(g Gomega) {
+					multiClusterEngine := types.NamespacedName{
+						Name: BackplaneConfigName,
+					}
+					existingMCE := &backplanev1.MultiClusterEngine{}
+					g.Expect(k8sClient.Get(context.TODO(), multiClusterEngine, existingMCE)).To(Succeed(), "Failed to get MCE")
+
+					g.Expect(existingMCE.Status.Phase).To(Equal(backplanev1.MultiClusterEnginePhaseError))
+				}, timeout, interval).Should(Succeed())
+
+				By("ensuring MCE no longer reports error in Phase when annotated")
+				multiClusterEngine := types.NamespacedName{
+					Name: BackplaneConfigName,
+				}
+				existingMCE := &backplanev1.MultiClusterEngine{}
+				Expect(k8sClient.Get(context.TODO(), multiClusterEngine, existingMCE)).To(Succeed(), "Failed to get MCE")
+				existingMCE.SetAnnotations(map[string]string{utils.AnnotationIgnoreOCPVersion: "true"})
+				Expect(k8sClient.Update(context.TODO(), existingMCE)).To(Succeed(), "Failed to get MCE")
+
+				Eventually(func(g Gomega) {
+					multiClusterEngine := types.NamespacedName{
+						Name: BackplaneConfigName,
+					}
+					existingMCE := &backplanev1.MultiClusterEngine{}
+					g.Expect(k8sClient.Get(context.TODO(), multiClusterEngine, existingMCE)).To(Succeed(), "Failed to get MCE")
+
+					g.Expect(existingMCE.Status.Phase).To(Not(Equal(backplanev1.MultiClusterEnginePhaseError)))
+				}, timeout, interval).Should(Succeed())
+			})
+		})
+
+	})
+})
+
+var schemeOnce sync.Once
+
+// registerScheme initializes the global test scheme with typed registrations once per test run.
+// Uses sync.Once to prevent duplicate registrations when called from multiple test functions.
+// Panic recovery handles conflicts with envtest's unstructured CRD registrations (see suite_test.go).
+func registerScheme() {
+	schemeOnce.Do(func() {
+		addSafe := func(fn func(*runtime.Scheme) error) {
+			func() {
+				defer func() {
+					if r := recover(); r != nil {
+						if !strings.Contains(fmt.Sprintf("%v", r), "Double registration") {
+							panic(r)
+						}
+					}
+				}()
+				if err := fn(scheme.Scheme); err != nil {
+					errStr := fmt.Sprintf("%v", err)
+					if !strings.Contains(errStr, "Double registration") {
+						panic(err)
+					}
+				}
+			}()
+		}
+
+		addSafe(backplanev1.AddToScheme)
+		addSafe(configv1.AddToScheme)
+		addSafe(addonv1alpha1.Install)
+	})
+}
+
+func Test_getComponentConfig(t *testing.T) {
+	tests := []struct {
+		name      string
+		component string
+		mch       backplanev1.MultiClusterEngine
+		want      backplanev1.ComponentConfig
+	}{
+		{
+			name:      "should get discovery ComponentConfig",
+			component: backplanev1.Discovery,
+			mch: backplanev1.MultiClusterEngine{
+				Spec: backplanev1.MultiClusterEngineSpec{
+					Overrides: &backplanev1.Overrides{
+						Components: []backplanev1.ComponentConfig{
+							{
+								Name:            backplanev1.ClusterLifecycle,
+								Enabled:         false,
+								ConfigOverrides: backplanev1.ConfigOverride{},
+							},
+							{
+								Name:            backplanev1.Discovery,
+								Enabled:         true,
+								ConfigOverrides: backplanev1.ConfigOverride{},
+							},
+						},
+					},
+				},
+			},
+			want: backplanev1.ComponentConfig{
+				Name:            backplanev1.Discovery,
+				Enabled:         true,
+				ConfigOverrides: backplanev1.ConfigOverride{},
+			},
+		},
+		{
+			name:      "should get no ComponentConfig",
+			component: "foobar",
+			mch: backplanev1.MultiClusterEngine{
+				Spec: backplanev1.MultiClusterEngineSpec{
+					Overrides: &backplanev1.Overrides{
+						Components: []backplanev1.ComponentConfig{
+							{
+								Name:            backplanev1.ClusterLifecycle,
+								Enabled:         false,
+								ConfigOverrides: backplanev1.ConfigOverride{},
+							},
+							{
+								Name:            backplanev1.Discovery,
+								Enabled:         true,
+								ConfigOverrides: backplanev1.ConfigOverride{},
+							},
+						},
+					},
+				},
+			},
+			want: backplanev1.ComponentConfig{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, _ := reconciler.getComponentConfig(tt.mch.Spec.Overrides.Components, tt.component)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("getComponentConfig(tt.mch.Spec.Overrides.Components) = %v, want = %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_getDeploymentConfig(t *testing.T) {
+	tests := []struct {
+		name           string
+		componentName  string
+		deploymentName string
+		mch            backplanev1.MultiClusterEngine
+		want           *backplanev1.DeploymentConfig
+	}{
+		{
+			name:           "should get search DeploymentConfig",
+			componentName:  backplanev1.Discovery,
+			deploymentName: "discovery-operator",
+			mch: backplanev1.MultiClusterEngine{
+				Spec: backplanev1.MultiClusterEngineSpec{
+					Overrides: &backplanev1.Overrides{
+						Components: []backplanev1.ComponentConfig{
+							{
+								Name:            backplanev1.ClusterLifecycle,
+								Enabled:         false,
+								ConfigOverrides: backplanev1.ConfigOverride{},
+							},
+							{
+								Name:    backplanev1.Discovery,
+								Enabled: true,
+								ConfigOverrides: backplanev1.ConfigOverride{
+									Deployments: []backplanev1.DeploymentConfig{
+										{
+											Name: "discovery-operator",
+											Containers: []backplanev1.ContainerConfig{
+												{
+													Name: "discovery-operator",
+													Env: []backplanev1.EnvConfig{
+														{
+															Name:  "foo",
+															Value: "bar",
+														},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: &backplanev1.DeploymentConfig{
+				Name: "discovery-operator",
+				Containers: []backplanev1.ContainerConfig{
+					{
+						Name: "discovery-operator",
+						Env: []backplanev1.EnvConfig{
+							{
+								Name:  "foo",
+								Value: "bar",
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:           "should get no DeploymentConfig",
+			componentName:  backplanev1.ClusterLifecycle,
+			deploymentName: "discovery-operator",
+			mch: backplanev1.MultiClusterEngine{
+				Spec: backplanev1.MultiClusterEngineSpec{
+					Overrides: &backplanev1.Overrides{
+						Components: []backplanev1.ComponentConfig{
+							{
+								Name:            backplanev1.ClusterLifecycle,
+								Enabled:         false,
+								ConfigOverrides: backplanev1.ConfigOverride{},
+							},
+							{
+								Name:            backplanev1.Discovery,
+								Enabled:         true,
+								ConfigOverrides: backplanev1.ConfigOverride{},
+							},
+						},
+					},
+				},
+			},
+			want: &backplanev1.DeploymentConfig{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if componentConfig, found := reconciler.getComponentConfig(tt.mch.Spec.Overrides.Components,
+				tt.componentName); found {
+				if got, _ := reconciler.getDeploymentConfig(componentConfig.ConfigOverrides.Deployments,
+					tt.deploymentName); !reflect.DeepEqual(got, tt.want) {
+					t.Errorf("getDeploymentConfig(componentConfig.ConfigOverrides.Deployments, tt.deploymentName) = %v, want = %v", got, tt.want)
+				}
+			}
+		})
+	}
+}
+
+func Test_applyEnvConfig(t *testing.T) {
+	tests := []struct {
+		name          string
+		containerName string
+		template      *unstructured.Unstructured
+		envConfig     []backplanev1.EnvConfig
+		want          error
+	}{
+		{
+			name:          "should apply env config",
+			containerName: "discovery-operator",
+			template: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "apps/v1",
+					"kind":       "Deployment",
+					"metadata": map[string]interface{}{
+						"name":      "discovery-operator",
+						"namespace": "test-ns",
+					},
+					"spec": map[string]interface{}{
+						"template": map[string]interface{}{
+							"spec": map[string]interface{}{
+								"containers": []interface{}{
+									map[string]interface{}{
+										"name": "discovery-operator",
+										"env":  []interface{}{},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			envConfig: []backplanev1.EnvConfig{
+				{Name: "foo", Value: "bar"},
+			},
+			want: nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := reconciler.applyEnvConfig(tt.template, tt.containerName, tt.envConfig); err != nil {
+				t.Errorf("applyEnvConfig(tt.template, tt.containerName, tt.envConfig) = %v, want %v", err, tt.want)
+			}
+
+			deployment := &appsv1.Deployment{}
+			if err := runtime.DefaultUnstructuredConverter.FromUnstructured(tt.template.Object, deployment); err != nil {
+				t.Errorf("failed to convert unstructured object to deployment")
+			}
+
+			for _, c := range deployment.Spec.Template.Spec.Containers {
+				if c.Name == tt.containerName {
+					// Ensure envConfig is correctly applied to container Env
+					for _, envVar := range tt.envConfig {
+						found := false
+						for _, containerEnvVar := range c.Env {
+							if containerEnvVar.Name == envVar.Name && containerEnvVar.Value == envVar.Value {
+								found = true
+								break
+							}
+						}
+						if !found {
+							t.Errorf("env variable %v=%v not found in container %v", envVar.Name, envVar.Value, c.Name)
+						}
+					}
+					break
+				}
+			}
+		})
+	}
+}
+
+func Test_ensureInternalEngineComponent(t *testing.T) {
+	tests := []struct {
+		name string
+		mce  *backplanev1.MultiClusterEngine
+		ns   *corev1.Namespace
+		want bool
+	}{
+		{
+			name: "should ensure InternalEngineComponent created",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{Name: "mce"},
+				Spec: backplanev1.MultiClusterEngineSpec{
+					Overrides: &backplanev1.Overrides{
+						Components: []backplanev1.ComponentConfig{
+							{
+								Enabled: true,
+								Name:    "cluster-manager",
+							},
+							{
+								Enabled: true,
+								Name:    "discovery",
+							},
+						},
+					},
+					TargetNamespace: "test-ns",
+					NetworkPolicies: &backplanev1.NetworkPoliciesConfig{Enabled: true},
+				},
+			},
+			ns: &corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{Name: "test-ns"},
+			},
+			want: false,
+		},
+	}
+
+	registerScheme()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			iec := &backplanev1.InternalEngineComponent{}
+
+			defer func() {
+				if err := recon.Client.Delete(context.TODO(), tt.ns); err != nil {
+					t.Errorf("failed to delete namespace: %v", err)
+				}
+			}()
+
+			if err := recon.Client.Create(context.TODO(), tt.ns); err != nil {
+				t.Errorf("failed to create namespace %v: %v", tt.name, err)
+			}
+
+			for _, c := range tt.mce.Spec.Overrides.Components {
+				if _, err := recon.ensureInternalEngineComponent(context.TODO(), tt.mce, c.Name); err != nil {
+					t.Errorf("ensureInternalEngineComponent(context.TODO(), tt.mce, c.Name) = %v", err)
+				}
+
+				if err := recon.Client.Get(context.TODO(), types.NamespacedName{Name: c.Name,
+					Namespace: tt.mce.Spec.TargetNamespace}, iec); err != nil {
+					t.Errorf("failed to get InternalEngineComponent: %v", err)
+				}
+			}
+		})
+	}
+}
+
+func Test_ensureNoInternalEngineComponent(t *testing.T) {
+	tests := []struct {
+		name string
+		mce  *backplanev1.MultiClusterEngine
+		ns   *corev1.Namespace
+		want bool
+	}{
+		{
+			name: "should ensure no InternalEngineComponent exist",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{Name: "mce"},
+				Spec: backplanev1.MultiClusterEngineSpec{
+					Overrides: &backplanev1.Overrides{
+						Components: []backplanev1.ComponentConfig{
+							{
+								Enabled: true,
+								Name:    "cluster-manager",
+							},
+							{
+								Enabled: true,
+								Name:    "discovery",
+							},
+						},
+					},
+					TargetNamespace: "test-ns",
+					NetworkPolicies: &backplanev1.NetworkPoliciesConfig{Enabled: true},
+				},
+			},
+			ns: &corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{Name: "test-ns"},
+			},
+			want: false,
+		},
+	}
+
+	registerScheme()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			defer func() {
+				if err := recon.Client.Delete(context.TODO(), tt.ns); err != nil {
+					t.Errorf("failed to delete namespace: %v", err)
+				}
+			}()
+
+			if err := recon.Client.Create(context.TODO(), tt.ns); err != nil {
+				t.Errorf("failed to create namespace %v: %v", tt.name, err)
+			}
+
+			for _, c := range tt.mce.Spec.Overrides.Components {
+				// Should return nil since we haven't created any InternalEngineComponents yet
+				if _, err := recon.ensureNoInternalEngineComponent(context.TODO(), tt.mce, c.Name); err != nil {
+					t.Errorf("ensureNoInternalEngineComponent(context.TODO(), tt.mce, c.Name) = %v", err)
+				}
+
+				// Create instances of the InternalEngineComponent
+				if _, err := recon.ensureInternalEngineComponent(context.TODO(), tt.mce, c.Name); err != nil {
+					t.Errorf("ensureInternalEngineComponent(context.TODO(), tt.mce, c.Name) = %v", err)
+				}
+
+				iec := &backplanev1.InternalEngineComponent{}
+				if err := recon.Client.Get(context.TODO(), types.NamespacedName{Name: c.Name,
+					Namespace: tt.mce.Spec.TargetNamespace}, iec); err != nil {
+					t.Errorf("failed to get InternalEngineComponent: %v", err)
+				}
+
+				// Add finalizer to the InternalEngineComponent
+				iec.SetFinalizers([]string{"foo/bar"})
+				if err := recon.Client.Update(context.TODO(), iec); err != nil {
+					t.Errorf("failed to update InternalEngineComponent: %v", err)
+				}
+
+				// Should delete the InternalEngineComponent but leave it existing due to the finalizer
+				if _, err := recon.ensureNoInternalEngineComponent(context.TODO(), tt.mce, c.Name); err != nil {
+					t.Errorf("ensureInternalEngineComponent(context.TODO(), tt.mce, c.Name) = %v", err)
+				}
+
+				// Check for the DeletionTimestamp on the InternalEngineComponent
+				if err := recon.Client.Get(context.TODO(), types.NamespacedName{Name: iec.GetName(),
+					Namespace: iec.GetNamespace()}, iec); err != nil {
+					t.Errorf("failed to get InternalEngineComponent: %v", err)
+				}
+				if iec.GetDeletionTimestamp() == nil {
+					t.Errorf("InternalEngineComponent should have DeletionTimestamp")
+				}
+
+				// Reset finalizers on the InternalEngineComponent
+				iec.SetFinalizers([]string{})
+
+				if err := recon.Client.Update(context.TODO(), iec); err != nil {
+					t.Errorf("failed to update InternalEngineComponent: %v", err)
+				}
+
+				// Resource should be deleted
+				if _, err := recon.ensureNoInternalEngineComponent(context.TODO(), tt.mce, c.Name); err != nil {
+					t.Errorf("ensureInternalEngineComponent(context.TODO(), tt.mce, c.Name) = %v", err)
+				}
+			}
+		})
+	}
+}
+
+func Test_ensureNoAllInternalEngineComponents(t *testing.T) {
+	tests := []struct {
+		name string
+		mce  *backplanev1.MultiClusterEngine
+		want bool
+	}{
+		{
+			name: "should ensure no InternalEngineComponent",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "mce",
+				},
+				Spec: backplanev1.MultiClusterEngineSpec{
+					TargetNamespace: "test-ns",
+					NetworkPolicies: &backplanev1.NetworkPoliciesConfig{Enabled: true},
+				},
+			},
+			want: false,
+		},
+	}
+
+	registerScheme()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if _, err := recon.ensureNoAllInternalEngineComponents(context.Background(), tt.mce); err != nil {
+				t.Errorf("failed to ensure no InternalEngineComponents: %v", err)
+			}
+		})
+	}
+}
+
+func Test_finalizeBackplaneConfig(t *testing.T) {
+	tests := []struct {
+		name  string
+		cv    *configv1.ClusterVersion
+		mce   *backplanev1.MultiClusterEngine
+		mceNS *corev1.Namespace
+		lcNS  *corev1.Namespace
+		want  bool
+	}{
+		{
+			name: "should finalize BackplaneConfig",
+			cv: &configv1.ClusterVersion{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "version",
+				},
+				Status: configv1.ClusterVersionStatus{
+					History: []configv1.UpdateHistory{
+						{
+							Version: "4.16.0",
+						},
+					},
+				},
+			},
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "mce",
+				},
+				Spec: backplanev1.MultiClusterEngineSpec{
+					LocalClusterName: "local-cluster",
+					TargetNamespace:  "test-ns",
+					NetworkPolicies:  &backplanev1.NetworkPoliciesConfig{Enabled: true},
+				},
+			},
+			mceNS: &corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-ns",
+				},
+			},
+			lcNS: &corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "local-cluster",
+				},
+			},
+			want: false,
+		},
+	}
+
+	registerScheme()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := recon.Client.Create(ctx, tt.mceNS); err != nil {
+				t.Errorf("failed to create MCE namespace: %v", err)
+			}
+
+			for _, c := range backplanev1.MCEComponents {
+				if c == backplanev1.HypershiftLocalHosting {
+					continue
+				}
+
+				if _, err := recon.ensureInternalEngineComponent(context.TODO(), tt.mce, c); err != nil {
+					t.Errorf("failed to ensure internal engine component: %v", err)
+				}
+			}
+
+			iecList := &backplanev1.InternalEngineComponentList{}
+			if err := recon.Client.List(context.TODO(), iecList); err != nil {
+				t.Errorf("failed to list internal engine components: %v", err)
+			}
+
+			if err := recon.Client.Create(ctx, tt.cv); err != nil {
+				t.Errorf("failed to create ClusterVersion: %v", err)
+			}
+
+			if err := recon.Client.Create(ctx, tt.mce); err != nil {
+				t.Errorf("failed to create MultiClusterEngine: %v", err)
+			}
+
+			if err := recon.Client.Create(ctx, tt.lcNS); err != nil {
+				t.Errorf("failed to create local-cluster namespace: %v", err)
+			}
+
+			// Should fail since local-cluster namespace has not been deleted
+			if _, err := recon.finalizeBackplaneConfig(context.TODO(), tt.mce); err == nil {
+				t.Errorf("finalizeBackplaneConfig(context.TODO(), tt.mce) expected error, got: %v", err)
+			}
+
+			if err := recon.Client.Delete(ctx, tt.lcNS); err != nil {
+				t.Errorf("failed to delete local-cluster namespace: %v", err)
+			}
+
+			// Should fail since local-cluster namespace has not been deleted
+			if _, err := recon.finalizeBackplaneConfig(context.TODO(), tt.mce); err != nil {
+				t.Errorf("failed to finalize Backplane config: %v", err)
+			}
+		})
+	}
+}
+
+func Test_logAndSetCondition(t *testing.T) {
+	tests := []struct {
+		name     string
+		err      error
+		mce      *backplanev1.MultiClusterEngine
+		message  string
+		template *unstructured.Unstructured
+	}{
+		{
+			name: "should log and set condition of MCE",
+			err:  fmt.Errorf("Test error"),
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "multiclusterengine",
+					Namespace: "test-ns",
+				},
+			},
+			message: "This is a test error",
+			template: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "apps/v1",
+					"kind":       "Deployment",
+					"metadata": map[string]interface{}{
+						"name":      "test-deployment",
+						"namespace": "test-ns",
+					},
+					"spec": map[string]interface{}{},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			if _, err := recon.logAndSetCondition(tt.err, tt.message, tt.template, tt.mce); err == nil {
+				t.Errorf("logAndSetCondition() = %v, expected an error", err)
+			}
+		})
+	}
+}
+
+func Test_ensureResourceVersionAlignment(t *testing.T) {
+	tests := []struct {
+		name     string
+		mce      *backplanev1.MultiClusterEngine
+		template *unstructured.Unstructured
+		want     bool
+	}{
+		{
+			name: "should ensure resource version alignment is false",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "multiclusterengine",
+					Namespace: "test-ns",
+				},
+			},
+			template: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "apps/v1",
+					"kind":       "Deployment",
+					"metadata": map[string]interface{}{
+						"annotations": map[string]interface{}{
+							utils.AnnotationReleaseVersion: "2.7.0",
+						},
+						"name":      "test-deployment",
+						"namespace": "test-ns",
+					},
+					"spec": map[string]interface{}{},
+				},
+			},
+			want: false,
+		},
+		{
+			name: "should ensure resource version alignment is true",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "multiclusterhub",
+					Namespace: "test-ns",
+				},
+			},
+			template: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "apps/v1",
+					"kind":       "Deployment",
+					"metadata": map[string]interface{}{
+						"annotations": map[string]interface{}{
+							utils.AnnotationReleaseVersion: "2.17.0",
+						},
+						"name":      "test-deployment",
+						"namespace": "test-ns",
+					},
+					"spec": map[string]interface{}{},
+				},
+			},
+			want: true,
+		},
+	}
+
+	os.Setenv("OPERATOR_VERSION", "2.17.0")
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := recon.ensureResourceVersionAlignment(tt.template, os.Getenv("OPERATOR_VERSION"))
+			if got != tt.want {
+				t.Errorf("ensureResourceVersionAlignment() = %v, want: %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_EnsureDeprecatedResourceCleanup(t *testing.T) {
+	tests := []struct {
+		name string
+		mce  *backplanev1.MultiClusterEngine
+		want error
+	}{
+		{
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "multiclusterengine",
+				},
+				Spec: backplanev1.MultiClusterEngineSpec{
+					TargetNamespace: "test-ns",
+					NetworkPolicies: &backplanev1.NetworkPoliciesConfig{Enabled: true},
+				},
+			},
+			name: "should ensure deprecated resources are cleaned up",
+			want: nil,
+		},
+	}
+
+	registerScheme()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			for _, obj := range recon.GetDeprecatedResources(tt.mce) {
+				if err := recon.Client.Create(context.TODO(), obj); err != nil {
+					t.Errorf("Failed to create %v: %v", obj, err)
+				}
+
+				if _, err := recon.EnsureDeprecatedResourceCleanup(context.TODO(), obj); err != nil {
+					t.Errorf("EnsureDeprecatedResourceCleanup() = %v, want: %v", err, tt.want)
+				}
+			}
+		})
+	}
+}
+
+func Test_isComponentExternallyManaged(t *testing.T) {
+	tests := []struct {
+		name          string
+		mce           *backplanev1.MultiClusterEngine
+		componentName string
+		want          bool
+	}{
+		{
+			name: "component is externally managed",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-mce",
+					Annotations: map[string]string{
+						utils.AnnotationExternallyManaged: `["hypershift","cluster-api"]`,
+					},
+				},
+			},
+			componentName: backplanev1.HyperShift,
+			want:          true,
+		},
+		{
+			name: "component is not externally managed",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-mce",
+					Annotations: map[string]string{
+						utils.AnnotationExternallyManaged: `["hypershift"]`,
+					},
+				},
+			},
+			componentName: backplanev1.ClusterAPI,
+			want:          false,
+		},
+		{
+			name: "no annotation present",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-mce",
+				},
+			},
+			componentName: backplanev1.HyperShift,
+			want:          false,
+		},
+		{
+			name: "empty annotation",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-mce",
+					Annotations: map[string]string{
+						utils.AnnotationExternallyManaged: "",
+					},
+				},
+			},
+			componentName: backplanev1.HyperShift,
+			want:          false,
+		},
+		{
+			name: "invalid json annotation",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-mce",
+					Annotations: map[string]string{
+						utils.AnnotationExternallyManaged: "not-json",
+					},
+				},
+			},
+			componentName: backplanev1.HyperShift,
+			want:          false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := recon.isComponentExternallyManaged(tt.mce, tt.componentName)
+			if got != tt.want {
+				t.Errorf("isComponentExternallyManaged() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_getExternallyManagedCRDSkipDirectories(t *testing.T) {
+	tests := []struct {
+		name string
+		mce  *backplanev1.MultiClusterEngine
+		want []string
+	}{
+		{
+			name: "multiple externally managed components",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-mce",
+					Annotations: map[string]string{
+						utils.AnnotationExternallyManaged: `["hypershift","cluster-api","hive"]`,
+					},
+				},
+			},
+			want: []string{"cluster-api", "cluster-api-k8s", "hive-operator"},
+		},
+		{
+			name: "single externally managed component",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-mce",
+					Annotations: map[string]string{
+						utils.AnnotationExternallyManaged: `["cluster-api"]`,
+					},
+				},
+			},
+			want: []string{"cluster-api", "cluster-api-k8s"},
+		},
+		{
+			name: "no externally managed components",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-mce",
+				},
+			},
+			want: []string{},
+		},
+		{
+			name: "component with no CRD directory mapping",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-mce",
+					Annotations: map[string]string{
+						utils.AnnotationExternallyManaged: `["local-cluster"]`,
+					},
+				},
+			},
+			want: []string{},
+		},
+		{
+			name: "duplicate CRD directories (preview and stable)",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-mce",
+					Annotations: map[string]string{
+						utils.AnnotationExternallyManaged: `["cluster-api","cluster-api-preview"]`,
+					},
+				},
+			},
+			want: []string{"cluster-api", "cluster-api-k8s"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := recon.getExternallyManagedCRDSkipDirectories(tt.mce)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("getExternallyManagedCRDSkipDirectories() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_ensureToggleableComponents_withExternallyManagedComponents(t *testing.T) {
+	tests := []struct {
+		name string
+		mce  *backplanev1.MultiClusterEngine
+		want error
+	}{
+		{
+			name: "all components externally managed should skip reconciliation",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-mce",
+					Annotations: map[string]string{
+						utils.AnnotationExternallyManaged: `[` +
+							`"managedserviceaccount","image-based-install-operator",` +
+							`"hypershift","console-mce","discovery","fleet-navigation",` +
+							`"hive","assisted-service","cluster-lifecycle","cluster-manager",` +
+							`"cluster-permission","server-foundation","cluster-proxy-addon",` +
+							`"cluster-api","cluster-api-provider-aws",` +
+							`"cluster-api-provider-azure-preview",` +
+							`"cluster-api-provider-metal3-preview",` +
+							`"cluster-api-provider-openshift-assisted","local-cluster"]`,
+					},
+				},
+				Spec: backplanev1.MultiClusterEngineSpec{
+					LocalClusterName: "local-cluster",
+					TargetNamespace:  "test-ns",
+					NetworkPolicies:  &backplanev1.NetworkPoliciesConfig{Enabled: true},
+					Overrides: &backplanev1.Overrides{
+						Components: []backplanev1.ComponentConfig{
+							{Name: backplanev1.ManagedServiceAccount, Enabled: true},
+							{Name: backplanev1.ImageBasedInstallOperator, Enabled: true},
+							{Name: backplanev1.HyperShift, Enabled: true},
+							{Name: backplanev1.ConsoleMCE, Enabled: true},
+							{Name: backplanev1.Discovery, Enabled: true},
+							{Name: backplanev1.FleetNavigation, Enabled: true},
+							{Name: backplanev1.Hive, Enabled: true},
+							{Name: backplanev1.AssistedService, Enabled: true},
+							{Name: backplanev1.ClusterLifecycle, Enabled: true},
+							{Name: backplanev1.ClusterManager, Enabled: true},
+							{Name: backplanev1.ClusterPermission, Enabled: true},
+							{Name: backplanev1.ServerFoundation, Enabled: true},
+							{Name: backplanev1.ClusterProxyAddon, Enabled: true},
+							{Name: backplanev1.ClusterAPI, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderAWS, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderAzurePreview, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderMetal, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderOA, Enabled: true},
+							{Name: backplanev1.LocalCluster, Enabled: true},
+						},
+					},
+				},
+			},
+			want: nil,
+		},
+	}
+
+	registerScheme()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Set environment for OCP deployment
+			// os.Setenv("UNIT_TEST", "true")
+			// os.Setenv("ACM_HUB_OCP_VERSION", "4.12.0")
+			// defer os.Unsetenv("UNIT_TEST")
+			// defer os.Unsetenv("ACM_HUB_OCP_VERSION")
+
+			// Create ClusterVersion resource that CheckConsole expects
+			cv := &configv1.ClusterVersion{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "version",
+				},
+				Spec: configv1.ClusterVersionSpec{
+					Channel:   "stable-4.12",
+					ClusterID: "test-cluster-id",
+				},
+				Status: configv1.ClusterVersionStatus{
+					Capabilities: configv1.ClusterVersionCapabilitiesStatus{
+						EnabledCapabilities: []configv1.ClusterVersionCapability{"Console"},
+					},
+					History: []configv1.UpdateHistory{
+						{Version: "4.12.0"},
+					},
+				},
+			}
+			if err := recon.Client.Get(context.TODO(), types.NamespacedName{Name: cv.GetName()}, cv); err != nil {
+				if errors.IsNotFound(err) {
+					if err := recon.Client.Create(context.TODO(), cv); err != nil {
+						t.Fatalf("failed to create ClusterVersion: %v", err)
+					}
+				} else {
+					t.Fatalf("failed to get ClusterVersion: %v", err)
+				}
+			}
+			defer recon.Client.Delete(context.TODO(), cv)
+
+			_, err := recon.ensureToggleableComponents(context.TODO(), tt.mce)
+			if err != tt.want {
+				t.Errorf("ensureToggleableComponents() error = %v, want %v", err, tt.want)
+			}
+		})
+	}
+}
+
+func Test_getConsoleURL(t *testing.T) {
+	tests := []struct {
+		name      string
+		unitTest  string
+		console   *configv1.Console
+		wantURL   string
+		wantError bool
+	}{
+		{
+			name:     "returns test URL when UNIT_TEST is set",
+			unitTest: "true",
+			wantURL:  "https://console-openshift-console.apps.installer-test-cluster.dev00.red-chesterfield.com",
+		},
+		{
+			name: "returns console URL from cluster resource",
+			console: &configv1.Console{
+				ObjectMeta: metav1.ObjectMeta{Name: "cluster"},
+				Status:     configv1.ConsoleStatus{ConsoleURL: "https://console.example.com"},
+			},
+			wantURL: "https://console.example.com",
+		},
+		{
+			name: "returns error when console URL is empty",
+			console: &configv1.Console{
+				ObjectMeta: metav1.ObjectMeta{Name: "cluster"},
+			},
+			wantError: true,
+		},
+		{
+			name:      "returns error when console resource does not exist",
+			wantError: true,
+		},
+	}
+
+	registerScheme()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.unitTest != "" {
+				t.Setenv("UNIT_TEST", tt.unitTest)
+			} else if _, ok := os.LookupEnv("UNIT_TEST"); ok {
+				t.Setenv("UNIT_TEST", "")
+				os.Unsetenv("UNIT_TEST")
+			}
+
+			objs := []client.Object{}
+			if tt.console != nil {
+				objs = append(objs, tt.console)
+			}
+			cl := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(objs...).WithStatusSubresource(objs...).Build()
+			r := &MultiClusterEngineReconciler{
+				Client: cl,
+				Scheme: scheme.Scheme,
+				Log:    logr.Discard(),
+			}
+
+			url, err := r.getConsoleURL(context.TODO())
+			if tt.wantError {
+				if err == nil {
+					t.Errorf("expected error, got nil")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if url != tt.wantURL {
+				t.Errorf("got URL %q, want %q", url, tt.wantURL)
+			}
+		})
+	}
+}
+
+func Test_getDisabledComponentCRDSkipDirectories(t *testing.T) {
+	tests := []struct {
+		name string
+		mce  *backplanev1.MultiClusterEngine
+		want []string
+	}{
+		{
+			name: "all CAPI components explicitly enabled",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-mce",
+				},
+				Spec: backplanev1.MultiClusterEngineSpec{
+					Overrides: &backplanev1.Overrides{
+						Components: []backplanev1.ComponentConfig{
+							{Name: backplanev1.ClusterAPI, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderAWS, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderAzurePreview, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderMetal, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderOA, Enabled: true},
+						},
+					},
+				},
+			},
+			want: []string{},
+		},
+		{
+			name: "cluster-api explicitly disabled",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-mce",
+				},
+				Spec: backplanev1.MultiClusterEngineSpec{
+					Overrides: &backplanev1.Overrides{
+						Components: []backplanev1.ComponentConfig{
+							{Name: backplanev1.ClusterAPI, Enabled: false},
+							{Name: backplanev1.ClusterAPIProviderAWS, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderAzurePreview, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderMetal, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderOA, Enabled: true},
+						},
+					},
+				},
+			},
+			want: []string{backplanev1.ClusterAPICRDDir, backplanev1.ClusterAPIK8SCRDDir},
+		},
+		{
+			name: "multiple CAPI components disabled",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-mce",
+				},
+				Spec: backplanev1.MultiClusterEngineSpec{
+					Overrides: &backplanev1.Overrides{
+						Components: []backplanev1.ComponentConfig{
+							{Name: backplanev1.ClusterAPI, Enabled: false},
+							{Name: backplanev1.ClusterAPIProviderMetal, Enabled: false},
+							{Name: backplanev1.ClusterAPIProviderAWS, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderAzurePreview, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderOA, Enabled: true},
+						},
+					},
+				},
+			},
+			want: []string{
+				backplanev1.ClusterAPICRDDir,
+				backplanev1.ClusterAPIK8SCRDDir,
+				backplanev1.ClusterAPIProviderMetalCRDDir,
+				backplanev1.ClusterAPIProviderMetalK8SCRDDir,
+			},
+		},
+		{
+			name: "externally managed cluster-api should not be in skip list even if not explicitly enabled",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-mce",
+					Annotations: map[string]string{
+						utils.AnnotationExternallyManaged: `["cluster-api"]`,
+					},
+				},
+				Spec: backplanev1.MultiClusterEngineSpec{
+					Overrides: &backplanev1.Overrides{
+						Components: []backplanev1.ComponentConfig{
+							{Name: backplanev1.ClusterAPIProviderAWS, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderAzurePreview, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderMetal, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderOA, Enabled: true},
+						},
+					},
+				},
+			},
+			want: []string{},
+		},
+		{
+			name: "azure preview component disabled",
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-mce",
+				},
+				Spec: backplanev1.MultiClusterEngineSpec{
+					Overrides: &backplanev1.Overrides{
+						Components: []backplanev1.ComponentConfig{
+							{Name: backplanev1.ClusterAPI, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderAWS, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderAzurePreview, Enabled: false},
+							{Name: backplanev1.ClusterAPIProviderMetal, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderOA, Enabled: true},
+						},
+					},
+				},
+			},
+			want: []string{
+				backplanev1.ClusterAPIProviderAzureCRDDir,
+				backplanev1.ClusterAPIProviderAzureK8SCRDDir,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := recon.getDisabledComponentCRDSkipDirectories(tt.mce)
+
+			// Sort both slices for comparison since order doesn't matter
+			sort.Strings(got)
+			sort.Strings(tt.want)
+
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("getDisabledComponentCRDSkipDirectories() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_getPlatformSpecificCRDSkipDirectories(t *testing.T) {
+	// Save original platform state
+	originalPlatform := utils.DeployOnOCP()
+	defer utils.SetDeployOnOCP(originalPlatform)
+
+	tests := []struct {
+		name     string
+		isOCP    bool
+		wantDirs []string
+	}{
+		{
+			name:  "on OpenShift - should skip K8s variants",
+			isOCP: true,
+			wantDirs: []string{
+				backplanev1.ClusterAPIK8SCRDDir,
+				backplanev1.ClusterAPIProviderMetalK8SCRDDir,
+				backplanev1.ClusterAPIProviderOAK8SCRDDir,
+				backplanev1.ClusterAPIProviderAzureK8SCRDDir,
+			},
+		},
+		{
+			name:  "on vanilla Kubernetes - should skip OCP variants",
+			isOCP: false,
+			wantDirs: []string{
+				backplanev1.ClusterAPICRDDir,
+				backplanev1.ClusterAPIProviderMetalCRDDir,
+				backplanev1.ClusterAPIProviderOACRDDir,
+				backplanev1.ClusterAPIProviderAzureCRDDir,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Set platform for this test
+			utils.SetDeployOnOCP(tt.isOCP)
+
+			got := recon.getPlatformSpecificCRDSkipDirectories()
+
+			// Sort both for comparison
+			sort.Strings(got)
+			sort.Strings(tt.wantDirs)
+
+			if !reflect.DeepEqual(got, tt.wantDirs) {
+				t.Errorf("getPlatformSpecificCRDSkipDirectories() = %v, want %v", got, tt.wantDirs)
+			}
+
+			// Verify the count is correct
+			if len(got) != 4 {
+				t.Errorf("getPlatformSpecificCRDSkipDirectories() returned %d directories, expected 4", len(got))
+			}
+		})
+	}
+}
+
+func Test_CRDSkipListIntegration(t *testing.T) {
+	// Save original platform state
+	originalPlatform := utils.DeployOnOCP()
+	defer utils.SetDeployOnOCP(originalPlatform)
+
+	tests := []struct {
+		name            string
+		isOCP           bool
+		mce             *backplanev1.MultiClusterEngine
+		wantContains    []string
+		wantNotContains []string
+		description     string
+	}{
+		{
+			name:  "OCP with disabled cluster-api should skip both K8s variants and disabled component",
+			isOCP: true,
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-mce",
+				},
+				Spec: backplanev1.MultiClusterEngineSpec{
+					Overrides: &backplanev1.Overrides{
+						Components: []backplanev1.ComponentConfig{
+							{Name: backplanev1.ClusterAPI, Enabled: false},
+							{Name: backplanev1.ClusterAPIProviderAWS, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderAzurePreview, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderMetal, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderOA, Enabled: true},
+						},
+					},
+				},
+			},
+			wantContains: []string{
+				// K8s variants (platform-specific)
+				backplanev1.ClusterAPIK8SCRDDir,
+				backplanev1.ClusterAPIProviderMetalK8SCRDDir,
+				backplanev1.ClusterAPIProviderOAK8SCRDDir,
+				backplanev1.ClusterAPIProviderAzureK8SCRDDir,
+				// Disabled component (both variants)
+				backplanev1.ClusterAPICRDDir,
+			},
+			wantNotContains: []string{},
+			description:     "On OCP with disabled cluster-api, should skip all K8s variants plus disabled cluster-api OCP variant",
+		},
+		{
+			name:  "K8s with externally managed cluster-api should skip OCP variants and externally managed",
+			isOCP: false,
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-mce",
+					Annotations: map[string]string{
+						utils.AnnotationExternallyManaged: `["cluster-api"]`,
+					},
+				},
+				Spec: backplanev1.MultiClusterEngineSpec{
+					Overrides: &backplanev1.Overrides{
+						Components: []backplanev1.ComponentConfig{
+							{Name: backplanev1.ClusterAPIProviderAWS, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderAzurePreview, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderMetal, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderOA, Enabled: true},
+						},
+					},
+				},
+			},
+			wantContains: []string{
+				// OCP variants (platform-specific)
+				backplanev1.ClusterAPICRDDir,
+				backplanev1.ClusterAPIProviderMetalCRDDir,
+				backplanev1.ClusterAPIProviderOACRDDir,
+				backplanev1.ClusterAPIProviderAzureCRDDir,
+				// Externally managed (K8s variant)
+				backplanev1.ClusterAPIK8SCRDDir,
+			},
+			wantNotContains: []string{},
+			description:     "On K8s with externally managed cluster-api, should skip all OCP variants plus cluster-api K8s variant",
+		},
+		{
+			name:  "OCP with all CAPI components enabled should only skip K8s variants",
+			isOCP: true,
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-mce",
+				},
+				Spec: backplanev1.MultiClusterEngineSpec{
+					Overrides: &backplanev1.Overrides{
+						Components: []backplanev1.ComponentConfig{
+							{Name: backplanev1.ClusterAPI, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderAWS, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderAzurePreview, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderMetal, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderOA, Enabled: true},
+						},
+					},
+				},
+			},
+			wantContains: []string{
+				backplanev1.ClusterAPIK8SCRDDir,
+				backplanev1.ClusterAPIProviderMetalK8SCRDDir,
+				backplanev1.ClusterAPIProviderOAK8SCRDDir,
+				backplanev1.ClusterAPIProviderAzureK8SCRDDir,
+			},
+			wantNotContains: []string{
+				backplanev1.ClusterAPICRDDir,
+				backplanev1.ClusterAPIProviderMetalCRDDir,
+				backplanev1.ClusterAPIProviderOACRDDir,
+				backplanev1.ClusterAPIProviderAzureCRDDir,
+			},
+			description: "On OCP with all components enabled, should only skip K8s variants, not OCP variants",
+		},
+		{
+			name:  "K8s with all CAPI components enabled should only skip OCP variants",
+			isOCP: false,
+			mce: &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-mce",
+				},
+				Spec: backplanev1.MultiClusterEngineSpec{
+					Overrides: &backplanev1.Overrides{
+						Components: []backplanev1.ComponentConfig{
+							{Name: backplanev1.ClusterAPI, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderAWS, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderAzurePreview, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderMetal, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderOA, Enabled: true},
+						},
+					},
+				},
+			},
+			wantContains: []string{
+				backplanev1.ClusterAPICRDDir,
+				backplanev1.ClusterAPIProviderMetalCRDDir,
+				backplanev1.ClusterAPIProviderOACRDDir,
+				backplanev1.ClusterAPIProviderAzureCRDDir,
+			},
+			wantNotContains: []string{
+				backplanev1.ClusterAPIK8SCRDDir,
+				backplanev1.ClusterAPIProviderMetalK8SCRDDir,
+				backplanev1.ClusterAPIProviderOAK8SCRDDir,
+				backplanev1.ClusterAPIProviderAzureK8SCRDDir,
+			},
+			description: "On K8s with all components enabled, should only skip OCP variants, not K8s variants",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Set platform for this test
+			utils.SetDeployOnOCP(tt.isOCP)
+
+			// Get all skip lists
+			externallyManagedDirs := recon.getExternallyManagedCRDSkipDirectories(tt.mce)
+			disabledDirs := recon.getDisabledComponentCRDSkipDirectories(tt.mce)
+			platformDirs := recon.getPlatformSpecificCRDSkipDirectories()
+
+			// Merge them (simulating what happens in Reconcile)
+			dirMap := make(map[string]bool)
+			for _, dir := range externallyManagedDirs {
+				dirMap[dir] = true
+			}
+			for _, dir := range disabledDirs {
+				dirMap[dir] = true
+			}
+			for _, dir := range platformDirs {
+				dirMap[dir] = true
+			}
+
+			// Convert map to slice
+			mergedSkipDirs := []string{}
+			for dir := range dirMap {
+				mergedSkipDirs = append(mergedSkipDirs, dir)
+			}
+
+			// Check that all expected directories are present
+			for _, expectedDir := range tt.wantContains {
+				if !dirMap[expectedDir] {
+					t.Errorf("%s: expected skip list to contain %s, but it was not found. Skip list: %v",
+						tt.description, expectedDir, mergedSkipDirs)
+				}
+			}
+
+			// Check that unwanted directories are not present
+			for _, unwantedDir := range tt.wantNotContains {
+				if dirMap[unwantedDir] {
+					t.Errorf("%s: expected skip list NOT to contain %s, but it was found. Skip list: %v",
+						tt.description, unwantedDir, mergedSkipDirs)
+				}
+			}
+		})
+	}
+}
+
+func Test_CleanupVersionedAddOnTemplates(t *testing.T) {
+	mceName := "test-mce"
+	mceUID := types.UID("test-mce-uid")
+
+	tests := []struct {
+		name                string
+		existingTemplates   []string
+		templatesOwnedByMCE []string // Templates that have MCE as owner
+		expectedToBeDeleted []string
+		expectedToRemain    []string
+	}{
+		{
+			name: "should delete only versioned managed-serviceaccount-2.x templates owned by MCE",
+			existingTemplates: []string{
+				"managed-serviceaccount-2.11",
+				"managed-serviceaccount-2.17",
+				"managed-serviceaccount",
+				"some-other-addon-2.11",
+			},
+			templatesOwnedByMCE: []string{
+				"managed-serviceaccount-2.11",
+				"managed-serviceaccount-2.17",
+				"managed-serviceaccount",
+			},
+			expectedToBeDeleted: []string{
+				"managed-serviceaccount-2.11",
+				"managed-serviceaccount-2.17",
+			},
+			expectedToRemain: []string{
+				"managed-serviceaccount",
+				"some-other-addon-2.11",
+			},
+		},
+		{
+			name: "should not delete unversioned managed-serviceaccount template",
+			existingTemplates: []string{
+				"managed-serviceaccount",
+			},
+			templatesOwnedByMCE: []string{
+				"managed-serviceaccount",
+			},
+			expectedToBeDeleted: []string{},
+			expectedToRemain: []string{
+				"managed-serviceaccount",
+			},
+		},
+		{
+			name: "should handle multiple old versions",
+			existingTemplates: []string{
+				"managed-serviceaccount-2.8",
+				"managed-serviceaccount-2.9",
+				"managed-serviceaccount-2.10",
+				"managed-serviceaccount-2.11",
+				"managed-serviceaccount",
+			},
+			templatesOwnedByMCE: []string{
+				"managed-serviceaccount-2.8",
+				"managed-serviceaccount-2.9",
+				"managed-serviceaccount-2.10",
+				"managed-serviceaccount-2.11",
+				"managed-serviceaccount",
+			},
+			expectedToBeDeleted: []string{
+				"managed-serviceaccount-2.8",
+				"managed-serviceaccount-2.9",
+				"managed-serviceaccount-2.10",
+				"managed-serviceaccount-2.11",
+			},
+			expectedToRemain: []string{
+				"managed-serviceaccount",
+			},
+		},
+		{
+			name: "should not delete templates with different major versions",
+			existingTemplates: []string{
+				"managed-serviceaccount-1.5",
+				"managed-serviceaccount-3.0",
+				"managed-serviceaccount-2.11",
+			},
+			templatesOwnedByMCE: []string{
+				"managed-serviceaccount-1.5",
+				"managed-serviceaccount-3.0",
+				"managed-serviceaccount-2.11",
+			},
+			expectedToBeDeleted: []string{
+				"managed-serviceaccount-2.11",
+			},
+			expectedToRemain: []string{
+				"managed-serviceaccount-1.5",
+				"managed-serviceaccount-3.0",
+			},
+		},
+		{
+			name:                "should handle no templates",
+			existingTemplates:   []string{},
+			templatesOwnedByMCE: []string{},
+			expectedToBeDeleted: []string{},
+			expectedToRemain:    []string{},
+		},
+		{
+			name: "should not delete versioned templates not owned by MCE",
+			existingTemplates: []string{
+				"managed-serviceaccount-2.11",
+				"managed-serviceaccount-2.17",
+			},
+			templatesOwnedByMCE: []string{}, // Neither template is owned by MCE
+			expectedToBeDeleted: []string{},
+			expectedToRemain: []string{
+				"managed-serviceaccount-2.11",
+				"managed-serviceaccount-2.17",
+			},
+		},
+		{
+			name: "should delete only MCE-owned templates when some are not owned",
+			existingTemplates: []string{
+				"managed-serviceaccount-2.11",
+				"managed-serviceaccount-2.17",
+				"managed-serviceaccount-2.10",
+			},
+			templatesOwnedByMCE: []string{
+				"managed-serviceaccount-2.11",
+				"managed-serviceaccount-2.17",
+			}, // Only 2.11 and 2.17 are owned by MCE
+			expectedToBeDeleted: []string{
+				"managed-serviceaccount-2.11",
+				"managed-serviceaccount-2.17",
+			},
+			expectedToRemain: []string{
+				"managed-serviceaccount-2.10", // Not owned by MCE, should remain
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Create independent scheme for this test to avoid conflicts
+			testScheme := runtime.NewScheme()
+			if err := backplanev1.AddToScheme(testScheme); err != nil {
+				t.Fatalf("failed to add backplanev1 to scheme: %v", err)
+			}
+			if err := configv1.AddToScheme(testScheme); err != nil {
+				t.Fatalf("failed to add configv1 to scheme: %v", err)
+			}
+			if err := addonv1alpha1.Install(testScheme); err != nil {
+				t.Fatalf("failed to add addonv1alpha1 to scheme: %v", err)
+			}
+
+			// Create MCE instance
+			mce := &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: mceName,
+					UID:  mceUID,
+				},
+			}
+
+			// Create test templates
+			var initObjs []client.Object
+			for _, templateName := range tt.existingTemplates {
+				template := &addonv1alpha1.AddOnTemplate{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: templateName,
+					},
+				}
+
+				// Add owner reference if this template is owned by MCE
+				for _, ownedTemplateName := range tt.templatesOwnedByMCE {
+					if ownedTemplateName == templateName {
+						template.ObjectMeta.OwnerReferences = []metav1.OwnerReference{
+							{
+								APIVersion:         "multicluster.openshift.io/v1",
+								Kind:               "MultiClusterEngine",
+								Name:               mceName,
+								UID:                mceUID,
+								Controller:         ptr(true),
+								BlockOwnerDeletion: ptr(true),
+							},
+						}
+						break
+					}
+				}
+
+				initObjs = append(initObjs, template)
+			}
+
+			// Create fake client with test templates
+			fakeClient := fake.NewClientBuilder().
+				WithScheme(testScheme).
+				WithObjects(initObjs...).
+				Build()
+
+			reconciler := &MultiClusterEngineReconciler{
+				Client:        fakeClient,
+				Scheme:        testScheme,
+				StatusManager: &status.StatusTracker{Client: fakeClient},
+			}
+
+			// Run cleanup
+			_, err := reconciler.CleanupVersionedAddOnTemplates(context.TODO(), mce)
+			if err != nil {
+				t.Errorf("CleanupVersionedAddOnTemplates() error = %v", err)
+				return
+			}
+
+			// Verify deleted templates are gone
+			for _, templateName := range tt.expectedToBeDeleted {
+				template := &addonv1alpha1.AddOnTemplate{}
+				err := fakeClient.Get(context.TODO(), types.NamespacedName{Name: templateName}, template)
+				if err == nil {
+					t.Errorf("Expected template %s to be deleted, but it still exists", templateName)
+				} else if !errors.IsNotFound(err) {
+					t.Errorf("Unexpected error when checking template %s: %v", templateName, err)
+				}
+			}
+
+			// Verify remaining templates still exist
+			for _, templateName := range tt.expectedToRemain {
+				template := &addonv1alpha1.AddOnTemplate{}
+				err := fakeClient.Get(context.TODO(), types.NamespacedName{Name: templateName}, template)
+				if err != nil {
+					t.Errorf("Expected template %s to remain, but got error: %v", templateName, err)
+				}
+			}
+		})
+	}
+}
+
+// Helper function to create a pointer to a bool
+func ptr(b bool) *bool {
+	return &b
+}
+
+// Test_setDefaults_PrunesRemovedComponents verifies that components which have been
+// completely removed from MCE (backplanev1.RemovedComponents) are automatically pruned
+// from a MultiClusterEngine's spec during reconciliation, so that clusters upgrading
+// from a version where the component still existed are cleanly migrated without
+// requiring manual user intervention.
+func Test_setDefaults_PrunesRemovedComponents(t *testing.T) {
+	registerScheme()
+
+	// setDefaults() branches into OCP-specific reconciliation (ingress domain,
+	// console URL, cluster version) when this is true. That path isn't relevant
+	// to removed-component pruning and isn't set up for this fake client, so
+	// disable it for the duration of this test and restore it afterward since
+	// it's shared global state.
+	previousDeployOnOCP := utils.DeployOnOCP()
+	utils.SetDeployOnOCP(false)
+	defer utils.SetDeployOnOCP(previousDeployOnOCP)
+
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).Build()
+	reconciler := &MultiClusterEngineReconciler{
+		Client:        fakeClient,
+		Scheme:        scheme.Scheme,
+		StatusManager: &status.StatusTracker{Client: fakeClient},
+	}
+
+	mce := &backplanev1.MultiClusterEngine{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test-mce-removed-component",
+		},
+		Spec: backplanev1.MultiClusterEngineSpec{
+			TargetNamespace: "test-ns",
+			Overrides: &backplanev1.Overrides{
+				Components: []backplanev1.ComponentConfig{
+					{Name: backplanev1.MaestroPreview, Enabled: true},
+				},
+			},
+		},
+	}
+
+	if err := fakeClient.Create(context.TODO(), mce); err != nil {
+		t.Fatalf("failed to create MultiClusterEngine: %v", err)
+	}
+
+	if !mce.ComponentPresent(backplanev1.MaestroPreview) {
+		t.Fatalf("expected removed component %q to be present before reconciliation", backplanev1.MaestroPreview)
+	}
+
+	if _, err := reconciler.setDefaults(context.TODO(), mce); err != nil {
+		t.Fatalf("setDefaults() error = %v", err)
+	}
+
+	if mce.ComponentPresent(backplanev1.MaestroPreview) {
+		t.Errorf("expected removed component %q to be pruned from spec, but it is still present",
+			backplanev1.MaestroPreview)
+	}
+}

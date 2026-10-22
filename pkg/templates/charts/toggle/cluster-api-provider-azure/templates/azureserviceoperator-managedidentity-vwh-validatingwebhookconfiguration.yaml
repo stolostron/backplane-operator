@@ -1,0 +1,91 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+    service.beta.openshift.io/inject-cabundle: 'true'
+  name: azureserviceoperator-managedidentity-vwh
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-managedidentity-azure-com-v1api20181130-userassignedidentity
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20181130.userassignedidentities.managedidentity.azure.com
+  rules:
+  - apiGroups:
+    - managedidentity.azure.com
+    apiVersions:
+    - v1api20181130
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - userassignedidentities
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-managedidentity-azure-com-v1api20220131preview-federatedidentitycredential
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20220131preview.federatedidentitycredentials.managedidentity.azure.com
+  rules:
+  - apiGroups:
+    - managedidentity.azure.com
+    apiVersions:
+    - v1api20220131preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - federatedidentitycredentials
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-managedidentity-azure-com-v1api20230131-federatedidentitycredential
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20230131.federatedidentitycredentials.managedidentity.azure.com
+  rules:
+  - apiGroups:
+    - managedidentity.azure.com
+    apiVersions:
+    - v1api20230131
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - federatedidentitycredentials
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-managedidentity-azure-com-v1api20230131-userassignedidentity
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20230131.userassignedidentities.managedidentity.azure.com
+  rules:
+  - apiGroups:
+    - managedidentity.azure.com
+    apiVersions:
+    - v1api20230131
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - userassignedidentities
+  sideEffects: None

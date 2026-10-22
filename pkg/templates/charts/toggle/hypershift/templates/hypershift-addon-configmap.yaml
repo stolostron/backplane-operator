@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hypershift-operator-imagestream
+  namespace: {{ .Values.global.namespace }}
+data:
+  imagestream: |
+    kind: ImageStream
+    apiVersion: image.openshift.io/v1
+    metadata:
+      name: hypershift-operator-imagestream
+    spec:
+      lookupPolicy:
+        local: false
+      tags:
+      - name: cluster-api-provider-agent
+        annotations:
+          io.openshift.build.commit.id: dd6353f609dc9e7bfd0312ce4b2c8d3dac5d749e
+          io.openshift.build.source-location: https://github.com/openshift/cluster-api-provider-agent
+        from:
+          kind: DockerImage
+          name: {{ .Values.global.imageOverrides.cluster_api_provider_agent }}
+      - name: cluster-api-provider-kubevirt
+        annotations:
+          io.openshift.build.commit.id: 'dbdc825088513dc962ba2103efe2c1a4eb3cf524'
+          io.openshift.build.source-location: https://github.com/openshift/cluster-api-provider-kubevirt
+        from:
+          kind: DockerImage
+          name: {{ .Values.global.imageOverrides.cluster_api_provider_kubevirt }}
+      - name: hypershift-operator
+        annotations:
+          io.openshift.build.commit.id: ''
+          io.openshift.build.source-location: https://github.com/openshift/hypershift
+        from:
+          kind: DockerImage
+          name: {{ .Values.global.imageOverrides.hypershift_operator }}

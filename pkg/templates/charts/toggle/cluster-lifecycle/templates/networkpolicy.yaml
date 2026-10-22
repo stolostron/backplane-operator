@@ -1,0 +1,200 @@
+# Copyright Contributors to the Open Cluster Management project
+#
+# NetworkPolicies for every Deployment shipped by the MCE "cluster-lifecycle" toggle
+# (pkg/templates/charts/toggle/cluster-lifecycle). Controllers are built from:
+#   - cluster-curator-controller
+#   - clusterclaims-controller
+#   - cluster-image-set-controller
+#   - provider-credential-controller
+#   - clusterlifecycle-state-metrics (metrics exporter packaged in the same toggle)
+#
+# No "namespace" is set (consistent with the other templates in this chart) so the
+# chart installs them into whatever namespace MulticlusterEngine targets
+# (typically "multicluster-engine").
+#
+# Design principles (least privilege / deny by default):
+#   - Each policy is scoped to a single Deployment's pods via podSelector, so unrelated
+#     workloads that also run in the install namespace are never affected.
+#   - Once a NetworkPolicy selects a pod, only the traffic explicitly listed below is
+#     allowed; everything else is denied by default, per Kubernetes NetworkPolicy semantics.
+#   - Every ingress/egress rule carries a short "Allow ..." comment stating exactly what
+#     traffic it permits, so each policy can be audited at a glance.
+#   - DNS, Kubernetes API and metrics-ingress rules are port-based only (no
+#     namespaceSelector/podSelector "from"/"to" restriction) for portability across
+#     Kubernetes distributions and monitoring stacks, matching cluster-permission's
+#     NetworkPolicy (metrics port left unrestricted for the same reason).
+#   - None of these four controllers register an admission webhook
+#     (ValidatingWebhookConfiguration / MutatingWebhookConfiguration), so no 9443/9442
+#     webhook ingress is opened even where controller-runtime Options.Port is set.
+#   - Dynamic curator Job pods (created by cluster-curator-controller into per-cluster
+#     namespaces) are out of scope for this install-namespace NetworkPolicy.
+{{- if .Values.global.networkPolicies.enabled }}
+---
+# cluster-curator-controller: watches ClusterCurator CRs and launches curator Jobs.
+# Runtime traffic is Kubernetes API only (Ansible Tower / Hive / Hypershift / cloud APIs
+# are reached by other operators via CRs this controller creates).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cluster-curator-controller-policy
+spec:
+  podSelector:
+    matchLabels:
+      name: cluster-curator-controller
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow Metrics ingress
+  - ports:
+    - protocol: TCP
+      port: 8080
+  egress:
+  # Allow DNS egress
+  - ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+    - protocol: UDP
+      port: 5353
+    - protocol: TCP
+      port: 5353
+  # Allow egress to Kubernetes API server
+  - ports:
+    - protocol: TCP
+      port: 443
+    - protocol: TCP
+      port: 6443
+---
+# clusterclaims-controller: one pod with two containers -
+#   clusterclaims-controller (metrics 8080; Port 9443 is set in code but no admission
+#   webhook is registered),
+#   clusterpools-delete-controller (metrics 8383).
+# Both operate purely against the Kubernetes API (Hive ClusterClaim/ClusterPool and
+# OCM ManagedCluster).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: clusterclaims-controller-policy
+spec:
+  podSelector:
+    matchLabels:
+      name: clusterclaims-controller
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow Metrics ingress (clusterclaims-controller and clusterpools-delete-controller)
+  - ports:
+    - protocol: TCP
+      port: 8080
+    - protocol: TCP
+      port: 8383
+  egress:
+  # Allow DNS egress
+  - ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+    - protocol: UDP
+      port: 5353
+    - protocol: TCP
+      port: 5353
+  # Allow egress to Kubernetes API server
+  - ports:
+    - protocol: TCP
+      port: 443
+    - protocol: TCP
+      port: 6443
+---
+# cluster-image-set-controller: syncs Hive ClusterImageSet CRs from a Git repository
+# (default https://github.com/stolostron/acm-hive-openshift-releases.git, overridable via
+# ConfigMap cluster-image-set-git-repo). Metrics 8387, health probes 8081. Port 9443 is
+# set in code but no admission webhook is registered. Does not pull container images or
+# contact quay.io at runtime.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cluster-image-set-controller-policy
+spec:
+  podSelector:
+    matchLabels:
+      name: cluster-image-set-controller
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow Metrics ingress
+  - ports:
+    - protocol: TCP
+      port: 8387
+  # Allow health probe ingress (/healthz, /readyz)
+  - ports:
+    - protocol: TCP
+      port: 8081
+  egress:
+  # Allow DNS egress
+  - ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+    - protocol: UDP
+      port: 5353
+    - protocol: TCP
+      port: 5353
+  # Allow egress to Kubernetes API server
+  - ports:
+    - protocol: TCP
+      port: 443
+    - protocol: TCP
+      port: 6443
+  # Allow egress to arbitrary Git repository endpoints configured via
+  # ConfigMap cluster-image-set-git-repo (default github.com; may be an internal Git host
+  # on any port). Also covers an optional HTTP(S) proxy when HTTP_PROXY/HTTPS_PROXY are set.
+  - {}
+---
+# provider-credential-controller: one pod with two containers -
+#   provider-credential-controller (metrics 8080; Port 9443 is set in code but no
+#   admission webhook is registered),
+#   old-provider-connection (metrics 8383).
+# Both only read/write Secrets via the Kubernetes API; they never call cloud provider
+# APIs to validate credentials.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: provider-credential-controller-policy
+spec:
+  podSelector:
+    matchLabels:
+      name: provider-credential-controller
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow Metrics ingress (provider-credential-controller and old-provider-connection)
+  - ports:
+    - protocol: TCP
+      port: 8080
+    - protocol: TCP
+      port: 8383
+  egress:
+  # Allow DNS egress
+  - ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+    - protocol: UDP
+      port: 5353
+    - protocol: TCP
+      port: 5353
+  # Allow egress to Kubernetes API server
+  - ports:
+    - protocol: TCP
+      port: 443
+    - protocol: TCP
+      port: 6443
+{{- end }}

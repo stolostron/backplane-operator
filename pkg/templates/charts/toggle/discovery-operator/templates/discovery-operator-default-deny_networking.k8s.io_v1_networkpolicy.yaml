@@ -1,0 +1,14 @@
+{{- if .Values.global.networkPolicies.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: discovery-operator-default-deny
+  namespace: '{{ .Values.global.namespace }}'
+spec:
+  podSelector:
+    matchLabels:
+      app: discovery-operator
+  policyTypes:
+  - Ingress
+  - Egress
+{{- end }}

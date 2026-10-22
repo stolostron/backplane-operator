@@ -1,0 +1,120 @@
+# Copyright Contributors to the Open Cluster Management project
+
+ORG ?= stolostron
+REPO ?= installer-dev-tools
+BRANCH ?= main
+COMPONENT ?=
+CONFIG ?=
+
+PIPELINE_REPO ?= backplane-pipeline
+PIPELINE_BRANCH ?= 2.9-integration
+
+# Bundle branch configuration
+# Derive current development version from COMPONENT_VERSION file
+COMPONENT_VERSION := $(shell cat COMPONENT_VERSION)
+BUNDLE_BRANCH_MAIN ?= backplane-$(shell echo $(COMPONENT_VERSION) | cut -d. -f1,2)
+
+# Default to current branch for local development
+BUNDLE_BRANCH ?= $(shell git branch --show-current)
+
+# Override for CI: map main to current development version
+ifdef GITHUB_BASE_REF
+  ifeq ($(GITHUB_BASE_REF),main)
+    BUNDLE_BRANCH := $(BUNDLE_BRANCH_MAIN)
+  else
+    BUNDLE_BRANCH := $(GITHUB_BASE_REF)
+  endif
+endif
+
+# For local development on main, also use current development version
+ifeq ($(BUNDLE_BRANCH),main)
+  BUNDLE_BRANCH := $(BUNDLE_BRANCH_MAIN)
+endif
+
+# Bundle repo to validate against
+BUNDLE ?= mce-operator-bundle
+
+##@ Dev. targets
+
+.PHONY: subscriptions
+subscriptions: ## Applies upstream community subscriptions (Hive, Cluster-manager)
+	oc create ns backplane-operator-system --dry-run=client -o yaml | oc apply -f -
+	oc apply -k hack/subscriptions
+
+.PHONY: add-images
+add-images: ## Retrieves latest manifest and injects image definitions directly into the deployment template
+	pip3 install -r ./hack/bundle-automation/requirements.txt
+	python3 ./hack/scripts/dev-update-image-references.py
+
+.PHONY: add-images-local
+add-images-local:  ## Generates a local image manifest. Source this file to define necessary environment variables to run the operator locally
+	pip3 install -r ./hack/bundle-automation/requirements.txt
+	python3 ./hack/scripts/dev-update-image-references.py --local
+
+.PHONY: upstream-install
+upstream-install: ## Installs the upstream Backplane Operator by deploying a CatalogSource and Subscription
+	bash ./hack/scripts/upstream-install.sh
+
+.PHONY: install-requirements
+install-requirements:
+	pip3 install -r hack/bundle-automation/requirements.txt
+
+## Lints the operator bundles
+.PHONY: lint-operator-bundles
+lint-operator-bundles: install-requirements
+	python3 ./hack/bundle-automation/generate-shell.py --lint-bundles --org $(ORG) --repo $(REPO) --branch $(BRANCH) --component "$(COMPONENT)" --config "$(CONFIG)"
+
+## Regenerates the operator bundles
+.PHONY: refresh-image-aliases
+refresh-image-aliases: install-requirements
+	python3 ./hack/bundle-automation/generate-shell.py --refresh-image-aliases --org $(ORG) --repo $(REPO) --branch $(BRANCH) --pipeline-repo $(PIPELINE_REPO) --pipeline-branch $(PIPELINE_BRANCH) --component "$(COMPONENT)"
+
+## Regenerates the operator charts from bundles
+.PHONY: regenerate-charts-from-bundles
+regenerate-charts-from-bundles: install-requirements
+	python3 ./hack/bundle-automation/generate-shell.py --update-charts-from-bundles --org $(ORG) --repo $(REPO) --branch $(BRANCH) --component "$(COMPONENT)" --config "$(CONFIG)"
+
+## Regenerates the operator bundles
+.PHONY: regenerate-operator-sha-commits
+regenerate-operator-sha-commits: install-requirements
+	python3 ./hack/bundle-automation/generate-shell.py --update-commits --org $(ORG) --repo $(REPO) --branch $(BRANCH) --pipeline-repo $(PIPELINE_REPO) --pipeline-branch $(PIPELINE_BRANCH) --component "$(COMPONENT)" --config "$(CONFIG)"
+
+## Regenerates the charts
+.PHONY: regenerate-charts
+regenerate-charts: install-requirements
+	python3 ./hack/bundle-automation/generate-shell.py --update-charts --org $(ORG) --repo $(REPO) --branch $(BRANCH) --component "$(COMPONENT)" --config "$(CONFIG)"
+
+## Regenerates the operator bundles
+.PHONY: copy-charts
+copy-charts: install-requirements
+	python3 ./hack/bundle-automation/generate-shell.py --copy-charts --org $(ORG) --repo $(REPO) --branch $(BRANCH) --component "$(COMPONENT)" --config "$(CONFIG)"
+
+## Onboard new OLM/Chart component
+.PHONY: onboard-new-component
+onboard-new-component: install-requirements
+	python3 ./hack/bundle-automation/generate-shell.py --onboard-new-component --org $(ORG) --repo $(REPO) --branch $(BRANCH) --component "$(COMPONENT)"
+
+## Validate that all required image keys exist in the bundle
+.PHONY: validate-image-keys
+validate-image-keys: install-requirements
+	@echo "Cloning $(BUNDLE)..."
+	@if [ -d "$(BUNDLE)" ]; then \
+		echo "Removing existing $(BUNDLE) directory..."; \
+		rm -rf $(BUNDLE); \
+	fi
+	@git clone https://github.com/$(ORG)/$(BUNDLE).git $(BUNDLE)
+	@echo "Checking out bundle branch: $(BUNDLE_BRANCH)"
+	@cd $(BUNDLE) && git checkout $(BUNDLE_BRANCH)
+	@echo "Successfully checked out branch: $$(cd $(BUNDLE) && git branch --show-current)"
+	@python3 ./hack/bundle-automation/generate-shell.py --validate-image-keys --org $(ORG) --repo $(REPO) --branch $(BRANCH) --bundle $(BUNDLE)
+	@echo "Cleaning up cloned bundle..."
+	@rm -rf $(BUNDLE)
+
+.PHONY: catalog-deploy
+catalog-deploy: ## Deploys backplane operator via subscription
+	IMG="${IMAGE_TAG_BASE}-catalog:v${VERSION}" yq eval -i '.spec.image = env(IMG)' hack/catalog/catalogsource.yaml
+	oc create ns backplane-operator-system --dry-run=client -o yaml | oc apply -f -
+	oc apply -k hack/catalog
+
+.PHONY: full-catalog-install
+full-catalog-install: generate bundle bundle-build bundle-push catalog-build catalog-push catalog-deploy ## Generates all required files and deploys backplane operator via subscription

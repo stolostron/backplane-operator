@@ -1,0 +1,21 @@
+global:
+  imageOverrides:
+    multicloud_manager: quay.io/test/test:test
+  templateOverrides: {}
+  networkPolicies:
+    enabled: true
+  pullSecret: ""
+  namespace: default
+  olmVersion: v0
+  deployOnOCP: ""
+  servingCertCABundle: ""
+  upgrading: false
+  eusUpgrading: false
+hubconfig:
+  nodeSelector: {}
+  proxyConfigs: {}
+  replicaCount: 1
+  tolerations: []
+  ocpVersion: "4.12.0"
+  probeConfig: null
+org: open-cluster-management

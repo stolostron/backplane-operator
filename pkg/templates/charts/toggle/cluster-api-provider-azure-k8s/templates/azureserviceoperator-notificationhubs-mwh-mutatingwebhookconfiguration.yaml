@@ -1,0 +1,91 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: capz-system/azureserviceoperator-serving-cert
+  name: azureserviceoperator-notificationhubs-mwh
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-notificationhubs-azure-com-v1api20230901-namespace
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20230901.namespaces.notificationhubs.azure.com
+  rules:
+  - apiGroups:
+    - notificationhubs.azure.com
+    apiVersions:
+    - v1api20230901
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - namespaces
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-notificationhubs-azure-com-v1api20230901-namespacesauthorizationrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20230901.namespacesauthorizationrules.notificationhubs.azure.com
+  rules:
+  - apiGroups:
+    - notificationhubs.azure.com
+    apiVersions:
+    - v1api20230901
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - namespacesauthorizationrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-notificationhubs-azure-com-v1api20230901-notificationhub
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20230901.notificationhubs.notificationhubs.azure.com
+  rules:
+  - apiGroups:
+    - notificationhubs.azure.com
+    apiVersions:
+    - v1api20230901
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - notificationhubs
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-notificationhubs-azure-com-v1api20230901-notificationhubsauthorizationrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20230901.notificationhubsauthorizationrules.notificationhubs.azure.com
+  rules:
+  - apiGroups:
+    - notificationhubs.azure.com
+    apiVersions:
+    - v1api20230901
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - notificationhubsauthorizationrules
+  sideEffects: None

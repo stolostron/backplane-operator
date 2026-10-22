@@ -1,0 +1,156 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    cluster.x-k8s.io/provider: infrastructure-aws
+    control-plane: capa-controller-manager
+  name: capa-controller-manager
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      cluster.x-k8s.io/provider: infrastructure-aws
+      control-plane: capa-controller-manager
+  template:
+    metadata:
+      annotations:
+        iam.amazonaws.com/role: ''
+      labels:
+        cluster.x-k8s.io/provider: infrastructure-aws
+        control-plane: capa-controller-manager
+        ocm-antiaffinity-selector: capa-controller-manager
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - capa-controller-manager
+              topologyKey: topology.kubernetes.io/zone
+            weight: 70
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - capa-controller-manager
+              topologyKey: kubernetes.io/hostname
+            weight: 35
+      containers:
+      - args:
+        - --leader-elect
+        - --feature-gates=EKS=true,EKSEnableIAM=true,EKSAllowAddRoles=true,EKSFargate=true,MachinePool=true,MachinePoolMachines=true,EventBridgeInstanceState=false,AutoControllerIdentityCreator=false,BootstrapFormatIgnition=false,ExternalResourceGC=true,AlternativeGCStrategy=false,TagUnmanagedNetworkResources=true,ROSA=true
+        - --v=0
+        - --diagnostics-address=:8443
+        - --insecure-diagnostics=false
+        - --disable-controllers=unmanaged
+        - --tls-min-version=VersionTLS13
+        - --tls-cipher-suites=
+        command:
+        - /bin/cluster-api-provider-aws-controller-manager
+        env:
+{{- if .Values.global.pullSecret }}
+        - name: AGENT_IMAGE_PULL_SECRET
+          value: {{ .Values.global.pullSecret }}
+{{- end }}
+{{- if .Values.hubconfig.proxyConfigs }}
+        - name: HTTP_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
+        - name: HTTPS_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.HTTPS_PROXY }}
+        - name: NO_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
+{{- end }}
+        - name: AWS_SHARED_CREDENTIALS_FILE
+          value: /home/.aws/credentials
+        - name: OCM_TOKEN
+          value: ''
+        - name: OCM_CONFIG
+          value: /ocm/ocm.json
+        image: '{{ .Values.global.imageOverrides.cluster_api_provider_aws_rhel9 }}'
+        imagePullPolicy: '{{ .Values.global.pullPolicy }}'
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /healthz
+            port: healthz
+          periodSeconds: 10
+        name: manager
+        ports:
+        - containerPort: 9443
+          name: webhook-server
+          protocol: TCP
+        - containerPort: 9440
+          name: healthz
+          protocol: TCP
+        - containerPort: 8443
+          name: metrics
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: healthz
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+        terminationMessagePolicy: FallbackToLogsOnError
+        volumeMounts:
+        - mountPath: /ocm
+          name: ocm
+        - mountPath: /tmp/k8s-webhook-server/serving-certs
+          name: cert
+          readOnly: true
+        - mountPath: /home/.aws
+          name: credentials
+      hostIPC: false
+      hostNetwork: false
+      hostPID: false
+{{- if .Values.global.pullSecret }}
+      imagePullSecrets:
+      - name: {{ .Values.global.pullSecret }}
+{{- end }}
+{{- with .Values.hubconfig.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+{{- end }}
+      securityContext:
+        runAsNonRoot: true
+{{- if .Values.global.deployOnOCP }}
+{{- if semverCompare ">=4.11.0" .Values.hubconfig.ocpVersion }}
+        seccompProfile:
+          type: RuntimeDefault
+{{- end }}
+{{- end }}
+      serviceAccountName: capa-controller-manager
+      terminationGracePeriodSeconds: 10
+{{- with .Values.hubconfig.tolerations }}
+      tolerations:
+      {{- range . }}
+      - {{ if .Key }} key: {{ .Key }} {{- end }}
+        {{ if .Operator }} operator: {{ .Operator }} {{- end }}
+        {{ if .Value }} value: {{ .Value }} {{- end }}
+        {{ if .Effect }} effect: {{ .Effect }} {{- end }}
+        {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
+        {{- end }}
+{{- end }}
+      volumes:
+      - emptyDir:
+          sizeLimit: 1Mi
+        name: ocm
+      - name: cert
+        secret:
+          defaultMode: 420
+          secretName: capa-webhook-service-cert
+      - name: credentials
+        secret:
+          secretName: capa-manager-bootstrap-credentials

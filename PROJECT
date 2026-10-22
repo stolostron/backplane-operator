@@ -1,0 +1,23 @@
+domain: open-cluster-management.io
+layout:
+- go.kubebuilder.io/v4
+plugins:
+  manifests.sdk.operatorframework.io/v2: {}
+  scorecard.sdk.operatorframework.io/v2: {}
+projectName: multicluster-engine
+repo: github.com/stolostron/backplane-operator
+resources:
+- api:
+    crdVersion: v1alpha1
+    namespaced: false
+  controller: true
+  domain: openshift.io
+  group: multicluster
+  kind: MultiClusterEngine
+  path: github.com/stolostron/backplane-operator/api/v1
+  version: v1
+  webhooks:
+    defaulting: true
+    validation: true
+    webhookVersion: v1
+version: "3"

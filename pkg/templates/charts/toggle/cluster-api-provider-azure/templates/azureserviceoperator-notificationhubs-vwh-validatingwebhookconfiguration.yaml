@@ -1,0 +1,91 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+    service.beta.openshift.io/inject-cabundle: 'true'
+  name: azureserviceoperator-notificationhubs-vwh
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-notificationhubs-azure-com-v1api20230901-namespace
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20230901.namespaces.notificationhubs.azure.com
+  rules:
+  - apiGroups:
+    - notificationhubs.azure.com
+    apiVersions:
+    - v1api20230901
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - namespaces
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-notificationhubs-azure-com-v1api20230901-namespacesauthorizationrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20230901.namespacesauthorizationrules.notificationhubs.azure.com
+  rules:
+  - apiGroups:
+    - notificationhubs.azure.com
+    apiVersions:
+    - v1api20230901
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - namespacesauthorizationrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-notificationhubs-azure-com-v1api20230901-notificationhub
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20230901.notificationhubs.notificationhubs.azure.com
+  rules:
+  - apiGroups:
+    - notificationhubs.azure.com
+    apiVersions:
+    - v1api20230901
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - notificationhubs
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /validate-notificationhubs-azure-com-v1api20230901-notificationhubsauthorizationrule
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20230901.notificationhubsauthorizationrules.notificationhubs.azure.com
+  rules:
+  - apiGroups:
+    - notificationhubs.azure.com
+    apiVersions:
+    - v1api20230901
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - notificationhubsauthorizationrules
+  sideEffects: None

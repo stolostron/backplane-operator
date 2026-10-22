@@ -1,0 +1,351 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.19.0
+  creationTimestamp: null
+  name: discoveredclusters.discovery.open-cluster-management.io
+spec:
+  group: discovery.open-cluster-management.io
+  names:
+    kind: DiscoveredCluster
+    listKind: DiscoveredClusterList
+    plural: discoveredclusters
+    singular: discoveredcluster
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - description: Human-readable name assigned to the cluster
+      jsonPath: .spec.displayName
+      name: Display Name
+      type: string
+    - description: Cloud provider where the cluster is hosted (e.g., AWS, Azure, GCP)
+      jsonPath: .spec.cloudProvider
+      name: Cloud Provider
+      type: string
+    - description: Region where the cluster is deployed (e.g., us-east-1, us-central1)
+      jsonPath: .spec.region
+      name: Region
+      type: string
+    - description: Current state of the discovered cluster (e.g Active, Stale)
+      jsonPath: .spec.status
+      name: Status
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1
+    schema:
+      openAPIV3Schema:
+        description: DiscoveredCluster is the Schema for the discoveredclusters API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: DiscoveredClusterSpec defines the desired state of DiscoveredCluster
+            properties:
+              activityTimestamp:
+                description: ActivityTimestamp records the last observed activity
+                  of the cluster.
+                format: date-time
+                type: string
+              apiUrl:
+                description: APIURL is the endpoint used to access the cluster's API
+                  server.
+                type: string
+              cloudProvider:
+                description: CloudProvider specifies the cloud provider where the
+                  cluster is hosted (e.g., AWS, Azure, GCP).
+                type: string
+              console:
+                description: Console provides the URL of the cluster's web-based console.
+                type: string
+              creationTimestamp:
+                description: CreationTimestamp marks when the cluster was initially
+                  discovered.
+                format: date-time
+                type: string
+              credential:
+                description: Credential references the Kubernetes secret containing
+                  authentication details for the cluster.
+                properties:
+                  apiVersion:
+                    description: API version of the referent.
+                    type: string
+                  fieldPath:
+                    description: |-
+                      If referring to a piece of an object instead of an entire object, this string
+                      should contain a valid JSON/Go field access statement, such as desiredState.manifest.containers[2].
+                      For example, if the object reference is to a container within a pod, this would take on a value like:
+                      "spec.containers{name}" (where "name" refers to the name of the container that triggered
+                      the event) or if no container name is specified "spec.containers[2]" (container with
+                      index 2 in this pod). This syntax is chosen only to have some well-defined way of
+                      referencing a part of an object.
+                    type: string
+                  kind:
+                    description: |-
+                      Kind of the referent.
+                      More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+                    type: string
+                  name:
+                    description: |-
+                      Name of the referent.
+                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                    type: string
+                  namespace:
+                    description: |-
+                      Namespace of the referent.
+                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
+                    type: string
+                  resourceVersion:
+                    description: |-
+                      Specific resourceVersion to which this reference is made, if any.
+                      More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency
+                    type: string
+                  uid:
+                    description: |-
+                      UID of the referent.
+                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids
+                    type: string
+                type: object
+                x-kubernetes-map-type: atomic
+              displayName:
+                description: DisplayName is a human-readable name assigned to the
+                  cluster.
+                type: string
+              importAsManagedCluster:
+                default: false
+                description: ImportAsManagedCluster determines whether the discovered
+                  cluster should be automatically imported as a managed cluster.
+                type: boolean
+              isManagedCluster:
+                description: IsManagedCluster indicates whether the cluster is currently
+                  managed.
+                type: boolean
+              name:
+                description: Name represents the unique identifier of the discovered
+                  cluster.
+                type: string
+              ocpClusterId:
+                description: OCPClusterID contains the unique identifier assigned
+                  by OpenShift to the cluster.
+                type: string
+              openshiftVersion:
+                description: OpenshiftVersion specifies the OpenShift version running
+                  on the cluster.
+                type: string
+              provenance:
+                description: Provenance indicates how the cluster was discovered (e.g.,
+                  Telemetry, Manual).
+                type: string
+              region:
+                description: Region specifies the geographical region where the cluster
+                  is deployed.
+                type: string
+              rhocmClusterId:
+                description: RHOCMClusterID contains the cluster ID from Red Hat OpenShift
+                  Cluster Manager.
+                type: string
+              status:
+                description: Status represents the current state of the discovered
+                  cluster (e.g Active, Stale).
+                type: string
+              supportLevel:
+                description: SupportLevel specifies the support tier for the cluster
+                  (e.g., Self-Support, L1-L3, Premium).
+                type: string
+              type:
+                description: Type defines the type of cluster, such as OpenShift,
+                  Kubernetes, or a specific managed service type.
+                type: string
+              usage:
+                description: Usage indicates the cluster's intended purpose (e.g.,
+                  Development/Test, Production).
+                type: string
+            required:
+            - apiUrl
+            - displayName
+            - isManagedCluster
+            - name
+            - type
+            type: object
+          status:
+            description: DiscoveredClusterStatus defines the observed state of DiscoveredCluster
+            properties:
+              conditions:
+                description: Conditions represent the latest available observations
+                  of the DiscoveredCluster's state
+                items:
+                  description: DiscoveredClusterCondition represents an observation
+                    of a DiscoveredCluster's state
+                  properties:
+                    lastTransitionTime:
+                      description: Last time the condition transitioned from one status
+                        to another
+                      format: date-time
+                      type: string
+                    message:
+                      description: Human-readable message indicating details about
+                        the transition
+                      type: string
+                    observedGeneration:
+                      description: ObservedGeneration represents the .metadata.generation
+                        that the condition was set based upon
+                      format: int64
+                      type: integer
+                    reason:
+                      description: Programmatic identifier indicating the reason for
+                        the condition's last transition
+                      type: string
+                    status:
+                      description: Status of the condition (True, False, Unknown)
+                      type: string
+                    type:
+                      description: Type of the condition
+                      type: string
+                  required:
+                  - type
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - type
+                x-kubernetes-list-type: map
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+  - deprecated: true
+    deprecationWarning: discovery.open-cluster-management.io/v1alpha1 DiscoveredCluster
+      is deprecated in v2.5+, unavailable in v2.6+; use discovery.open-cluster-management.io/v1
+      DiscoveredCluster
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: DiscoveredCluster is the Schema for the discoveredclusters API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: DiscoveredClusterSpec defines the desired state of DiscoveredCluster
+            properties:
+              activityTimestamp:
+                format: date-time
+                type: string
+              apiUrl:
+                type: string
+              cloudProvider:
+                type: string
+              console:
+                type: string
+              creationTimestamp:
+                format: date-time
+                type: string
+              credential:
+                description: ObjectReference contains enough information to let you
+                  inspect or modify the referred object.
+                properties:
+                  apiVersion:
+                    description: API version of the referent.
+                    type: string
+                  fieldPath:
+                    description: |-
+                      If referring to a piece of an object instead of an entire object, this string
+                      should contain a valid JSON/Go field access statement, such as desiredState.manifest.containers[2].
+                      For example, if the object reference is to a container within a pod, this would take on a value like:
+                      "spec.containers{name}" (where "name" refers to the name of the container that triggered
+                      the event) or if no container name is specified "spec.containers[2]" (container with
+                      index 2 in this pod). This syntax is chosen only to have some well-defined way of
+                      referencing a part of an object.
+                    type: string
+                  kind:
+                    description: |-
+                      Kind of the referent.
+                      More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+                    type: string
+                  name:
+                    description: |-
+                      Name of the referent.
+                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                    type: string
+                  namespace:
+                    description: |-
+                      Namespace of the referent.
+                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
+                    type: string
+                  resourceVersion:
+                    description: |-
+                      Specific resourceVersion to which this reference is made, if any.
+                      More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency
+                    type: string
+                  uid:
+                    description: |-
+                      UID of the referent.
+                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids
+                    type: string
+                type: object
+                x-kubernetes-map-type: atomic
+              displayName:
+                type: string
+              isManagedCluster:
+                type: boolean
+              name:
+                type: string
+              openshiftVersion:
+                type: string
+              status:
+                type: string
+              type:
+                type: string
+            required:
+            - apiUrl
+            - displayName
+            - isManagedCluster
+            - name
+            - type
+            type: object
+          status:
+            description: DiscoveredClusterStatus defines the observed state of DiscoveredCluster
+            type: object
+        type: object
+    served: true
+    storage: false
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: null
+  storedVersions: null

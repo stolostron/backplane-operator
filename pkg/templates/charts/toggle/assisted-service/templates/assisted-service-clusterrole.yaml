@@ -1,0 +1,392 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: '{{ .Values.org }}:{{ .Chart.Name }}:assisted-service'
+rules:
+- apiGroups:
+  - ''
+  resources:
+  - nodes
+  - pods
+  - endpoints
+  - services
+  - secrets
+  verbs:
+  - get
+  - watch
+  - list
+- apiGroups:
+  - ''
+  resources:
+  - secrets
+  verbs:
+  - get
+  - watch
+  - list
+  - create
+- apiGroups:
+  - batch
+  resources:
+  - jobs
+  verbs:
+  - get
+  - watch
+  - list
+  - delete
+  - create
+- apiGroups:
+  - ''
+  resources:
+  - configmaps
+  verbs:
+  - create
+  - get
+  - list
+  - watch
+- apiGroups:
+  - config.openshift.io
+  resources:
+  - clusterversions
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - route.openshift.io
+  resources:
+  - routes
+  - routes/custom-host
+  verbs:
+  - create
+  - get
+- apiGroups:
+  - ''
+  resources:
+  - configmaps
+  - persistentvolumeclaims
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ''
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+- apiGroups:
+  - ''
+  resources:
+  - namespaces
+  verbs:
+  - create
+  - get
+  - list
+  - watch
+- apiGroups:
+  - admissionregistration.k8s.io
+  resources:
+  - mutatingwebhookconfigurations
+  - validatingwebhookconfigurations
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - agent-install.openshift.io
+  resources:
+  - agentclassifications
+  - agents
+  - agentserviceconfigs
+  - hypershiftagentserviceconfigs
+  - infraenvs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - agent-install.openshift.io
+  resources:
+  - agentclassifications/finalizers
+  - agents/ai-deprovision
+  - agentserviceconfigs/finalizers
+  - hypershiftagentserviceconfigs/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - agent-install.openshift.io
+  resources:
+  - agentclassifications/status
+  - agents/status
+  - agentserviceconfigs/status
+  - hypershiftagentserviceconfigs/status
+  - infraenvs/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - agent-install.openshift.io
+  resources:
+  - nmstateconfigs
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - apiregistration.k8s.io
+  resources:
+  - apiservices
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  - statefulsets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - authorization.k8s.io
+  resources:
+  - subjectaccessreviews
+  verbs:
+  - create
+- apiGroups:
+  - cert-manager.io
+  resources:
+  - certificates
+  - issuers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.open-cluster-management.io
+  resources:
+  - managedclusters
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - cluster.open-cluster-management.io
+  resources:
+  - managedclustersets/join
+  verbs:
+  - create
+- apiGroups:
+  - config.openshift.io
+  resources:
+  - apiservers
+  - clusteroperators
+  - clusterversions
+  - dnses
+  - infrastructures
+  - proxies
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - extensions.hive.openshift.io
+  resources:
+  - agentclusterinstalls
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - extensions.hive.openshift.io
+  resources:
+  - agentclusterinstalls/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - extensions.hive.openshift.io
+  resources:
+  - agentclusterinstalls/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - hive.openshift.io
+  resources:
+  - clusterdeployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - hive.openshift.io
+  resources:
+  - clusterdeployments/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - hive.openshift.io
+  resources:
+  - clusterdeployments/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - hive.openshift.io
+  resources:
+  - clusterimagesets
+  verbs:
+  - create
+  - get
+  - list
+  - watch
+- apiGroups:
+  - metal3.io
+  resources:
+  - baremetalhosts
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - metal3.io
+  resources:
+  - baremetalhosts/status
+  - preprovisioningimages/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - metal3.io
+  resources:
+  - preprovisioningimages
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - metal3.io
+  resources:
+  - provisionings
+  verbs:
+  - get
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - servicemonitors
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  - networkpolicies
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - clusterrolebindings
+  - clusterroles
+  - rolebindings
+  - roles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - route.openshift.io
+  resources:
+  - routes
+  - routes/custom-host
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch

@@ -1,0 +1,14 @@
+global:
+  imageOverrides:
+    multicloud_manager: quay.io/test/test:test
+  networkPolicies:
+    enabled: true
+  pullSecret: ""
+  namespace: default
+hubconfig:
+  nodeSelector: {}
+  probeConfig: null
+  proxyConfigs: {}
+  replicaCount: 1
+  tolerations: []
+org: open-cluster-management

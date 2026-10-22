@@ -1,0 +1,1309 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: capz-system/azureserviceoperator-serving-cert
+  name: azureserviceoperator-storage-vwh
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v1api20210401-storageaccount
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20210401.storageaccounts.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v1api20210401
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccounts
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v1api20210401-storageaccountsblobservice
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20210401.storageaccountsblobservices.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v1api20210401
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountsblobservices
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v1api20210401-storageaccountsblobservicescontainer
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20210401.storageaccountsblobservicescontainers.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v1api20210401
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountsblobservicescontainers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v1api20210401-storageaccountsmanagementpolicy
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20210401.storageaccountsmanagementpolicies.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v1api20210401
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountsmanagementpolicies
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v1api20210401-storageaccountsqueueservice
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20210401.storageaccountsqueueservices.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v1api20210401
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountsqueueservices
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v1api20210401-storageaccountsqueueservicesqueue
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20210401.storageaccountsqueueservicesqueues.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v1api20210401
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountsqueueservicesqueues
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v1api20220901-storageaccount
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20220901.storageaccounts.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v1api20220901
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccounts
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v1api20220901-storageaccountsblobservice
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20220901.storageaccountsblobservices.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v1api20220901
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountsblobservices
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v1api20220901-storageaccountsblobservicescontainer
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20220901.storageaccountsblobservicescontainers.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v1api20220901
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountsblobservicescontainers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v1api20220901-storageaccountsfileservice
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20220901.storageaccountsfileservices.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v1api20220901
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountsfileservices
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v1api20220901-storageaccountsfileservicesshare
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20220901.storageaccountsfileservicesshares.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v1api20220901
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountsfileservicesshares
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v1api20220901-storageaccountsmanagementpolicy
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20220901.storageaccountsmanagementpolicies.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v1api20220901
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountsmanagementpolicies
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v1api20220901-storageaccountsqueueservice
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20220901.storageaccountsqueueservices.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v1api20220901
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountsqueueservices
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v1api20220901-storageaccountsqueueservicesqueue
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20220901.storageaccountsqueueservicesqueues.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v1api20220901
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountsqueueservicesqueues
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v1api20220901-storageaccountstableservice
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20220901.storageaccountstableservices.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v1api20220901
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountstableservices
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v1api20220901-storageaccountstableservicestable
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20220901.storageaccountstableservicestables.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v1api20220901
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountstableservicestables
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v1api20230101-storageaccount
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20230101.storageaccounts.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v1api20230101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccounts
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v1api20230101-storageaccountsblobservice
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20230101.storageaccountsblobservices.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v1api20230101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountsblobservices
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v1api20230101-storageaccountsblobservicescontainer
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20230101.storageaccountsblobservicescontainers.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v1api20230101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountsblobservicescontainers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v1api20230101-storageaccountsfileservice
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20230101.storageaccountsfileservices.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v1api20230101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountsfileservices
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v1api20230101-storageaccountsfileservicesshare
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20230101.storageaccountsfileservicesshares.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v1api20230101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountsfileservicesshares
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v1api20230101-storageaccountsmanagementpolicy
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20230101.storageaccountsmanagementpolicies.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v1api20230101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountsmanagementpolicies
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v1api20230101-storageaccountsqueueservice
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20230101.storageaccountsqueueservices.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v1api20230101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountsqueueservices
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v1api20230101-storageaccountsqueueservicesqueue
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20230101.storageaccountsqueueservicesqueues.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v1api20230101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountsqueueservicesqueues
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v1api20230101-storageaccountstableservice
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20230101.storageaccountstableservices.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v1api20230101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountstableservices
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v1api20230101-storageaccountstableservicestable
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20230101.storageaccountstableservicestables.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v1api20230101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountstableservicestables
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v20210401-storageaccount
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20210401.storageaccounts.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v20210401
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccounts
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v20210401-storageaccountsblobservice
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20210401.storageaccountsblobservices.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v20210401
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountsblobservices
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v20210401-storageaccountsblobservicescontainer
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20210401.storageaccountsblobservicescontainers.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v20210401
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountsblobservicescontainers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v20210401-storageaccountsmanagementpolicy
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20210401.storageaccountsmanagementpolicies.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v20210401
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountsmanagementpolicies
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v20210401-storageaccountsqueueservice
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20210401.storageaccountsqueueservices.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v20210401
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountsqueueservices
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v20210401-storageaccountsqueueservicesqueue
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20210401.storageaccountsqueueservicesqueues.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v20210401
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountsqueueservicesqueues
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v20220901-storageaccount
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20220901.storageaccounts.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v20220901
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccounts
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v20220901-storageaccountsblobservice
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20220901.storageaccountsblobservices.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v20220901
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountsblobservices
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v20220901-storageaccountsblobservicescontainer
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20220901.storageaccountsblobservicescontainers.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v20220901
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountsblobservicescontainers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v20220901-storageaccountsfileservice
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20220901.storageaccountsfileservices.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v20220901
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountsfileservices
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v20220901-storageaccountsfileservicesshare
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20220901.storageaccountsfileservicesshares.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v20220901
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountsfileservicesshares
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v20220901-storageaccountsmanagementpolicy
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20220901.storageaccountsmanagementpolicies.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v20220901
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountsmanagementpolicies
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v20220901-storageaccountsqueueservice
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20220901.storageaccountsqueueservices.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v20220901
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountsqueueservices
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v20220901-storageaccountsqueueservicesqueue
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20220901.storageaccountsqueueservicesqueues.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v20220901
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountsqueueservicesqueues
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v20220901-storageaccountstableservice
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20220901.storageaccountstableservices.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v20220901
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountstableservices
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v20220901-storageaccountstableservicestable
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20220901.storageaccountstableservicestables.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v20220901
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountstableservicestables
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v20230101-storageaccount
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20230101.storageaccounts.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v20230101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccounts
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v20230101-storageaccountsblobservice
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20230101.storageaccountsblobservices.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v20230101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountsblobservices
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v20230101-storageaccountsblobservicescontainer
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20230101.storageaccountsblobservicescontainers.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v20230101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountsblobservicescontainers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v20230101-storageaccountsfileservice
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20230101.storageaccountsfileservices.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v20230101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountsfileservices
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v20230101-storageaccountsfileservicesshare
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20230101.storageaccountsfileservicesshares.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v20230101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountsfileservicesshares
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v20230101-storageaccountsmanagementpolicy
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20230101.storageaccountsmanagementpolicies.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v20230101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountsmanagementpolicies
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v20230101-storageaccountsqueueservice
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20230101.storageaccountsqueueservices.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v20230101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountsqueueservices
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v20230101-storageaccountsqueueservicesqueue
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20230101.storageaccountsqueueservicesqueues.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v20230101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountsqueueservicesqueues
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v20230101-storageaccountstableservice
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20230101.storageaccountstableservices.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v20230101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountstableservices
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v20230101-storageaccountstableservicestable
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20230101.storageaccountstableservicestables.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v20230101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountstableservicestables
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v20250601-storageaccount
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250601.storageaccounts.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v20250601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccounts
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v20250601-storageaccountsblobservice
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250601.storageaccountsblobservices.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v20250601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountsblobservices
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v20250601-storageaccountsblobservicescontainer
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250601.storageaccountsblobservicescontainers.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v20250601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountsblobservicescontainers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v20250601-storageaccountsfileservice
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250601.storageaccountsfileservices.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v20250601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountsfileservices
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v20250601-storageaccountsfileservicesshare
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250601.storageaccountsfileservicesshares.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v20250601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountsfileservicesshares
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v20250601-storageaccountsmanagementpolicy
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250601.storageaccountsmanagementpolicies.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v20250601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountsmanagementpolicies
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v20250601-storageaccountsqueueservice
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250601.storageaccountsqueueservices.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v20250601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountsqueueservices
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v20250601-storageaccountsqueueservicesqueue
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250601.storageaccountsqueueservicesqueues.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v20250601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountsqueueservicesqueues
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v20250601-storageaccountstableservice
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250601.storageaccountstableservices.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v20250601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountstableservices
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-storage-azure-com-v20250601-storageaccountstableservicestable
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20250601.storageaccountstableservicestables.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v20250601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountstableservicestables
+  sideEffects: None

@@ -1,0 +1,91 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: capz-system/azureserviceoperator-serving-cert
+  name: azureserviceoperator-managedidentity-mwh
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-managedidentity-azure-com-v1api20181130-userassignedidentity
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20181130.userassignedidentities.managedidentity.azure.com
+  rules:
+  - apiGroups:
+    - managedidentity.azure.com
+    apiVersions:
+    - v1api20181130
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - userassignedidentities
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-managedidentity-azure-com-v1api20220131preview-federatedidentitycredential
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20220131preview.federatedidentitycredentials.managedidentity.azure.com
+  rules:
+  - apiGroups:
+    - managedidentity.azure.com
+    apiVersions:
+    - v1api20220131preview
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - federatedidentitycredentials
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-managedidentity-azure-com-v1api20230131-federatedidentitycredential
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20230131.federatedidentitycredentials.managedidentity.azure.com
+  rules:
+  - apiGroups:
+    - managedidentity.azure.com
+    apiVersions:
+    - v1api20230131
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - federatedidentitycredentials
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-managedidentity-azure-com-v1api20230131-userassignedidentity
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v1api20230131.userassignedidentities.managedidentity.azure.com
+  rules:
+  - apiGroups:
+    - managedidentity.azure.com
+    apiVersions:
+    - v1api20230131
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - userassignedidentities
+  sideEffects: None

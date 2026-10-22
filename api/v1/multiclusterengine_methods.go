@@ -1,0 +1,320 @@
+// Copyright Contributors to the Open Cluster Management project
+
+/*
+Copyright 2021.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+package v1
+
+const (
+	// Component names
+	AssistedService                  = "assisted-service"
+	ClusterAPI                       = "cluster-api"
+	ClusterAPIPreview                = "cluster-api-preview"
+	ClusterAPIProviderAWS            = "cluster-api-provider-aws"
+	ClusterAPIProviderAWSPreview     = "cluster-api-provider-aws-preview"
+	ClusterAPIProviderAzure          = "cluster-api-provider-azure"
+	ClusterAPIProviderAzurePreview   = "cluster-api-provider-azure-preview"
+	ClusterAPIProviderMetal          = "cluster-api-provider-metal3"
+	ClusterAPIProviderMetalPreview   = "cluster-api-provider-metal3-preview"
+	ClusterAPIProviderOA             = "cluster-api-provider-openshift-assisted"
+	ClusterAPIProviderOAPreview      = "cluster-api-provider-openshift-assisted-preview"
+	ClusterLifecycle                 = "cluster-lifecycle"
+	ClusterManager                   = "cluster-manager"
+	ClusterPermission                = "cluster-permission"
+	ClusterProxyAddon                = "cluster-proxy-addon"
+	ConsoleMCE                       = "console-mce"
+	Discovery                        = "discovery"
+	FleetNavigation                  = "fleet-navigation"
+	Hive                             = "hive"
+	HyperShift                       = "hypershift"
+	HypershiftLocalHosting           = "hypershift-local-hosting"
+	HyperShiftPreview                = "hypershift-preview"
+	ImageBasedInstallOperator        = "image-based-install-operator"
+	ImageBasedInstallOperatorPreview = "image-based-install-operator-preview"
+	LocalCluster                     = "local-cluster"
+	ManagedServiceAccount            = "managedserviceaccount"
+	ManagedServiceAccountPreview     = "managedserviceaccount-preview"
+	ServerFoundation                 = "server-foundation"
+	MaestroPreview                   = "maestro-preview" // Removed in MCE 5.1
+
+	// CRD directory names
+	AssistedServiceCRDDir            = "assisted-service"
+	ClusterAPICRDDir                 = "cluster-api"
+	ClusterAPIK8SCRDDir              = "cluster-api-k8s"
+	ClusterAPIProviderAWSCRDDir      = "cluster-api-provider-aws"
+	ClusterAPIProviderAzureCRDDir    = "cluster-api-provider-azure"
+	ClusterAPIProviderAzureK8SCRDDir = "cluster-api-provider-azure-k8s"
+	ClusterAPIProviderMetalCRDDir    = "cluster-api-provider-metal3"
+	ClusterAPIProviderMetalK8SCRDDir = "cluster-api-provider-metal3-k8s"
+	ClusterAPIProviderOACRDDir       = "cluster-api-provider-openshift-assisted"
+	ClusterAPIProviderOAK8SCRDDir    = "cluster-api-provider-openshift-assisted-k8s"
+	ClusterLifecycleCRDDir           = "cluster-lifecycle"
+	ClusterManagerCRDDir             = "cluster-manager"
+	ClusterPermissionCRDDir          = "cluster-permission"
+	ClusterProxyAddonCRDDir          = "cluster-proxy-addon"
+	DiscoveryCRDDir                  = "discovery-operator"
+	HiveCRDDir                       = "hive-operator"
+	ImageBasedInstallOperatorCRDDir  = "image-based-install-operator"
+	ManagedServiceAccountCRDDir      = "managed-serviceaccount"
+	ServerFoundationCRDDir           = "foundation"
+)
+
+// AllComponents is a slice containing all valid component names
+var AllComponents = []string{
+	AssistedService,
+	ClusterAPI,
+	ClusterAPIPreview,
+	ClusterAPIProviderAWS,
+	ClusterAPIProviderAWSPreview,
+	// ClusterAPIProviderAzure, Uncomment until stable release is available
+	ClusterAPIProviderAzurePreview,
+	ClusterAPIProviderMetal,
+	ClusterAPIProviderMetalPreview,
+	ClusterAPIProviderOAPreview,
+	ClusterAPIProviderOA,
+	ClusterLifecycle,
+	ClusterManager,
+	ClusterPermission,
+	ClusterProxyAddon,
+	ConsoleMCE,
+	Discovery,
+	FleetNavigation,
+	Hive,
+	HyperShift,
+	HypershiftLocalHosting,
+	HyperShiftPreview,
+	ImageBasedInstallOperator,
+	ImageBasedInstallOperatorPreview,
+	LocalCluster,
+	ManagedServiceAccount,
+	ManagedServiceAccountPreview,
+	ServerFoundation,
+}
+
+// MCEComponents is a slice containing component names specific to the "MCE" category.
+var MCEComponents = []string{
+	AssistedService,
+	ClusterAPI,
+	ClusterAPIProviderAWS,
+	// ClusterAPIProviderAzure, Uncomment until stable release is available
+	ClusterAPIProviderAzurePreview,
+	ClusterAPIProviderMetal,
+	ClusterAPIProviderOA,
+	ClusterLifecycle,
+	ClusterManager,
+	ClusterPermission,
+	ClusterProxyAddon,
+	ConsoleMCE,
+	Discovery,
+	FleetNavigation,
+	Hive,
+	HyperShift,
+	HypershiftLocalHosting,
+	ImageBasedInstallOperator,
+	ManagedServiceAccount,
+	ServerFoundation,
+}
+
+/*
+PreviewComponents is a list of all MCE component names that represent preview (tech preview) features.
+These components are candidates for pruning when the stable version replaces them.
+*/
+var PreviewComponents = []string{
+	ClusterAPIPreview,
+	ClusterAPIProviderAWSPreview,
+	// ClusterAPIProviderAzurePreview, // Uncomment when stable release is available
+	ClusterAPIProviderMetalPreview,
+	ClusterAPIProviderOAPreview,
+	HyperShiftPreview,
+	ImageBasedInstallOperatorPreview,
+	ManagedServiceAccountPreview,
+}
+
+/*
+PreviewToStable maps each preview component to its corresponding stable replacement.
+This mapping is used to enable the stable component when the preview version is pruned.
+*/
+var PreviewToStable = map[string]string{
+	ClusterAPIPreview:            ClusterAPI,            // Upgraded in ACM 2.14 / MCE 2.9
+	ClusterAPIProviderAWSPreview: ClusterAPIProviderAWS, // Upgraded in ACM 2.14 / MCE 2.9
+	// ClusterAPIProviderAzurePreview:   ClusterAPIProviderAzure,   // Upgraded in ACM 2.16 / MCE 2.11
+	ClusterAPIProviderMetalPreview:   ClusterAPIProviderMetal,   // Upgraded in ACM 2.15 / MCE 2.10
+	ClusterAPIProviderOAPreview:      ClusterAPIProviderOA,      // Upgraded in ACM 2.15 / MCE 2.10
+	HyperShiftPreview:                HyperShift,                // Upgraded in ACM 2.8 / MCE 2.3
+	ImageBasedInstallOperatorPreview: ImageBasedInstallOperator, // Upgraded in ACM 2.12 / MCE 2.7
+	ManagedServiceAccountPreview:     ManagedServiceAccount,     // Upgraded in ACM 2.9 / MCE 2.4
+}
+
+/*
+RemovedComponents is a list of component names that have been completely removed from MCE.
+These components are no longer valid and are automatically pruned from existing MultiClusterEngine
+CRs during reconciliation, so that clusters upgrading from a version where the component still
+existed can be cleanly migrated without requiring manual user intervention.
+*/
+var RemovedComponents = []string{
+	MaestroPreview, // Removed in MCE 5.1
+}
+
+/*
+ComponentPresent checks if a component with the given name is present in the MultiClusterEngine's Overrides.
+Returns true if the component is present, otherwise false.
+*/
+func (mce *MultiClusterEngine) ComponentPresent(s string) bool {
+	if mce.Spec.Overrides == nil {
+		return false
+	}
+	for _, c := range mce.Spec.Overrides.Components {
+		if c.Name == s {
+			return true
+		}
+	}
+	return false
+}
+
+/*
+Enabled checks if a component with the given name is enabled in the MultiClusterEngine's Overrides.
+Returns true if the component is enabled, otherwise false.
+*/
+func (mce *MultiClusterEngine) Enabled(s string) bool {
+	if mce.Spec.Overrides == nil {
+		return false
+	}
+	for _, c := range mce.Spec.Overrides.Components {
+		if c.Name == s {
+			return c.Enabled
+		}
+	}
+	return false
+}
+
+/*
+Enable enables a component with the given name in the MultiClusterEngine's Overrides.
+If the component is not present, it adds it and sets it as enabled.
+*/
+func (mce *MultiClusterEngine) Enable(s string) {
+	if mce.Spec.Overrides == nil {
+		mce.Spec.Overrides = &Overrides{}
+	}
+	for i, c := range mce.Spec.Overrides.Components {
+		if c.Name == s {
+			mce.Spec.Overrides.Components[i].Enabled = true
+			return
+		}
+	}
+	mce.Spec.Overrides.Components = append(mce.Spec.Overrides.Components, ComponentConfig{
+		ConfigOverrides: ConfigOverride{},
+		Enabled:         true,
+		Name:            s,
+	})
+}
+
+/*
+Prune removes a component with the given name from the MultiClusterEngine's Overrides.
+Returns true if the component is pruned, indicating changes were made.
+*/
+func (mce *MultiClusterEngine) Prune(s string) bool {
+	if mce.Spec.Overrides == nil {
+		return false
+	}
+	pruned := false
+	prunedList := []ComponentConfig{}
+	for _, c := range mce.Spec.Overrides.Components {
+		if c.Name == s {
+			pruned = true
+		} else {
+			prunedList = append(prunedList, c)
+		}
+	}
+
+	if pruned {
+		mce.Spec.Overrides.Components = prunedList
+		return true
+	}
+	return false
+}
+
+/*
+Disable disables a component with the given name in the MultiClusterEngine's Overrides.
+If the component is not present, it adds it and sets it as disabled.
+*/
+func (mce *MultiClusterEngine) Disable(s string) {
+	if mce.Spec.Overrides == nil {
+		mce.Spec.Overrides = &Overrides{}
+	}
+	for i, c := range mce.Spec.Overrides.Components {
+		if c.Name == s {
+			mce.Spec.Overrides.Components[i].Enabled = false
+			return
+		}
+	}
+	mce.Spec.Overrides.Components = append(mce.Spec.Overrides.Components, ComponentConfig{
+		ConfigOverrides: ConfigOverride{},
+		Enabled:         false,
+		Name:            s,
+	})
+}
+
+/*
+validComponent checks if a ComponentConfig is valid by comparing its name to a list of known component names.
+Returns true if the component is valid, otherwise false.
+*/
+func validComponent(c ComponentConfig) bool {
+	for _, name := range AllComponents {
+		if c.Name == name {
+			return true
+		}
+	}
+	return false
+}
+
+/*
+IsRemovedComponent checks if the given component name is in the RemovedComponents list.
+Returns true if the component has been completely removed from MCE.
+*/
+func IsRemovedComponent(name string) bool {
+	for _, removed := range RemovedComponents {
+		if name == removed {
+			return true
+		}
+	}
+	return false
+}
+
+/*
+IsInHostedMode checks if the MultiClusterEngine has an annotation indicating it is in hosted mode.
+Returns true if the annotation is present and its value is "ModeHosted," otherwise false.
+*/
+func IsInHostedMode(mce *MultiClusterEngine) bool {
+	a := mce.GetAnnotations()
+	if a == nil {
+		return false
+	}
+	if a["deploymentmode"] == string(ModeHosted) {
+		return true
+	}
+	return false
+}
+
+// IsACMManaged returns true if operator is managed by ACM
+func IsACMManaged(mce *MultiClusterEngine) bool {
+	managedByACMLabel := "multiclusterhubs.operator.open-cluster-management.io/managed-by"
+	if labels := mce.GetLabels(); labels != nil {
+		if labels[managedByACMLabel] == "true" {
+			return true
+		}
+	}
+	return false
+}

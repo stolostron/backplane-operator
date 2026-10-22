@@ -1,0 +1,28 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: capz-system/azureserviceoperator-serving-cert
+  name: azureserviceoperator-quota-vwh
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-quota-azure-com-v1api20250901-quota
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20250901.quotas.quota.azure.com
+  rules:
+  - apiGroups:
+    - quota.azure.com
+    apiVersions:
+    - v1api20250901
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - quotas
+  sideEffects: None

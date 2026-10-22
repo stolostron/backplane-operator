@@ -1,0 +1,570 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.17.0
+  creationTimestamp: null
+  name: agents.agent-install.openshift.io
+spec:
+  conversion:
+    strategy: Webhook
+    webhook:
+      clientConfig:
+        service:
+          name: webhook-service
+          namespace: assisted-installer
+          path: /convert
+      conversionReviewVersions:
+      - v1
+  group: agent-install.openshift.io
+  names:
+    kind: Agent
+    listKind: AgentList
+    plural: agents
+    singular: agent
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - description: The name of the cluster the Agent registered to.
+      jsonPath: .spec.clusterDeploymentName.name
+      name: Cluster
+      type: string
+    - description: The `Approve` state of the Agent.
+      jsonPath: .spec.approved
+      name: Approved
+      type: boolean
+    - description: The role (master/worker) of the Agent.
+      jsonPath: .status.role
+      name: Role
+      type: string
+    - description: The HostStage of the Agent.
+      jsonPath: .status.progress.currentStage
+      name: Stage
+      type: string
+    - description: The hostname of the Agent.
+      jsonPath: .status.inventory.hostname
+      name: Hostname
+      priority: 1
+      type: string
+    - description: The requested hostname for the Agent.
+      jsonPath: .spec.hostname
+      name: Requested Hostname
+      priority: 1
+      type: string
+    name: v1beta1
+    schema:
+      openAPIV3Schema:
+        description: |-
+          Agent represents a host that has been discovered by booting from an InfraEnv discovery image
+          and can be installed as part of an OpenShift cluster.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: |-
+              AgentSpec defines the desired configuration for an Agent, including its cluster assignment, role,
+              installation disk, and additional customizations.
+            properties:
+              approved:
+                description: |-
+                  Approved indicates whether this Agent is authorized to participate in cluster installation.
+                  When false, the Agent will not be included in installation even if all other requirements
+                  are met. Set to true to allow the Agent to proceed with installation.
+                type: boolean
+              clusterDeploymentName:
+                description: |-
+                  ClusterReference represents a Cluster Reference. It has enough information to retrieve cluster
+                  in any namespace
+                properties:
+                  name:
+                    description: Name is unique within a namespace to reference a
+                      cluster resource.
+                    type: string
+                  namespace:
+                    description: Namespace defines the space within which the cluster
+                      name must be unique.
+                    type: string
+                type: object
+              fencingCredentialsSecretRef:
+                description: FencingCredentialsSecretRef is a name of a secret in
+                  the Agent's namespace that contains fencing credentials
+                type: string
+              hostname:
+                description: |-
+                  Hostname is the desired hostname to be configured for this host when it joins the cluster.
+                  If not specified, the hostname discovered from the host's inventory will be used.
+                  This value is written to the host's network configuration during installation.
+                type: string
+              ignitionConfigOverrides:
+                description: |-
+                  IgnitionConfigOverrides is a JSON-formatted string containing user-provided Ignition configuration
+                  that will be merged with the base Ignition config generated for this host. Use this to customize
+                  the host's initial configuration (files, systemd units, users, etc.). The override is applied
+                  during installation and takes precedence over generated configuration.
+                type: string
+              ignitionEndpointHTTPHeaders:
+                additionalProperties:
+                  type: string
+                description: IgnitionEndpointHTTPHeaders are the additional HTTP headers
+                  used when fetching the ignition.
+                type: object
+              ignitionEndpointTokenReference:
+                description: IgnitionEndpointTokenReference references a secret containing
+                  an Authorization Bearer token to fetch the ignition from ignition_endpoint_url.
+                properties:
+                  name:
+                    description: Name is the name of the secret containing the ignition
+                      endpoint token.
+                    type: string
+                  namespace:
+                    description: Namespace is the namespace of the secret containing
+                      the ignition endpoint token.
+                    type: string
+                required:
+                - name
+                - namespace
+                type: object
+              installation_disk_id:
+                description: InstallationDiskID defines the installation destination
+                  disk (must be equal to the inventory disk id).
+                type: string
+              installation_disk_path:
+                description: InstallationDiskPath defines the installation destination
+                  disk using either its by-id or by-path value.
+                type: string
+              installerArgs:
+                description: |-
+                  InstallerArgs is a JSON-formatted string containing additional arguments for the coreos-installer
+                  command during installation. Use this to customize installation behavior such as appending kernel
+                  arguments or configuring network settings that persist after installation.
+                type: string
+              machineConfigPool:
+                description: |-
+                  MachineConfigPool specifies the name of a custom MachineConfigPool for this worker node.
+                  Only applicable when role is 'worker'. If set, the node will be labeled to use this
+                  MachineConfigPool instead of the default 'worker' pool, allowing custom machine
+                  configurations to be applied. Leave empty to use the default pool.
+                type: string
+              nodeLabels:
+                additionalProperties:
+                  type: string
+                description: NodeLabels are the labels to be applied on the node associated
+                  with this agent
+                type: object
+              role:
+                description: |-
+                  Role specifies the desired OpenShift role for this Agent in the cluster.
+                  Valid values: 'master' (control plane node running API server, etcd, and scheduler),
+                  'worker' (compute node for running workloads), 'arbiter' (lightweight control plane node
+                  for TNA clusters, running only etcd with reduced resource requirements), or 'auto-assign'
+                  (let the service automatically assign the role based on cluster requirements).
+                  The role affects hardware validation requirements and the node's responsibilities in the cluster.
+                type: string
+            required:
+            - approved
+            - role
+            type: object
+          status:
+            description: |-
+              AgentStatus represents the observed state of an Agent, including hardware inventory,
+              installation progress, validation results, and readiness conditions.
+            properties:
+              bootstrap:
+                description: |-
+                  Bootstrap indicates whether this Agent has been selected as the bootstrap node for the cluster
+                  installation. The bootstrap node coordinates the initial control plane formation by hosting
+                  temporary services that initialize etcd and the Kubernetes API. After the other control plane
+                  nodes complete installation, the bootstrap node transitions to become a regular control plane node.
+                  Only one Agent per cluster will have this field set to true, and it is always assigned to a master-role Agent.
+                type: boolean
+              conditions:
+                description: |-
+                  Conditions represent the latest available observations of the Agent's state. Standard condition types
+                  include: 'SpecSynced' (whether spec changes were successfully applied), 'Connected' (agent's connection
+                  to the service), 'RequirementsMet' (whether the agent is ready to begin installation), 'Validated'
+                  (whether hardware and configuration validations are passing), 'Installed' (installation completion status),
+                  and 'Bound' (whether the agent is bound to a cluster). Each condition includes a status (True/False/Unknown),
+                  reason code, and human-readable message.
+                items:
+                  description: |-
+                    Condition represents the state of the operator's
+                    reconciliation functionality.
+                  properties:
+                    lastHeartbeatTime:
+                      format: date-time
+                      type: string
+                    lastTransitionTime:
+                      format: date-time
+                      type: string
+                    message:
+                      type: string
+                    reason:
+                      type: string
+                    status:
+                      type: string
+                    type:
+                      description: ConditionType is the state of the operator's reconciliation
+                        functionality.
+                      type: string
+                  required:
+                  - status
+                  - type
+                  type: object
+                type: array
+              csrStatus:
+                description: CSRStatus tracks the status of CSR approvals for the
+                  agent
+                properties:
+                  approvedCSRs:
+                    description: CSRs that have been approved for the agent by the
+                      assisted-service
+                    items:
+                      description: CSRInfo tracks information about an approved CSR
+                      properties:
+                        approvedAt:
+                          format: date-time
+                          type: string
+                        name:
+                          type: string
+                        type:
+                          description: CSRType represents the type of CSR
+                          type: string
+                      required:
+                      - approvedAt
+                      - name
+                      - type
+                      type: object
+                    type: array
+                  lastApprovalAttempt:
+                    description: Last time we attempted a CSR approval
+                    format: date-time
+                    type: string
+                type: object
+              debugInfo:
+                description: DebugInfo includes information for debugging the installation
+                  process.
+                properties:
+                  eventsURL:
+                    description: EventsURL specifies an HTTP/S URL that contains events
+                      which occured during the cluster installation process
+                    type: string
+                  logsURL:
+                    description: LogsURL specifies a url for download controller logs
+                      tar file.
+                    type: string
+                  state:
+                    description: |-
+                      State is the current lifecycle state of the Agent. Common values include: 'discovering'
+                      (initial hardware discovery), 'known' (ready for installation), 'insufficient' (hardware
+                      requirements not met), 'pending-for-input' (waiting for user input), 'preparing-for-installation',
+                      'installing', 'installed', 'error' (installation failed), 'cancelled', 'disabled', 'binding'/'unbinding'
+                      (cluster association changes), and various '-unbound' suffixed states for agents not associated with a cluster.
+                    type: string
+                  stateInfo:
+                    description: Additional information pertaining to the status of
+                      the Agent
+                    type: string
+                type: object
+              deprovision_info:
+                description: DeprovisionInfo stores data related to the agent's previous
+                  cluster binding in order to clean up when the agent re-registers
+                properties:
+                  cluster_name:
+                    type: string
+                  cluster_namespace:
+                    type: string
+                  message:
+                    type: string
+                  node_name:
+                    type: string
+                type: object
+              installation_disk_id:
+                description: InstallationDiskID is the disk that will be used for
+                  the installation.
+                type: string
+              inventory:
+                description: |-
+                  Inventory contains the hardware and system information discovered from this Agent, including CPU,
+                  memory, disks, network interfaces, boot configuration, and system vendor details. This information
+                  is gathered by the discovery image when the host boots and is used for validation and installation
+                  planning. The inventory is continuously updated while the agent is connected.
+                properties:
+                  bmcAddress:
+                    type: string
+                  bmcV6Address:
+                    type: string
+                  boot:
+                    properties:
+                      currentBootMode:
+                        type: string
+                      deviceType:
+                        type: string
+                      pxeInterface:
+                        type: string
+                    type: object
+                  cpu:
+                    properties:
+                      architecture:
+                        type: string
+                      clockMegahertz:
+                        description: 'Name in REST API: frequency'
+                        format: int64
+                        type: integer
+                      count:
+                        format: int64
+                        type: integer
+                      flags:
+                        items:
+                          type: string
+                        type: array
+                      modelName:
+                        type: string
+                    type: object
+                  disks:
+                    items:
+                      properties:
+                        bootable:
+                          type: boolean
+                        byID:
+                          type: string
+                        byPath:
+                          type: string
+                        driveType:
+                          type: string
+                        hctl:
+                          type: string
+                        id:
+                          type: string
+                        installationEligibility:
+                          properties:
+                            eligible:
+                              type: boolean
+                            notEligibleReasons:
+                              items:
+                                type: string
+                              type: array
+                          required:
+                          - notEligibleReasons
+                          type: object
+                        ioPerf:
+                          properties:
+                            syncDurationMilliseconds:
+                              description: 99th percentile of fsync duration in milliseconds
+                              format: int64
+                              type: integer
+                          type: object
+                        model:
+                          type: string
+                        name:
+                          type: string
+                        path:
+                          type: string
+                        serial:
+                          type: string
+                        sizeBytes:
+                          format: int64
+                          type: integer
+                        smart:
+                          type: string
+                        vendor:
+                          type: string
+                        wwn:
+                          type: string
+                      required:
+                      - id
+                      type: object
+                    type: array
+                  gpus:
+                    items:
+                      properties:
+                        address:
+                          description: Device address (for example "0000:00:02.0")
+                          type: string
+                        deviceID:
+                          description: ID of the device (for example "3ea0")
+                          type: string
+                        name:
+                          description: Product name of the device (for example "UHD
+                            Graphics 620 (Whiskey Lake)")
+                          type: string
+                        vendor:
+                          description: The name of the device vendor (for example
+                            "Intel Corporation")
+                          type: string
+                        vendorID:
+                          description: ID of the vendor (for example "8086")
+                          type: string
+                      type: object
+                    type: array
+                  hostname:
+                    type: string
+                  interfaces:
+                    items:
+                      properties:
+                        biosDevName:
+                          type: string
+                        clientID:
+                          type: string
+                        flags:
+                          items:
+                            type: string
+                          type: array
+                        hasCarrier:
+                          type: boolean
+                        ipV4Addresses:
+                          items:
+                            type: string
+                          type: array
+                        ipV6Addresses:
+                          items:
+                            type: string
+                          type: array
+                        macAddress:
+                          type: string
+                        mtu:
+                          format: int64
+                          type: integer
+                        name:
+                          type: string
+                        product:
+                          type: string
+                        speedMbps:
+                          format: int64
+                          type: integer
+                        vendor:
+                          type: string
+                      required:
+                      - flags
+                      - ipV4Addresses
+                      - ipV6Addresses
+                      type: object
+                    type: array
+                  memory:
+                    properties:
+                      physicalBytes:
+                        format: int64
+                        type: integer
+                      usableBytes:
+                        format: int64
+                        type: integer
+                    type: object
+                  reportTime:
+                    description: 'Name in REST API: timestamp'
+                    format: date-time
+                    type: string
+                  systemVendor:
+                    properties:
+                      manufacturer:
+                        type: string
+                      productName:
+                        type: string
+                      serialNumber:
+                        type: string
+                      virtual:
+                        type: boolean
+                    type: object
+                type: object
+              kind:
+                description: |-
+                  Kind corresponds to the same field in the model Host. It indicates the type of cluster the host is
+                  being installed to; either an existing cluster (day-2) or a new cluster (day-1).
+                  Value is one of: "AddToExistingClusterHost" (day-2) or "Host" (day-1)
+                type: string
+              ntpSources:
+                items:
+                  properties:
+                    sourceName:
+                      type: string
+                    sourceState:
+                      description: |-
+                        SourceState source state
+
+                        swagger:model source_state
+                      type: string
+                  type: object
+                type: array
+              progress:
+                properties:
+                  currentStage:
+                    description: current installation stage
+                    type: string
+                  installationPercentage:
+                    description: Estimate progress (percentage)
+                    format: int64
+                    type: integer
+                  progressInfo:
+                    description: Additional information for the current installation
+                      stage
+                    type: string
+                  progressStages:
+                    description: All stages (ordered by their appearance) for this
+                      agent
+                    items:
+                      description: |-
+                        HostStage host stage
+
+                        swagger:model host-stage
+                      type: string
+                    type: array
+                  stageStartTime:
+                    description: 'host field: progress: stage_started_at'
+                    format: date-time
+                    type: string
+                  stageUpdateTime:
+                    description: 'host field: progress: stage_updated_at'
+                    format: date-time
+                    type: string
+                type: object
+              role:
+                description: |-
+                  Role is the effective OpenShift role assigned to this Agent. This reflects the actual role
+                  the Agent will use, which may differ from spec.role if spec.role is 'auto-assign'.
+                  Possible values: 'master', 'worker', 'arbiter', 'auto-assign', or 'bootstrap'.
+                type: string
+              validationsInfo:
+                additionalProperties:
+                  items:
+                    properties:
+                      id:
+                        type: string
+                      message:
+                        type: string
+                      status:
+                        type: string
+                    required:
+                    - id
+                    - message
+                    - status
+                    type: object
+                  type: array
+                description: ValidationsInfo is a JSON-formatted string containing
+                  the validation results for each validation id grouped by category
+                  (network, hosts-data, etc.)
+                type: object
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: null
+  storedVersions: null

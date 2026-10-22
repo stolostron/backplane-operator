@@ -1,0 +1,191 @@
+# Copyright Contributors to the Open Cluster Management project
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: console-mce-console
+spec:
+  replicas: {{ .Values.hubconfig.replicaCount }}
+  selector:
+    matchLabels:
+      app: console-mce
+  template:
+    metadata:
+      labels:
+        app: console-mce
+        ocm-antiaffinity-selector: "console-mce"
+    spec:
+      hostNetwork: false
+      hostPID: false
+      hostIPC: false
+      serviceAccountName: console-mce
+      securityContext:
+        runAsNonRoot: true
+        {{- if semverCompare ">=4.11.0" .Values.hubconfig.ocpVersion }}
+        seccompProfile:
+          type: RuntimeDefault
+        {{- end }}
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                - amd64
+                - ppc64le
+                - s390x
+                - arm64
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 70
+            podAffinityTerm:
+              topologyKey: topology.kubernetes.io/zone
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - console-mce
+                - key: component
+                  operator: In
+                  values:
+                  - console-mce
+          - weight: 35
+            podAffinityTerm:
+              topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - console-mce
+                - key: component
+                  operator: In
+                  values:
+                  - console-mce
+{{- with .Values.hubconfig.tolerations }}
+      tolerations:
+      {{- range . }}
+      - {{ if .Key }} key: {{ .Key }} {{- end }}
+        {{ if .Operator }} operator: {{ .Operator }} {{- end }}
+        {{ if .Value }} value: {{ .Value }} {{- end }}
+        {{ if .Effect }} effect: {{ .Effect }} {{- end }}
+        {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
+        {{- end }}
+{{- end }}
+      volumes:
+      - name: console-mce-console-certs
+        secret:
+          defaultMode: 420
+          secretName: console-mce-console-certs
+      - name: console-mce-console-mce-config
+        configMap:
+          name: console-mce-config
+      containers:
+      - name: console
+        volumeMounts:
+        - mountPath: /app/certs
+          name: console-mce-console-certs
+        - mountPath: /app/config
+          name: console-mce-console-mce-config
+        image: {{ .Values.global.imageOverrides.console_mce }}
+        imagePullPolicy: {{ .Values.global.pullPolicy }}
+        resources:
+          requests:
+          {{- if hasKey .Values.global.templateOverrides "console_mce_deployment_container_memory_request" }}
+            memory: {{ .Values.global.templateOverrides.console_mce_deployment_container_memory_request | quote }}
+          {{- else }}
+            memory: "40Mi"
+          {{- end }}
+          {{- if hasKey .Values.global.templateOverrides "console_mce_deployment_container_cpu_request" }}
+            cpu: {{ .Values.global.templateOverrides.console_mce_deployment_container_cpu_request | quote }}
+          {{- else }}
+            cpu: "3m"
+          {{- end }}
+        {{- if or (hasKey .Values.global.templateOverrides "console_mce_deployment_container_memory_limit") (hasKey .Values.global.templateOverrides "console_mce_deployment_container_cpu_limit") }}
+          limits:
+          {{- if hasKey .Values.global.templateOverrides "console_mce_deployment_container_memory_limit" }}
+            memory: {{ .Values.global.templateOverrides.console_mce_deployment_container_memory_limit | quote }}
+          {{- end }}
+          {{- if hasKey .Values.global.templateOverrides "console_mce_deployment_container_cpu_limit" }}
+            cpu: {{ .Values.global.templateOverrides.console_mce_deployment_container_cpu_limit | quote }}
+          {{- end }}
+        {{- end }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+        env:
+        - name: PORT
+          value: "3000"
+        - name: CLUSTER_API_URL
+          value: https://kubernetes.default.svc:443
+        {{- if .Values.hubconfig.proxyConfigs }}
+        - name: HTTP_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
+        - name: HTTPS_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.HTTPS_PROXY }}
+        - name: NO_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
+        {{- end }}
+        ports:
+        - containerPort: 3000
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /readinessProbe
+            port: 3000
+            scheme: HTTPS
+          {{- if hasKey .Values.global.templateOverrides "console_mce_deployment_container_readiness_probe_timeout_seconds" }}
+          timeoutSeconds: {{ .Values.global.templateOverrides.console_mce_deployment_container_readiness_probe_timeout_seconds }}
+          {{- else }}
+          timeoutSeconds: 10
+          {{- end }}
+          {{- if hasKey .Values.global.templateOverrides "console_mce_deployment_container_readiness_probe_initial_delay_seconds" }}
+          initialDelaySeconds: {{ .Values.global.templateOverrides.console_mce_deployment_container_readiness_probe_initial_delay_seconds }}
+          {{- end }}
+          {{- if hasKey .Values.global.templateOverrides "console_mce_deployment_container_readiness_probe_period_seconds" }}
+          periodSeconds: {{ .Values.global.templateOverrides.console_mce_deployment_container_readiness_probe_period_seconds }}
+          {{- end }}
+          {{- if hasKey .Values.global.templateOverrides "console_mce_deployment_container_readiness_probe_success_threshold" }}
+          successThreshold: {{ .Values.global.templateOverrides.console_mce_deployment_container_readiness_probe_success_threshold }}
+          {{- end }}
+          {{- if hasKey .Values.global.templateOverrides "console_mce_deployment_container_readiness_probe_failure_threshold" }}
+          failureThreshold: {{ .Values.global.templateOverrides.console_mce_deployment_container_readiness_probe_failure_threshold }}
+          {{- end }}
+        livenessProbe:
+          httpGet:
+            path: /livenessProbe
+            port: 3000
+            scheme: HTTPS
+          {{- if hasKey .Values.global.templateOverrides "console_mce_deployment_container_liveness_probe_timeout_seconds" }}
+          timeoutSeconds: {{ .Values.global.templateOverrides.console_mce_deployment_container_liveness_probe_timeout_seconds }}
+          {{- else }}
+          timeoutSeconds: 10
+          {{- end }}
+          {{- if hasKey .Values.global.templateOverrides "console_mce_deployment_container_liveness_probe_initial_delay_seconds" }}
+          initialDelaySeconds: {{ .Values.global.templateOverrides.console_mce_deployment_container_liveness_probe_initial_delay_seconds }}
+          {{- else }}
+          initialDelaySeconds: 10
+          {{- end }}
+          {{- if hasKey .Values.global.templateOverrides "console_mce_deployment_container_liveness_probe_period_seconds" }}
+          periodSeconds: {{ .Values.global.templateOverrides.console_mce_deployment_container_liveness_probe_period_seconds }}
+          {{- end }}
+          {{- if hasKey .Values.global.templateOverrides "console_mce_deployment_container_liveness_probe_success_threshold" }}
+          successThreshold: {{ .Values.global.templateOverrides.console_mce_deployment_container_liveness_probe_success_threshold }}
+          {{- end }}
+          {{- if hasKey .Values.global.templateOverrides "console_mce_deployment_container_liveness_probe_failure_threshold" }}
+          failureThreshold: {{ .Values.global.templateOverrides.console_mce_deployment_container_liveness_probe_failure_threshold }}
+          {{- end }}
+      {{- if .Values.global.pullSecret }}
+      imagePullSecrets:
+      - name: {{ .Values.global.pullSecret }}
+      {{- end }}
+      {{- with .Values.hubconfig.nodeSelector }}
+      nodeSelector:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}

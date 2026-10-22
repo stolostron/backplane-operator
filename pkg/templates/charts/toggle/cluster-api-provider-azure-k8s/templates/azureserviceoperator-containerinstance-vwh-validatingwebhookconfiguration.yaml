@@ -1,0 +1,49 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: capz-system/azureserviceoperator-serving-cert
+  name: azureserviceoperator-containerinstance-vwh
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-containerinstance-azure-com-v1api20211001-containergroup
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v1api20211001.containergroups.containerinstance.azure.com
+  rules:
+  - apiGroups:
+    - containerinstance.azure.com
+    apiVersions:
+    - v1api20211001
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - containergroups
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-containerinstance-azure-com-v20211001-containergroup
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20211001.containergroups.containerinstance.azure.com
+  rules:
+  - apiGroups:
+    - containerinstance.azure.com
+    apiVersions:
+    - v20211001
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - containergroups
+  sideEffects: None

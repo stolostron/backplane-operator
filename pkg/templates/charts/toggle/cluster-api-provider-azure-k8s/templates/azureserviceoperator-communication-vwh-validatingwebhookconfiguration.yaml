@@ -1,0 +1,91 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: capz-system/azureserviceoperator-serving-cert
+  name: azureserviceoperator-communication-vwh
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-communication-azure-com-v20230401-communicationservice
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20230401.communicationservices.communication.azure.com
+  rules:
+  - apiGroups:
+    - communication.azure.com
+    apiVersions:
+    - v20230401
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - communicationservices
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-communication-azure-com-v20230401-domain
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20230401.domains.communication.azure.com
+  rules:
+  - apiGroups:
+    - communication.azure.com
+    apiVersions:
+    - v20230401
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - domains
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-communication-azure-com-v20230401-emailservice
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20230401.emailservices.communication.azure.com
+  rules:
+  - apiGroups:
+    - communication.azure.com
+    apiVersions:
+    - v20230401
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - emailservices
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /validate-communication-azure-com-v20230401-senderusername
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: validate.v20230401.senderusernames.communication.azure.com
+  rules:
+  - apiGroups:
+    - communication.azure.com
+    apiVersions:
+    - v20230401
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - senderusernames
+  sideEffects: None

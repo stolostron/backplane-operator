@@ -1,0 +1,69 @@
+# Copyright Contributors to the Open Cluster Management project
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ .Values.org }}:cluster-lifecycle:clusterlifecycle-state-metrics-v2
+rules:
+# Allow hub to manage configmap for leader selection
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - create
+  - update
+  - get
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  verbs:
+  - get
+# Allow hub to monitor clusterdeployments, managedclusterinfos and managedclusters
+- apiGroups: ["hive.openshift.io"]
+  resources: ["clusterdeployments"]
+  verbs: ["get","list","watch"]
+- apiGroups: ["internal.open-cluster-management.io"]
+  resources: ["managedclusterinfos"]
+  verbs: ["get","list","watch"]
+- apiGroups: ["cluster.open-cluster-management.io"]
+  resources: ["managedclusters"]
+  verbs: ["get","list","watch"]
+# Allow to query the CVO on the Hub Cluster to get the ClusterId
+- apiGroups: ["config.openshift.io"]
+  resources: ["clusterversions"]
+  verbs: ["get"]  
+# Allow to watch TLS security profile from APIServer CR
+- apiGroups: ["config.openshift.io"]
+  resources: ["apiservers"]
+  verbs: ["get","list","watch"]
+- apiGroups: ["authentication.k8s.io"]
+  resources: ["tokenreviews"]
+  verbs: ["create"]
+- apiGroups: [""]
+  resources: ["pods","services","endpoints"]
+  verbs: ["get","list","watch"]
+- apiGroups: ["authorization.k8s.io"]
+  resources: ["subjectaccessreviews"]
+  verbs: ["create"]
+# Allow hub to monitor add-ons & manifestworks
+- apiGroups: ["addon.open-cluster-management.io"]
+  resources: ["managedclusteraddons"]
+  verbs: ["get","list","watch"]
+- apiGroups: ["work.open-cluster-management.io"]
+  resources: ["manifestworks"]
+  verbs: ["get","list","watch"]
+# Allow hub to patch manifestwroks annotation
+- apiGroups: ["work.open-cluster-management.io"]
+  resources: ["manifestworks"]
+  verbs: ["patch"]
+- apiGroups: ["coordination.k8s.io"]
+  resources: ["leases"]
+  verbs: ["get","create","update","patch","delete"]
+- apiGroups: [""]
+  resources: ["events"]
+  verbs: ["get","create","update","patch","delete"]
+- nonResourceURLs: ["/metrics"]
+  verbs: ["get"]

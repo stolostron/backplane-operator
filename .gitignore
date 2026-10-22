@@ -1,0 +1,54 @@
+
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.pyc
+testbin/*
+.DS_STORE
+.vscode/*
+venv
+
+bin/
+
+darwin-amd64/
+linux-amd64/
+env-vars.txt
+helm3.tar.gz
+# Test binary, build with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+# Kubernetes Generated files - skip generated files, except for vendored files
+vendor/
+!vendor/**/zz_generated.*
+
+# editor and IDE paraphernalia
+.idea
+*.swp
+*.swo
+*~
+
+
+#function test results
+test/function_tests/results/*
+
+test/mock-component-image/bin
+test/mock-component-image/scripts/_pycache_
+hack/bundle-automation/tmp/
+
+# Ignore partial workflow directory
+workflow/
+mce-operator-bundle/
+
+# Scanner and security analysis artifacts
+.scannerwork/
+gosec.json
+
+# ART builds monitor
+__pycache__/
+tools/art-monitor/__pycache__
