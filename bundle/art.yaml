@@ -12,7 +12,7 @@ external-images:
 # Third-party images (same pins as backplane-5.0).
 - name: postgresql-13
   search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/postgresql-13:latest"
-  replace: "registry.redhat.io/rhel9/postgresql-13@sha256:5d1e632ccb21e7835115b335270ec0a4c009aba77d938381273771722c28e691"
+  replace: "registry.redhat.io/rhel9/postgresql-13@sha256:d4adbf9d656a3ab1451dca11f452b5e1b2f22afd9d710250095518857d0c46cb"
 - name: postgresql-15
   search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/postgresql-15:latest"
   replace: "registry.redhat.io/rhel9/postgresql-15@sha256:accc0970a3adaaae64517e3a11dd1012f094edd95b05c0514e529bf94240c76b"
