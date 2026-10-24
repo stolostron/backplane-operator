@@ -1,0 +1,13 @@
+# ManagedClusterSetBinding binds the "global" ManagedClusterSet to the namespace where the
+# cert-manager-addon Placement lives. Without this binding, the Placement cannot select any
+# managed clusters from the "global" set.
+#
+# This resource is idempotent — if it already exists (e.g. created by another addon or MCE
+# infrastructure), Kubernetes will not error. The name must match the clusterSet name.
+apiVersion: cluster.open-cluster-management.io/v1beta2
+kind: ManagedClusterSetBinding
+metadata:
+  name: global
+  namespace: open-cluster-management-global-set
+spec:
+  clusterSet: global

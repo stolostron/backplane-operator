@@ -21,6 +21,7 @@ package v1
 const (
 	// Component names
 	AssistedService                  = "assisted-service"
+	CertManagerAddon                 = "cert-manager-addon"
 	ClusterAPI                       = "cluster-api"
 	ClusterAPIPreview                = "cluster-api-preview"
 	ClusterAPIProviderAWS            = "cluster-api-provider-aws"
@@ -75,6 +76,7 @@ const (
 // AllComponents is a slice containing all valid component names
 var AllComponents = []string{
 	AssistedService,
+	CertManagerAddon,
 	ClusterAPI,
 	ClusterAPIPreview,
 	ClusterAPIProviderAWS,
@@ -107,6 +109,7 @@ var AllComponents = []string{
 // MCEComponents is a slice containing component names specific to the "MCE" category.
 var MCEComponents = []string{
 	AssistedService,
+	CertManagerAddon,
 	ClusterAPI,
 	ClusterAPIProviderAWS,
 	// ClusterAPIProviderAzure, Uncomment until stable release is available
