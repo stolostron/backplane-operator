@@ -35,7 +35,7 @@ global:
   pullSecret: null
 hubconfig:
   nodeSelector: null
-  proxyConfigs: {}
+  proxyConfigs: null
   replicaCount: 1
   tolerations: []
   ocpVersion: "4.12.0"

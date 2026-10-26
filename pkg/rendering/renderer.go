@@ -411,7 +411,19 @@ func renderTemplates(chartPath string, backplaneConfig *v1.MultiClusterEngine, i
 		return nil, append(errs, err)
 	}
 
-	rawTemplates, err := helmEngine.Render(chart, chartutil.Values{"Values": vals.AsMap()})
+	// Merge chart values.yaml defaults (base layer) with Go-injected overrides.
+	// CoalesceValues applies the following priority order:
+	//   1. Go-injected vals (highest) — runtime values from MCE spec, env vars, annotations
+	//   2. chart values.yaml defaults (lowest) — shipped defaults, fills gaps Go doesn't set
+	// This makes values.yaml the authoritative source for shipped defaults so chart
+	// maintainers can update defaults without requiring a Go constant change.
+	coalesced, err := chartutil.CoalesceValues(chart, vals.AsMap())
+	if err != nil {
+		log.Info(fmt.Sprintf("error coalescing chart values: %s", chart.Name()))
+		return nil, append(errs, err)
+	}
+
+	rawTemplates, err := helmEngine.Render(chart, chartutil.Values{"Values": coalesced.AsMap()})
 	if err != nil {
 		log.Info(fmt.Sprintf("error rendering chart: %s", chart.Name()))
 		return nil, append(errs, err)
