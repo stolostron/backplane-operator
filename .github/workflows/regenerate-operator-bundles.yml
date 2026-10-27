@@ -137,7 +137,7 @@ jobs:
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v3
-        if: ${{ always() && steps.changes.outputs.changes == 'true' }}
+        if: ${{ success() && steps.changes.outputs.changes == 'true' }}
         with:
           signoff: true
           branch: "regenerate-operator-bundles-${{ matrix.branch }}"
