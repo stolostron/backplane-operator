@@ -740,7 +740,9 @@ func TestRenderCRDs(t *testing.T) {
 		}
 		found := false
 		for _, u := range got {
-			ns, exists, _ := unstructured.NestedString(u.Object, "spec", "conversion", "webhook", "clientConfig", "service", "namespace")
+			ns, exists, _ := unstructured.NestedString(
+				u.Object, "spec", "conversion", "webhook", "clientConfig", "service", "namespace",
+			)
 			if exists && ns != "" {
 				if ns != "multicluster-engine" {
 					t.Errorf("webhook namespace = %q, want %q", ns, "multicluster-engine")
