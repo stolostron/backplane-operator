@@ -2698,6 +2698,11 @@ func (r *MultiClusterEngineReconciler) EnsureDeprecatedResourceCleanup(ctx conte
 			return ctrl.Result{}, nil
 		}
 
+		// CRD does not exist (e.g., monitoring CRDs on non-OCP clusters), nothing to clean up
+		if apimeta.IsNoMatchError(err) {
+			return ctrl.Result{}, nil
+		}
+
 		log.Error(err, "Failed to get resource", "Kind", resource.GetKind(),
 			"Name", resource.GetName(), "Namespace", resource.GetNamespace())
 		return ctrl.Result{}, err
@@ -2950,6 +2955,21 @@ func (r *MultiClusterEngineReconciler) GetDeprecatedResources(m *backplanev1.Mul
 		&rbacv1.RoleBinding{
 			TypeMeta:   metav1.TypeMeta{Kind: "RoleBinding"},
 			ObjectMeta: metav1.ObjectMeta{Name: "open-cluster-management:cluster-proxy-addon:addon-manager", Namespace: m.Spec.TargetNamespace},
+		},
+		// Console monitoring resources removed in MCE 2.7 / ACM 2.17
+		&rbacv1.Role{
+			TypeMeta:   metav1.TypeMeta{Kind: "Role"},
+			ObjectMeta: metav1.ObjectMeta{Name: "console-metrics-monitor", Namespace: m.Spec.TargetNamespace},
+		},
+		&rbacv1.RoleBinding{
+			TypeMeta:   metav1.TypeMeta{Kind: "RoleBinding"},
+			ObjectMeta: metav1.ObjectMeta{Name: "console-metrics-monitor", Namespace: m.Spec.TargetNamespace},
+		},
+		&monitorv1.PrometheusRule{
+			ObjectMeta: metav1.ObjectMeta{Name: "acm-console-prometheus-rules", Namespace: m.Spec.TargetNamespace},
+		},
+		&monitorv1.ServiceMonitor{
+			ObjectMeta: metav1.ObjectMeta{Name: "console-mce-monitor", Namespace: m.Spec.TargetNamespace},
 		},
 	}
 }
