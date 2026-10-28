@@ -1685,6 +1685,7 @@ func registerScheme() {
 		addSafe(backplanev1.AddToScheme)
 		addSafe(configv1.AddToScheme)
 		addSafe(addonv1alpha1.Install)
+		addSafe(monitoringv1.AddToScheme)
 	})
 }
 
