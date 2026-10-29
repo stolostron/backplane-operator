@@ -1,20 +1,20 @@
 global:
-  hubSize: Small
   imageOverrides:
+    assisted_service_9: ''
+    assisted_service_8: ''
     assisted_image_service: ''
-    assisted_installer: ''
+    postgresql_12: ''
     assisted_installer_agent: ''
     assisted_installer_controller: ''
-    assisted_service_8: ''
-    assisted_service_9: ''
-    postgresql_12: ''
+    assisted_installer: ''
+  templateOverrides: {}
   namespace: default
   pullSecret: null
-  templateOverrides: {}
+  hubSize: Small
 hubconfig:
   nodeSelector: null
-  ocpVersion: 4.12.0
   proxyConfigs: {}
   replicaCount: 1
   tolerations: []
+  ocpVersion: 4.12.0
 org: open-cluster-management

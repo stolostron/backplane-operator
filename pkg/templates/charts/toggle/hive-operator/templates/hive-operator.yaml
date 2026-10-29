@@ -3,12 +3,12 @@ kind: Deployment
 metadata:
   name: hive-operator
 spec:
-  replicas: 1
-  revisionHistoryLimit: 4
   selector:
     matchLabels:
       control-plane: hive-operator
       controller-tools.k8s.io: '1.0'
+  replicas: 1
+  revisionHistoryLimit: 4
   strategy:
     type: Recreate
   template:
@@ -19,32 +19,33 @@ spec:
         hive.openshift.io/component: hive-operator
         ocm-antiaffinity-selector: hive-operator
     spec:
-      affinity:
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-          - podAffinityTerm:
-              labelSelector:
-                matchExpressions:
-                - key: ocm-antiaffinity-selector
-                  operator: In
-                  values:
-                  - hive-operator
-              topologyKey: topology.kubernetes.io/zone
-            weight: 70
-          - podAffinityTerm:
-              labelSelector:
-                matchExpressions:
-                - key: ocm-antiaffinity-selector
-                  operator: In
-                  values:
-                  - hive-operator
-              topologyKey: kubernetes.io/hostname
-            weight: 35
+      serviceAccountName: hive-operator
+      volumes:
+      - name: kubectl-cache
+        emptyDir: {}
+      - name: tmp
+        emptyDir: {}
       containers:
-      - command:
+      - image: '{{ .Values.global.imageOverrides.openshift_hive }}'
+        imagePullPolicy: '{{ .Values.global.pullPolicy }}'
+        name: hive-operator
+        ports:
+        - name: metrics
+          containerPort: 2112
+          protocol: TCP
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+        command:
         - /opt/services/hive-operator
         - --log-level
         - info
+        volumeMounts:
+        - name: kubectl-cache
+          mountPath: /var/cache/kubectl
+        - name: tmp
+          mountPath: /tmp
         env:
 {{- if .Values.hubconfig.proxyConfigs }}
         - name: HTTP_PROXY
@@ -70,57 +71,50 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
-        image: '{{ .Values.global.imageOverrides.openshift_hive }}'
-        imagePullPolicy: '{{ .Values.global.pullPolicy }}'
-        livenessProbe:
-          httpGet:
-            path: /healthz
-            port: 8080
-        name: hive-operator
-        ports:
-        - containerPort: 2112
-          name: metrics
-          protocol: TCP
-        readinessProbe:
-          httpGet:
-            path: /readyz
-            port: 8080
-        resources:
-          requests:
-            cpu: 100m
-            memory: 256Mi
         securityContext:
+          privileged: false
+          readOnlyRootFilesystem: true
           allowPrivilegeEscalation: false
           capabilities:
             drop:
             - ALL
-          privileged: false
-          readOnlyRootFilesystem: true
           runAsNonRoot: true
-        volumeMounts:
-        - mountPath: /var/cache/kubectl
-          name: kubectl-cache
-        - mountPath: /tmp
-          name: tmp
-      hostIPC: false
-      hostNetwork: false
-      hostPID: false
-{{- if .Values.global.pullSecret }}
-      imagePullSecrets:
-      - name: {{ .Values.global.pullSecret }}
-{{- end }}
-{{- with .Values.hubconfig.nodeSelector }}
-      nodeSelector:
-{{ toYaml . | indent 8 }}
-{{- end }}
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8080
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+      terminationGracePeriodSeconds: 10
       securityContext:
         runAsNonRoot: true
 {{- if semverCompare ">=4.11.0" .Values.hubconfig.ocpVersion }}
         seccompProfile:
           type: RuntimeDefault
 {{- end }}
-      serviceAccountName: hive-operator
-      terminationGracePeriodSeconds: 10
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 70
+            podAffinityTerm:
+              topologyKey: topology.kubernetes.io/zone
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - hive-operator
+          - weight: 35
+            podAffinityTerm:
+              topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - hive-operator
 {{- with .Values.hubconfig.tolerations }}
       tolerations:
       {{- range . }}
@@ -131,8 +125,14 @@ spec:
         {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
         {{- end }}
 {{- end }}
-      volumes:
-      - emptyDir: {}
-        name: kubectl-cache
-      - emptyDir: {}
-        name: tmp
+      hostNetwork: false
+      hostPID: false
+      hostIPC: false
+{{- with .Values.hubconfig.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+{{- end }}
+{{- if .Values.global.pullSecret }}
+      imagePullSecrets:
+      - name: {{ .Values.global.pullSecret }}
+{{- end }}

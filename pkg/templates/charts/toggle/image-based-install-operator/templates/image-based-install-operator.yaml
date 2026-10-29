@@ -14,27 +14,6 @@ spec:
         app: image-based-install-operator
         ocm-antiaffinity-selector: image-based-install-operator
     spec:
-      affinity:
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-          - podAffinityTerm:
-              labelSelector:
-                matchExpressions:
-                - key: ocm-antiaffinity-selector
-                  operator: In
-                  values:
-                  - image-based-install-operator
-              topologyKey: topology.kubernetes.io/zone
-            weight: 70
-          - podAffinityTerm:
-              labelSelector:
-                matchExpressions:
-                - key: ocm-antiaffinity-selector
-                  operator: In
-                  values:
-                  - image-based-install-operator
-              topologyKey: kubernetes.io/hostname
-            weight: 35
       containers:
       - args:
         - --leader-elect
@@ -60,7 +39,6 @@ spec:
         - name: ROUTE_SCHEME
           value: https
         image: '{{ .Values.global.imageOverrides.image_based_install_operator }}'
-        imagePullPolicy: '{{ .Values.global.pullPolicy }}'
         livenessProbe:
           httpGet:
             path: /healthz
@@ -87,13 +65,14 @@ spec:
             drop:
             - ALL
           privileged: false
-          readOnlyRootFilesystem: true
           runAsNonRoot: true
+          readOnlyRootFilesystem: true
         volumeMounts:
         - mountPath: /data
           name: data
         - mountPath: /webhook-certs
           name: webhook-certs
+        imagePullPolicy: '{{ .Values.global.pullPolicy }}'
       - command:
         - /usr/local/bin/server
         env:
@@ -112,7 +91,6 @@ spec:
         - name: PORT
           value: '8000'
         image: '{{ .Values.global.imageOverrides.image_based_install_operator }}'
-        imagePullPolicy: '{{ .Values.global.pullPolicy }}'
         name: server
         ports:
         - containerPort: 8000
@@ -131,24 +109,14 @@ spec:
             drop:
             - ALL
           privileged: false
-          readOnlyRootFilesystem: true
           runAsNonRoot: true
+          readOnlyRootFilesystem: true
         volumeMounts:
         - mountPath: /data
           name: data
         - mountPath: /certs
           name: certs
-      hostIPC: false
-      hostNetwork: false
-      hostPID: false
-{{- if .Values.global.pullSecret }}
-      imagePullSecrets:
-      - name: {{ .Values.global.pullSecret }}
-{{- end }}
-{{- with .Values.hubconfig.nodeSelector }}
-      nodeSelector:
-{{ toYaml . | indent 8 }}
-{{- end }}
+        imagePullPolicy: '{{ .Values.global.pullPolicy }}'
       securityContext:
         runAsNonRoot: true
 {{- if semverCompare ">=4.11.0" .Values.hubconfig.ocpVersion }}
@@ -157,6 +125,36 @@ spec:
 {{- end }}
       serviceAccountName: controller-manager
       terminationGracePeriodSeconds: 10
+      volumes:
+      - emptyDir: {}
+        name: data
+      - name: certs
+        secret:
+          secretName: ibi-config-serving-certs
+      - name: webhook-certs
+        secret:
+          secretName: webhook-certs
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 70
+            podAffinityTerm:
+              topologyKey: topology.kubernetes.io/zone
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - image-based-install-operator
+          - weight: 35
+            podAffinityTerm:
+              topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - image-based-install-operator
 {{- with .Values.hubconfig.tolerations }}
       tolerations:
       {{- range . }}
@@ -167,12 +165,14 @@ spec:
         {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
         {{- end }}
 {{- end }}
-      volumes:
-      - emptyDir: {}
-        name: data
-      - name: certs
-        secret:
-          secretName: ibi-config-serving-certs
-      - name: webhook-certs
-        secret:
-          secretName: webhook-certs
+      hostNetwork: false
+      hostPID: false
+      hostIPC: false
+{{- with .Values.hubconfig.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+{{- end }}
+{{- if .Values.global.pullSecret }}
+      imagePullSecrets:
+      - name: {{ .Values.global.pullSecret }}
+{{- end }}
