@@ -20,35 +20,37 @@ package v1
 
 const (
 	// Component names
-	AssistedService                  = "assisted-service"
-	ClusterAPI                       = "cluster-api"
-	ClusterAPIPreview                = "cluster-api-preview"
-	ClusterAPIProviderAWS            = "cluster-api-provider-aws"
-	ClusterAPIProviderAWSPreview     = "cluster-api-provider-aws-preview"
-	ClusterAPIProviderAzure          = "cluster-api-provider-azure"
-	ClusterAPIProviderAzurePreview   = "cluster-api-provider-azure-preview"
-	ClusterAPIProviderMetal          = "cluster-api-provider-metal3"
-	ClusterAPIProviderMetalPreview   = "cluster-api-provider-metal3-preview"
-	ClusterAPIProviderOA             = "cluster-api-provider-openshift-assisted"
-	ClusterAPIProviderOAPreview      = "cluster-api-provider-openshift-assisted-preview"
-	ClusterLifecycle                 = "cluster-lifecycle"
-	ClusterManager                   = "cluster-manager"
-	ClusterPermission                = "cluster-permission"
-	ClusterProxyAddon                = "cluster-proxy-addon"
-	ConsoleMCE                       = "console-mce"
-	Discovery                        = "discovery"
-	FleetNavigation                  = "fleet-navigation"
-	Hive                             = "hive"
-	HyperShift                       = "hypershift"
-	HypershiftLocalHosting           = "hypershift-local-hosting"
-	HyperShiftPreview                = "hypershift-preview"
-	ImageBasedInstallOperator        = "image-based-install-operator"
-	ImageBasedInstallOperatorPreview = "image-based-install-operator-preview"
-	LocalCluster                     = "local-cluster"
-	ManagedServiceAccount            = "managedserviceaccount"
-	ManagedServiceAccountPreview     = "managedserviceaccount-preview"
-	ServerFoundation                 = "server-foundation"
-	MaestroPreview                   = "maestro-preview" // Removed in MCE 5.1
+	AssistedService                   = "assisted-service"
+	ClusterAPI                        = "cluster-api"
+	ClusterAPIPreview                 = "cluster-api-preview"
+	ClusterAPIProviderAWS             = "cluster-api-provider-aws"
+	ClusterAPIProviderAWSPreview      = "cluster-api-provider-aws-preview"
+	ClusterAPIProviderAzure           = "cluster-api-provider-azure"
+	ClusterAPIProviderAzurePreview    = "cluster-api-provider-azure-preview"
+	ClusterAPIProviderMetal           = "cluster-api-provider-metal3"
+	ClusterAPIProviderMetalPreview    = "cluster-api-provider-metal3-preview"
+	ClusterAPIProviderKubeVirt        = "cluster-api-provider-kubevirt"
+	ClusterAPIProviderKubeVirtPreview = "cluster-api-provider-kubevirt-preview"
+	ClusterAPIProviderOA              = "cluster-api-provider-openshift-assisted"
+	ClusterAPIProviderOAPreview       = "cluster-api-provider-openshift-assisted-preview"
+	ClusterLifecycle                  = "cluster-lifecycle"
+	ClusterManager                    = "cluster-manager"
+	ClusterPermission                 = "cluster-permission"
+	ClusterProxyAddon                 = "cluster-proxy-addon"
+	ConsoleMCE                        = "console-mce"
+	Discovery                         = "discovery"
+	FleetNavigation                   = "fleet-navigation"
+	Hive                              = "hive"
+	HyperShift                        = "hypershift"
+	HypershiftLocalHosting            = "hypershift-local-hosting"
+	HyperShiftPreview                 = "hypershift-preview"
+	ImageBasedInstallOperator         = "image-based-install-operator"
+	ImageBasedInstallOperatorPreview  = "image-based-install-operator-preview"
+	LocalCluster                      = "local-cluster"
+	ManagedServiceAccount             = "managedserviceaccount"
+	ManagedServiceAccountPreview      = "managedserviceaccount-preview"
+	ServerFoundation                  = "server-foundation"
+	MaestroPreview                    = "maestro-preview" // Removed in MCE 5.1
 
 	// CRD directory names
 	AssistedServiceCRDDir            = "assisted-service"
@@ -59,6 +61,7 @@ const (
 	ClusterAPIProviderAzureK8SCRDDir = "cluster-api-provider-azure-k8s"
 	ClusterAPIProviderMetalCRDDir    = "cluster-api-provider-metal3"
 	ClusterAPIProviderMetalK8SCRDDir = "cluster-api-provider-metal3-k8s"
+	ClusterAPIProviderKubeVirtCRDDir = "cluster-api-provider-kubevirt"
 	ClusterAPIProviderOACRDDir       = "cluster-api-provider-openshift-assisted"
 	ClusterAPIProviderOAK8SCRDDir    = "cluster-api-provider-openshift-assisted-k8s"
 	ClusterLifecycleCRDDir           = "cluster-lifecycle"
@@ -81,6 +84,8 @@ var AllComponents = []string{
 	ClusterAPIProviderAWSPreview,
 	// ClusterAPIProviderAzure, Uncomment until stable release is available
 	ClusterAPIProviderAzurePreview,
+	ClusterAPIProviderKubeVirt,
+	ClusterAPIProviderKubeVirtPreview,
 	ClusterAPIProviderMetal,
 	ClusterAPIProviderMetalPreview,
 	ClusterAPIProviderOAPreview,
@@ -111,6 +116,7 @@ var MCEComponents = []string{
 	ClusterAPIProviderAWS,
 	// ClusterAPIProviderAzure, Uncomment until stable release is available
 	ClusterAPIProviderAzurePreview,
+	ClusterAPIProviderKubeVirt,
 	ClusterAPIProviderMetal,
 	ClusterAPIProviderOA,
 	ClusterLifecycle,
@@ -136,6 +142,7 @@ var PreviewComponents = []string{
 	ClusterAPIPreview,
 	ClusterAPIProviderAWSPreview,
 	// ClusterAPIProviderAzurePreview, // Uncomment when stable release is available
+	ClusterAPIProviderKubeVirtPreview,
 	ClusterAPIProviderMetalPreview,
 	ClusterAPIProviderOAPreview,
 	HyperShiftPreview,
@@ -151,11 +158,12 @@ var PreviewToStable = map[string]string{
 	ClusterAPIPreview:            ClusterAPI,            // Upgraded in ACM 2.14 / MCE 2.9
 	ClusterAPIProviderAWSPreview: ClusterAPIProviderAWS, // Upgraded in ACM 2.14 / MCE 2.9
 	// ClusterAPIProviderAzurePreview:   ClusterAPIProviderAzure,   // Upgraded in ACM 2.16 / MCE 2.11
-	ClusterAPIProviderMetalPreview:   ClusterAPIProviderMetal,   // Upgraded in ACM 2.15 / MCE 2.10
-	ClusterAPIProviderOAPreview:      ClusterAPIProviderOA,      // Upgraded in ACM 2.15 / MCE 2.10
-	HyperShiftPreview:                HyperShift,                // Upgraded in ACM 2.8 / MCE 2.3
-	ImageBasedInstallOperatorPreview: ImageBasedInstallOperator, // Upgraded in ACM 2.12 / MCE 2.7
-	ManagedServiceAccountPreview:     ManagedServiceAccount,     // Upgraded in ACM 2.9 / MCE 2.4
+	ClusterAPIProviderKubeVirtPreview: ClusterAPIProviderKubeVirt, // Tech Preview
+	ClusterAPIProviderMetalPreview:    ClusterAPIProviderMetal,    // Upgraded in ACM 2.15 / MCE 2.10
+	ClusterAPIProviderOAPreview:       ClusterAPIProviderOA,       // Upgraded in ACM 2.15 / MCE 2.10
+	HyperShiftPreview:                 HyperShift,                 // Upgraded in ACM 2.8 / MCE 2.3
+	ImageBasedInstallOperatorPreview:  ImageBasedInstallOperator,  // Upgraded in ACM 2.12 / MCE 2.7
+	ManagedServiceAccountPreview:      ManagedServiceAccount,      // Upgraded in ACM 2.9 / MCE 2.4
 }
 
 /*

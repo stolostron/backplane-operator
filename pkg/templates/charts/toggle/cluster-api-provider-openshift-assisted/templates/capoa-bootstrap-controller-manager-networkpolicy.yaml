@@ -2,6 +2,91 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
+  annotations:
+    installer.open-cluster-management.io/legacy-managed-egress-rules: >-
+      [
+        {
+          "ports": [
+            {
+              "port": 5353,
+              "protocol": "UDP"
+            },
+            {
+              "port": 5353,
+              "protocol": "TCP"
+            }
+          ],
+          "to": [
+            {
+              "namespaceSelector": {
+                "matchLabels": {
+                  "kubernetes.io/metadata.name": "openshift-dns"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ports": [
+            {
+              "port": 6443,
+              "protocol": "TCP"
+            }
+          ],
+          "to": [
+            {
+              "ipBlock": {
+                "cidr": "0.0.0.0/0"
+              }
+            },
+            {
+              "ipBlock": {
+                "cidr": "::/0"
+              }
+            }
+          ]
+        },
+        {
+          "ports": [
+            {
+              "port": 8090,
+              "protocol": "TCP"
+            }
+          ],
+          "to": [
+            {
+              "ipBlock": {
+                "cidr": "0.0.0.0/0"
+              }
+            },
+            {
+              "ipBlock": {
+                "cidr": "::/0"
+              }
+            }
+          ]
+        },
+        {
+          "ports": [
+            {
+              "port": 443,
+              "protocol": "TCP"
+            }
+          ],
+          "to": [
+            {
+              "ipBlock": {
+                "cidr": "0.0.0.0/0"
+              }
+            },
+            {
+              "ipBlock": {
+                "cidr": "::/0"
+              }
+            }
+          ]
+        }
+      ]
   labels:
     control-plane: capoa-bootstrap-controller-manager
   name: capoa-bootstrap-controller-manager
@@ -9,6 +94,10 @@ metadata:
 spec:
   egress:
   - ports:
+    - port: 53
+      protocol: UDP
+    - port: 53
+      protocol: TCP
     - port: 5353
       protocol: UDP
     - port: 5353
@@ -17,6 +106,16 @@ spec:
     - namespaceSelector:
         matchLabels:
           kubernetes.io/metadata.name: openshift-dns
+  {{- range .Values.hubconfig.proxyEgress }}
+  - ports:
+    - port: {{ .port }}
+      protocol: TCP
+    to:
+    {{- range .cidrs }}
+    - ipBlock:
+        cidr: {{ . }}
+    {{- end }}
+  {{- end }}
   - ports:
     - port: 6443
       protocol: TCP

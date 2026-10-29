@@ -1,0 +1,13 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: capk-leader-election-rolebinding
+  namespace: '{{ .Values.global.namespace }}'
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: capk-leader-election-role
+subjects:
+  - kind: ServiceAccount
+    name: capk-controller-manager
+    namespace: '{{ .Values.global.namespace }}'
