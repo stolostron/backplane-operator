@@ -2600,7 +2600,23 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 		updateNecessary = true
 	}
 
+	if utils.DeployOnOCP() {
+		currentClusterVersion, err := r.getClusterVersion(ctx)
+		if err != nil {
+			return ctrl.Result{}, pkgerrors.Wrapf(err, "failed to detect clusterversion")
+		}
+		os.Setenv("ACM_HUB_OCP_VERSION", currentClusterVersion)
+	}
+
 	if utils.SetDefaultComponents(m) {
+		updateNecessary = true
+	}
+
+	clusterAPIDisabled, err := r.enforceClusterAPIExclusivity(ctx, m)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	if clusterAPIDisabled {
 		updateNecessary = true
 	}
 
@@ -2615,11 +2631,13 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 	for _, preview := range backplanev1.PreviewComponents {
 		if m.Enabled(preview) {
 			if stable, exists := backplanev1.PreviewToStable[preview]; exists {
-				log.Info("Stable component version enabled due to preview being enabled",
-					"preview", preview,
-					"stable", stable,
-				)
-				m.Enable(stable)
+				if utils.ShouldEnablePreviewStable(m, stable) {
+					log.Info("Stable component version enabled due to preview being enabled",
+						"preview", preview,
+						"stable", stable,
+					)
+					m.Enable(stable)
+				}
 			}
 		}
 
@@ -2656,15 +2674,7 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 			return ctrl.Result{}, pkgerrors.Wrapf(err, "failed to set ACM_HUB_CONSOLE_URL")
 		}
 
-		// If OCP 4.10+ then set then enable the MCE console. Else ensure it is disabled
-		currentClusterVersion, err := r.getClusterVersion(ctx)
-		if err != nil {
-			return ctrl.Result{}, pkgerrors.Wrapf(err, "failed to detect clusterversion")
-		}
-
-		// Set OCP version as env var, so that charts can render this value
-		os.Setenv("ACM_HUB_OCP_VERSION", currentClusterVersion)
-
+		currentClusterVersion := os.Getenv("ACM_HUB_OCP_VERSION")
 		currentVersion, err := semver.NewVersion(currentClusterVersion)
 		if err != nil {
 			log.Error(err, fmt.Sprintf("Failed to convert currentClusterVersion %s to semver compatible value for comparison", currentClusterVersion))
@@ -2782,6 +2792,64 @@ func (r *MultiClusterEngineReconciler) EnsureDeprecatedResourceCleanup(ctx conte
 	}
 
 	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterEngineReconciler) enforceClusterAPIExclusivity(
+	ctx context.Context,
+	m *backplanev1.MultiClusterEngine,
+) (bool, error) {
+	if !m.RequestsClusterAPI() {
+		return false, nil
+	}
+
+	mceList := &backplanev1.MultiClusterEngineList{}
+	if err := r.Client.List(ctx, mceList); err != nil {
+		return false, fmt.Errorf("unable to list MultiClusterEngines: %w", err)
+	}
+
+	owner := m.DeepCopy()
+	for i := range mceList.Items {
+		candidate := &mceList.Items[i]
+		if candidate.Name == m.Name && candidate.Namespace == m.Namespace {
+			continue
+		}
+		if !candidate.RequestsClusterAPI() {
+			continue
+		}
+		if clusterAPIOwnerPrecedes(candidate, owner) {
+			owner = candidate.DeepCopy()
+		}
+	}
+
+	if owner.Name == m.Name && owner.Namespace == m.Namespace {
+		return false, nil
+	}
+
+	log.Info(
+		"Disabling Cluster API because another MultiClusterEngine owns it",
+		"owner", owner.Name,
+	)
+	for _, component := range []string{
+		backplanev1.ClusterAPI,
+		backplanev1.ClusterAPIPreview,
+		backplanev1.ClusterAPIProviderOA,
+		backplanev1.ClusterAPIProviderOAPreview,
+		backplanev1.ClusterAPIProviderKubeVirt,
+		backplanev1.ClusterAPIProviderKubeVirtPreview,
+	} {
+		m.Disable(component)
+	}
+	return true, nil
+}
+
+func clusterAPIOwnerPrecedes(candidate, owner *backplanev1.MultiClusterEngine) bool {
+	if !candidate.CreationTimestamp.Equal(&owner.CreationTimestamp) {
+		return candidate.CreationTimestamp.Before(&owner.CreationTimestamp)
+	}
+	if candidate.Namespace != owner.Namespace {
+		return candidate.Namespace < owner.Namespace
+	}
+	return candidate.Name < owner.Name
 }
 
 func (r *MultiClusterEngineReconciler) validateNamespace(ctx context.Context, m *backplanev1.MultiClusterEngine) (

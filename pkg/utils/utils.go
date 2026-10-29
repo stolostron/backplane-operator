@@ -17,6 +17,7 @@ import (
 
 	configv1 "github.com/openshift/api/config/v1"
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
+	"github.com/stolostron/backplane-operator/pkg/version"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -113,18 +114,58 @@ func SetDefaultComponents(m *backplanev1.MultiClusterEngine) bool {
 // resource specification can safely be enabled by default.
 func shouldEnableDefaultComponent(m *backplanev1.MultiClusterEngine, component string) bool {
 	switch component {
+	case backplanev1.ClusterAPI:
+		if m.ComponentPresent(backplanev1.ClusterAPIPreview) {
+			return m.Enabled(backplanev1.ClusterAPIPreview) &&
+				ShouldEnablePreviewStable(m, backplanev1.ClusterAPI)
+		}
+		return ShouldEnablePreviewStable(m, backplanev1.ClusterAPI)
 	case backplanev1.ClusterAPIProviderKubeVirt:
-		if backplanev1.IsInHostedMode(m) {
+		if m.ComponentPresent(backplanev1.ClusterAPIProviderKubeVirtPreview) {
+			return m.Enabled(backplanev1.ClusterAPIProviderKubeVirtPreview) &&
+				ShouldEnablePreviewStable(m, backplanev1.ClusterAPIProviderKubeVirt)
+		}
+		return ShouldEnablePreviewStable(m, backplanev1.ClusterAPIProviderKubeVirt)
+	case backplanev1.ClusterAPIProviderOA:
+		if m.ComponentPresent(backplanev1.ClusterAPIProviderOAPreview) &&
+			!m.Enabled(backplanev1.ClusterAPIProviderOAPreview) {
 			return false
 		}
-		if m.ComponentPresent(backplanev1.ClusterAPIProviderKubeVirtPreview) {
-			return m.Enabled(backplanev1.ClusterAPIProviderKubeVirtPreview)
-		}
-		return m.Enabled(backplanev1.ClusterAPI) || !m.ComponentPresent(backplanev1.ClusterAPI)
+		return ShouldEnablePreviewStable(m, backplanev1.ClusterAPIProviderOA)
+	default:
+		return true
+	}
+}
+
+func clusterSupportsCAPKWebhookMatchConditions() bool {
+	if !DeployOnOCP() {
+		return true
+	}
+
+	ocpVersion := os.Getenv("ACM_HUB_OCP_VERSION")
+	if ocpVersion == "" {
+		return false
+	}
+
+	supported, err := version.AtLeast(ocpVersion, version.WebhookMatchConditions)
+	return err == nil && supported
+}
+
+// ShouldEnablePreviewStable reports whether a preview component may transfer
+// its enabled preference to the stable component after deployment constraints
+// have been applied.
+func ShouldEnablePreviewStable(m *backplanev1.MultiClusterEngine, stable string) bool {
+	switch stable {
+	case backplanev1.ClusterAPI:
+		return !backplanev1.IsInHostedMode(m)
+	case backplanev1.ClusterAPIProviderKubeVirt:
+		return !backplanev1.IsInHostedMode(m) &&
+			clusterSupportsCAPKWebhookMatchConditions() &&
+			m.EffectiveDependencyEnabled(backplanev1.ClusterAPI)
 	case backplanev1.ClusterAPIProviderOA:
-		capiEnabled := m.Enabled(backplanev1.ClusterAPI) || !m.ComponentPresent(backplanev1.ClusterAPI)
-		assistedEnabled := m.Enabled(backplanev1.AssistedService) || !m.ComponentPresent(backplanev1.AssistedService)
-		return capiEnabled && assistedEnabled
+		return !backplanev1.IsInHostedMode(m) &&
+			m.EffectiveDependencyEnabled(backplanev1.ClusterAPI) &&
+			m.EffectiveDependencyEnabled(backplanev1.AssistedService)
 	default:
 		return true
 	}

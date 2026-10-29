@@ -209,6 +209,46 @@ func (mce *MultiClusterEngine) Enabled(s string) bool {
 }
 
 /*
+EffectiveDependencyEnabled reports whether a required component dependency is enabled
+after the defaults applied during reconciliation are taken into account. Omitted
+Cluster API and Assisted Service components default to enabled unless a preview
+preference overrides that default; explicitly disabled components remain disabled.
+Other components have no dependency-specific default.
+*/
+func (mce *MultiClusterEngine) EffectiveDependencyEnabled(component string) bool {
+	if mce.ComponentPresent(component) {
+		return mce.Enabled(component)
+	}
+
+	switch component {
+	case ClusterAPI:
+		if mce.ComponentPresent(ClusterAPIPreview) {
+			return mce.Enabled(ClusterAPIPreview)
+		}
+		return true
+	case AssistedService:
+		return true
+	default:
+		return false
+	}
+}
+
+/*
+RequestsClusterAPI reports whether the resource's current component preferences
+request the Cluster API manager. Omitted Cluster API components default to
+enabled in standalone mode and disabled in hosted mode.
+*/
+func (mce *MultiClusterEngine) RequestsClusterAPI() bool {
+	stablePresent := mce.ComponentPresent(ClusterAPI)
+	previewPresent := mce.ComponentPresent(ClusterAPIPreview)
+	if stablePresent || previewPresent {
+		return mce.Enabled(ClusterAPI) ||
+			(previewPresent && mce.Enabled(ClusterAPIPreview))
+	}
+	return !IsInHostedMode(mce)
+}
+
+/*
 Enable enables a component with the given name in the MultiClusterEngine's Overrides.
 If the component is not present, it adds it and sets it as enabled.
 */

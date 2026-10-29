@@ -18,6 +18,8 @@ import (
 )
 
 func Test_utils(t *testing.T) {
+	setDeployOnOCPForTest(t, true)
+	t.Setenv("ACM_HUB_OCP_VERSION", "4.15.0")
 	m := &backplanev1.MultiClusterEngine{}
 	yes := SetDefaultComponents(m)
 	if !yes {
@@ -69,6 +71,8 @@ func Test_utils(t *testing.T) {
 }
 
 func TestSetDefaultComponentsRespectsDisabledDependencies(t *testing.T) {
+	setDeployOnOCPForTest(t, true)
+	t.Setenv("ACM_HUB_OCP_VERSION", "4.15.0")
 	tests := []struct {
 		name        string
 		annotations map[string]string
@@ -104,13 +108,36 @@ func TestSetDefaultComponentsRespectsDisabledDependencies(t *testing.T) {
 			},
 		},
 		{
-			name: "Hosted mode disables KubeVirt provider",
+			name: "Hosted mode disables cluster-scoped providers",
 			annotations: map[string]string{
 				"deploymentmode": string(backplanev1.ModeHosted),
 			},
 			check: func(m *backplanev1.MultiClusterEngine) error {
+				if m.Enabled(backplanev1.ClusterAPI) {
+					return fmt.Errorf("ClusterAPI should default to disabled in hosted mode")
+				}
 				if m.Enabled(backplanev1.ClusterAPIProviderKubeVirt) {
 					return fmt.Errorf("ClusterAPIProviderKubeVirt should default to disabled in hosted mode")
+				}
+				if m.Enabled(backplanev1.ClusterAPIProviderOA) {
+					return fmt.Errorf("ClusterAPIProviderOA should default to disabled in hosted mode")
+				}
+				return nil
+			},
+		},
+		{
+			name: "Disabled Cluster API preview disables stable dependencies",
+			components: []backplanev1.ComponentConfig{
+				{Name: backplanev1.ClusterAPIPreview, Enabled: false},
+			},
+			check: func(m *backplanev1.MultiClusterEngine) error {
+				if !m.ComponentPresent(backplanev1.ClusterAPI) {
+					return fmt.Errorf("ClusterAPI should transfer the preview preference")
+				}
+				if m.Enabled(backplanev1.ClusterAPI) ||
+					m.Enabled(backplanev1.ClusterAPIProviderKubeVirt) ||
+					m.Enabled(backplanev1.ClusterAPIProviderOA) {
+					return fmt.Errorf("ClusterAPI and its providers should honor a disabled preview component")
 				}
 				return nil
 			},
@@ -142,6 +169,46 @@ func TestSetDefaultComponentsRespectsDisabledDependencies(t *testing.T) {
 				return nil
 			},
 		},
+		{
+			name: "Disabled CAPOA preview disables stable provider",
+			components: []backplanev1.ComponentConfig{
+				{Name: backplanev1.ClusterAPIProviderOAPreview, Enabled: false},
+			},
+			check: func(m *backplanev1.MultiClusterEngine) error {
+				if !m.ComponentPresent(backplanev1.ClusterAPIProviderOA) {
+					return fmt.Errorf("ClusterAPIProviderOA should transfer the preview preference")
+				}
+				if m.Enabled(backplanev1.ClusterAPIProviderOA) {
+					return fmt.Errorf("ClusterAPIProviderOA should honor a disabled preview component")
+				}
+				return nil
+			},
+		},
+		{
+			name: "Enabled CAPOA preview enables stable provider",
+			components: []backplanev1.ComponentConfig{
+				{Name: backplanev1.ClusterAPIProviderOAPreview, Enabled: true},
+			},
+			check: func(m *backplanev1.MultiClusterEngine) error {
+				if !m.Enabled(backplanev1.ClusterAPIProviderOA) {
+					return fmt.Errorf("ClusterAPIProviderOA should honor an enabled preview component")
+				}
+				return nil
+			},
+		},
+		{
+			name: "Enabled CAPOA preview respects disabled dependencies",
+			components: []backplanev1.ComponentConfig{
+				{Name: backplanev1.ClusterAPIProviderOAPreview, Enabled: true},
+				{Name: backplanev1.ClusterAPI, Enabled: false},
+			},
+			check: func(m *backplanev1.MultiClusterEngine) error {
+				if m.Enabled(backplanev1.ClusterAPIProviderOA) {
+					return fmt.Errorf("ClusterAPIProviderOA should respect a disabled dependency")
+				}
+				return nil
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -158,6 +225,93 @@ func TestSetDefaultComponentsRespectsDisabledDependencies(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestSetDefaultComponentsDisablesCAPKOnIncompatibleOpenShift(t *testing.T) {
+	setDeployOnOCPForTest(t, true)
+	tests := []struct {
+		name       string
+		ocpVersion string
+		wantCAPK   bool
+	}{
+		{name: "OpenShift 4.15 supports matchConditions", ocpVersion: "4.15.0", wantCAPK: true},
+		{name: "OpenShift 4.12 does not support matchConditions", ocpVersion: "4.12.0", wantCAPK: false},
+		{name: "unknown OpenShift version fails closed", ocpVersion: "", wantCAPK: false},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Setenv("ACM_HUB_OCP_VERSION", test.ocpVersion)
+			m := &backplanev1.MultiClusterEngine{}
+			SetDefaultComponents(m)
+			if got := m.Enabled(backplanev1.ClusterAPIProviderKubeVirt); got != test.wantCAPK {
+				t.Fatalf("ClusterAPIProviderKubeVirt enabled = %t, want %t", got, test.wantCAPK)
+			}
+		})
+	}
+}
+
+func TestShouldEnablePreviewStable(t *testing.T) {
+	setDeployOnOCPForTest(t, true)
+	tests := []struct {
+		name        string
+		ocpVersion  string
+		annotations map[string]string
+		components  []backplanev1.ComponentConfig
+		stable      string
+		want        bool
+	}{
+		{
+			name:       "standalone Cluster API can transfer",
+			ocpVersion: "4.15.0",
+			stable:     backplanev1.ClusterAPI,
+			want:       true,
+		},
+		{
+			name: "hosted Cluster API cannot transfer",
+			annotations: map[string]string{
+				"deploymentmode": string(backplanev1.ModeHosted),
+			},
+			stable: backplanev1.ClusterAPI,
+			want:   false,
+		},
+		{
+			name:       "old OpenShift CAPK cannot transfer",
+			ocpVersion: "4.12.0",
+			stable:     backplanev1.ClusterAPIProviderKubeVirt,
+			want:       false,
+		},
+		{
+			name: "CAPOA with disabled dependency cannot transfer",
+			components: []backplanev1.ComponentConfig{
+				{Name: backplanev1.ClusterAPI, Enabled: false},
+			},
+			stable: backplanev1.ClusterAPIProviderOA,
+			want:   false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Setenv("ACM_HUB_OCP_VERSION", test.ocpVersion)
+			m := &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{Annotations: test.annotations},
+				Spec: backplanev1.MultiClusterEngineSpec{
+					Overrides: &backplanev1.Overrides{Components: test.components},
+				},
+			}
+			if got := ShouldEnablePreviewStable(m, test.stable); got != test.want {
+				t.Fatalf("ShouldEnablePreviewStable(%s) = %t, want %t", test.stable, got, test.want)
+			}
+		})
+	}
+}
+
+func setDeployOnOCPForTest(t *testing.T, value bool) {
+	t.Helper()
+	original := GlobalDeployOnOCP
+	SetDeployOnOCP(value)
+	t.Cleanup(func() { SetDeployOnOCP(original) })
 }
 
 func TestGetHubType(t *testing.T) {

@@ -3334,6 +3334,126 @@ func Test_setDefaults_PrunesRemovedComponents(t *testing.T) {
 	}
 }
 
+func Test_setDefaults_EnforcesClusterAPIExclusivity(t *testing.T) {
+	registerScheme()
+
+	previousDeployOnOCP := utils.DeployOnOCP()
+	utils.SetDeployOnOCP(false)
+	defer utils.SetDeployOnOCP(previousDeployOnOCP)
+
+	newClusterAPIMCE := func(name string, createdAt time.Time) *backplanev1.MultiClusterEngine {
+		return &backplanev1.MultiClusterEngine{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:              name,
+				CreationTimestamp: metav1.NewTime(createdAt),
+				Annotations: map[string]string{
+					"deploymentmode": string(backplanev1.ModeHosted),
+				},
+			},
+			Spec: backplanev1.MultiClusterEngineSpec{
+				TargetNamespace: name,
+				NetworkPolicies: &backplanev1.NetworkPoliciesConfig{Enabled: true},
+				Overrides: &backplanev1.Overrides{Components: []backplanev1.ComponentConfig{
+					{Name: backplanev1.ClusterAPI, Enabled: true},
+				}},
+			},
+		}
+	}
+
+	owner := newClusterAPIMCE("cluster-api-owner", time.Now().Add(-time.Hour))
+	conflict := newClusterAPIMCE("cluster-api-conflict", time.Now())
+
+	fakeClient := fake.NewClientBuilder().
+		WithScheme(scheme.Scheme).
+		WithObjects(owner, conflict).
+		Build()
+	reconciler := &MultiClusterEngineReconciler{
+		Client:        fakeClient,
+		Scheme:        scheme.Scheme,
+		StatusManager: &status.StatusTracker{Client: fakeClient},
+	}
+
+	if _, err := reconciler.setDefaults(context.TODO(), conflict); err != nil {
+		t.Fatalf("setDefaults() conflict error = %v", err)
+	}
+	if conflict.Enabled(backplanev1.ClusterAPI) {
+		t.Fatal("later MultiClusterEngine retained Cluster API during a conflict")
+	}
+
+	updatedConflict := &backplanev1.MultiClusterEngine{}
+	if err := fakeClient.Get(
+		context.TODO(),
+		types.NamespacedName{Name: conflict.Name},
+		updatedConflict,
+	); err != nil {
+		t.Fatalf("failed to get updated conflict: %v", err)
+	}
+	if updatedConflict.Enabled(backplanev1.ClusterAPI) {
+		t.Fatal("later MultiClusterEngine Cluster API disablement was not persisted")
+	}
+
+	if _, err := reconciler.setDefaults(context.TODO(), owner); err != nil {
+		t.Fatalf("setDefaults() owner error = %v", err)
+	}
+	if !owner.Enabled(backplanev1.ClusterAPI) {
+		t.Fatal("earliest MultiClusterEngine lost Cluster API ownership")
+	}
+}
+
+func Test_setDefaults_EnforcesClusterAPIExclusivityDisablesDependentProviders(t *testing.T) {
+	registerScheme()
+
+	previousDeployOnOCP := utils.DeployOnOCP()
+	utils.SetDeployOnOCP(false)
+	defer utils.SetDeployOnOCP(previousDeployOnOCP)
+
+	owner := &backplanev1.MultiClusterEngine{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              "cluster-api-owner",
+			CreationTimestamp: metav1.NewTime(time.Now().Add(-time.Hour)),
+			Annotations: map[string]string{
+				"deploymentmode": string(backplanev1.ModeHosted),
+			},
+		},
+		Spec: backplanev1.MultiClusterEngineSpec{
+			TargetNamespace: "cluster-api-owner",
+			NetworkPolicies: &backplanev1.NetworkPoliciesConfig{Enabled: true},
+			Overrides: &backplanev1.Overrides{Components: []backplanev1.ComponentConfig{
+				{Name: backplanev1.ClusterAPI, Enabled: true},
+			}},
+		},
+	}
+	conflict := &backplanev1.MultiClusterEngine{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              "standalone-cluster-api-conflict",
+			CreationTimestamp: metav1.NewTime(time.Now()),
+		},
+		Spec: backplanev1.MultiClusterEngineSpec{
+			TargetNamespace: "standalone-cluster-api-conflict",
+			NetworkPolicies: &backplanev1.NetworkPoliciesConfig{Enabled: true},
+		},
+	}
+
+	fakeClient := fake.NewClientBuilder().
+		WithScheme(scheme.Scheme).
+		WithObjects(owner, conflict).
+		Build()
+	reconciler := &MultiClusterEngineReconciler{
+		Client:        fakeClient,
+		Scheme:        scheme.Scheme,
+		StatusManager: &status.StatusTracker{Client: fakeClient},
+	}
+
+	if _, err := reconciler.setDefaults(context.TODO(), conflict); err != nil {
+		t.Fatalf("setDefaults() conflict error = %v", err)
+	}
+	if conflict.Enabled(backplanev1.ClusterAPI) ||
+		conflict.Enabled(backplanev1.ClusterAPIProviderOA) ||
+		conflict.Enabled(backplanev1.ClusterAPIProviderKubeVirt) {
+		t.Fatal("losing MultiClusterEngine retained Cluster API or a dependent provider")
+	}
+}
+
 func TestEnsureUnstructuredResourceReturnsCRDLabelUpdateError(t *testing.T) {
 	testScheme := runtime.NewScheme()
 	if err := apixv1.AddToScheme(testScheme); err != nil {
