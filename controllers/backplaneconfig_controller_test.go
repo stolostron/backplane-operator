@@ -55,6 +55,7 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -3330,6 +3331,136 @@ func Test_setDefaults_PrunesRemovedComponents(t *testing.T) {
 	if mce.ComponentPresent(backplanev1.MaestroPreview) {
 		t.Errorf("expected removed component %q to be pruned from spec, but it is still present",
 			backplanev1.MaestroPreview)
+	}
+}
+
+func TestEnsureUnstructuredResourceReturnsCRDLabelUpdateError(t *testing.T) {
+	testScheme := runtime.NewScheme()
+	if err := apixv1.AddToScheme(testScheme); err != nil {
+		t.Fatalf("failed to initialize test scheme: %v", err)
+	}
+
+	existingCRD := &apixv1.CustomResourceDefinition{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: apixv1.SchemeGroupVersion.String(),
+			Kind:       "CustomResourceDefinition",
+		},
+		ObjectMeta: metav1.ObjectMeta{Name: "test-crd"},
+		Spec: apixv1.CustomResourceDefinitionSpec{
+			Group: "example.com",
+			Names: apixv1.CustomResourceDefinitionNames{
+				Kind:     "Test",
+				ListKind: "TestList",
+				Plural:   "tests",
+				Singular: "test",
+			},
+			Scope: apixv1.ClusterScoped,
+			Versions: []apixv1.CustomResourceDefinitionVersion{{
+				Name:    "v1",
+				Served:  true,
+				Storage: true,
+			}},
+		},
+	}
+	desiredMap, err := runtime.DefaultUnstructuredConverter.ToUnstructured(existingCRD)
+	if err != nil {
+		t.Fatalf("failed to convert desired CRD: %v", err)
+	}
+	desired := &unstructured.Unstructured{Object: desiredMap}
+	desired.SetLabels(map[string]string{"cluster.x-k8s.io/provider": "kubevirt"})
+
+	updateError := fmt.Errorf("CRD label update failed")
+	fakeClient := fake.NewClientBuilder().
+		WithScheme(testScheme).
+		WithObjects(existingCRD).
+		WithInterceptorFuncs(interceptor.Funcs{
+			Update: func(context.Context, client.WithWatch, client.Object, ...client.UpdateOption) error {
+				return updateError
+			},
+		}).
+		Build()
+	reconciler := &MultiClusterEngineReconciler{
+		Client: fakeClient,
+		Scheme: testScheme,
+		Log:    logr.Discard(),
+	}
+
+	_, err = reconciler.ensureUnstructuredResource(context.TODO(), &backplanev1.MultiClusterEngine{}, desired)
+	if err != updateError {
+		t.Fatalf("ensureUnstructuredResource() error = %v, want %v", err, updateError)
+	}
+}
+
+func TestEnsureCRDWithRetryDoesNotMutateRenderedCRD(t *testing.T) {
+	testScheme := runtime.NewScheme()
+	if err := apixv1.AddToScheme(testScheme); err != nil {
+		t.Fatalf("failed to initialize test scheme: %v", err)
+	}
+
+	newCRD := func(annotations map[string]string) *apixv1.CustomResourceDefinition {
+		return &apixv1.CustomResourceDefinition{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: apixv1.SchemeGroupVersion.String(),
+				Kind:       "CustomResourceDefinition",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        "test-crd",
+				Annotations: annotations,
+			},
+			Spec: apixv1.CustomResourceDefinitionSpec{
+				Group: "example.com",
+				Names: apixv1.CustomResourceDefinitionNames{
+					Kind:     "Test",
+					ListKind: "TestList",
+					Plural:   "tests",
+					Singular: "test",
+				},
+				Scope: apixv1.ClusterScoped,
+				Versions: []apixv1.CustomResourceDefinitionVersion{{
+					Name:    "v1",
+					Served:  true,
+					Storage: true,
+				}},
+			},
+		}
+	}
+	existingCRD := newCRD(map[string]string{"example.com/external": "value"})
+	desiredMap, err := runtime.DefaultUnstructuredConverter.ToUnstructured(newCRD(nil))
+	if err != nil {
+		t.Fatalf("failed to convert desired CRD: %v", err)
+	}
+	desired := &unstructured.Unstructured{Object: desiredMap}
+
+	updateCount := 0
+	fakeClient := fake.NewClientBuilder().
+		WithScheme(testScheme).
+		WithObjects(existingCRD).
+		WithInterceptorFuncs(interceptor.Funcs{
+			Update: func(ctx context.Context, c client.WithWatch, obj client.Object, opts ...client.UpdateOption) error {
+				updateCount++
+				if updateCount == 1 {
+					return errors.NewConflict(
+						schema.GroupResource{
+							Group:    apixv1.SchemeGroupVersion.Group,
+							Resource: "customresourcedefinitions",
+						},
+						obj.GetName(),
+						fmt.Errorf("conflict"),
+					)
+				}
+				return c.Update(ctx, obj, opts...)
+			},
+		}).
+		Build()
+
+	if err := ensureCRDWithRetry(context.TODO(), fakeClient, desired); err != nil {
+		t.Fatalf("ensureCRDWithRetry() error = %v", err)
+	}
+	if updateCount != 2 {
+		t.Fatalf("update count = %d, want 2", updateCount)
+	}
+	if _, found := desired.GetAnnotations()["example.com/external"]; found {
+		t.Fatal("rendered CRD was mutated across retry attempts")
 	}
 }
 

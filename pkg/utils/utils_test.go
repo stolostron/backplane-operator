@@ -5,6 +5,7 @@ package utils
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -64,6 +65,98 @@ func Test_utils(t *testing.T) {
 	attemptedRemove := Remove(stringList, "test1")
 	if len(attemptedRemove) != len(stringRemoveList) {
 		t.Error("Removes did not work")
+	}
+}
+
+func TestSetDefaultComponentsRespectsDisabledDependencies(t *testing.T) {
+	tests := []struct {
+		name        string
+		annotations map[string]string
+		components  []backplanev1.ComponentConfig
+		check       func(m *backplanev1.MultiClusterEngine) error
+	}{
+		{
+			name: "CAPI disabled disables KubeVirt and CAPOA providers",
+			components: []backplanev1.ComponentConfig{
+				{Name: backplanev1.ClusterAPI, Enabled: false},
+			},
+			check: func(m *backplanev1.MultiClusterEngine) error {
+				if m.Enabled(backplanev1.ClusterAPIProviderKubeVirt) {
+					return fmt.Errorf("ClusterAPIProviderKubeVirt should default to disabled")
+				}
+				if m.Enabled(backplanev1.ClusterAPIProviderOA) {
+					return fmt.Errorf("ClusterAPIProviderOA should default to disabled")
+				}
+				return nil
+			},
+		},
+		{
+			name: "Assisted Service disabled disables CAPOA provider",
+			components: []backplanev1.ComponentConfig{
+				{Name: backplanev1.ClusterAPI, Enabled: true},
+				{Name: backplanev1.AssistedService, Enabled: false},
+			},
+			check: func(m *backplanev1.MultiClusterEngine) error {
+				if m.Enabled(backplanev1.ClusterAPIProviderOA) {
+					return fmt.Errorf("ClusterAPIProviderOA should default to disabled")
+				}
+				return nil
+			},
+		},
+		{
+			name: "Hosted mode disables KubeVirt provider",
+			annotations: map[string]string{
+				"deploymentmode": string(backplanev1.ModeHosted),
+			},
+			check: func(m *backplanev1.MultiClusterEngine) error {
+				if m.Enabled(backplanev1.ClusterAPIProviderKubeVirt) {
+					return fmt.Errorf("ClusterAPIProviderKubeVirt should default to disabled in hosted mode")
+				}
+				return nil
+			},
+		},
+		{
+			name: "Disabled KubeVirt preview disables stable provider",
+			components: []backplanev1.ComponentConfig{
+				{Name: backplanev1.ClusterAPIProviderKubeVirtPreview, Enabled: false},
+			},
+			check: func(m *backplanev1.MultiClusterEngine) error {
+				if !m.ComponentPresent(backplanev1.ClusterAPIProviderKubeVirt) {
+					return fmt.Errorf("ClusterAPIProviderKubeVirt should transfer the preview preference")
+				}
+				if m.Enabled(backplanev1.ClusterAPIProviderKubeVirt) {
+					return fmt.Errorf("ClusterAPIProviderKubeVirt should honor a disabled preview component")
+				}
+				return nil
+			},
+		},
+		{
+			name: "Enabled KubeVirt preview enables stable provider",
+			components: []backplanev1.ComponentConfig{
+				{Name: backplanev1.ClusterAPIProviderKubeVirtPreview, Enabled: true},
+			},
+			check: func(m *backplanev1.MultiClusterEngine) error {
+				if !m.Enabled(backplanev1.ClusterAPIProviderKubeVirt) {
+					return fmt.Errorf("ClusterAPIProviderKubeVirt should honor an enabled preview component")
+				}
+				return nil
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			m := &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{Annotations: test.annotations},
+				Spec: backplanev1.MultiClusterEngineSpec{
+					Overrides: &backplanev1.Overrides{Components: test.components},
+				},
+			}
+			SetDefaultComponents(m)
+			if err := test.check(m); err != nil {
+				t.Error(err)
+			}
+		})
 	}
 }
 

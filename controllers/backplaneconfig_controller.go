@@ -493,12 +493,7 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 
 	// Apply ALL CRDs with retry logic
 	for i := range crds {
-		retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-			crd := crds[i]
-			e := EnsureCRD(context.TODO(), r.Client, crd)
-			return e
-		})
-
+		retryErr := ensureCRDWithRetry(ctx, r.Client, crds[i])
 		if retryErr != nil {
 			r.Log.Error(retryErr, "Failed to apply CRD", "CRD", crds[i].GetName())
 			return result, retryErr
@@ -2580,6 +2575,7 @@ func (r *MultiClusterEngineReconciler) ensureUnstructuredResource(ctx context.Co
 			found.SetLabels(existingLabels)
 			if err := r.Client.Update(ctx, found); err != nil {
 				r.Log.Error(err, "Failed to update CRD labels", "Name", u.GetName())
+				return ctrl.Result{}, err
 			}
 		}
 	}
@@ -2974,6 +2970,12 @@ func (r *MultiClusterEngineReconciler) CheckDeprecatedFieldUsage(m *backplanev1.
 	}
 }
 
+func ensureCRDWithRetry(ctx context.Context, c client.Client, crd *unstructured.Unstructured) error {
+	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		return EnsureCRD(ctx, c, crd.DeepCopy())
+	})
+}
+
 // EnsureCRD creates crd in the cluster via c, or updates it if it already
 // exists. On update it preserves any existing caBundle in the conversion
 // webhook's clientConfig (e.g. injected by cert-manager on vanilla K8s) and
@@ -3022,6 +3024,8 @@ func EnsureCRD(ctx context.Context, c client.Client, crd *unstructured.Unstructu
 	return nil
 }
 
+// preserveCRDMetadata copies labels and annotations from an existing CRD into
+// the desired CRD when the desired resource does not define those keys.
 func preserveCRDMetadata(existingCRD, desiredCRD *unstructured.Unstructured) {
 	desiredLabels := desiredCRD.GetLabels()
 	if desiredLabels == nil {
