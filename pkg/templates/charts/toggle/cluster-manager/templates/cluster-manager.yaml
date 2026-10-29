@@ -18,24 +18,24 @@ spec:
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
-          - podAffinityTerm:
-              labelSelector:
-                matchExpressions:
-                - key: ocm-antiaffinity-selector
-                  operator: In
-                  values:
-                  - cluster-manager
+          - weight: 70
+            podAffinityTerm:
               topologyKey: topology.kubernetes.io/zone
-            weight: 70
-          - podAffinityTerm:
               labelSelector:
                 matchExpressions:
                 - key: ocm-antiaffinity-selector
                   operator: In
                   values:
                   - cluster-manager
+          - weight: 35
+            podAffinityTerm:
               topologyKey: kubernetes.io/hostname
-            weight: 35
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - cluster-manager
       containers:
       - args:
         - /registration-operator
@@ -86,17 +86,6 @@ spec:
         volumeMounts:
         - mountPath: /tmp
           name: tmpdir
-      hostIPC: false
-      hostNetwork: false
-      hostPID: false
-{{- if .Values.global.pullSecret }}
-      imagePullSecrets:
-      - name: {{ .Values.global.pullSecret }}
-{{- end }}
-{{- with .Values.hubconfig.nodeSelector }}
-      nodeSelector:
-{{ toYaml . | indent 8 }}
-{{- end }}
       securityContext:
         runAsNonRoot: true
 {{- if .Values.global.deployOnOCP }}
@@ -106,6 +95,9 @@ spec:
 {{- end }}
 {{- end }}
       serviceAccountName: cluster-manager
+      volumes:
+      - emptyDir: {}
+        name: tmpdir
 {{- with .Values.hubconfig.tolerations }}
       tolerations:
       {{- range . }}
@@ -116,6 +108,14 @@ spec:
         {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
         {{- end }}
 {{- end }}
-      volumes:
-      - emptyDir: {}
-        name: tmpdir
+      hostNetwork: false
+      hostPID: false
+      hostIPC: false
+{{- with .Values.hubconfig.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+{{- end }}
+{{- if .Values.global.pullSecret }}
+      imagePullSecrets:
+      - name: {{ .Values.global.pullSecret }}
+{{- end }}

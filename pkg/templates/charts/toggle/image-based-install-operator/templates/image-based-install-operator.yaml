@@ -15,27 +15,6 @@ spec:
         app: image-based-install-operator
         ocm-antiaffinity-selector: image-based-install-operator
     spec:
-      affinity:
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-          - podAffinityTerm:
-              labelSelector:
-                matchExpressions:
-                - key: ocm-antiaffinity-selector
-                  operator: In
-                  values:
-                  - image-based-install-operator
-              topologyKey: topology.kubernetes.io/zone
-            weight: 70
-          - podAffinityTerm:
-              labelSelector:
-                matchExpressions:
-                - key: ocm-antiaffinity-selector
-                  operator: In
-                  values:
-                  - image-based-install-operator
-              topologyKey: kubernetes.io/hostname
-            weight: 35
       containers:
       - args:
         - --leader-elect
@@ -65,7 +44,6 @@ spec:
         - name: TMPDIR
           value: /data
         image: '{{ .Values.global.imageOverrides.image_based_install_operator }}'
-        imagePullPolicy: '{{ .Values.global.pullPolicy }}'
         livenessProbe:
           httpGet:
             path: /healthz
@@ -96,6 +74,7 @@ spec:
           name: data
         - mountPath: /webhook-certs
           name: webhook-certs
+        imagePullPolicy: '{{ .Values.global.pullPolicy }}'
       - command:
         - /usr/local/bin/server
         env:
@@ -116,7 +95,6 @@ spec:
         - name: TMPDIR
           value: /data
         image: '{{ .Values.global.imageOverrides.image_based_install_operator }}'
-        imagePullPolicy: '{{ .Values.global.pullPolicy }}'
         name: server
         ports:
         - containerPort: 8000
@@ -139,17 +117,7 @@ spec:
           name: data
         - mountPath: /certs
           name: certs
-      hostIPC: false
-      hostNetwork: false
-      hostPID: false
-{{- if .Values.global.pullSecret }}
-      imagePullSecrets:
-      - name: {{ .Values.global.pullSecret }}
-{{- end }}
-{{- with .Values.hubconfig.nodeSelector }}
-      nodeSelector:
-{{ toYaml . | indent 8 }}
-{{- end }}
+        imagePullPolicy: '{{ .Values.global.pullPolicy }}'
       securityContext:
         runAsNonRoot: true
 {{- if .Values.global.deployOnOCP }}
@@ -160,6 +128,36 @@ spec:
 {{- end }}
       serviceAccountName: image-based-install-operator
       terminationGracePeriodSeconds: 10
+      volumes:
+      - emptyDir: {}
+        name: data
+      - name: certs
+        secret:
+          secretName: ibi-config-serving-certs
+      - name: webhook-certs
+        secret:
+          secretName: ibi-webhook-serving-certs
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 70
+            podAffinityTerm:
+              topologyKey: topology.kubernetes.io/zone
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - image-based-install-operator
+          - weight: 35
+            podAffinityTerm:
+              topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - image-based-install-operator
 {{- with .Values.hubconfig.tolerations }}
       tolerations:
       {{- range . }}
@@ -170,12 +168,14 @@ spec:
         {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
         {{- end }}
 {{- end }}
-      volumes:
-      - emptyDir: {}
-        name: data
-      - name: certs
-        secret:
-          secretName: ibi-config-serving-certs
-      - name: webhook-certs
-        secret:
-          secretName: ibi-webhook-serving-certs
+      hostNetwork: false
+      hostPID: false
+      hostIPC: false
+{{- with .Values.hubconfig.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+{{- end }}
+{{- if .Values.global.pullSecret }}
+      imagePullSecrets:
+      - name: {{ .Values.global.pullSecret }}
+{{- end }}
