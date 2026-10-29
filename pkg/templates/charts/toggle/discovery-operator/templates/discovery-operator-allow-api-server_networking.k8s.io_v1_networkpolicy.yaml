@@ -5,15 +5,15 @@ metadata:
   name: discovery-operator-allow-api-server
   namespace: '{{ .Values.global.namespace }}'
 spec:
-  egress:
-  - ports:
-    - port: 443
-      protocol: TCP
-    - port: 6443
-      protocol: TCP
   podSelector:
     matchLabels:
       app: discovery-operator
+  egress:
+  - ports:
+    - protocol: TCP
+      port: 443
+    - protocol: TCP
+      port: 6443
   policyTypes:
   - Egress
 {{- end }}

@@ -5,17 +5,17 @@ metadata:
   name: discovery-operator-allow-webhook
   namespace: '{{ .Values.global.namespace }}'
 spec:
+  podSelector:
+    matchLabels:
+      app: discovery-operator
   ingress:
   - from:
     - namespaceSelector:
         matchLabels:
           policy-group.network.openshift.io/host-network: ''
     ports:
-    - port: 9443
-      protocol: TCP
-  podSelector:
-    matchLabels:
-      app: discovery-operator
+    - protocol: TCP
+      port: 9443
   policyTypes:
   - Ingress
 {{- end }}

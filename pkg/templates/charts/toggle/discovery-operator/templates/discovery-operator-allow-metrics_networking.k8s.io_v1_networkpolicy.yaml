@@ -5,13 +5,13 @@ metadata:
   name: discovery-operator-allow-metrics
   namespace: '{{ .Values.global.namespace }}'
 spec:
-  ingress:
-  - ports:
-    - port: 8080
-      protocol: TCP
   podSelector:
     matchLabels:
       app: discovery-operator
+  ingress:
+  - ports:
+    - protocol: TCP
+      port: 8080
   policyTypes:
   - Ingress
 {{- end }}

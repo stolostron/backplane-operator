@@ -5,19 +5,19 @@ metadata:
   name: discovery-operator-allow-dns
   namespace: '{{ .Values.global.namespace }}'
 spec:
-  egress:
-  - ports:
-    - port: 53
-      protocol: TCP
-    - port: 53
-      protocol: UDP
-    - port: 5353
-      protocol: TCP
-    - port: 5353
-      protocol: UDP
   podSelector:
     matchLabels:
       app: discovery-operator
+  egress:
+  - ports:
+    - protocol: TCP
+      port: 53
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 5353
+    - protocol: UDP
+      port: 5353
   policyTypes:
   - Egress
 {{- end }}
