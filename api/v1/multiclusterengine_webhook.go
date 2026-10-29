@@ -22,6 +22,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"reflect"
 
 	admissionregistration "k8s.io/api/admissionregistration/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -61,12 +62,11 @@ var (
 	backplaneconfiglog = logf.Log.WithName("backplaneconfig-resource")
 	Client             cl.Client
 
-	ErrInvalidComponent     = errors.New("invalid component config")
-	ErrInvalidNamespace     = errors.New("invalid TargetNamespace")
-	ErrInvalidDeployMode    = errors.New("invalid DeploymentMode")
-	ErrInvalidAvailability  = errors.New("invalid AvailabilityConfig")
-	ErrInvalidInfraNS       = errors.New("invalid InfrastructureCustomNamespace")
-	ErrComponentExclusivity = errors.New("component exclusivity violation")
+	ErrInvalidComponent    = errors.New("invalid component config")
+	ErrInvalidNamespace    = errors.New("invalid TargetNamespace")
+	ErrInvalidDeployMode   = errors.New("invalid DeploymentMode")
+	ErrInvalidAvailability = errors.New("invalid AvailabilityConfig")
+	ErrInvalidInfraNS      = errors.New("invalid InfrastructureCustomNamespace")
 
 	blockDeletionResources = []BlockDeletionResource{
 		{
@@ -146,6 +146,55 @@ func ValidatingWebhook(namespace string) *admissionregistration.ValidatingWebhoo
 	}
 }
 
+// MutatingWebhook returns the mutating webhook configuration used to default
+// MultiClusterEngine resources before persistence.
+func MutatingWebhook(namespace string) *admissionregistration.MutatingWebhookConfiguration {
+	fail := admissionregistration.Fail
+	none := admissionregistration.SideEffectClassNone
+	path := "/mutate-multicluster-openshift-io-v1-multiclusterengine"
+	return &admissionregistration.MutatingWebhookConfiguration{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "admissionregistration.k8s.io/v1",
+			Kind:       "MutatingWebhookConfiguration",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        "multiclusterengines.multicluster.openshift.io",
+			Annotations: map[string]string{"service.beta.openshift.io/inject-cabundle": "true"},
+		},
+		Webhooks: []admissionregistration.MutatingWebhook{
+			{
+				AdmissionReviewVersions: []string{
+					"v1",
+					"v1beta1",
+				},
+				Name: "multiclusterengines.multicluster.openshift.io",
+				ClientConfig: admissionregistration.WebhookClientConfig{
+					Service: &admissionregistration.ServiceReference{
+						Name:      "multicluster-engine-operator-webhook-service",
+						Namespace: namespace,
+						Path:      &path,
+					},
+				},
+				FailurePolicy: &fail,
+				Rules: []admissionregistration.RuleWithOperations{
+					{
+						Rule: admissionregistration.Rule{
+							APIGroups:   []string{GroupVersion.Group},
+							APIVersions: []string{GroupVersion.Version},
+							Resources:   []string{"multiclusterengines"},
+						},
+						Operations: []admissionregistration.OperationType{
+							admissionregistration.Create,
+							admissionregistration.Update,
+						},
+					},
+				},
+				SideEffects: &none,
+			},
+		},
+	}
+}
+
 func (r *MultiClusterEngine) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	Client = mgr.GetClient()
 	return builder.WebhookManagedBy(mgr, r).
@@ -162,6 +211,9 @@ func (r *MultiClusterEngine) Default(ctx context.Context, obj *MultiClusterEngin
 	backplaneconfiglog.Info("default", "name", obj.Name)
 	if obj.Spec.TargetNamespace == "" {
 		obj.Spec.TargetNamespace = DefaultTargetNamespace
+	}
+	if obj.Spec.NetworkPolicies == nil {
+		obj.Spec.NetworkPolicies = &NetworkPoliciesConfig{Enabled: true}
 	}
 	return nil
 }
@@ -189,8 +241,7 @@ func (r *MultiClusterEngine) ValidateCreate(ctx context.Context, obj *MultiClust
 		}
 	}
 
-	// Validate component exclusivity (HyperShift vs Cluster API)
-	if err := obj.validateComponentExclusivity(); err != nil {
+	if err := obj.validateComponentDependencies(); err != nil {
 		return nil, err
 	}
 
@@ -275,9 +326,11 @@ func (r *MultiClusterEngine) ValidateUpdate(ctx context.Context, oldObj, newObj 
 		}
 	}
 
-	// Validate component exclusivity (HyperShift vs Cluster API)
-	if err := newObj.validateComponentExclusivity(); err != nil {
-		return nil, err
+	if err := newObj.validateComponentDependencies(); err != nil {
+		if shouldRejectComponentDependencies(oldObj, newObj) {
+			return nil, err
+		}
+		warnings = append(warnings, err.Error())
 	}
 
 	// Block disable if relevant resources present
@@ -421,58 +474,56 @@ func contains(s []string, v string) bool {
 	return false
 }
 
-// validateComponentExclusivity ensures HyperShift and Cluster API components are mutually exclusive
-// Note: If additional exclusivity rules are needed in the future, consider refactoring to a
-// rules-based approach to handle multiple independent exclusivity constraints.
-func (r *MultiClusterEngine) validateComponentExclusivity() error {
-	// Define HyperShift component set
-	hypershiftComponents := []string{
-		HyperShift,
-		HyperShiftPreview,
-		HypershiftLocalHosting,
-	}
-
-	// Define Cluster API component set
-	clusterAPIComponents := []string{
-		ClusterAPI,
-		ClusterAPIPreview,
-		ClusterAPIProviderAWS,
-		ClusterAPIProviderAWSPreview,
-		// ClusterAPIProviderAzure, Uncomment until stable release is available
-		ClusterAPIProviderAzurePreview,
-		ClusterAPIProviderMetal,
-		ClusterAPIProviderMetalPreview,
-		ClusterAPIProviderOA,
-		ClusterAPIProviderOAPreview,
-	}
-
-	hypershiftEnabled := false
-	clusterAPIEnabled := false
-
-	// Check if any HyperShift component is enabled
-	for _, comp := range hypershiftComponents {
-		if r.Enabled(comp) {
-			hypershiftEnabled = true
-			break
+func (r *MultiClusterEngine) validateComponentDependencies() error {
+	if r.Enabled(ClusterAPIProviderOA) {
+		if !r.Enabled(ClusterAPI) {
+			return fmt.Errorf("%w: cluster-api-provider-openshift-assisted requires cluster-api to be enabled",
+				ErrInvalidComponent)
+		}
+		if !r.Enabled(AssistedService) {
+			return fmt.Errorf("%w: cluster-api-provider-openshift-assisted requires assisted-service to be enabled",
+				ErrInvalidComponent)
 		}
 	}
 
-	// Check if any Cluster API component is enabled
-	for _, comp := range clusterAPIComponents {
-		if r.Enabled(comp) {
-			clusterAPIEnabled = true
-			break
-		}
-	}
-
-	// Reject if both are enabled
-	if hypershiftEnabled && clusterAPIEnabled {
-		return fmt.Errorf("%w: HyperShift components (hypershift, hypershift-local-hosting) "+
-			"and Cluster API components (cluster-api, cluster-api-provider-aws, "+
-			"cluster-api-provider-azure-preview, cluster-api-provider-metal3, cluster-api-provider-openshift-assisted) "+
-			"cannot be enabled simultaneously. Please enable only one set of components",
-			ErrComponentExclusivity)
+	if r.Enabled(ClusterAPIProviderKubeVirt) && !r.Enabled(ClusterAPI) {
+		return fmt.Errorf("%w: cluster-api-provider-kubevirt requires cluster-api to be enabled",
+			ErrInvalidComponent)
 	}
 
 	return nil
+}
+
+// shouldRejectComponentDependencies preserves updates for resources that
+// already contain invalid component dependencies while still rejecting new or
+// changed invalid dependency configurations.
+func shouldRejectComponentDependencies(oldObj, newObj *MultiClusterEngine) bool {
+	if oldObj.validateComponentDependencies() == nil {
+		return true
+	}
+	for _, component := range []string{
+		ClusterAPI,
+		AssistedService,
+		ClusterAPIProviderOA,
+		ClusterAPIProviderKubeVirt,
+	} {
+		oldConfig, oldFound := componentConfig(oldObj, component)
+		newConfig, newFound := componentConfig(newObj, component)
+		if oldFound != newFound || !reflect.DeepEqual(oldConfig, newConfig) {
+			return true
+		}
+	}
+	return false
+}
+
+func componentConfig(mce *MultiClusterEngine, name string) (ComponentConfig, bool) {
+	if mce.Spec.Overrides == nil {
+		return ComponentConfig{}, false
+	}
+	for _, component := range mce.Spec.Overrides.Components {
+		if component.Name == name {
+			return component, true
+		}
+	}
+	return ComponentConfig{}, false
 }
