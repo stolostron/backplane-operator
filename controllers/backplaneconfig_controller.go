@@ -2543,6 +2543,7 @@ func (r *MultiClusterEngineReconciler) ensureUnstructuredResource(ctx context.Co
 			found.SetLabels(existingLabels)
 			if err := r.Client.Update(ctx, found); err != nil {
 				r.Log.Error(err, "Failed to update CRD labels", "Name", u.GetName())
+				return ctrl.Result{}, err
 			}
 		}
 	}
@@ -2985,6 +2986,8 @@ func EnsureCRD(ctx context.Context, c client.Client, crd *unstructured.Unstructu
 	return nil
 }
 
+// preserveCRDMetadata copies labels and annotations from an existing CRD into
+// the desired CRD when the desired resource does not define those keys.
 func preserveCRDMetadata(existingCRD, desiredCRD *unstructured.Unstructured) {
 	desiredLabels := desiredCRD.GetLabels()
 	if desiredLabels == nil {

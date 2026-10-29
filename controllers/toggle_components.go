@@ -840,6 +840,8 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterAPIProviderMetal(ctx conte
 	return ctrl.Result{}, nil
 }
 
+// ensureClusterAPIProviderKubeVirt installs and continuously reconciles the
+// cluster-wide CAPK controller and its supporting resources.
 func (r *MultiClusterEngineReconciler) ensureClusterAPIProviderKubeVirt(ctx context.Context, mce *backplanev1.MultiClusterEngine) (
 	ctrl.Result, error) {
 
@@ -866,6 +868,10 @@ func (r *MultiClusterEngineReconciler) ensureClusterAPIProviderKubeVirt(ctx cont
 	}
 
 	for _, template := range templates {
+		// Skip NetworkPolicy resources - they are managed by ensureNetworkPolicies with create-once pattern
+		if template.GetKind() == "NetworkPolicy" {
+			continue
+		}
 		applyReleaseVersionAnnotation(template)
 		result, err := r.applyTemplate(ctx, mce, template)
 		if err != nil {
@@ -876,6 +882,8 @@ func (r *MultiClusterEngineReconciler) ensureClusterAPIProviderKubeVirt(ctx cont
 	return ctrl.Result{}, nil
 }
 
+// ensureNoClusterAPIProviderKubeVirt removes the CAPK controller and its
+// supporting resources while preserving externally managed NetworkPolicies.
 func (r *MultiClusterEngineReconciler) ensureNoClusterAPIProviderKubeVirt(ctx context.Context,
 	mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
 	namespacedName := types.NamespacedName{Name: "capk-controller-manager", Namespace: mce.Spec.TargetNamespace}
@@ -899,6 +907,10 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterAPIProviderKubeVirt(ctx co
 	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
 
 	for _, template := range templates {
+		// Skip NetworkPolicy resources - they are managed by ensureNetworkPolicies with create-once pattern
+		if template.GetKind() == "NetworkPolicy" {
+			continue
+		}
 		result, err := r.deleteTemplate(ctx, mce, template)
 		if err != nil {
 			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
