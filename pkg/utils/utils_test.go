@@ -22,6 +22,12 @@ func Test_utils(t *testing.T) {
 	if !yes {
 		t.Error("Setting default did not work")
 	}
+	if !m.Enabled(backplanev1.ClusterAPI) ||
+		!m.Enabled(backplanev1.ClusterAPIProviderOA) ||
+		!m.Enabled(backplanev1.ClusterAPIProviderKubeVirt) ||
+		!m.Enabled(backplanev1.AssistedService) {
+		t.Error("CAPOA KubeVirt dependencies are not enabled by default")
+	}
 
 	os.Setenv("NO_PROXY", "test")
 	yes = ProxyEnvVarsAreSet()

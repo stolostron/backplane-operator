@@ -42,15 +42,15 @@ spec:
         env:
 {{- if .Values.global.pullSecret }}
         - name: AGENT_IMAGE_PULL_SECRET
-          value: {{ .Values.global.pullSecret }}
+          value: {{ .Values.global.pullSecret | quote }}
 {{- end }}
 {{- if .Values.hubconfig.proxyConfigs }}
         - name: HTTP_PROXY
-          value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY }}
+          value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY | quote }}
         - name: HTTPS_PROXY
-          value: {{ .Values.hubconfig.proxyConfigs.HTTPS_PROXY }}
+          value: {{ .Values.hubconfig.proxyConfigs.HTTPS_PROXY | quote }}
         - name: NO_PROXY
-          value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY }}
+          value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY | quote }}
 {{- end }}
         - name: NAMESPACE
           valueFrom:
@@ -81,11 +81,11 @@ spec:
           periodSeconds: 10
         resources:
           limits:
-            cpu: 500m
-            memory: 128Mi
+            cpu: 1
+            memory: 2Gi
           requests:
-            cpu: 10m
-            memory: 64Mi
+            cpu: 100m
+            memory: 512Mi
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -102,7 +102,7 @@ spec:
       hostPID: false
 {{- if .Values.global.pullSecret }}
       imagePullSecrets:
-      - name: {{ .Values.global.pullSecret }}
+      - name: {{ .Values.global.pullSecret | quote }}
 {{- end }}
 {{- with .Values.hubconfig.nodeSelector }}
       nodeSelector:
@@ -121,11 +121,11 @@ spec:
 {{- with .Values.hubconfig.tolerations }}
       tolerations:
       {{- range . }}
-      - {{ if .Key }} key: {{ .Key }} {{- end }}
-        {{ if .Operator }} operator: {{ .Operator }} {{- end }}
-        {{ if .Value }} value: {{ .Value }} {{- end }}
-        {{ if .Effect }} effect: {{ .Effect }} {{- end }}
-        {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
+      - {{ if .Key }} key: {{ trimSuffix "'" (trimPrefix "'" .Key) | quote }} {{- end }}
+        {{ if .Operator }} operator: {{ trimSuffix "'" (trimPrefix "'" .Operator) | quote }} {{- end }}
+        {{ if .Value }} value: {{ trimSuffix "'" (trimPrefix "'" .Value) | quote }} {{- end }}
+        {{ if .Effect }} effect: {{ trimSuffix "'" (trimPrefix "'" .Effect) | quote }} {{- end }}
+        {{ if ne .TolerationSeconds nil }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
         {{- end }}
 {{- end }}
       volumes:

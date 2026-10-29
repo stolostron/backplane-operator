@@ -20,6 +20,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
+	"net/url"
 	"os"
 	"path"
 	"path/filepath"
@@ -88,6 +90,7 @@ type NetworkPoliciesValue struct {
 type HubConfig struct {
 	NodeSelector         map[string]string `json:"nodeSelector" structs:"nodeSelector"`
 	ProxyConfigs         map[string]string `json:"proxyConfigs" structs:"proxyConfigs"`
+	ProxyEgress          []ProxyEgressRule `json:"proxyEgress" structs:"proxyEgress"`
 	ReplicaCount         int               `json:"replicaCount" structs:"replicaCount"`
 	Tolerations          []Toleration      `json:"tolerations" structs:"tolerations"`
 	ProbeConfig          *ProbeConfig      `json:"probeConfig" structs:"probeConfig"`
@@ -112,6 +115,11 @@ type Toleration struct {
 	Value             string                    `json:"Value" protobuf:"bytes,3,opt,name=value"`
 	Effect            corev1.TaintEffect        `json:"Effect" protobuf:"bytes,4,opt,name=effect,casttype=TaintEffect"`
 	TolerationSeconds *int64                    `json:"TolerationSeconds" protobuf:"varint,5,opt,name=tolerationSeconds"`
+}
+
+type ProxyEgressRule struct {
+	Port  int      `json:"port,omitempty"`
+	CIDRs []string `json:"cidrs,omitempty"`
 }
 
 func convertTolerations(tols []corev1.Toleration) []Toleration {
@@ -326,6 +334,15 @@ func RenderCRDs(crdDir string, backplaneConfig *v1.MultiClusterEngine, skipDirs 
 		// fmt.Printf("Rendering CRD %s from directory: %s\n", crd.GetName(), sourceDir)
 
 		if backplaneConfig != nil {
+			if certManagerCA, found := crd.GetAnnotations()["cert-manager.io/inject-ca-from"]; found {
+				caParts := strings.SplitN(certManagerCA, "/", 2)
+				if len(caParts) == 2 {
+					annotations := crd.GetAnnotations()
+					annotations["cert-manager.io/inject-ca-from"] = path.Join(
+						backplaneConfig.Spec.TargetNamespace, caParts[1])
+					crd.SetAnnotations(annotations)
+				}
+			}
 			_, conversion, _ := unstructured.NestedMap(crd.Object, "spec", "conversion", "webhook", "clientConfig", "service")
 			if conversion {
 				crd.Object["spec"].(map[string]interface{})["conversion"].(map[string]interface{})["webhook"].(map[string]interface{})["clientConfig"].(map[string]interface{})["service"].(map[string]interface{})["namespace"] = backplaneConfig.Spec.TargetNamespace
@@ -501,6 +518,10 @@ func renderTemplates(chartPath string, backplaneConfig *v1.MultiClusterEngine, i
 func injectValuesOverrides(values *Values, backplaneConfig *v1.MultiClusterEngine, images map[string]string,
 	templates map[string]string) {
 
+	values.HubConfig.ProxyEgress = []ProxyEgressRule{}
+
+	values.HubConfig.ProxyConfigs = map[string]string{}
+
 	values.Global.ImageOverrides = images
 
 	values.Global.Upgrading = utils.IsUpgrading(backplaneConfig)
@@ -581,6 +602,7 @@ func injectValuesOverrides(values *Values, backplaneConfig *v1.MultiClusterEngin
 		proxyVar["HTTPS_PROXY"] = os.Getenv("HTTPS_PROXY")
 		proxyVar["NO_PROXY"] = os.Getenv("NO_PROXY")
 		values.HubConfig.ProxyConfigs = proxyVar
+		values.HubConfig.ProxyEgress = proxyEgressRules()
 	}
 
 	// cluster-proxy ACM overrides -- see pkg/templates/charts/toggle/cluster-proxy-addon/
@@ -591,6 +613,79 @@ func injectValuesOverrides(values *Values, backplaneConfig *v1.MultiClusterEngin
 	values.EnableKubeApiProxy = false
 	// Upstream default: true. ACM always enables impersonation.
 	values.EnableImpersonation = true
+}
+
+func proxyEgressRules() []ProxyEgressRule {
+	rules := []ProxyEgressRule{}
+	for _, proxyURL := range []string{os.Getenv("HTTP_PROXY"), os.Getenv("HTTPS_PROXY")} {
+		rule, ok := parseProxyEgressRule(proxyURL)
+		if !ok || containsProxyEgressRule(rules, rule) {
+			continue
+		}
+		rules = append(rules, rule)
+	}
+	return rules
+}
+
+func parseProxyEgressRule(proxyURL string) (ProxyEgressRule, bool) {
+	if proxyURL == "" {
+		return ProxyEgressRule{}, false
+	}
+	if !strings.Contains(proxyURL, "://") {
+		proxyURL = "http://" + proxyURL
+	}
+	parsedURL, err := url.Parse(proxyURL)
+	if err != nil || parsedURL.Hostname() == "" {
+		return ProxyEgressRule{}, false
+	}
+
+	port := 0
+	if parsedURL.Port() != "" {
+		port, err = strconv.Atoi(parsedURL.Port())
+		if err != nil || port <= 0 || port > 65535 {
+			return ProxyEgressRule{}, false
+		}
+	} else if parsedURL.Scheme == "http" {
+		port = 80
+	} else if parsedURL.Scheme == "https" {
+		port = 443
+	} else {
+		return ProxyEgressRule{}, false
+	}
+
+	return ProxyEgressRule{Port: port, CIDRs: proxyCIDRs(parsedURL.Hostname())}, true
+}
+
+func proxyCIDRs(host string) []string {
+	if ip := net.ParseIP(host); ip != nil {
+		if ipv4 := ip.To4(); ipv4 != nil {
+			return []string{ipv4.String() + "/32"}
+		}
+		return []string{ip.String() + "/128"}
+	}
+	// Kubernetes NetworkPolicy peers cannot select DNS names. Restrict this
+	// fallback to the configured proxy port when the proxy is addressed by hostname.
+	// This permits egress to any destination on that port; see docs/proxy-egress.md.
+	return []string{"0.0.0.0/0", "::/0"}
+}
+
+func containsProxyEgressRule(rules []ProxyEgressRule, rule ProxyEgressRule) bool {
+	for _, existing := range rules {
+		if existing.Port != rule.Port || len(existing.CIDRs) != len(rule.CIDRs) {
+			continue
+		}
+		matches := true
+		for index, cidr := range existing.CIDRs {
+			if cidr != rule.CIDRs[index] {
+				matches = false
+				break
+			}
+		}
+		if matches {
+			return true
+		}
+	}
+	return false
 }
 
 // EnsureTLSProfileConfigMaps creates or updates the TLS profile ConfigMap in the specified namespaces.

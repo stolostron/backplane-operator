@@ -840,6 +840,74 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterAPIProviderMetal(ctx conte
 	return ctrl.Result{}, nil
 }
 
+func (r *MultiClusterEngineReconciler) ensureClusterAPIProviderKubeVirt(ctx context.Context, mce *backplanev1.MultiClusterEngine) (
+	ctrl.Result, error) {
+
+	namespacedName := types.NamespacedName{Name: "capk-controller-manager", Namespace: mce.Spec.TargetNamespace}
+	r.StatusManager.RemoveComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
+	r.StatusManager.AddComponent(toggle.EnabledStatus(namespacedName))
+
+	if result, err := r.ensureInternalEngineComponent(ctx, mce, backplanev1.ClusterAPIProviderKubeVirt); err != nil {
+		return result, err
+	}
+
+	chartPath := r.fetchChartOrCRDPath(backplanev1.ClusterAPIProviderKubeVirt)
+	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
+
+	if len(errs) > 0 {
+		for _, err := range errs {
+			log.Info(err.Error())
+		}
+		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+	}
+
+	if result, err := r.applyComponentDeploymentOverrides(mce, templates, backplanev1.ClusterAPIProviderKubeVirt); err != nil {
+		return result, err
+	}
+
+	for _, template := range templates {
+		applyReleaseVersionAnnotation(template)
+		result, err := r.applyTemplate(ctx, mce, template)
+		if err != nil {
+			return result, err
+		}
+	}
+
+	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterEngineReconciler) ensureNoClusterAPIProviderKubeVirt(ctx context.Context,
+	mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+	namespacedName := types.NamespacedName{Name: "capk-controller-manager", Namespace: mce.Spec.TargetNamespace}
+
+	if result, err := r.ensureNoInternalEngineComponent(ctx, mce,
+		backplanev1.ClusterAPIProviderKubeVirt); (result != ctrl.Result{}) || err != nil {
+		return result, err
+	}
+
+	chartPath := r.fetchChartOrCRDPath(backplanev1.ClusterAPIProviderKubeVirt)
+	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
+
+	if len(errs) > 0 {
+		for _, err := range errs {
+			log.Info(err.Error())
+		}
+		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+	}
+
+	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
+	r.StatusManager.AddComponent(toggle.DisabledStatus(namespacedName, []*unstructured.Unstructured{}))
+
+	for _, template := range templates {
+		result, err := r.deleteTemplate(ctx, mce, template)
+		if err != nil {
+			log.Error(err, fmt.Sprintf("Failed to delete template: %s", template.GetName()))
+			return result, err
+		}
+	}
+	return ctrl.Result{}, nil
+}
+
 func (r *MultiClusterEngineReconciler) ensureClusterAPIProviderOA(ctx context.Context, mce *backplanev1.MultiClusterEngine) (
 	ctrl.Result, error) {
 
