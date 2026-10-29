@@ -1,0 +1,17 @@
+{{- if not .Values.global.deployOnOCP }}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: capk-cert
+  namespace: '{{ default "multicluster-engine" .Values.global.namespace }}'
+spec:
+  commonName: capk-webhook-service.{{ default "multicluster-engine" .Values.global.namespace }}.svc
+  dnsNames:
+  - capk-webhook-service.{{ default "multicluster-engine" .Values.global.namespace }}.svc
+  duration: 8760h
+  issuerRef:
+    kind: Issuer
+    name: capk-selfsigned-issuer
+  renewBefore: 360h
+  secretName: capk-webhook-service-cert
+{{- end }}

@@ -485,6 +485,7 @@ func ensureWebhooks(k8sClient client.Client) error {
 	}
 
 	validatingWebhook := backplanev1.ValidatingWebhook(deploymentNamespace)
+	mutatingWebhook := backplanev1.MutatingWebhook(deploymentNamespace)
 
 	maxAttempts := 10
 	for i := 0; i < maxAttempts; i++ {
@@ -507,6 +508,7 @@ func ensureWebhooks(k8sClient client.Client) error {
 				UID:        owner.UID,
 			},
 		})
+		mutatingWebhook.SetOwnerReferences(validatingWebhook.GetOwnerReferences())
 		if !utils.DeployOnOCP() {
 			servingCertCABundle, err := utils.GetServingCertCABundle()
 			if err != nil {
@@ -515,6 +517,7 @@ func ensureWebhooks(k8sClient client.Client) error {
 				continue
 			} else {
 				validatingWebhook.Webhooks[0].ClientConfig.CABundle = []byte(servingCertCABundle)
+				mutatingWebhook.Webhooks[0].ClientConfig.CABundle = []byte(servingCertCABundle)
 			}
 			if err = utils.DumpServingCertSecret(); err != nil {
 				fmt.Printf("error dumping serving cert secret: %s\n", err)
@@ -538,7 +541,6 @@ func ensureWebhooks(k8sClient client.Client) error {
 				time.Sleep(5 * time.Second)
 				continue
 			}
-			return nil
 		} else if err != nil {
 			setupLog.Error(err, "Error getting validatingwebhookconfiguration")
 			time.Sleep(5 * time.Second)
@@ -554,8 +556,35 @@ func ensureWebhooks(k8sClient client.Client) error {
 				time.Sleep(5 * time.Second)
 				continue
 			}
-			return nil
 		}
+
+		existingMutatingWebhook := &admissionregistration.MutatingWebhookConfiguration{}
+		existingMutatingWebhook.SetGroupVersionKind(schema.GroupVersionKind{
+			Group:   "admissionregistration.k8s.io",
+			Version: "v1",
+			Kind:    "MutatingWebhookConfiguration",
+		})
+		err = k8sClient.Get(ctx, types.NamespacedName{Name: mutatingWebhook.GetName()}, existingMutatingWebhook)
+		if err != nil && errors.IsNotFound(err) {
+			if err := k8sClient.Create(ctx, mutatingWebhook); err != nil {
+				setupLog.Error(err, "Error creating mutatingwebhookconfiguration")
+				time.Sleep(5 * time.Second)
+				continue
+			}
+			return nil
+		} else if err != nil {
+			setupLog.Error(err, "Error getting mutatingwebhookconfiguration")
+			time.Sleep(5 * time.Second)
+			continue
+		}
+
+		existingMutatingWebhook.Webhooks = mutatingWebhook.Webhooks
+		if err := k8sClient.Update(ctx, existingMutatingWebhook); err != nil {
+			setupLog.Error(err, "Error updating mutatingwebhookconfiguration")
+			time.Sleep(5 * time.Second)
+			continue
+		}
+		return nil
 	}
 	return fmt.Errorf("unable to ensure validatingwebhook exists in allotted time")
 }

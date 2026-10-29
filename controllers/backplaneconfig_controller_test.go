@@ -2537,6 +2537,7 @@ func Test_ensureToggleableComponents_withExternallyManagedComponents(t *testing.
 							{Name: backplanev1.ClusterAPI, Enabled: true},
 							{Name: backplanev1.ClusterAPIProviderAWS, Enabled: true},
 							{Name: backplanev1.ClusterAPIProviderAzurePreview, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderKubeVirt, Enabled: true},
 							{Name: backplanev1.ClusterAPIProviderMetal, Enabled: true},
 							{Name: backplanev1.ClusterAPIProviderOA, Enabled: true},
 							{Name: backplanev1.LocalCluster, Enabled: true},
@@ -2684,6 +2685,7 @@ func Test_getDisabledComponentCRDSkipDirectories(t *testing.T) {
 							{Name: backplanev1.ClusterAPI, Enabled: true},
 							{Name: backplanev1.ClusterAPIProviderAWS, Enabled: true},
 							{Name: backplanev1.ClusterAPIProviderAzurePreview, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderKubeVirt, Enabled: true},
 							{Name: backplanev1.ClusterAPIProviderMetal, Enabled: true},
 							{Name: backplanev1.ClusterAPIProviderOA, Enabled: true},
 						},
@@ -2704,6 +2706,7 @@ func Test_getDisabledComponentCRDSkipDirectories(t *testing.T) {
 							{Name: backplanev1.ClusterAPI, Enabled: false},
 							{Name: backplanev1.ClusterAPIProviderAWS, Enabled: true},
 							{Name: backplanev1.ClusterAPIProviderAzurePreview, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderKubeVirt, Enabled: true},
 							{Name: backplanev1.ClusterAPIProviderMetal, Enabled: true},
 							{Name: backplanev1.ClusterAPIProviderOA, Enabled: true},
 						},
@@ -2722,6 +2725,7 @@ func Test_getDisabledComponentCRDSkipDirectories(t *testing.T) {
 					Overrides: &backplanev1.Overrides{
 						Components: []backplanev1.ComponentConfig{
 							{Name: backplanev1.ClusterAPI, Enabled: false},
+							{Name: backplanev1.ClusterAPIProviderKubeVirt, Enabled: false},
 							{Name: backplanev1.ClusterAPIProviderMetal, Enabled: false},
 							{Name: backplanev1.ClusterAPIProviderAWS, Enabled: true},
 							{Name: backplanev1.ClusterAPIProviderAzurePreview, Enabled: true},
@@ -2733,6 +2737,7 @@ func Test_getDisabledComponentCRDSkipDirectories(t *testing.T) {
 			want: []string{
 				backplanev1.ClusterAPICRDDir,
 				backplanev1.ClusterAPIK8SCRDDir,
+				backplanev1.ClusterAPIProviderKubeVirtCRDDir,
 				backplanev1.ClusterAPIProviderMetalCRDDir,
 				backplanev1.ClusterAPIProviderMetalK8SCRDDir,
 			},
@@ -2751,6 +2756,7 @@ func Test_getDisabledComponentCRDSkipDirectories(t *testing.T) {
 						Components: []backplanev1.ComponentConfig{
 							{Name: backplanev1.ClusterAPIProviderAWS, Enabled: true},
 							{Name: backplanev1.ClusterAPIProviderAzurePreview, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderKubeVirt, Enabled: true},
 							{Name: backplanev1.ClusterAPIProviderMetal, Enabled: true},
 							{Name: backplanev1.ClusterAPIProviderOA, Enabled: true},
 						},
@@ -2771,6 +2777,7 @@ func Test_getDisabledComponentCRDSkipDirectories(t *testing.T) {
 							{Name: backplanev1.ClusterAPI, Enabled: true},
 							{Name: backplanev1.ClusterAPIProviderAWS, Enabled: true},
 							{Name: backplanev1.ClusterAPIProviderAzurePreview, Enabled: false},
+							{Name: backplanev1.ClusterAPIProviderKubeVirt, Enabled: true},
 							{Name: backplanev1.ClusterAPIProviderMetal, Enabled: true},
 							{Name: backplanev1.ClusterAPIProviderOA, Enabled: true},
 						},
@@ -3330,5 +3337,105 @@ func Test_setDefaults_PrunesRemovedComponents(t *testing.T) {
 	if mce.ComponentPresent(backplanev1.MaestroPreview) {
 		t.Errorf("expected removed component %q to be pruned from spec, but it is still present",
 			backplanev1.MaestroPreview)
+	}
+}
+
+func TestEnsureCRDPreservesExternallyOwnedMetadata(t *testing.T) {
+	testScheme := runtime.NewScheme()
+	if err := apixv1.AddToScheme(testScheme); err != nil {
+		t.Fatalf("failed to initialize test scheme: %v", err)
+	}
+
+	newCRD := func(labels map[string]string, annotations map[string]string) *apixv1.CustomResourceDefinition {
+		return &apixv1.CustomResourceDefinition{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: apixv1.SchemeGroupVersion.String(),
+				Kind:       "CustomResourceDefinition",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        "kubevirtmachines.infrastructure.cluster.x-k8s.io",
+				Labels:      labels,
+				Annotations: annotations,
+			},
+			Spec: apixv1.CustomResourceDefinitionSpec{
+				Group: "infrastructure.cluster.x-k8s.io",
+				Names: apixv1.CustomResourceDefinitionNames{
+					Kind:     "KubevirtMachine",
+					ListKind: "KubevirtMachineList",
+					Plural:   "kubevirtmachines",
+					Singular: "kubevirtmachine",
+				},
+				Scope: apixv1.NamespaceScoped,
+				Versions: []apixv1.CustomResourceDefinitionVersion{{
+					Name:    "v1alpha1",
+					Served:  true,
+					Storage: true,
+					Schema: &apixv1.CustomResourceValidation{
+						OpenAPIV3Schema: &apixv1.JSONSchemaProps{Type: "object"},
+					},
+				}},
+			},
+		}
+	}
+
+	existingCRD := newCRD(
+		map[string]string{
+			"cluster.x-k8s.io/v1beta1":                   "v1alpha1",
+			"hypershift.openshift.io/externally-managed": "true",
+		},
+		map[string]string{
+			"hypershift.openshift.io/owner": "control-plane-operator",
+		},
+	)
+	desiredCRD := newCRD(
+		map[string]string{
+			"cluster.x-k8s.io/provider": "kubevirt",
+			"cluster.x-k8s.io/v1beta1":  "v1alpha1",
+			"cluster.x-k8s.io/v1beta2":  "v1alpha1",
+		},
+		map[string]string{
+			"controller-gen.kubebuilder.io/version": "test",
+		},
+	)
+
+	fakeClient := fake.NewClientBuilder().
+		WithScheme(testScheme).
+		WithObjects(existingCRD).
+		Build()
+	desiredMap, err := runtime.DefaultUnstructuredConverter.ToUnstructured(desiredCRD)
+	if err != nil {
+		t.Fatalf("failed to convert desired CRD: %v", err)
+	}
+	desired := &unstructured.Unstructured{Object: desiredMap}
+
+	if err := EnsureCRD(context.TODO(), fakeClient, desired); err != nil {
+		t.Fatalf("EnsureCRD() error = %v", err)
+	}
+
+	updatedCRD := &apixv1.CustomResourceDefinition{}
+	if err := fakeClient.Get(
+		context.TODO(),
+		types.NamespacedName{Name: existingCRD.Name},
+		updatedCRD,
+	); err != nil {
+		t.Fatalf("failed to get updated CRD: %v", err)
+	}
+
+	expectedLabels := map[string]string{
+		"cluster.x-k8s.io/provider":                  "kubevirt",
+		"cluster.x-k8s.io/v1beta1":                   "v1alpha1",
+		"cluster.x-k8s.io/v1beta2":                   "v1alpha1",
+		"hypershift.openshift.io/externally-managed": "true",
+	}
+	if !reflect.DeepEqual(updatedCRD.Labels, expectedLabels) {
+		t.Errorf("updated labels = %v, want %v", updatedCRD.Labels, expectedLabels)
+	}
+	for key, value := range existingCRD.Annotations {
+		if updatedCRD.Annotations[key] != value {
+			t.Errorf("annotation %q = %q, want %q", key, updatedCRD.Annotations[key], value)
+		}
+	}
+	if updatedCRD.Annotations["controller-gen.kubebuilder.io/version"] != "test" {
+		t.Errorf("desired controller-gen annotation was not retained: %v", updatedCRD.Annotations)
 	}
 }

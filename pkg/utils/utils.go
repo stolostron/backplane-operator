@@ -62,15 +62,16 @@ var onComponents = []string{
 	backplanev1.HypershiftLocalHosting,
 	backplanev1.HyperShift,
 	backplanev1.ManagedServiceAccount,
+	backplanev1.ClusterAPI,
+	backplanev1.ClusterAPIProviderKubeVirt,
+	backplanev1.ClusterAPIProviderOA,
 	// backplanev1.ConsoleMCE, // determined by OCP version
 }
 
 var offComponents = []string{
-	backplanev1.ClusterAPI,
 	backplanev1.ClusterAPIProviderAWS,
 	backplanev1.ClusterAPIProviderAzurePreview,
 	backplanev1.ClusterAPIProviderMetal,
-	backplanev1.ClusterAPIProviderOA,
 	backplanev1.ImageBasedInstallOperator,
 }
 
@@ -487,6 +488,8 @@ func ComponentCRDDirectories(component string) []string {
 		return []string{backplanev1.AssistedServiceCRDDir}
 	case backplanev1.ClusterAPIProviderAWS, backplanev1.ClusterAPIProviderAWSPreview:
 		return []string{backplanev1.ClusterAPIProviderAWSCRDDir}
+	case backplanev1.ClusterAPIProviderKubeVirt, backplanev1.ClusterAPIProviderKubeVirtPreview:
+		return []string{backplanev1.ClusterAPIProviderKubeVirtCRDDir}
 	case backplanev1.ClusterLifecycle:
 		return []string{backplanev1.ClusterLifecycleCRDDir}
 	case backplanev1.ClusterManager:
