@@ -15,7 +15,7 @@ external-images:
   replace: "registry.stage.redhat.io/openshift5/ose-baremetal-cluster-api-controllers-rhel9:v5.0"
 - name: postgresql-15
   search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/postgresql-15:latest"
-  replace: "registry.redhat.io/rhel9/postgresql-15@sha256:a760b3213fe32e0514120d6ef49a68ddf2a370928059368a3774520618f648d0"
+  replace: "registry.redhat.io/rhel9/postgresql-15@sha256:cb2b214b470dfb39e19d6d71819844e855c52435c78deea025c1e0650ad175f8"
 - name: postgresql-16
   search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/postgresql-16:latest"
-  replace: "registry.redhat.io/rhel9/postgresql-16@sha256:00455f08b15940a326fcb84caacdb0e15543477f0d7b74d54eb46f9147f39be3"
+  replace: "registry.redhat.io/rhel9/postgresql-16@sha256:9223bb5f0745e66f0e4204ff87d4d1a5283f3726e9b7d9b71d7bdb2a650fc218"
