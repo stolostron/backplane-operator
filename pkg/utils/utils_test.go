@@ -5,6 +5,7 @@ package utils
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -64,6 +65,57 @@ func Test_utils(t *testing.T) {
 	attemptedRemove := Remove(stringList, "test1")
 	if len(attemptedRemove) != len(stringRemoveList) {
 		t.Error("Removes did not work")
+	}
+}
+
+func TestSetDefaultComponentsRespectsDisabledDependencies(t *testing.T) {
+	tests := []struct {
+		name       string
+		components []backplanev1.ComponentConfig
+		check      func(m *backplanev1.MultiClusterEngine) error
+	}{
+		{
+			name: "CAPI disabled disables KubeVirt and CAPOA providers",
+			components: []backplanev1.ComponentConfig{
+				{Name: backplanev1.ClusterAPI, Enabled: false},
+			},
+			check: func(m *backplanev1.MultiClusterEngine) error {
+				if m.Enabled(backplanev1.ClusterAPIProviderKubeVirt) {
+					return fmt.Errorf("ClusterAPIProviderKubeVirt should default to disabled")
+				}
+				if m.Enabled(backplanev1.ClusterAPIProviderOA) {
+					return fmt.Errorf("ClusterAPIProviderOA should default to disabled")
+				}
+				return nil
+			},
+		},
+		{
+			name: "Assisted Service disabled disables CAPOA provider",
+			components: []backplanev1.ComponentConfig{
+				{Name: backplanev1.ClusterAPI, Enabled: true},
+				{Name: backplanev1.AssistedService, Enabled: false},
+			},
+			check: func(m *backplanev1.MultiClusterEngine) error {
+				if m.Enabled(backplanev1.ClusterAPIProviderOA) {
+					return fmt.Errorf("ClusterAPIProviderOA should default to disabled")
+				}
+				return nil
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			m := &backplanev1.MultiClusterEngine{
+				Spec: backplanev1.MultiClusterEngineSpec{
+					Overrides: &backplanev1.Overrides{Components: test.components},
+				},
+			}
+			SetDefaultComponents(m)
+			if err := test.check(m); err != nil {
+				t.Error(err)
+			}
+		})
 	}
 }
 

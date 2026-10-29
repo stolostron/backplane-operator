@@ -254,6 +254,9 @@ func TestStatusTracker_ReportStatus(t *testing.T) {
 			for _, c := range tt.Components {
 				tracker.AddComponent(c)
 			}
+			for _, condition := range tt.Conditions {
+				tracker.AddCondition(condition)
+			}
 
 			got := tracker.ReportStatus(backplane)
 

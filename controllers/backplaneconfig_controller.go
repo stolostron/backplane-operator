@@ -2967,6 +2967,8 @@ func EnsureCRD(ctx context.Context, c client.Client, crd *unstructured.Unstructu
 	return nil
 }
 
+// preserveCRDMetadata copies labels and annotations from an existing CRD into
+// the desired CRD when the desired resource does not define those keys.
 func preserveCRDMetadata(existingCRD, desiredCRD *unstructured.Unstructured) {
 	desiredLabels := desiredCRD.GetLabels()
 	if desiredLabels == nil {

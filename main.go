@@ -331,6 +331,7 @@ func main() {
 		backplanev1.ClusterAPIProviderAzureK8SCRDDir,
 		backplanev1.ClusterAPIProviderMetalCRDDir,
 		backplanev1.ClusterAPIProviderMetalK8SCRDDir,
+		backplanev1.ClusterAPIProviderKubeVirtCRDDir,
 		backplanev1.ClusterAPIProviderOACRDDir,
 		backplanev1.ClusterAPIProviderOAK8SCRDDir,
 	}
@@ -578,7 +579,19 @@ func ensureWebhooks(k8sClient client.Client) error {
 			continue
 		}
 
-		existingMutatingWebhook.Webhooks = mutatingWebhook.Webhooks
+		desiredWebhooks := mutatingWebhook.Webhooks
+		for webhookIndex := range desiredWebhooks {
+			if len(desiredWebhooks[webhookIndex].ClientConfig.CABundle) > 0 {
+				continue
+			}
+			for _, existingWebhook := range existingMutatingWebhook.Webhooks {
+				if existingWebhook.Name == desiredWebhooks[webhookIndex].Name {
+					desiredWebhooks[webhookIndex].ClientConfig.CABundle = existingWebhook.ClientConfig.CABundle
+					break
+				}
+			}
+		}
+		existingMutatingWebhook.Webhooks = desiredWebhooks
 		if err := k8sClient.Update(ctx, existingMutatingWebhook); err != nil {
 			setupLog.Error(err, "Error updating mutatingwebhookconfiguration")
 			time.Sleep(5 * time.Second)

@@ -92,7 +92,11 @@ func SetDefaultComponents(m *backplanev1.MultiClusterEngine) bool {
 	updated := false
 	for _, c := range components {
 		if !m.ComponentPresent(c) {
-			m.Enable(c)
+			if shouldEnableDefaultComponent(m, c) {
+				m.Enable(c)
+			} else {
+				m.Disable(c)
+			}
 			updated = true
 		}
 	}
@@ -103,6 +107,21 @@ func SetDefaultComponents(m *backplanev1.MultiClusterEngine) bool {
 		}
 	}
 	return updated
+}
+
+// shouldEnableDefaultComponent reports whether a component absent from the
+// resource specification can safely be enabled by default.
+func shouldEnableDefaultComponent(m *backplanev1.MultiClusterEngine, component string) bool {
+	switch component {
+	case backplanev1.ClusterAPIProviderKubeVirt:
+		return m.Enabled(backplanev1.ClusterAPI) || !m.ComponentPresent(backplanev1.ClusterAPI)
+	case backplanev1.ClusterAPIProviderOA:
+		capiEnabled := m.Enabled(backplanev1.ClusterAPI) || !m.ComponentPresent(backplanev1.ClusterAPI)
+		assistedEnabled := m.Enabled(backplanev1.AssistedService) || !m.ComponentPresent(backplanev1.AssistedService)
+		return capiEnabled && assistedEnabled
+	default:
+		return true
+	}
 }
 
 // AddBackplaneConfigLabels adds BackplaneConfig Labels ...
