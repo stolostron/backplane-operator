@@ -1,12 +1,12 @@
 global:
   deployOnOCP: true
   imageOverrides:
+    assisted_service_9: ''
     assisted_image_service: ''
-    assisted_installer: ''
+    postgresql_12: ''
     assisted_installer_agent: ''
     assisted_installer_controller: ''
-    assisted_service_9: ''
-    postgresql_12: ''
+    assisted_installer: ''
   namespace: default
   pullSecret: null
   templateOverrides: {}

@@ -15,27 +15,6 @@ spec:
         app: discovery-operator
         ocm-antiaffinity-selector: discovery-operator
     spec:
-      affinity:
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-          - podAffinityTerm:
-              labelSelector:
-                matchExpressions:
-                - key: ocm-antiaffinity-selector
-                  operator: In
-                  values:
-                  - discovery-operator
-              topologyKey: topology.kubernetes.io/zone
-            weight: 70
-          - podAffinityTerm:
-              labelSelector:
-                matchExpressions:
-                - key: ocm-antiaffinity-selector
-                  operator: In
-                  values:
-                  - discovery-operator
-              topologyKey: kubernetes.io/hostname
-            weight: 35
       containers:
       - args:
         - --leader-elect
@@ -83,45 +62,20 @@ spec:
             drop:
             - ALL
           privileged: false
-          readOnlyRootFilesystem: true
           runAsNonRoot: true
+          readOnlyRootFilesystem: true
         volumeMounts:
         - mountPath: /tmp/k8s-webhook-server/serving-certs
           name: cert
           readOnly: true
         - mountPath: /etc/pki/ca-trust/extracted/pem/
           name: trusted-ca-bundle
-      hostIPC: false
-      hostNetwork: false
-      hostPID: false
 {{- if .Values.global.pullSecret }}
       imagePullSecrets:
       - name: {{ .Values.global.pullSecret }}
 {{- end }}
-{{- with .Values.hubconfig.nodeSelector }}
-      nodeSelector:
-{{ toYaml . | indent 8 }}
-{{- end }}
-      securityContext:
-        runAsNonRoot: true
-{{- if .Values.global.deployOnOCP }}
-{{- if semverCompare ">=4.11.0" .Values.hubconfig.ocpVersion }}
-        seccompProfile:
-          type: RuntimeDefault
-{{- end }}
-{{- end }}
       serviceAccountName: discovery-operator
       terminationGracePeriodSeconds: 10
-{{- with .Values.hubconfig.tolerations }}
-      tolerations:
-      {{- range . }}
-      - {{ if .Key }} key: {{ .Key }} {{- end }}
-        {{ if .Operator }} operator: {{ .Operator }} {{- end }}
-        {{ if .Value }} value: {{ .Value }} {{- end }}
-        {{ if .Effect }} effect: {{ .Effect }} {{- end }}
-        {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
-        {{- end }}
-{{- end }}
       volumes:
       - name: cert
         secret:
@@ -135,3 +89,49 @@ spec:
           name: trusted-ca-bundle
           optional: true
         name: trusted-ca-bundle
+      securityContext:
+        runAsNonRoot: true
+{{- if .Values.global.deployOnOCP }}
+{{- if semverCompare ">=4.11.0" .Values.hubconfig.ocpVersion }}
+        seccompProfile:
+          type: RuntimeDefault
+{{- end }}
+{{- end }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 70
+            podAffinityTerm:
+              topologyKey: topology.kubernetes.io/zone
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - discovery-operator
+          - weight: 35
+            podAffinityTerm:
+              topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - discovery-operator
+{{- with .Values.hubconfig.tolerations }}
+      tolerations:
+      {{- range . }}
+      - {{ if .Key }} key: {{ .Key }} {{- end }}
+        {{ if .Operator }} operator: {{ .Operator }} {{- end }}
+        {{ if .Value }} value: {{ .Value }} {{- end }}
+        {{ if .Effect }} effect: {{ .Effect }} {{- end }}
+        {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
+        {{- end }}
+{{- end }}
+      hostNetwork: false
+      hostPID: false
+      hostIPC: false
+{{- with .Values.hubconfig.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+{{- end }}
