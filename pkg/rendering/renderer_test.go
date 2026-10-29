@@ -1370,6 +1370,51 @@ func TestClusterAPIProviderKubevirtWebhookVersionCompatibility(t *testing.T) {
 	}
 }
 
+func TestClusterAPIProviderKubevirtClusterTemplateCRDAllowsEmptyMetadata(t *testing.T) {
+	crds, errs := RenderCRDs("../../pkg/templates/crds", nil, []string{})
+	if len(errs) > 0 {
+		t.Fatalf("RenderCRDs() errors = %v", errs)
+	}
+
+	foundCRD := false
+	for _, crd := range crds {
+		if crd.GetName() != "kubevirtclustertemplates.infrastructure.cluster.x-k8s.io" {
+			continue
+		}
+		foundCRD = true
+		versions, _, err := unstructured.NestedSlice(crd.Object, "spec", "versions")
+		if err != nil {
+			t.Fatal(err)
+		}
+		foundMetadataSchema := false
+		for _, versionValue := range versions {
+			version, ok := versionValue.(map[string]interface{})
+			if !ok {
+				t.Fatalf("CRD version has invalid type: %T", versionValue)
+			}
+			metadata, found, err := unstructured.NestedMap(
+				version,
+				"schema", "openAPIV3Schema", "properties", "spec", "properties", "template", "properties", "metadata",
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if found {
+				foundMetadataSchema = true
+				if _, exists := metadata["minProperties"]; exists {
+					t.Fatal("KubevirtClusterTemplate metadata schema must accept an empty object")
+				}
+			}
+		}
+		if !foundMetadataSchema {
+			t.Fatal("KubevirtClusterTemplate metadata schema was not found")
+		}
+	}
+	if !foundCRD {
+		t.Fatal("KubevirtClusterTemplate CRD was not rendered")
+	}
+}
+
 func TestClusterAPIProviderKubevirtNetworkPolicyWebhooksAndRBAC(t *testing.T) {
 	t.Setenv("DIRECTORY_OVERRIDE", "../../")
 	t.Setenv("POD_NAMESPACE", "default")

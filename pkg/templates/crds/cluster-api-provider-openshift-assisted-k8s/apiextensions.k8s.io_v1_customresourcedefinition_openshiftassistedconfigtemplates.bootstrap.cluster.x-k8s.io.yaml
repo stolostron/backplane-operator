@@ -1,14 +1,21 @@
+---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  annotations:
-    cert-manager.io/inject-ca-from: multicluster-engine/capoa-bootstrap-cert
-    controller-gen.kubebuilder.io/version: v0.17.2
   labels:
     cluster.x-k8s.io/v1beta1: v1alpha1
     cluster.x-k8s.io/v1beta2: v1alpha2
+  annotations:
+    cert-manager.io/inject-ca-from: multicluster-engine/capoa-bootstrap-cert
+    controller-gen.kubebuilder.io/version: v0.17.2
   name: openshiftassistedconfigtemplates.bootstrap.cluster.x-k8s.io
 spec:
+  group: bootstrap.cluster.x-k8s.io
+  names:
+    kind: OpenshiftAssistedConfigTemplate
+    listKind: OpenshiftAssistedConfigTemplateList
+    plural: openshiftassistedconfigtemplates
+    singular: openshiftassistedconfigtemplate
   conversion:
     strategy: Webhook
     webhook:
@@ -20,12 +27,6 @@ spec:
       conversionReviewVersions:
       - v1
       - v1beta1
-  group: bootstrap.cluster.x-k8s.io
-  names:
-    kind: OpenshiftAssistedConfigTemplate
-    listKind: OpenshiftAssistedConfigTemplateList
-    plural: openshiftassistedconfigtemplates
-    singular: openshiftassistedconfigtemplate
   scope: Namespaced
   versions:
   - deprecated: true
@@ -340,6 +341,15 @@ spec:
                         description: CpuArchitecture specifies the target CPU architecture.
                           Default is x86_64
                         type: string
+                      installerArgs:
+                        description: |-
+                          InstallerArgs is the additional installer arguments to be passed to the host at install time.
+                          They are appended to the arguments derived from KernelArguments, and are restricted to the
+                          flags assisted-service allows.
+                        items:
+                          type: string
+                        type: array
+                        x-kubernetes-list-type: atomic
                       kernelArguments:
                         description: |-
                           KernelArguments is the additional kernel arguments to be passed during boot time of the discovery image.
