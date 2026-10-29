@@ -15,27 +15,6 @@ spec:
         control-plane: infrastructure-operator
         ocm-antiaffinity-selector: infrastructure-operator
     spec:
-      affinity:
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-          - podAffinityTerm:
-              labelSelector:
-                matchExpressions:
-                - key: ocm-antiaffinity-selector
-                  operator: In
-                  values:
-                  - infrastructure-operator
-              topologyKey: topology.kubernetes.io/zone
-            weight: 70
-          - podAffinityTerm:
-              labelSelector:
-                matchExpressions:
-                - key: ocm-antiaffinity-selector
-                  operator: In
-                  values:
-                  - infrastructure-operator
-              topologyKey: kubernetes.io/hostname
-            weight: 35
       containers:
       - args:
         - --leader-elect
@@ -77,7 +56,6 @@ spec:
             fieldRef:
               fieldPath: metadata.name
         image: '{{ .Values.global.imageOverrides.assisted_service_9 }}'
-        imagePullPolicy: '{{ .Values.global.pullPolicy }}'
         livenessProbe:
           httpGet:
             path: /healthz
@@ -97,23 +75,15 @@ spec:
             memory: 200Mi
         securityContext:
           allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
           capabilities:
             drop:
             - ALL
           privileged: false
-          readOnlyRootFilesystem: true
           runAsNonRoot: true
-      hostIPC: false
-      hostNetwork: false
-      hostPID: false
-{{- if .Values.global.pullSecret }}
-      imagePullSecrets:
-      - name: {{ .Values.global.pullSecret }}
-{{- end }}
-{{- with .Values.hubconfig.nodeSelector }}
-      nodeSelector:
-{{ toYaml . | indent 8 }}
-{{- end }}
+        imagePullPolicy: '{{ .Values.global.pullPolicy }}'
+      serviceAccountName: assisted-service
+      terminationGracePeriodSeconds: 10
       securityContext:
         runAsNonRoot: true
 {{- if .Values.global.deployOnOCP }}
@@ -122,8 +92,27 @@ spec:
           type: RuntimeDefault
 {{- end }}
 {{- end }}
-      serviceAccountName: assisted-service
-      terminationGracePeriodSeconds: 10
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 70
+            podAffinityTerm:
+              topologyKey: topology.kubernetes.io/zone
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - infrastructure-operator
+          - weight: 35
+            podAffinityTerm:
+              topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - infrastructure-operator
 {{- with .Values.hubconfig.tolerations }}
       tolerations:
       {{- range . }}
@@ -133,4 +122,15 @@ spec:
         {{ if .Effect }} effect: {{ .Effect }} {{- end }}
         {{ if .TolerationSeconds }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
         {{- end }}
+{{- end }}
+      hostNetwork: false
+      hostPID: false
+      hostIPC: false
+{{- with .Values.hubconfig.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+{{- end }}
+{{- if .Values.global.pullSecret }}
+      imagePullSecrets:
+      - name: {{ .Values.global.pullSecret }}
 {{- end }}
