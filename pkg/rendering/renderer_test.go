@@ -666,42 +666,137 @@ func TestRenderCRDs(t *testing.T) {
 			Phase: "",
 		},
 	}
-	tests := []struct {
-		name   string
-		crdDir string
-		want   []error
-	}{
-		{
-			name:   "Render CRDs directory",
-			crdDir: crdsDir,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, errs := RenderCRDs(tt.crdDir, testBackplane, []string{})
-			if errs != nil && len(errs) > 1 {
-				t.Errorf("RenderCRDs() got = %v, want %v", errs, nil)
+
+	t.Run("Render CRDs directory", func(t *testing.T) {
+		got, errs := RenderCRDs(crdsDir, testBackplane, []string{})
+		if errs != nil && len(errs) > 1 {
+			t.Errorf("RenderCRDs() got = %v, want %v", errs, nil)
+		}
+		for _, u := range got {
+			kind := "CustomResourceDefinition"
+			apiVersion := "apiextensions.k8s.io/v1"
+			if u.GetKind() != kind {
+				t.Errorf("RenderCRDs() got Kind = %v, want Kind %v", errs, kind)
 			}
-
-			for _, u := range got {
-				kind := "CustomResourceDefinition"
-				apiVersion := "apiextensions.k8s.io/v1"
-				if u.GetKind() != kind {
-					t.Errorf("RenderCRDs() got Kind = %v, want Kind %v", errs, kind)
-				}
-
-				if u.GetAPIVersion() != apiVersion {
-					t.Errorf("RenderCRDs() got apiversion = %v, want apiversion %v", errs, apiVersion)
-				}
-
-				namespace, conversion, _ := unstructured.NestedString(u.Object, "spec", "conversion", "webhook", "clientConfig", "service", "namespace")
-				if conversion && namespace != "" {
-					t.Errorf("did not properly set namespace")
-				}
-
+			if u.GetAPIVersion() != apiVersion {
+				t.Errorf("RenderCRDs() got apiversion = %v, want apiversion %v", errs, apiVersion)
 			}
-		})
-	}
+			namespace, conversion, _ := unstructured.NestedString(u.Object, "spec", "conversion", "webhook", "clientConfig", "service", "namespace")
+			if conversion && namespace != "" {
+				t.Errorf("did not properly set namespace")
+			}
+		}
+	})
+
+	t.Run("returns error for non-existent directory", func(t *testing.T) {
+		_, errs := RenderCRDs("/does/not/exist", testBackplane, []string{})
+		if len(errs) == 0 {
+			t.Error("RenderCRDs() expected error for non-existent directory, got none")
+		}
+	})
+
+	t.Run("renders CRDs with nil backplane config", func(t *testing.T) {
+		got, errs := RenderCRDs(crdsDir, nil, []string{})
+		if len(errs) > 0 {
+			t.Errorf("RenderCRDs() unexpected errors: %v", errs)
+		}
+		if len(got) == 0 {
+			t.Error("RenderCRDs() returned no CRDs, expected at least one")
+		}
+	})
+
+	t.Run("renders from empty directory", func(t *testing.T) {
+		dir := t.TempDir()
+		got, errs := RenderCRDs(dir, testBackplane, []string{})
+		if len(errs) > 0 {
+			t.Errorf("RenderCRDs() unexpected errors: %v", errs)
+		}
+		if len(got) != 0 {
+			t.Errorf("RenderCRDs() expected 0 CRDs from empty dir, got %d", len(got))
+		}
+	})
+
+	t.Run("returns error for invalid yaml file", func(t *testing.T) {
+		dir := t.TempDir()
+		if err := os.WriteFile(dir+"/bad.yaml", []byte("{{invalid yaml{{"), 0600); err != nil {
+			t.Fatal(err)
+		}
+		_, errs := RenderCRDs(dir, testBackplane, []string{})
+		if len(errs) == 0 {
+			t.Error("RenderCRDs() expected unmarshal error for invalid yaml, got none")
+		}
+	})
+
+	t.Run("sets webhook conversion namespace from backplane config", func(t *testing.T) {
+		// None of the shared unit-test-crds fixtures declare a conversion webhook
+		// service, so use a local fixture with an empty namespace to assert that
+		// RenderCRDs injects the backplane target namespace.
+		dir := t.TempDir()
+		crd := `apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: widgets.example.com
+spec:
+  group: example.com
+  names:
+    kind: Widget
+    listKind: WidgetList
+    plural: widgets
+    singular: widget
+  scope: Namespaced
+  conversion:
+    strategy: Webhook
+    webhook:
+      clientConfig:
+        service:
+          name: webhook
+          namespace: ""
+          path: /convert
+      conversionReviewVersions: ["v1"]
+  versions:
+  - name: v1
+    served: true
+    storage: true
+    schema:
+      openAPIV3Schema:
+        type: object
+`
+		if err := os.WriteFile(dir+"/widgets.yaml", []byte(crd), 0600); err != nil {
+			t.Fatal(err)
+		}
+		mce := &backplane.MultiClusterEngine{
+			ObjectMeta: metav1.ObjectMeta{Name: "testBackplane"},
+			Spec:       backplane.MultiClusterEngineSpec{TargetNamespace: "multicluster-engine"},
+		}
+		got, errs := RenderCRDs(dir, mce, []string{})
+		if len(errs) > 0 {
+			t.Fatalf("RenderCRDs() unexpected errors: %v", errs)
+		}
+		if len(got) != 1 {
+			t.Fatalf("RenderCRDs() got %d CRDs, want 1", len(got))
+		}
+		ns, exists, err := unstructured.NestedString(
+			got[0].Object, "spec", "conversion", "webhook", "clientConfig", "service", "namespace",
+		)
+		if err != nil || !exists {
+			t.Fatalf("webhook conversion namespace missing: exists=%v err=%v", exists, err)
+		}
+		if ns != "multicluster-engine" {
+			t.Errorf("webhook namespace = %q, want %q", ns, "multicluster-engine")
+		}
+	})
+
+	t.Run("DIRECTORY_OVERRIDE applies to crdDir", func(t *testing.T) {
+		t.Setenv("DIRECTORY_OVERRIDE", "../../")
+		// With override, crdDir is joined: "../../" + "hack/unit-test-crds"
+		got, errs := RenderCRDs("hack/unit-test-crds", testBackplane, []string{})
+		if len(errs) > 0 {
+			t.Errorf("RenderCRDs() unexpected errors with DIRECTORY_OVERRIDE: %v", errs)
+		}
+		if len(got) == 0 {
+			t.Error("RenderCRDs() returned no CRDs with DIRECTORY_OVERRIDE set")
+		}
+	})
 }
 
 func TestRenderCRDsSkipDirectories(t *testing.T) {
