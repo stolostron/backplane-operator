@@ -1514,6 +1514,12 @@ func (r *MultiClusterEngineReconciler) ensureClusterManager(ctx context.Context,
 		return ctrl.Result{}, err
 	}
 
+	// Enable ManifestWorkReplicaSet by default with the same targeted update, so a
+	// mode the user already set and any other work feature gates are kept.
+	if err := r.ensureManifestWorkReplicaSetFeatureGate(ctx, cmTemplate); err != nil {
+		return ctrl.Result{}, err
+	}
+
 	// Ensure TLS profile ConfigMap exists in operator namespace where cluster-manager runs
 	clusterManagerNamespaces := []string{
 		mce.Spec.TargetNamespace, // Operator namespace (multicluster-engine)
@@ -1642,6 +1648,46 @@ func (r *MultiClusterEngineReconciler) ensureNetworkPoliciesFeatureGate(
 	}
 	log.Info("Updated ClusterManager registrationConfiguration.featureGates",
 		"NetworkPolicies", desiredMode)
+	return nil
+}
+
+// ensureManifestWorkReplicaSetFeatureGate enables the ManifestWorkReplicaSet
+// feature gate in spec.workConfiguration.featureGates of the ClusterManager (cm)
+// when the gate is not set. An existing entry is left as it is, so users can
+// still turn the feature off by setting its mode to Disable. Other work feature
+// gates are not changed.
+func (r *MultiClusterEngineReconciler) ensureManifestWorkReplicaSetFeatureGate(
+	ctx context.Context,
+	cm *unstructured.Unstructured,
+) error {
+
+	if cm == nil {
+		return errors.New("ClusterManager object is nil")
+	}
+
+	gates, _, err := unstructured.NestedSlice(cm.Object, "spec", "workConfiguration", "featureGates")
+	if err != nil {
+		return errors.Wrapf(err, "failed to read workConfiguration.featureGates on ClusterManager")
+	}
+	for _, g := range gates {
+		if gate, ok := g.(map[string]interface{}); ok && gate["feature"] == foundation.ManifestWorkReplicaSetFeatureGate {
+			return nil
+		}
+	}
+
+	gates = append(gates, map[string]interface{}{
+		"feature": foundation.ManifestWorkReplicaSetFeatureGate,
+		"mode":    string(foundation.ManifestWorkReplicaSetDefaultMode),
+	})
+	if err := unstructured.SetNestedSlice(cm.Object, gates,
+		"spec", "workConfiguration", "featureGates"); err != nil {
+		return errors.Wrapf(err, "failed to set workConfiguration.featureGates on ClusterManager")
+	}
+	if err := r.Client.Update(ctx, cm); err != nil {
+		return errors.Wrapf(err, "failed to update ClusterManager workConfiguration.featureGates")
+	}
+	log.Info("Updated ClusterManager workConfiguration.featureGates",
+		foundation.ManifestWorkReplicaSetFeatureGate, string(foundation.ManifestWorkReplicaSetDefaultMode))
 	return nil
 }
 

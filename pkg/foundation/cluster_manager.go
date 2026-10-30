@@ -40,6 +40,10 @@ const (
 	addonPath                     = "pkg/templates/clustermanagementaddons/"
 	clusterManagementAddonCRDName = "clustermanagementaddons.addon.open-cluster-management.io"
 	ClusterManagementAddonKind    = "ClusterManagementAddOn"
+	// ManifestWorkReplicaSetFeatureGate is the OCM work feature gate that MCE enables by default.
+	ManifestWorkReplicaSetFeatureGate = "ManifestWorkReplicaSet"
+	// ManifestWorkReplicaSetDefaultMode is the mode MCE sets when the gate is not set yet.
+	ManifestWorkReplicaSetDefaultMode = ocmapiv1.FeatureGateModeTypeEnable
 )
 
 // RegistrationImage ...
