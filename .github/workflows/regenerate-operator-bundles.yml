@@ -37,6 +37,9 @@ jobs:
   build:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
+    concurrency:
+      group: regenerate-bundles-${{ matrix.branch }}
+      cancel-in-progress: false
     strategy:
       fail-fast: false # If one jobs fail, we still want the other jobs to run.
       matrix:
@@ -136,7 +139,7 @@ jobs:
           echo "changes=${changes}" >> $GITHUB_OUTPUT
 
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v3
+        uses: peter-evans/create-pull-request@v8
         if: ${{ success() && steps.changes.outputs.changes == 'true' }}
         with:
           signoff: true
