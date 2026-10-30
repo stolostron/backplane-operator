@@ -773,6 +773,149 @@ func Test_mergeFeatureGates(t *testing.T) {
 	}
 }
 
+func Test_ensureManifestWorkReplicaSetFeatureGate(t *testing.T) {
+	scheme := runtime.NewScheme()
+	corev1.AddToScheme(scheme)
+	backplanev1.AddToScheme(scheme)
+
+	ctx := context.TODO()
+
+	newCM := func(workConfig map[string]interface{}) *unstructured.Unstructured {
+		spec := map[string]interface{}{
+			"registrationConfiguration": map[string]interface{}{
+				"featureGates": []interface{}{
+					map[string]interface{}{"feature": "NetworkPolicies", "mode": "Enable"},
+				},
+			},
+		}
+		if workConfig != nil {
+			spec["workConfiguration"] = workConfig
+		}
+		return &unstructured.Unstructured{Object: map[string]interface{}{
+			"apiVersion": "operator.open-cluster-management.io/v1",
+			"kind":       "ClusterManager",
+			"metadata":   map[string]interface{}{"name": "cluster-manager"},
+			"spec":       spec,
+		}}
+	}
+
+	tests := []struct {
+		name        string
+		existingCM  *unstructured.Unstructured
+		expectError bool
+		// wantGates is the expected workConfiguration.featureGates as feature -> mode.
+		wantGates      map[string]string
+		wantWorkDriver string
+	}{
+		{
+			name:       "adds the gate when workConfiguration is not set",
+			existingCM: newCM(nil),
+			wantGates:  map[string]string{"ManifestWorkReplicaSet": "Enable"},
+		},
+		{
+			name:           "adds the gate and keeps workDriver",
+			existingCM:     newCM(map[string]interface{}{"workDriver": "kube"}),
+			wantGates:      map[string]string{"ManifestWorkReplicaSet": "Enable"},
+			wantWorkDriver: "kube",
+		},
+		{
+			name: "adds the gate and keeps other work feature gates",
+			existingCM: newCM(map[string]interface{}{
+				"workDriver": "kube",
+				"featureGates": []interface{}{
+					map[string]interface{}{"feature": "CleanUpCompletedManifestWork", "mode": "Enable"},
+				},
+			}),
+			wantGates: map[string]string{
+				"CleanUpCompletedManifestWork": "Enable",
+				"ManifestWorkReplicaSet":       "Enable",
+			},
+			wantWorkDriver: "kube",
+		},
+		{
+			name: "keeps the gate disabled when the user disabled it",
+			existingCM: newCM(map[string]interface{}{
+				"featureGates": []interface{}{
+					map[string]interface{}{"feature": "ManifestWorkReplicaSet", "mode": "Disable"},
+				},
+			}),
+			wantGates: map[string]string{"ManifestWorkReplicaSet": "Disable"},
+		},
+		{
+			name: "no change when the gate is already enabled",
+			existingCM: newCM(map[string]interface{}{
+				"featureGates": []interface{}{
+					map[string]interface{}{"feature": "ManifestWorkReplicaSet", "mode": "Enable"},
+				},
+			}),
+			wantGates: map[string]string{"ManifestWorkReplicaSet": "Enable"},
+		},
+		{
+			name:        "error when ClusterManager object is nil",
+			existingCM:  nil,
+			expectError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var objs []runtime.Object
+			if tt.existingCM != nil {
+				objs = append(objs, tt.existingCM)
+			}
+
+			cl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(objs...).Build()
+			r := &MultiClusterEngineReconciler{Client: cl, Scheme: scheme}
+
+			err := r.ensureManifestWorkReplicaSetFeatureGate(ctx, tt.existingCM)
+
+			if tt.expectError {
+				if err == nil {
+					t.Errorf("expected error, got nil")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			updated := &unstructured.Unstructured{}
+			updated.SetGroupVersionKind(schema.GroupVersionKind{
+				Group: "operator.open-cluster-management.io", Version: "v1", Kind: "ClusterManager",
+			})
+			if err := cl.Get(ctx, types.NamespacedName{Name: "cluster-manager"}, updated); err != nil {
+				t.Fatalf("failed to get ClusterManager: %v", err)
+			}
+
+			gates, _, _ := unstructured.NestedSlice(updated.Object, "spec", "workConfiguration", "featureGates")
+			got := map[string]string{}
+			for _, g := range gates {
+				if gate, ok := g.(map[string]interface{}); ok {
+					feature, _ := gate["feature"].(string)
+					mode, _ := gate["mode"].(string)
+					got[feature] = mode
+				}
+			}
+			if len(got) != len(gates) {
+				t.Errorf("duplicate feature gates in %v", gates)
+			}
+			if !reflect.DeepEqual(got, tt.wantGates) {
+				t.Errorf("workConfiguration.featureGates: want %v, got %v", tt.wantGates, got)
+			}
+
+			workDriver, _, _ := unstructured.NestedString(updated.Object, "spec", "workConfiguration", "workDriver")
+			if workDriver != tt.wantWorkDriver {
+				t.Errorf("workDriver: want %q, got %q", tt.wantWorkDriver, workDriver)
+			}
+
+			regGates, _, _ := unstructured.NestedSlice(updated.Object, "spec", "registrationConfiguration", "featureGates")
+			if len(regGates) != 1 {
+				t.Errorf("registrationConfiguration.featureGates should be unchanged, got %v", regGates)
+			}
+		})
+	}
+}
+
 func newFleetNavReconciler(objs ...runtime.Object) *MultiClusterEngineReconciler {
 	s := runtime.NewScheme()
 	corev1.AddToScheme(s)
