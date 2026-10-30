@@ -22,8 +22,8 @@ data:
           name: {{ .Values.global.imageOverrides.cluster_api_provider_agent }}
       - name: cluster-api-provider-kubevirt
         annotations:
-          io.openshift.build.commit.id: 'dbdc825088513dc962ba2103efe2c1a4eb3cf524'
-          io.openshift.build.source-location: https://github.com/openshift/cluster-api-provider-kubevirt
+          io.openshift.build.commit.id: 'a4c55e325ca72528b8cf0f56f80dc811e90dab69'
+          io.openshift.build.source-location: https://github.com/kubernetes-sigs/cluster-api-provider-kubevirt
         from:
           kind: DockerImage
           name: {{ .Values.global.imageOverrides.cluster_api_provider_kubevirt }}

@@ -58,10 +58,12 @@ spec:
       - emptyDir:
           medium: Memory
         name: tmp-vol
+      {{- if .Values.hcpProxyEnabled }}
       - name: hcp-proxy-tls
         secret:
           secretName: hypershift-addon-hcp-proxy-tls
           optional: true
+      {{- end }}
       hostNetwork: false
       hostPID: false
       hostIPC: false
@@ -81,13 +83,17 @@ spec:
           volumeMounts:
           - mountPath: /tmp
             name: tmp-vol
+          {{- if .Values.hcpProxyEnabled }}
           - mountPath: /etc/hcp-proxy/tls
             name: hcp-proxy-tls
             readOnly: true
+          {{- end }}
           ports:
+          {{- if .Values.hcpProxyEnabled }}
           - name: hcp-proxy
             containerPort: 9443
             protocol: TCP
+          {{- end }}
           args:
             - ./hypershift-addon
             - manager

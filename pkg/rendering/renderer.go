@@ -65,6 +65,7 @@ type Values struct {
 	// EnableImpersonation: upstream default true. ACM always enables.
 	// Used by {{- if .Values.enableImpersonation }} conditional in clusterrole.yaml.
 	EnableImpersonation bool `json:"enableImpersonation" structs:"enableImpersonation"`
+	HCPProxyEnabled     bool `json:"hcpProxyEnabled" structs:"hcpProxyEnabled"`
 }
 
 type Global struct {
@@ -310,6 +311,15 @@ func RenderCRDs(crdDir string, backplaneConfig *v1.MultiClusterEngine, skipDirs 
 		// fmt.Printf("Rendering CRD %s from directory: %s\n", crd.GetName(), sourceDir)
 
 		if backplaneConfig != nil {
+			if certManagerCA, found := crd.GetAnnotations()["cert-manager.io/inject-ca-from"]; found {
+				caParts := strings.SplitN(certManagerCA, "/", 2)
+				if len(caParts) == 2 {
+					annotations := crd.GetAnnotations()
+					annotations["cert-manager.io/inject-ca-from"] = path.Join(
+						backplaneConfig.Spec.TargetNamespace, caParts[1])
+					crd.SetAnnotations(annotations)
+				}
+			}
 			_, conversion, _ := unstructured.NestedMap(crd.Object, "spec", "conversion", "webhook", "clientConfig", "service")
 			if conversion {
 				crd.Object["spec"].(map[string]interface{})["conversion"].(map[string]interface{})["webhook"].(map[string]interface{})["clientConfig"].(map[string]interface{})["service"].(map[string]interface{})["namespace"] = backplaneConfig.Spec.TargetNamespace

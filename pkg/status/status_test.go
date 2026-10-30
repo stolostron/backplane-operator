@@ -167,6 +167,42 @@ func TestStatusTracker_ReportStatus(t *testing.T) {
 			},
 		},
 		{
+			name: "Completed deployment clears progressing condition",
+			Components: []StatusReporter{
+				MockStatus{
+					NamespacedName: types.NamespacedName{Name: "mock-name", Namespace: "mock-ns"},
+					statusFunc: func() bpv1.ComponentCondition {
+						return bpv1.ComponentCondition{
+							Name:               "mock-name",
+							Kind:               "Deployment",
+							Type:               "Available",
+							Status:             metav1.ConditionStatus("true"),
+							LastUpdateTime:     metav1.Now(),
+							LastTransitionTime: metav1.Now(),
+							Reason:             "Running",
+							Message:            "Mock is running",
+							Available:          true,
+						}
+					},
+				},
+			},
+			Conditions: []bpv1.MultiClusterEngineCondition{
+				{
+					Type:               bpv1.MultiClusterEngineProgressing,
+					Status:             metav1.ConditionFalse,
+					Reason:             DeploySuccessReason,
+					Message:            "All components deployed",
+					LastUpdateTime:     metav1.Now(),
+					LastTransitionTime: metav1.Now(),
+				},
+			},
+			want: bpv1.MultiClusterEngineStatus{
+				CurrentVersion: "9.9.9",
+				DesiredVersion: "9.9.9",
+				Phase:          bpv1.MultiClusterEnginePhaseAvailable,
+			},
+		},
+		{
 			name: "Single non-running deployment",
 			Components: []StatusReporter{
 				MockStatus{
@@ -217,6 +253,9 @@ func TestStatusTracker_ReportStatus(t *testing.T) {
 			}
 			for _, c := range tt.Components {
 				tracker.AddComponent(c)
+			}
+			for _, condition := range tt.Conditions {
+				tracker.AddCondition(condition)
 			}
 
 			got := tracker.ReportStatus(backplane)

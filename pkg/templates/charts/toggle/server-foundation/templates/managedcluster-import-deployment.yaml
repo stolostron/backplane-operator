@@ -88,7 +88,6 @@ spec:
         args:
           - "managedcluster-import-controller"
           - "--cluster-ingress-domain={{ .Values.hubconfig.clusterIngressDomain }}"
-          - "--enable-klusterlet-network-policies={{ .Values.global.networkPolicies.enabled }}"
           {{- if .Values.hubconfig.enableFlightCtl }}
           - "--enable-flightctl=true"
           {{- end }}
@@ -102,7 +101,6 @@ spec:
           - "--feature-gates=AgentRegistration=false"
           - "--deploy-on-ocp=false"
           - "--cluster-ingress-domain={{ .Values.hubconfig.clusterIngressDomain }}"
-          - "--enable-klusterlet-network-policies={{ .Values.global.networkPolicies.enabled }}"
           {{- if .Values.hubconfig.enableFlightCtl }}
           - "--enable-flightctl=true"
           {{- end }}

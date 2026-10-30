@@ -1,0 +1,81 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+{{- if .Values.global.deployOnOCP }}
+  annotations:
+    service.beta.openshift.io/inject-cabundle: "true"
+{{- else }}
+  annotations:
+    cert-manager.io/inject-ca-from: '{{ .Values.global.namespace }}/capk-cert'
+{{- end }}
+  name: capk-validating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: capk-webhook-service
+      namespace: '{{ default "multicluster-engine" .Values.global.namespace }}'
+      path: /validate-infrastructure-cluster-x-k8s-io-v1alpha1-kubevirtcluster
+  failurePolicy: Fail
+  matchPolicy: Equivalent
+  name: validation.kubevirtcluster.infrastructure.cluster.x-k8s.io
+  objectSelector: null
+  rules:
+  - apiGroups:
+    - infrastructure.cluster.x-k8s.io
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - kubevirtclusters
+  sideEffects: None
+  timeoutSeconds: 10
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: capk-webhook-service
+      namespace: '{{ default "multicluster-engine" .Values.global.namespace }}'
+      path: /validate-infrastructure-cluster-x-k8s-io-v1alpha1-kubevirtmachine
+  failurePolicy: Fail
+  matchPolicy: Equivalent
+  name: validation.kubevirtmachine.infrastructure.cluster.x-k8s.io
+  objectSelector: null
+  rules:
+  - apiGroups:
+    - infrastructure.cluster.x-k8s.io
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - kubevirtmachines
+  sideEffects: None
+  timeoutSeconds: 10
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: capk-webhook-service
+      namespace: '{{ default "multicluster-engine" .Values.global.namespace }}'
+      path: /validate-infrastructure-cluster-x-k8s-io-v1alpha1-kubevirtmachinetemplate
+  failurePolicy: Fail
+  matchPolicy: Equivalent
+  name: validation.kubevirtmachinetemplate.infrastructure.cluster.x-k8s.io
+  objectSelector: null
+  rules:
+  - apiGroups:
+    - infrastructure.cluster.x-k8s.io
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - kubevirtmachinetemplates
+  sideEffects: None
+  timeoutSeconds: 10
