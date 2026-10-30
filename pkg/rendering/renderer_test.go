@@ -728,31 +728,61 @@ func TestRenderCRDs(t *testing.T) {
 	})
 
 	t.Run("sets webhook conversion namespace from backplane config", func(t *testing.T) {
-		// cert-manager CRDs include webhook conversion — verify namespace is injected
-		webhookCRDDir := "../../hack/unit-test-crds"
+		// None of the shared unit-test-crds fixtures declare a conversion webhook
+		// service, so use a local fixture with an empty namespace to assert that
+		// RenderCRDs injects the backplane target namespace.
+		dir := t.TempDir()
+		crd := `apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: widgets.example.com
+spec:
+  group: example.com
+  names:
+    kind: Widget
+    listKind: WidgetList
+    plural: widgets
+    singular: widget
+  scope: Namespaced
+  conversion:
+    strategy: Webhook
+    webhook:
+      clientConfig:
+        service:
+          name: webhook
+          namespace: ""
+          path: /convert
+      conversionReviewVersions: ["v1"]
+  versions:
+  - name: v1
+    served: true
+    storage: true
+    schema:
+      openAPIV3Schema:
+        type: object
+`
+		if err := os.WriteFile(dir+"/widgets.yaml", []byte(crd), 0600); err != nil {
+			t.Fatal(err)
+		}
 		mce := &backplane.MultiClusterEngine{
 			ObjectMeta: metav1.ObjectMeta{Name: "testBackplane"},
 			Spec:       backplane.MultiClusterEngineSpec{TargetNamespace: "multicluster-engine"},
 		}
-		got, errs := RenderCRDs(webhookCRDDir, mce, []string{})
+		got, errs := RenderCRDs(dir, mce, []string{})
 		if len(errs) > 0 {
-			t.Errorf("RenderCRDs() unexpected errors: %v", errs)
+			t.Fatalf("RenderCRDs() unexpected errors: %v", errs)
 		}
-		found := false
-		for _, u := range got {
-			ns, exists, _ := unstructured.NestedString(
-				u.Object, "spec", "conversion", "webhook", "clientConfig", "service", "namespace",
-			)
-			if exists && ns != "" {
-				if ns != "multicluster-engine" {
-					t.Errorf("webhook namespace = %q, want %q", ns, "multicluster-engine")
-				}
-				found = true
-				break
-			}
+		if len(got) != 1 {
+			t.Fatalf("RenderCRDs() got %d CRDs, want 1", len(got))
 		}
-		if !found {
-			t.Skip("no webhook conversion CRDs found in unit-test-crds — skipping namespace injection check")
+		ns, exists, err := unstructured.NestedString(
+			got[0].Object, "spec", "conversion", "webhook", "clientConfig", "service", "namespace",
+		)
+		if err != nil || !exists {
+			t.Fatalf("webhook conversion namespace missing: exists=%v err=%v", exists, err)
+		}
+		if ns != "multicluster-engine" {
+			t.Errorf("webhook namespace = %q, want %q", ns, "multicluster-engine")
 		}
 	})
 
