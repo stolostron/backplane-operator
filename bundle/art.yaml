@@ -1,0 +1,20 @@
+---
+updates:
+- file: "manifests/multicluster-engine.clusterserviceversion.yaml"
+  update_list:
+  - search: "5.1.0"
+    replace: "5.1.0"
+external-images:
+# OSE images are OCP 5.1 payload images. Keep them on the stage registry
+# in the openshift5 namespace until that payload is published to production.
+# Assisted images are ART builds and are intentionally omitted so Doozer
+# substitutes them. postgresql-15 is not a 5.1 chart image.
+- name: ose-cluster-api
+  search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/ose-cluster-api-rhel9:latest"
+  replace: "registry.stage.redhat.io/openshift5/ose-cluster-api-rhel9:v5.1"
+- name: ose-baremetal-cluster-api-controllers
+  search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/ose-baremetal-cluster-api-controllers-rhel9:latest"
+  replace: "registry.stage.redhat.io/openshift5/ose-baremetal-cluster-api-controllers-rhel9:v5.1"
+- name: postgresql-16
+  search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/postgresql-16:latest"
+  replace: "registry.redhat.io/rhel9/postgresql-16@sha256:9223bb5f0745e66f0e4204ff87d4d1a5283f3726e9b7d9b71d7bdb2a650fc218"
