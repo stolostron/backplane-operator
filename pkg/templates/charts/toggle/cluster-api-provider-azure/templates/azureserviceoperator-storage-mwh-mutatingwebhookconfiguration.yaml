@@ -1307,3 +1307,213 @@ webhooks:
     resources:
     - storageaccountstableservicestables
   sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /mutate-storage-azure-com-v20260601-storageaccount
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20260601.storageaccounts.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v20260601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccounts
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /mutate-storage-azure-com-v20260601-storageaccountsblobservice
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20260601.storageaccountsblobservices.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v20260601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountsblobservices
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /mutate-storage-azure-com-v20260601-storageaccountsblobservicescontainer
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20260601.storageaccountsblobservicescontainers.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v20260601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountsblobservicescontainers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /mutate-storage-azure-com-v20260601-storageaccountsfileservice
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20260601.storageaccountsfileservices.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v20260601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountsfileservices
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /mutate-storage-azure-com-v20260601-storageaccountsfileservicesshare
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20260601.storageaccountsfileservicesshares.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v20260601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountsfileservicesshares
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /mutate-storage-azure-com-v20260601-storageaccountsmanagementpolicy
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20260601.storageaccountsmanagementpolicies.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v20260601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountsmanagementpolicies
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /mutate-storage-azure-com-v20260601-storageaccountsqueueservice
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20260601.storageaccountsqueueservices.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v20260601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountsqueueservices
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /mutate-storage-azure-com-v20260601-storageaccountsqueueservicesqueue
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20260601.storageaccountsqueueservicesqueues.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v20260601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountsqueueservicesqueues
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /mutate-storage-azure-com-v20260601-storageaccountstableservice
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20260601.storageaccountstableservices.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v20260601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountstableservices
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /mutate-storage-azure-com-v20260601-storageaccountstableservicestable
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20260601.storageaccountstableservicestables.storage.azure.com
+  rules:
+  - apiGroups:
+    - storage.azure.com
+    apiVersions:
+    - v20260601
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageaccountstableservicestables
+  sideEffects: None

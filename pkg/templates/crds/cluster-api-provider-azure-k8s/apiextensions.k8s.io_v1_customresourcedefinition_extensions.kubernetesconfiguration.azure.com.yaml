@@ -6,7 +6,7 @@ metadata:
     controller-gen.kubebuilder.io/version: v0.19.0
   labels:
     app.kubernetes.io/name: azure-service-operator
-    app.kubernetes.io/version: v2.22.0-hcpclusters.0
+    app.kubernetes.io/version: v2.22.0-hcpclusters.2
   name: extensions.kubernetesconfiguration.azure.com
 spec:
   conversion:
@@ -50,7 +50,7 @@ spec:
       openAPIV3Schema:
         description: |-
           Generator information:
-          - Generated from: /kubernetesconfiguration/resource-manager/Microsoft.KubernetesConfiguration/stable/2023-05-01/extensions.json
+          - Generated from: /kubernetesconfiguration/resource-manager/Microsoft.KubernetesConfiguration/legacy/stable/2023-05-01/extensions.json
           - ARM URI: /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{clusterRp}/{clusterResourceName}/{clusterName}/providers/Microsoft.KubernetesConfiguration/extensions/{extensionName}
         properties:
           apiVersion:
@@ -700,7 +700,7 @@ spec:
         description: |-
           Storage version of v1api20230501.Extension
           Generator information:
-          - Generated from: /kubernetesconfiguration/resource-manager/Microsoft.KubernetesConfiguration/stable/2023-05-01/extensions.json
+          - Generated from: /kubernetesconfiguration/resource-manager/Microsoft.KubernetesConfiguration/legacy/stable/2023-05-01/extensions.json
           - ARM URI: /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{clusterRp}/{clusterResourceName}/{clusterName}/providers/Microsoft.KubernetesConfiguration/extensions/{extensionName}
         properties:
           apiVersion:

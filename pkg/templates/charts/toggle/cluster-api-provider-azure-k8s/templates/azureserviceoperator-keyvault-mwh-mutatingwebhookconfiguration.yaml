@@ -47,3 +47,24 @@ webhooks:
     resources:
     - vaults
   sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ .Values.global.namespace }}'
+      path: /mutate-keyvault-azure-com-v20230701-vaultkey
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20230701.vaultkeys.keyvault.azure.com
+  rules:
+  - apiGroups:
+    - keyvault.azure.com
+    apiVersions:
+    - v20230701
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - vaultkeys
+  sideEffects: None

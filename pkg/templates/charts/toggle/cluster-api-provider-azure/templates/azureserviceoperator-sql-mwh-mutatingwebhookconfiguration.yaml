@@ -998,6 +998,90 @@ webhooks:
     service:
       name: azureserviceoperator-webhook-service
       namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /mutate-sql-azure-com-v20250101-instancefailovergroup
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20250101.instancefailovergroups.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v20250101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - instancefailovergroups
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /mutate-sql-azure-com-v20250101-managedinstance
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20250101.managedinstances.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v20250101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - managedinstances
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /mutate-sql-azure-com-v20250101-managedinstancesdatabase
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20250101.managedinstancesdatabases.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v20250101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - managedinstancesdatabases
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
+      path: /mutate-sql-azure-com-v20250101-managedinstancesdatabasestransparentdataencryption
+  failurePolicy: Fail
+  matchPolicy: Exact
+  name: default.v20250101.managedinstancesdatabasestransparentdataencryptions.sql.azure.com
+  rules:
+  - apiGroups:
+    - sql.azure.com
+    apiVersions:
+    - v20250101
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - managedinstancesdatabasestransparentdataencryptions
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: azureserviceoperator-webhook-service
+      namespace: '{{ default "capz-system" .Values.global.namespace }}'
       path: /mutate-sql-azure-com-v20250101-server
   failurePolicy: Fail
   matchPolicy: Exact
