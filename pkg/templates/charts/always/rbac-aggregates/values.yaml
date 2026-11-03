@@ -1,5 +1,5 @@
 global:
-  imageOverrides: []
+  imageOverrides: {}
   pullSecret: null
 hubconfig:
   nodeSelector: null
