@@ -980,6 +980,7 @@ rules:
 - apiGroups:
   - keyvault.azure.com
   resources:
+  - vaultkeys
   - vaults
   verbs:
   - create
@@ -992,6 +993,8 @@ rules:
 - apiGroups:
   - keyvault.azure.com
   resources:
+  - vaultkeys/finalizers
+  - vaultkeys/status
   - vaults/finalizers
   - vaults/status
   verbs:
@@ -1490,6 +1493,7 @@ rules:
   - namespacestopics
   - namespacestopicssubscriptions
   - namespacestopicssubscriptionsrules
+  - queueauthorizationrules
   - topicauthorizationrules
   verbs:
   - create
@@ -1514,6 +1518,8 @@ rules:
   - namespacestopicssubscriptions/status
   - namespacestopicssubscriptionsrules/finalizers
   - namespacestopicssubscriptionsrules/status
+  - queueauthorizationrules/finalizers
+  - queueauthorizationrules/status
   - topicauthorizationrules/finalizers
   - topicauthorizationrules/status
   verbs:
@@ -1553,6 +1559,10 @@ rules:
 - apiGroups:
   - sql.azure.com
   resources:
+  - instancefailovergroups
+  - managedinstances
+  - managedinstancesdatabases
+  - managedinstancesdatabasestransparentdataencryptions
   - servers
   - serversadministrators
   - serversadvancedthreatprotectionsettings
@@ -1589,6 +1599,14 @@ rules:
 - apiGroups:
   - sql.azure.com
   resources:
+  - instancefailovergroups/finalizers
+  - instancefailovergroups/status
+  - managedinstances/finalizers
+  - managedinstances/status
+  - managedinstancesdatabases/finalizers
+  - managedinstancesdatabases/status
+  - managedinstancesdatabasestransparentdataencryptions/finalizers
+  - managedinstancesdatabasestransparentdataencryptions/status
   - servers/finalizers
   - servers/status
   - serversadministrators/finalizers
