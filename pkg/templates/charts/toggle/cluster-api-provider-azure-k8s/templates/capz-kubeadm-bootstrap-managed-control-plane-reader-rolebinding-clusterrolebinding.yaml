@@ -12,7 +12,6 @@ subjects:
 - apiGroup: rbac.authorization.k8s.io
   kind: Group
   name: system:serviceaccounts:capi-kubeadm-bootstrap-system
-  namespace: '{{ .Values.global.namespace }}'
 - kind: ServiceAccount
   name: capi-kubeadm-bootstrap-manager
-  namespace: '{{ default "system" .Values.global.namespace }}'
+  namespace: system
