@@ -20,8 +20,8 @@ spec:
       openAPIV3Schema:
         description: ClusterCurator is the custom resource for the clustercurators
           API. This kind allows you to run Ansible prehook and posthook jobs before
-          provisioning Hive or HyperShift and importing a cluster. Additionally, cluster
-          upgrade and destroy operations are supported as well.
+          provisioning a Hive or HyperShift cluster and importing a cluster. Additionally,
+          cluster upgrade and destroy operations are supported as well.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -40,7 +40,8 @@ spec:
               operation
             properties:
               retryPosthook:
-                description: Option for retrying a failed posthook job
+                description: Option for retrying a failed posthook job. The supported
+                  options are 'installPosthook' or 'upgradePosthook'.
                 enum:
                 - installPosthook
                 - upgradePosthook
@@ -50,10 +51,11 @@ spec:
             description: ClusterCuratorSpec defines the desired state of ClusterCurator
             properties:
               curatorJob:
-                description: Kubernetes job resource created for curation of a cluster
+                description: Kubernetes job resource created for curation of a cluster.
                 type: string
               desiredCuration:
-                description: This is the desired curation that will occur
+                description: This is the desired curation that occurs. The supported
+                  options are 'install', 'upgrade', or 'destroy'.
                 enum:
                 - install
                 - scale
@@ -62,23 +64,25 @@ spec:
                 - delete-cluster-namespace
                 type: string
               destroy:
-                description: During an destroy curation run these **Pre hook ONLY**
+                description: A destroy curation runs these hooks. Standalone clusters
+                  only support the prehook. Hosted clusters support both prehook and
+                  posthook.
                 properties:
                   jobMonitorTimeout:
                     default: 5
                     description: JobMonitorTimeout defines the timeout for finding
-                      a job, the unit of this is minute. If job is found, the curator
-                      controller waits until the job becomes active. By default, it
-                      is 5 minutes If its value is less than or equal to zero, the
-                      default value will be used.
+                      a job and defines time in minutes. If the job is found, the
+                      curator controller waits until the job becomes active. By default,
+                      it is 5 minutes. If its value is less than or equal to zero,
+                      the default is used.
                     type: integer
                   overrideJob:
                     description: When provided, this is a Job specification and overrides
-                      the default flow
+                      the default flow.
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
                   posthook:
-                    description: Jobs to run after the cluster import
+                    description: Jobs to run after the cluster import.
                     items:
                       properties:
                         extra_vars:
@@ -88,21 +92,21 @@ spec:
                           x-kubernetes-preserve-unknown-fields: true
                         job_tags:
                           description: A comma-separated list of tags to specify which
-                            sets of ansible tasks in a job should be run.
+                            sets of Ansible tasks in a job should be run.
                           type: string
                         name:
-                          description: Name of the Ansible Template to run in Tower
-                            as a job
+                          description: Name of the Ansible Template to run in the
+                            Ansible Tower as a job.
                           type: string
                         skip_tags:
                           description: A comma-separated list of tags to specify which
-                            sets of ansible tasks in a job should not be run.
+                            sets of Ansible tasks in a job should not be run.
                           type: string
                         type:
                           default: Job
                           description: Type of the Hook. For Job type, Ansible job
-                            template will be used. For Workflow type, Ansible workflow
-                            template will be used. If omitted, default to Job type.
+                            template is used. For Workflow type, Ansible workflow
+                            template is used. If omitted, it defaults to the Job type.
                           enum:
                           - Job
                           - Workflow
@@ -112,7 +116,7 @@ spec:
                       type: object
                     type: array
                   prehook:
-                    description: Jobs to run before the cluster deployment
+                    description: Jobs to run before the cluster deployment.
                     items:
                       properties:
                         extra_vars:
@@ -122,21 +126,21 @@ spec:
                           x-kubernetes-preserve-unknown-fields: true
                         job_tags:
                           description: A comma-separated list of tags to specify which
-                            sets of ansible tasks in a job should be run.
+                            sets of Ansible tasks in a job should be run.
                           type: string
                         name:
-                          description: Name of the Ansible Template to run in Tower
-                            as a job
+                          description: Name of the Ansible Template to run in the
+                            Ansible Tower as a job.
                           type: string
                         skip_tags:
                           description: A comma-separated list of tags to specify which
-                            sets of ansible tasks in a job should not be run.
+                            sets of Ansible tasks in a job should not be run.
                           type: string
                         type:
                           default: Job
                           description: Type of the Hook. For Job type, Ansible job
-                            template will be used. For Workflow type, Ansible workflow
-                            template will be used. If omitted, default to Job type.
+                            template is used. For Workflow type, Ansible workflow
+                            template is used. If omitted, it defaults to the Job type.
                           enum:
                           - Job
                           - Workflow
@@ -146,28 +150,28 @@ spec:
                       type: object
                     type: array
                   towerAuthSecret:
-                    description: TowerAuthSecret is ansible secret used in template
-                      to run in tower
+                    description: TowerAuthSecret is an Ansible secret used in the
+                      template to provide authentication to an Ansbile tower.
                     type: string
                 type: object
               install:
-                description: During an install curation run these Pre/Post hooks
+                description: An install curation runs these prehooks and posthooks.
                 properties:
                   jobMonitorTimeout:
                     default: 5
                     description: JobMonitorTimeout defines the timeout for finding
-                      a job, the unit of this is minute. If job is found, the curator
-                      controller waits until the job becomes active. By default, it
-                      is 5 minutes If its value is less than or equal to zero, the
-                      default value will be used.
+                      a job and defines time in minutes. If the job is found, the
+                      curator controller waits until the job becomes active. By default,
+                      it is 5 minutes. If its value is less than or equal to zero,
+                      the default is used.
                     type: integer
                   overrideJob:
                     description: When provided, this is a Job specification and overrides
-                      the default flow
+                      the default flow.
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
                   posthook:
-                    description: Jobs to run after the cluster import
+                    description: Jobs to run after the cluster import.
                     items:
                       properties:
                         extra_vars:
@@ -177,21 +181,21 @@ spec:
                           x-kubernetes-preserve-unknown-fields: true
                         job_tags:
                           description: A comma-separated list of tags to specify which
-                            sets of ansible tasks in a job should be run.
+                            sets of Ansible tasks in a job should be run.
                           type: string
                         name:
-                          description: Name of the Ansible Template to run in Tower
-                            as a job
+                          description: Name of the Ansible Template to run in the
+                            Ansible Tower as a job.
                           type: string
                         skip_tags:
                           description: A comma-separated list of tags to specify which
-                            sets of ansible tasks in a job should not be run.
+                            sets of Ansible tasks in a job should not be run.
                           type: string
                         type:
                           default: Job
                           description: Type of the Hook. For Job type, Ansible job
-                            template will be used. For Workflow type, Ansible workflow
-                            template will be used. If omitted, default to Job type.
+                            template is used. For Workflow type, Ansible workflow
+                            template is used. If omitted, it defaults to the Job type.
                           enum:
                           - Job
                           - Workflow
@@ -201,7 +205,7 @@ spec:
                       type: object
                     type: array
                   prehook:
-                    description: Jobs to run before the cluster deployment
+                    description: Jobs to run before the cluster deployment.
                     items:
                       properties:
                         extra_vars:
@@ -211,21 +215,21 @@ spec:
                           x-kubernetes-preserve-unknown-fields: true
                         job_tags:
                           description: A comma-separated list of tags to specify which
-                            sets of ansible tasks in a job should be run.
+                            sets of Ansible tasks in a job should be run.
                           type: string
                         name:
-                          description: Name of the Ansible Template to run in Tower
-                            as a job
+                          description: Name of the Ansible Template to run in the
+                            Ansible Tower as a job.
                           type: string
                         skip_tags:
                           description: A comma-separated list of tags to specify which
-                            sets of ansible tasks in a job should not be run.
+                            sets of Ansible tasks in a job should not be run.
                           type: string
                         type:
                           default: Job
                           description: Type of the Hook. For Job type, Ansible job
-                            template will be used. For Workflow type, Ansible workflow
-                            template will be used. If omitted, default to Job type.
+                            template is used. For Workflow type, Ansible workflow
+                            template is used. If omitted, it defaults to the Job type.
                           enum:
                           - Job
                           - Workflow
@@ -235,8 +239,8 @@ spec:
                       type: object
                     type: array
                   towerAuthSecret:
-                    description: TowerAuthSecret is ansible secret used in template
-                      to run in tower
+                    description: TowerAuthSecret is an Ansible secret used in the
+                      template to provide authentication to an Ansbile tower.
                     type: string
                 type: object
               inventory:
@@ -248,23 +252,23 @@ spec:
                   format: namespace/secretName'
                 type: string
               scale:
-                description: During an scale curation run these Pre/Post hooks
+                description: A scale curation run these prehooks and posthooks.
                 properties:
                   jobMonitorTimeout:
                     default: 5
                     description: JobMonitorTimeout defines the timeout for finding
-                      a job, the unit of this is minute. If job is found, the curator
-                      controller waits until the job becomes active. By default, it
-                      is 5 minutes If its value is less than or equal to zero, the
-                      default value will be used.
+                      a job and defines time in minutes. If the job is found, the
+                      curator controller waits until the job becomes active. By default,
+                      it is 5 minutes. If its value is less than or equal to zero,
+                      the default is used.
                     type: integer
                   overrideJob:
                     description: When provided, this is a Job specification and overrides
-                      the default flow
+                      the default flow.
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
                   posthook:
-                    description: Jobs to run after the cluster import
+                    description: Jobs to run after the cluster import.
                     items:
                       properties:
                         extra_vars:
@@ -274,21 +278,21 @@ spec:
                           x-kubernetes-preserve-unknown-fields: true
                         job_tags:
                           description: A comma-separated list of tags to specify which
-                            sets of ansible tasks in a job should be run.
+                            sets of Ansible tasks in a job should be run.
                           type: string
                         name:
-                          description: Name of the Ansible Template to run in Tower
-                            as a job
+                          description: Name of the Ansible Template to run in the
+                            Ansible Tower as a job.
                           type: string
                         skip_tags:
                           description: A comma-separated list of tags to specify which
-                            sets of ansible tasks in a job should not be run.
+                            sets of Ansible tasks in a job should not be run.
                           type: string
                         type:
                           default: Job
                           description: Type of the Hook. For Job type, Ansible job
-                            template will be used. For Workflow type, Ansible workflow
-                            template will be used. If omitted, default to Job type.
+                            template is used. For Workflow type, Ansible workflow
+                            template is used. If omitted, it defaults to the Job type.
                           enum:
                           - Job
                           - Workflow
@@ -298,7 +302,7 @@ spec:
                       type: object
                     type: array
                   prehook:
-                    description: Jobs to run before the cluster deployment
+                    description: Jobs to run before the cluster deployment.
                     items:
                       properties:
                         extra_vars:
@@ -308,21 +312,21 @@ spec:
                           x-kubernetes-preserve-unknown-fields: true
                         job_tags:
                           description: A comma-separated list of tags to specify which
-                            sets of ansible tasks in a job should be run.
+                            sets of Ansible tasks in a job should be run.
                           type: string
                         name:
-                          description: Name of the Ansible Template to run in Tower
-                            as a job
+                          description: Name of the Ansible Template to run in the
+                            Ansible Tower as a job.
                           type: string
                         skip_tags:
                           description: A comma-separated list of tags to specify which
-                            sets of ansible tasks in a job should not be run.
+                            sets of Ansible tasks in a job should not be run.
                           type: string
                         type:
                           default: Job
                           description: Type of the Hook. For Job type, Ansible job
-                            template will be used. For Workflow type, Ansible workflow
-                            template will be used. If omitted, default to Job type.
+                            template is used. For Workflow type, Ansible workflow
+                            template is used. If omitted, it defaults to the Job type.
                           enum:
                           - Job
                           - Workflow
@@ -332,39 +336,40 @@ spec:
                       type: object
                     type: array
                   towerAuthSecret:
-                    description: TowerAuthSecret is ansible secret used in template
-                      to run in tower
+                    description: TowerAuthSecret is an Ansible secret used in the
+                      template to provide authentication to an Ansbile tower.
                     type: string
                 type: object
               upgrade:
-                description: During an upgrade curation run these
+                description: An upgrade curation runs these hooks.
                 properties:
                   channel:
                     description: Channel is an identifier for explicitly requesting
                       that a non-default set of updates be applied to this cluster.
-                      The default channel will be contain stable updates that are
-                      appropriate for production clusters.
+                      The default channel contains stable updates that are appropriate
+                      for production clusters.
                     type: string
                   desiredUpdate:
                     description: DesiredUpdate indicates the desired value of the
-                      cluster version. Setting this value will trigger an upgrade
-                      (if the current version does not match the desired version).
-                      During an EUS to EUS upgrade, this value becomes the final cluster
-                      version (the target version that ClusterCurator will upgrade
-                      the cluster to).
+                      cluster version. Setting this value triggers an upgrade (if
+                      the current version does not match the desired version). During
+                      an EUS to EUS upgrade, this value becomes the final cluster
+                      version (the target version that ClusterCurator upgrades the
+                      cluster to).
                     type: string
                   intermediateUpdate:
                     description: IntermediateUpdate indicates the desired value of
                       the intermediate cluster version when performing EUS to EUS
-                      upgrades. Setting both this value and DesiredUpdate will trigger
+                      upgrades. Setting both this value and DesiredUpdate triggers
                       an EUS to EUS upgrade.
                     type: string
                   upgradeType:
-                    description: UpgradeType specifies which components to upgrade
-                      for HostedCluster deployments. For standalone clusters, this
-                      field is ignored. Supported values are ControlPlane (upgrade
-                      only the HostedCluster control plane), NodePools (upgrade only
-                      the NodePools/worker nodes), or empty string (default, upgrade
+                    description: UpgradeType specifies which components to upgrade.
+                      For standalone clusters, the worker MachineConfigPools stand
+                      in for NodePools. Supported values are ControlPlane (upgrade
+                      only the control plane; standalone, pause the worker MachineConfigPools
+                      first), NodePools (upgrade only the NodePools; standalone, unpause
+                      the worker MachineConfigPools), or empty string (default, upgrade
                       both control plane and node pools).
                     type: string
                     enum:
@@ -373,26 +378,29 @@ spec:
                     - ""
                   nodePoolNames:
                     description: NodePoolNames specifies which NodePools to upgrade
-                      when upgradeType is NodePools or empty (default). If not specified
-                      or empty, all NodePools associated with the HostedCluster will
-                      be upgraded. This field is ignored when upgradeType is ControlPlane.
+                      when upgradeType is NodePools or empty (default). For standalone
+                      clusters these are MachineConfigPool names, worker when empty,
+                      and they are also the pools paused when upgradeType is ControlPlane.
+                      The master pool can not be listed. If not specified or empty,
+                      all NodePools associated with the HostedCluster will be upgraded.
+                      For HostedClusters this field is ignored when upgradeType is ControlPlane.
                     type: array
                     items:
                       type: string
                   monitorTimeout:
                     default: 120
                     description: MonitorTimeout defines the monitor process timeout,
-                      the unit of this is minute. By default, it is 120 minutes If
-                      its value is less than or equal to zero, the default value will
-                      be used.
+                      and defines time in minutes. By default, it is 120 minutes.
+                      If its value is less than or equal to zero, the default value
+                      is used.
                     type: integer
                   overrideJob:
                     description: When provided, this is a Job specification and overrides
-                      the default flow
+                      the default flow.
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
                   posthook:
-                    description: Jobs to run after the cluster upgrade
+                    description: Jobs to run after the cluster upgrade.
                     items:
                       properties:
                         extra_vars:
@@ -402,21 +410,21 @@ spec:
                           x-kubernetes-preserve-unknown-fields: true
                         job_tags:
                           description: A comma-separated list of tags to specify which
-                            sets of ansible tasks in a job should be run.
+                            sets of Ansible tasks in a job should be run.
                           type: string
                         name:
-                          description: Name of the Ansible Template to run in Tower
-                            as a job
+                          description: Name of the Ansible Template to run in the
+                            Ansible Tower as a job.
                           type: string
                         skip_tags:
                           description: A comma-separated list of tags to specify which
-                            sets of ansible tasks in a job should not be run.
+                            sets of Ansible tasks in a job should not be run.
                           type: string
                         type:
                           default: Job
                           description: Type of the Hook. For Job type, Ansible job
-                            template will be used. For Workflow type, Ansible workflow
-                            template will be used. If omitted, default to Job type.
+                            template is used. For Workflow type, Ansible workflow
+                            template is used. If omitted, it defaults to the Job type.
                           enum:
                           - Job
                           - Workflow
@@ -426,7 +434,7 @@ spec:
                       type: object
                     type: array
                   prehook:
-                    description: Jobs to run before the cluster upgrade
+                    description: Jobs to run before the cluster upgrade.
                     items:
                       properties:
                         extra_vars:
@@ -436,21 +444,21 @@ spec:
                           x-kubernetes-preserve-unknown-fields: true
                         job_tags:
                           description: A comma-separated list of tags to specify which
-                            sets of ansible tasks in a job should be run.
+                            sets of Ansible tasks in a job should be run.
                           type: string
                         name:
-                          description: Name of the Ansible Template to run in Tower
-                            as a job
+                          description: Name of the Ansible Template to run in the
+                            Ansible Tower as a job.
                           type: string
                         skip_tags:
                           description: A comma-separated list of tags to specify which
-                            sets of ansible tasks in a job should not be run.
+                            sets of Ansible tasks in a job should not be run.
                           type: string
                         type:
                           default: Job
                           description: Type of the Hook. For Job type, Ansible job
-                            template will be used. For Workflow type, Ansible workflow
-                            template will be used. If omitted, default to Job type.
+                            template is used. For Workflow type, Ansible workflow
+                            template is used. If omitted, it defaults to the Job type.
                           enum:
                           - Job
                           - Workflow
@@ -460,13 +468,13 @@ spec:
                       type: object
                     type: array
                   towerAuthSecret:
-                    description: TowerAuthSecret is ansible secret used in template
-                      to run in tower
+                    description: TowerAuthSecret is an Ansible secret used in the
+                      template to provide authentication to an Ansbile tower.
                     type: string
                   upstream:
                     description: Upstream may be used to specify the preferred update
-                      server. By default it will use the appropriate update server
-                      for the cluster and region.
+                      server. By default it uses the appropriate update server for
+                      the cluster and region.
                     type: string
                 type: object
                 x-kubernetes-validations:
@@ -489,11 +497,11 @@ spec:
             type: object
           status:
             description: ClusterCuratorStatus defines the observed state of ClusterCurator
-              work
+              work.
             properties:
               conditions:
                 description: Track the conditions for each step in the desired curation
-                  that is being executed as a job
+                  that is being executed as a job.
                 items:
                   description: "Condition contains details for one aspect of the current
                     state of this API Resource. --- This struct is intended for direct
