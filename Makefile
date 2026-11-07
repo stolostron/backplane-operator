@@ -261,14 +261,14 @@ test-image: ## Build a functional test image
 	docker build . -f Dockerfile.test.prow -t $(REGISTRY)/backplane-operator-test:$(VERSION)
 
 ft-install: ## Docker run the functional test image
-	docker run --env TEST_MODE="install" --volume ~/.kube/config:/opt/.kube/config $(REGISTRY)/backplane-operator-test:$(VERSION)
+	docker run --user "$(shell id -u):$(shell id -g)" --env TEST_MODE="install" --volume ~/.kube/config:/opt/.kube/config $(REGISTRY)/backplane-operator-test:$(VERSION)
 
 podman-test-image: ## Build a functional test image
 	@echo "Building $(REGISTRY)/backplane-operator-test:$(VERSION)"
 	podman build . -f Dockerfile.test.prow -t $(REGISTRY)/backplane-operator-test:$(VERSION)
 
 podman-ft-install: ## Podman run the functional test image
-	podman run --env TEST_MODE="install" --volume ~/.kube/config:/opt/.kube/config $(REGISTRY)/backplane-operator-test:$(VERSION)
+	podman run --userns=keep-id --user "$(shell id -u)" --env TEST_MODE="install" --volume ~/.kube/config:/opt/.kube/config $(REGISTRY)/backplane-operator-test:$(VERSION)
 
 functional-tests: ## Run ginkgo functional tests directly.
 	ginkgo -tags functional -v test/function_tests/backplane_operator_install_test

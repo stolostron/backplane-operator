@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path"
 	"path/filepath"
@@ -265,49 +266,45 @@ func RenderCRDs(crdDir string, backplaneConfig *v1.MultiClusterEngine, skipDirs 
 		crdDir = path.Join(val, crdDir)
 	}
 
-	// Read CRD files
-	err := filepath.Walk(crdDir, func(filePath string, info os.FileInfo, err error) error {
+	// Use os.OpenRoot to open a handle rooted at crdDir. All walk and read
+	// operations go through root.FS(), which prevents symlinks from escaping
+	// the directory boundary (gosec G122).
+	root, err := os.OpenRoot(crdDir)
+	if err != nil {
+		return crds, append(errs, fmt.Errorf("error opening CRD directory %s: %v", crdDir, err))
+	}
+	defer root.Close()
+	rootFS := root.FS()
+
+	err = fs.WalkDir(rootFS, ".", func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
 			fmt.Println(err.Error())
 			return err
 		}
 
 		crd := &unstructured.Unstructured{}
-		if info == nil || info.IsDir() {
+		if d.IsDir() {
 			return nil
 		}
 
-		// Check if this file is in a directory that should be skipped
+		// Check if this file is in a directory that should be skipped.
+		// p is already relative to crdDir so filepath.Dir(p) gives the parent dir.
+		fileDir := filepath.Dir(p)
 		for _, skipDir := range skipDirs {
-			// Get the relative path from crdDir to the file
-			relPath, err := filepath.Rel(crdDir, filePath)
-			if err != nil {
-				continue
-			}
-
-			// Get the immediate parent directory of the file
-			fileDir := filepath.Dir(relPath)
-
-			// Check if the file's directory matches the skip directory
 			if fileDir == skipDir {
 				// Skip this file as it belongs to a component that should be skipped
 				return nil
 			}
 		}
 
-		bytesFile, e := os.ReadFile(filepath.Clean(filePath)) // #nosec G304,G122 -- filePath from filepath.Walk within operator's own template directory
+		bytesFile, e := fs.ReadFile(rootFS, p)
 		if e != nil {
-			errs = append(errs, fmt.Errorf("%s - error reading file: %v", info.Name(), err.Error()))
+			errs = append(errs, fmt.Errorf("%s - error reading file: %v", d.Name(), e))
 		}
 
 		if err = yaml.Unmarshal(bytesFile, crd); err != nil {
-			errs = append(errs, fmt.Errorf("%s - error unmarshalling file to unstructured: %v", info.Name(), err.Error()))
+			errs = append(errs, fmt.Errorf("%s - error unmarshalling file to unstructured: %v", d.Name(), err.Error()))
 		}
-
-		// Log which directory this CRD is being rendered from
-		// relPath, _ := filepath.Rel(crdDir, filePath)
-		// sourceDir := filepath.Dir(relPath)
-		// fmt.Printf("Rendering CRD %s from directory: %s\n", crd.GetName(), sourceDir)
 
 		if backplaneConfig != nil {
 			_, conversion, _ := unstructured.NestedMap(crd.Object, "spec", "conversion", "webhook", "clientConfig", "service")
