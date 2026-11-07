@@ -1,0 +1,6 @@
+apiVersion: v2
+name: cluster-api-provider-kubevirt
+description: Cluster API Provider KubeVirt for MCE
+type: application
+appVersion: '5.1.0'
+version: '5.1.0'

@@ -45,9 +45,8 @@ spec:
         - --leader-elect
         - --diagnostics-address=:8443
         - --insecure-diagnostics=false
-        - --feature-gates=MachinePool=true,ClusterTopology=false,RuntimeSDK=false,MachineSetPreflightChecks=true,MachineWaitForVolumeDetachConsiderVolumeAttachments=true,PriorityQueue=false,ReconcilerRateLimiting=false,InPlaceUpdates=false,MachineTaintPropagation=false
+        - --feature-gates=MachinePool=true,ClusterTopology=false,RuntimeSDK=false,MachineSetPreflightChecks=true,MachineWaitForVolumeDetachConsiderVolumeAttachments=true,PriorityQueue=false
         - --tls-min-version=VersionTLS13
-        - --tls-cipher-suites=
         command:
         - /manager
         env:

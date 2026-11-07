@@ -13,6 +13,7 @@ import (
 
 	backplane "github.com/stolostron/backplane-operator/api/v1"
 	"github.com/stolostron/backplane-operator/pkg/utils"
+	admissionv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -282,6 +283,94 @@ func TestRender(t *testing.T) {
 	os.Unsetenv("POD_NAMESPACE")
 	os.Unsetenv("ACM_HUB_OCP_VERSION")
 
+}
+
+func TestClusterAPIProviderKubevirtCoexistence(t *testing.T) {
+	t.Setenv("DIRECTORY_OVERRIDE", "../../")
+	t.Setenv("POD_NAMESPACE", "default")
+	t.Setenv("ACM_HUB_OCP_VERSION", "4.18.0")
+
+	images := map[string]string{}
+	for _, imageName := range utils.GetTestImages() {
+		images[imageName] = "quay.io/test/test:latest"
+	}
+
+	config := &backplane.MultiClusterEngine{
+		ObjectMeta: metav1.ObjectMeta{Name: "test"},
+		Spec:       backplane.MultiClusterEngineSpec{TargetNamespace: "multicluster-engine"},
+	}
+
+	objects, errs := RenderChart(
+		"pkg/templates/charts/toggle/cluster-api-provider-kubevirt",
+		config,
+		images,
+		map[string]string{},
+	)
+	if len(errs) > 0 {
+		for _, err := range errs {
+			t.Log(err)
+		}
+		t.Fatal("failed to render cluster-api-provider-kubevirt chart")
+	}
+
+	foundDeployment := false
+	foundWebhookConfiguration := false
+	for _, object := range objects {
+		switch object.GetKind() {
+		case "Deployment":
+			if object.GetName() != "capk-controller-manager" {
+				continue
+			}
+			foundDeployment = true
+			deployment := &appsv1.Deployment{}
+			if err := runtime.DefaultUnstructuredConverter.FromUnstructured(object.Object, deployment); err != nil {
+				t.Fatal(err)
+			}
+			for _, container := range deployment.Spec.Template.Spec.Containers {
+				hasExcludedAnnotations := false
+				for _, arg := range container.Args {
+					if arg == "--watch-filter=multicluster-engine" {
+						t.Fatal("CAPK deployment must not use a watch filter; HyperShift objects are excluded in-controller")
+					}
+					if arg == "--exclude-annotations=hypershift.openshift.io/nodePool,hypershift.openshift.io/cluster" {
+						hasExcludedAnnotations = true
+					}
+				}
+				if !hasExcludedAnnotations {
+					t.Fatal("CAPK deployment must exclude HyperShift-owned objects by annotation")
+				}
+			}
+		case "ValidatingWebhookConfiguration":
+			if object.GetName() != "capk-validating-webhook-configuration" {
+				continue
+			}
+			foundWebhookConfiguration = true
+			webhookConfiguration := &admissionv1.ValidatingWebhookConfiguration{}
+			if err := runtime.DefaultUnstructuredConverter.FromUnstructured(object.Object, webhookConfiguration); err != nil {
+				t.Fatal(err)
+			}
+			renderedWebhooks, ok := object.Object["webhooks"].([]interface{})
+			if !ok {
+				t.Fatalf("CAPK validating webhook configuration has invalid webhooks: %T", object.Object["webhooks"])
+			}
+			for index, renderedWebhook := range renderedWebhooks {
+				webhook := webhookConfiguration.Webhooks[index]
+				value, exists := renderedWebhook.(map[string]interface{})["objectSelector"]
+				if !exists || value != nil {
+					t.Fatalf("CAPK webhook %s must explicitly remove objectSelector with a null field", webhook.Name)
+				}
+				if webhook.ObjectSelector != nil {
+					t.Fatalf("CAPK webhook %s must not use an object selector", webhook.Name)
+				}
+			}
+		}
+	}
+	if !foundDeployment {
+		t.Fatal("CAPK deployment was not rendered")
+	}
+	if !foundWebhookConfiguration {
+		t.Fatal("CAPK validating webhook configuration was not rendered")
+	}
 }
 
 func TestClusterProxyManagedProxyConfigurationArgs(t *testing.T) {
@@ -832,6 +921,105 @@ func TestNetworkPoliciesValueInjection(t *testing.T) {
 	})
 }
 
+func TestHypershiftHCPProxyDisabled(t *testing.T) {
+	t.Setenv("DIRECTORY_OVERRIDE", "../../")
+	t.Setenv("POD_NAMESPACE", "default")
+	t.Setenv("ACM_HUB_OCP_VERSION", "4.12.0")
+
+	testImages := map[string]string{}
+	for _, image := range utils.GetTestImages() {
+		testImages[image] = "quay.io/test/test:Test"
+	}
+	mce := &backplane.MultiClusterEngine{
+		ObjectMeta: metav1.ObjectMeta{Name: "test-mce"},
+		Spec:       backplane.MultiClusterEngineSpec{TargetNamespace: "default"},
+	}
+
+	templates, errs := RenderChart("pkg/templates/charts/toggle/hypershift", mce, testImages, map[string]string{})
+	if len(errs) > 0 {
+		t.Fatalf("RenderChart failed: %v", errs)
+	}
+
+	for _, template := range templates {
+		switch template.GetKind() {
+		case "APIService":
+			if template.GetName() == "v1alpha1.hcp.ocm.io" {
+				t.Error("HCP proxy APIService must not render while the shipped addon image lacks the proxy")
+			}
+		case "Service":
+			if template.GetName() == "hypershift-addon-hcp-proxy" {
+				t.Error("HCP proxy Service must not render while the shipped addon image lacks the proxy")
+			}
+		case "ClusterRole", "ClusterRoleBinding":
+			if strings.Contains(template.GetName(), "hypershift-addon-hcp-proxy") {
+				t.Errorf("HCP proxy %s must not render while the shipped addon image lacks the proxy", template.GetKind())
+			}
+		case "Deployment":
+			if template.GetName() != "hypershift-addon-manager" {
+				continue
+			}
+			deployment := &appsv1.Deployment{}
+			if err := runtime.DefaultUnstructuredConverter.FromUnstructured(template.Object, deployment); err != nil {
+				t.Fatal(err)
+			}
+			for _, container := range deployment.Spec.Template.Spec.Containers {
+				for _, port := range container.Ports {
+					if port.ContainerPort == 9443 {
+						t.Error("HCP proxy port must not render while the shipped addon image lacks the proxy")
+					}
+				}
+				for _, mount := range container.VolumeMounts {
+					if mount.Name == "hcp-proxy-tls" {
+						t.Error("HCP proxy TLS mount must not render while the shipped addon image lacks the proxy")
+					}
+				}
+			}
+			for _, volume := range deployment.Spec.Template.Spec.Volumes {
+				if volume.Name == "hcp-proxy-tls" {
+					t.Error("HCP proxy TLS volume must not render while the shipped addon image lacks the proxy")
+				}
+			}
+		}
+	}
+}
+
+func TestHypershiftAddonAgentPBDRBAC(t *testing.T) {
+	t.Setenv("DIRECTORY_OVERRIDE", "../../")
+	t.Setenv("POD_NAMESPACE", "default")
+	t.Setenv("ACM_HUB_OCP_VERSION", "4.12.0")
+
+	testImages := map[string]string{}
+	for _, image := range utils.GetTestImages() {
+		testImages[image] = "quay.io/test/test:Test"
+	}
+	mce := &backplane.MultiClusterEngine{
+		ObjectMeta: metav1.ObjectMeta{Name: "test-mce"},
+		Spec:       backplane.MultiClusterEngineSpec{TargetNamespace: "default"},
+	}
+
+	templates, errs := RenderChart("pkg/templates/charts/toggle/hypershift", mce, testImages, map[string]string{})
+	if len(errs) > 0 {
+		t.Fatalf("RenderChart failed: %v", errs)
+	}
+
+	roleFound := false
+	bindingFound := false
+	for _, template := range templates {
+		if template.GetName() != "open-cluster-management:hypershift:hypershift-addon-agent-pdb" {
+			continue
+		}
+		switch template.GetKind() {
+		case "ClusterRole":
+			roleFound = true
+		case "ClusterRoleBinding":
+			bindingFound = true
+		}
+	}
+	if !roleFound || !bindingFound {
+		t.Fatalf("expected addon-agent PDB RBAC, roleFound=%t bindingFound=%t", roleFound, bindingFound)
+	}
+}
+
 func TestClusterLifecycleStateMetricsNetworkPolicies(t *testing.T) {
 	t.Setenv("DIRECTORY_OVERRIDE", "../../")
 	t.Setenv("POD_NAMESPACE", "default")
@@ -1072,8 +1260,6 @@ func TestServerFoundationNetworkPolicies(t *testing.T) {
 		for name := range expectedNPNames {
 			found[name] = false
 		}
-		ocmControllerFlag := false
-		importControllerFlag := false
 		for _, tmpl := range templates {
 			if tmpl.GetKind() == "NetworkPolicy" {
 				if _, ok := found[tmpl.GetName()]; ok {
@@ -1083,75 +1269,15 @@ func TestServerFoundationNetworkPolicies(t *testing.T) {
 					t.Errorf("unexpected NetworkPolicy name: %s", tmpl.GetName())
 				}
 			}
-			if tmpl.GetKind() == "Deployment" && tmpl.GetName() == "ocm-controller" {
-				containers, foundContainers, err := unstructured.NestedSlice(tmpl.Object, "spec", "template", "spec", "containers")
-				if err != nil {
-					t.Fatalf("ocm-controller containers NestedSlice: %v", err)
-				}
-				if !foundContainers {
-					t.Fatal("ocm-controller missing spec.template.spec.containers")
-				}
-				for i, c := range containers {
-					container, ok := c.(map[string]interface{})
-					if !ok {
-						t.Fatalf("ocm-controller containers[%d] is not a map", i)
-					}
-					args, foundArgs, err := unstructured.NestedStringSlice(container, "args")
-					if err != nil {
-						t.Fatalf("ocm-controller containers[%d] args NestedStringSlice: %v", i, err)
-					}
-					if !foundArgs {
-						t.Fatalf("ocm-controller containers[%d] missing args", i)
-					}
-					for _, arg := range args {
-						if arg == "--enable-network-policies=true" {
-							ocmControllerFlag = true
-						}
-					}
-				}
-			}
-			if tmpl.GetKind() == "Deployment" && tmpl.GetName() == "managedcluster-import-controller-v2" {
-				containers, foundContainers, err := unstructured.NestedSlice(tmpl.Object, "spec", "template", "spec", "containers")
-				if err != nil {
-					t.Fatalf("managedcluster-import-controller-v2 containers NestedSlice: %v", err)
-				}
-				if !foundContainers {
-					t.Fatal("managedcluster-import-controller-v2 missing spec.template.spec.containers")
-				}
-				for i, c := range containers {
-					container, ok := c.(map[string]interface{})
-					if !ok {
-						t.Fatalf("managedcluster-import-controller-v2 containers[%d] is not a map", i)
-					}
-					args, foundArgs, err := unstructured.NestedStringSlice(container, "args")
-					if err != nil {
-						t.Fatalf("managedcluster-import-controller-v2 containers[%d] args NestedStringSlice: %v", i, err)
-					}
-					if !foundArgs {
-						t.Fatalf("managedcluster-import-controller-v2 containers[%d] missing args", i)
-					}
-					for _, arg := range args {
-						if arg == "--enable-klusterlet-network-policies=true" {
-							importControllerFlag = true
-						}
-					}
-				}
-			}
 		}
 		for name, ok := range found {
 			if !ok {
 				t.Errorf("expected NetworkPolicy %s when networkPolicies.enabled=true", name)
 			}
 		}
-		if !ocmControllerFlag {
-			t.Error("expected ocm-controller --enable-network-policies=true when networkPolicies.enabled=true")
-		}
-		if !importControllerFlag {
-			t.Error("expected managedcluster-import-controller-v2 --enable-klusterlet-network-policies=true when networkPolicies.enabled=true")
-		}
 	})
 
-	t.Run("NetworkPolicies disabled excludes hub NPs and sets flag false", func(t *testing.T) {
+	t.Run("NetworkPolicies disabled excludes hub NPs", func(t *testing.T) {
 		mce := &backplane.MultiClusterEngine{
 			ObjectMeta: metav1.ObjectMeta{Name: "test-mce"},
 			Spec: backplane.MultiClusterEngineSpec{
@@ -1166,72 +1292,38 @@ func TestServerFoundationNetworkPolicies(t *testing.T) {
 		}
 
 		foundOCMController := false
-		foundDisabledFlag := false
 		foundImportController := false
-		foundImportDisabledFlag := false
 		for _, tmpl := range templates {
 			if tmpl.GetKind() == "NetworkPolicy" {
 				t.Errorf("NetworkPolicy should not be rendered when networkPolicies.enabled=false: %s", tmpl.GetName())
 			}
-			if tmpl.GetKind() == "Deployment" && tmpl.GetName() == "ocm-controller" {
-				foundOCMController = true
-				containers, foundContainers, err := unstructured.NestedSlice(tmpl.Object, "spec", "template", "spec", "containers")
-				if err != nil {
-					t.Fatalf("ocm-controller containers NestedSlice: %v", err)
-				}
-				if !foundContainers {
-					t.Fatal("ocm-controller missing spec.template.spec.containers")
-				}
-				for i, c := range containers {
-					container, ok := c.(map[string]interface{})
-					if !ok {
-						t.Fatalf("ocm-controller containers[%d] is not a map", i)
-					}
-					args, foundArgs, err := unstructured.NestedStringSlice(container, "args")
-					if err != nil {
-						t.Fatalf("ocm-controller containers[%d] args NestedStringSlice: %v", i, err)
-					}
-					if !foundArgs {
-						t.Fatalf("ocm-controller containers[%d] missing args", i)
-					}
-					for _, arg := range args {
-						if arg == "--enable-network-policies=true" {
-							t.Error("ocm-controller should not have --enable-network-policies=true when disabled")
-						}
-						if arg == "--enable-network-policies=false" {
-							foundDisabledFlag = true
-						}
-					}
-				}
+			if tmpl.GetKind() != "Deployment" {
+				continue
 			}
-			if tmpl.GetKind() == "Deployment" && tmpl.GetName() == "managedcluster-import-controller-v2" {
+			if tmpl.GetName() != "ocm-controller" && tmpl.GetName() != "managedcluster-import-controller-v2" {
+				continue
+			}
+			if tmpl.GetName() == "ocm-controller" {
+				foundOCMController = true
+			} else {
 				foundImportController = true
-				containers, foundContainers, err := unstructured.NestedSlice(tmpl.Object, "spec", "template", "spec", "containers")
-				if err != nil {
-					t.Fatalf("managedcluster-import-controller-v2 containers NestedSlice: %v", err)
+			}
+			containers, foundContainers, err := unstructured.NestedSlice(tmpl.Object, "spec", "template", "spec", "containers")
+			if err != nil || !foundContainers {
+				t.Fatalf("%s missing containers: %v", tmpl.GetName(), err)
+			}
+			for i, c := range containers {
+				container, ok := c.(map[string]interface{})
+				if !ok {
+					t.Fatalf("%s containers[%d] is not a map", tmpl.GetName(), i)
 				}
-				if !foundContainers {
-					t.Fatal("managedcluster-import-controller-v2 missing spec.template.spec.containers")
+				args, foundArgs, err := unstructured.NestedStringSlice(container, "args")
+				if err != nil || !foundArgs {
+					t.Fatalf("%s containers[%d] missing args: %v", tmpl.GetName(), i, err)
 				}
-				for i, c := range containers {
-					container, ok := c.(map[string]interface{})
-					if !ok {
-						t.Fatalf("managedcluster-import-controller-v2 containers[%d] is not a map", i)
-					}
-					args, foundArgs, err := unstructured.NestedStringSlice(container, "args")
-					if err != nil {
-						t.Fatalf("managedcluster-import-controller-v2 containers[%d] args NestedStringSlice: %v", i, err)
-					}
-					if !foundArgs {
-						t.Fatalf("managedcluster-import-controller-v2 containers[%d] missing args", i)
-					}
-					for _, arg := range args {
-						if arg == "--enable-klusterlet-network-policies=true" {
-							t.Error("managedcluster-import-controller-v2 should not have --enable-klusterlet-network-policies=true when disabled")
-						}
-						if arg == "--enable-klusterlet-network-policies=false" {
-							foundImportDisabledFlag = true
-						}
+				for _, arg := range args {
+					if strings.HasPrefix(arg, "--enable-network-policies=") || strings.HasPrefix(arg, "--enable-klusterlet-network-policies=") {
+						t.Errorf("%s should not receive unsupported network-policy flags: %s", tmpl.GetName(), arg)
 					}
 				}
 			}
@@ -1239,14 +1331,8 @@ func TestServerFoundationNetworkPolicies(t *testing.T) {
 		if !foundOCMController {
 			t.Error("expected ocm-controller Deployment when rendering server-foundation chart")
 		}
-		if !foundDisabledFlag {
-			t.Error("expected ocm-controller --enable-network-policies=false when networkPolicies.enabled=false")
-		}
 		if !foundImportController {
 			t.Error("expected managedcluster-import-controller-v2 Deployment when rendering server-foundation chart")
-		}
-		if !foundImportDisabledFlag {
-			t.Error("expected managedcluster-import-controller-v2 --enable-klusterlet-network-policies=false when networkPolicies.enabled=false")
 		}
 	})
 
@@ -1272,18 +1358,16 @@ func TestServerFoundationNetworkPolicies(t *testing.T) {
 			"ocm-controller-network-policy":                   false,
 			"ocm-webhook-network-policy":                      false,
 		}
-		importControllerFlag := false
+		importControllerFound := false
 		for _, tmpl := range templates {
 			if tmpl.GetKind() == "Deployment" && tmpl.GetName() == "ocm-proxyserver" {
 				t.Error("ocm-proxyserver Deployment should not render when deployOnOCP=false")
 			}
 			if tmpl.GetKind() == "Deployment" && tmpl.GetName() == "managedcluster-import-controller-v2" {
+				importControllerFound = true
 				containers, foundContainers, err := unstructured.NestedSlice(tmpl.Object, "spec", "template", "spec", "containers")
-				if err != nil {
-					t.Fatalf("managedcluster-import-controller-v2 containers NestedSlice: %v", err)
-				}
-				if !foundContainers {
-					t.Fatal("managedcluster-import-controller-v2 missing spec.template.spec.containers")
+				if err != nil || !foundContainers {
+					t.Fatalf("managedcluster-import-controller-v2 missing containers: %v", err)
 				}
 				for i, c := range containers {
 					container, ok := c.(map[string]interface{})
@@ -1291,15 +1375,12 @@ func TestServerFoundationNetworkPolicies(t *testing.T) {
 						t.Fatalf("managedcluster-import-controller-v2 containers[%d] is not a map", i)
 					}
 					args, foundArgs, err := unstructured.NestedStringSlice(container, "args")
-					if err != nil {
-						t.Fatalf("managedcluster-import-controller-v2 containers[%d] args NestedStringSlice: %v", i, err)
-					}
-					if !foundArgs {
-						t.Fatalf("managedcluster-import-controller-v2 containers[%d] missing args", i)
+					if err != nil || !foundArgs {
+						t.Fatalf("managedcluster-import-controller-v2 containers[%d] missing args: %v", i, err)
 					}
 					for _, arg := range args {
-						if arg == "--enable-klusterlet-network-policies=true" {
-							importControllerFlag = true
+						if strings.HasPrefix(arg, "--enable-klusterlet-network-policies=") {
+							t.Errorf("managedcluster-import-controller-v2 should not receive unsupported network-policy flag: %s", arg)
 						}
 					}
 				}
@@ -1323,12 +1404,12 @@ func TestServerFoundationNetworkPolicies(t *testing.T) {
 				t.Errorf("expected NetworkPolicy %s when networkPolicies.enabled=true on non-OCP", name)
 			}
 		}
-		if !importControllerFlag {
-			t.Error("expected managedcluster-import-controller-v2 --enable-klusterlet-network-policies=true on non-OCP path")
+		if !importControllerFound {
+			t.Error("expected managedcluster-import-controller-v2 Deployment on non-OCP path")
 		}
 	})
 
-	t.Run("non-OCP sets klusterlet network policies flag false when disabled", func(t *testing.T) {
+	t.Run("non-OCP omits klusterlet network policy flag when disabled", func(t *testing.T) {
 		utils.SetDeployOnOCP(false)
 		defer utils.SetDeployOnOCP(true)
 
@@ -1346,7 +1427,6 @@ func TestServerFoundationNetworkPolicies(t *testing.T) {
 		}
 
 		foundImportController := false
-		foundDisabledFlag := false
 		for _, tmpl := range templates {
 			if tmpl.GetKind() != "Deployment" || tmpl.GetName() != "managedcluster-import-controller-v2" {
 				continue
@@ -1366,20 +1446,14 @@ func TestServerFoundationNetworkPolicies(t *testing.T) {
 					t.Fatalf("managedcluster-import-controller-v2 containers[%d] missing args: %v", i, err)
 				}
 				for _, arg := range args {
-					if arg == "--enable-klusterlet-network-policies=true" {
-						t.Error("managedcluster-import-controller-v2 should not have --enable-klusterlet-network-policies=true when disabled on non-OCP")
-					}
-					if arg == "--enable-klusterlet-network-policies=false" {
-						foundDisabledFlag = true
+					if strings.HasPrefix(arg, "--enable-klusterlet-network-policies=") {
+						t.Errorf("managedcluster-import-controller-v2 should not receive unsupported network-policy flag: %s", arg)
 					}
 				}
 			}
 		}
 		if !foundImportController {
 			t.Error("expected managedcluster-import-controller-v2 Deployment on non-OCP path")
-		}
-		if !foundDisabledFlag {
-			t.Error("expected managedcluster-import-controller-v2 --enable-klusterlet-network-policies=false on non-OCP path when disabled")
 		}
 	})
 

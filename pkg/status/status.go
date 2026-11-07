@@ -109,11 +109,6 @@ func (sm *StatusTracker) reportPhase(mce bpv1.MultiClusterEngine, components []b
 		}
 	}
 
-	// If operator isn't progressing show error phase
-	if progress != nil && progress.Status == metav1.ConditionFalse {
-		return bpv1.MultiClusterEnginePhaseError
-	}
-
 	// If deleting show uninstall phase
 	if mce.GetDeletionTimestamp() != nil {
 		return bpv1.MultiClusterEnginePhaseUninstalling
@@ -131,6 +126,9 @@ func (sm *StatusTracker) reportPhase(mce bpv1.MultiClusterEngine, components []b
 
 	// If a component isn't ready show progressing phase
 	if !allComponentsReady(components) {
+		if progress != nil && progress.Status == metav1.ConditionFalse {
+			return bpv1.MultiClusterEnginePhaseError
+		}
 		return bpv1.MultiClusterEnginePhaseProgressing
 	}
 

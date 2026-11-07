@@ -3,8 +3,10 @@
 package v1
 
 import (
+	"context"
 	"fmt"
 	"strings"
+	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -17,6 +19,201 @@ import (
 var (
 	multiClusterEngineName = "multiclusterengine"
 )
+
+func TestDefaultSetsNetworkPolicies(t *testing.T) {
+	mce := &MultiClusterEngine{}
+	if err := mce.Default(context.Background(), mce); err != nil {
+		t.Fatalf("Default() error = %v", err)
+	}
+	if mce.Spec.NetworkPolicies == nil {
+		t.Fatal("Default() did not set NetworkPolicies")
+	}
+	if !mce.Spec.NetworkPolicies.Enabled {
+		t.Fatal("Default() did not enable NetworkPolicies")
+	}
+}
+
+func TestMutatingWebhookConfiguration(t *testing.T) {
+	webhook := MutatingWebhook("test-namespace")
+	if webhook.Name != "multiclusterengines.multicluster.openshift.io" {
+		t.Fatalf("MutatingWebhook() name = %s", webhook.Name)
+	}
+	if len(webhook.Webhooks) != 1 {
+		t.Fatalf("MutatingWebhook() webhook count = %d", len(webhook.Webhooks))
+	}
+	service := webhook.Webhooks[0].ClientConfig.Service
+	if service == nil || service.Namespace != "test-namespace" || service.Path == nil || *service.Path != "/mutate-multicluster-openshift-io-v1-multiclusterengine" {
+		t.Fatalf("MutatingWebhook() has incorrect client configuration: %#v", service)
+	}
+}
+
+func TestValidateComponentDependencies(t *testing.T) {
+	tests := []struct {
+		name       string
+		components []ComponentConfig
+		wantErr    string
+	}{
+		{
+			name: "HyperShift and KubeVirt providers can coexist",
+			components: []ComponentConfig{
+				{Name: ClusterAPI, Enabled: true},
+				{Name: ClusterAPIProviderOA, Enabled: true},
+				{Name: ClusterAPIProviderKubeVirt, Enabled: true},
+				{Name: AssistedService, Enabled: true},
+				{Name: HyperShift, Enabled: true},
+				{Name: HypershiftLocalHosting, Enabled: true},
+			},
+		},
+		{
+			name: "CAPOA requires CAPI",
+			components: []ComponentConfig{
+				{Name: ClusterAPIProviderOA, Enabled: true},
+				{Name: AssistedService, Enabled: true},
+				{Name: ClusterAPI, Enabled: false},
+			},
+			wantErr: "cluster-api-provider-openshift-assisted requires cluster-api",
+		},
+		{
+			name: "Dependency-aware defaults remain valid when CAPI is disabled",
+			components: []ComponentConfig{
+				{Name: ClusterAPI, Enabled: false},
+				{Name: ClusterAPIProviderKubeVirt, Enabled: false},
+				{Name: ClusterAPIProviderOA, Enabled: false},
+				{Name: AssistedService, Enabled: true},
+			},
+		},
+		{
+			name: "CAPOA requires Assisted Service",
+			components: []ComponentConfig{
+				{Name: ClusterAPIProviderOA, Enabled: true},
+				{Name: ClusterAPI, Enabled: true},
+				{Name: AssistedService, Enabled: false},
+			},
+			wantErr: "cluster-api-provider-openshift-assisted requires assisted-service",
+		},
+		{
+			name: "CAPK requires CAPI",
+			components: []ComponentConfig{
+				{Name: ClusterAPIProviderKubeVirt, Enabled: true},
+				{Name: ClusterAPI, Enabled: false},
+			},
+			wantErr: "cluster-api-provider-kubevirt requires cluster-api",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			mce := &MultiClusterEngine{
+				Spec: MultiClusterEngineSpec{
+					Overrides: &Overrides{Components: test.components},
+				},
+			}
+			err := mce.validateComponentDependencies()
+			if test.wantErr == "" {
+				if err != nil {
+					t.Fatalf("validateComponentDependencies() unexpected error = %v", err)
+				}
+				return
+			}
+			if err == nil || !strings.Contains(err.Error(), test.wantErr) {
+				t.Fatalf("validateComponentDependencies() error = %v, want containing %q", err, test.wantErr)
+			}
+		})
+	}
+}
+
+func TestValidateUpdateComponentDependencyCompatibility(t *testing.T) {
+	invalidComponents := []ComponentConfig{
+		{Name: ClusterAPIProviderOA, Enabled: true},
+		{Name: ClusterAPIProviderKubeVirt, Enabled: true},
+		{Name: ClusterAPI, Enabled: false},
+		{Name: AssistedService, Enabled: true},
+	}
+
+	tests := []struct {
+		name        string
+		old         []ComponentConfig
+		new         []ComponentConfig
+		wantErr     bool
+		wantErrMsg  string
+		wantWarning string
+	}{
+		{
+			name:        "Pre-existing invalid dependencies remain updateable",
+			old:         invalidComponents,
+			new:         invalidComponents,
+			wantWarning: "cluster-api-provider-openshift-assisted requires cluster-api",
+		},
+		{
+			name: "Unrelated component changes remain updateable",
+			old:  invalidComponents,
+			new: append([]ComponentConfig{}, append(invalidComponents, ComponentConfig{
+				Name:    Discovery,
+				Enabled: true,
+			})...),
+			wantWarning: "cluster-api-provider-openshift-assisted requires cluster-api",
+		},
+		{
+			name: "Changed invalid dependencies are rejected",
+			old: []ComponentConfig{
+				{Name: ClusterAPIProviderOA, Enabled: true},
+				{Name: ClusterAPI, Enabled: false},
+				{Name: AssistedService, Enabled: true},
+			},
+			new: []ComponentConfig{
+				{Name: ClusterAPIProviderOA, Enabled: true},
+				{Name: ClusterAPI, Enabled: false},
+				{Name: AssistedService, Enabled: false},
+			},
+			wantErr:    true,
+			wantErrMsg: "cluster-api-provider-openshift-assisted requires cluster-api",
+		},
+		{
+			name: "New invalid dependencies are rejected",
+			old: []ComponentConfig{
+				{Name: ClusterAPIProviderOA, Enabled: true},
+				{Name: ClusterAPI, Enabled: true},
+				{Name: AssistedService, Enabled: true},
+			},
+			new: []ComponentConfig{
+				{Name: ClusterAPIProviderOA, Enabled: true},
+				{Name: ClusterAPI, Enabled: false},
+				{Name: AssistedService, Enabled: true},
+			},
+			wantErr:    true,
+			wantErrMsg: "cluster-api-provider-openshift-assisted requires cluster-api",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			oldObj := &MultiClusterEngine{Spec: MultiClusterEngineSpec{
+				Overrides: &Overrides{Components: test.old},
+			}}
+			newObj := &MultiClusterEngine{Spec: MultiClusterEngineSpec{
+				Overrides: &Overrides{Components: test.new},
+			}}
+
+			warnings, err := (&MultiClusterEngine{}).ValidateUpdate(context.Background(), oldObj, newObj)
+			if !test.wantErr {
+				if err != nil {
+					t.Fatalf("ValidateUpdate() unexpected error = %v", err)
+				}
+				if test.wantWarning == "" {
+					if len(warnings) != 0 {
+						t.Fatalf("ValidateUpdate() unexpected warnings = %v", warnings)
+					}
+				} else if len(warnings) != 1 || !strings.Contains(warnings[0], test.wantWarning) {
+					t.Fatalf("ValidateUpdate() warnings = %v, want one containing %q", warnings, test.wantWarning)
+				}
+				return
+			}
+			if err == nil || !strings.Contains(err.Error(), test.wantErrMsg) {
+				t.Fatalf("ValidateUpdate() error = %v, want containing %q", err, test.wantErrMsg)
+			}
+		})
+	}
+}
 
 var _ = Describe("Multiclusterengine webhook", func() {
 
