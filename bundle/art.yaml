@@ -2,16 +2,8 @@
 updates:
 - file: "manifests/multicluster-engine.clusterserviceversion.yaml"
   update_list:
-  - search: "name: multicluster-engine.v{MAJOR}.{MINOR}.0"
-    replace: "name: multicluster-engine.v{FULL_VER}"
-  - search: "  version: {MAJOR}.{MINOR}.0"
-    replace: "  version: {FULL_VER}"
-  - search: "olm.skipRange: '>=2.17.0-0 <{MAJOR}.{MINOR}.0'"
-    replace: "olm.skipRange: '>=2.17.0-0 <{FULL_VER}'"
-- file: "mce-operator.package.yaml"
-  update_list:
-  - search: "currentCSV: multicluster-engine.v{MAJOR}.{MINOR}.0"
-    replace: "currentCSV: multicluster-engine.v{FULL_VER}"
+  - search: "5.1.0"
+    replace: "5.1.0"
 external-images:
 # OSE images are OCP 5.1 payload images. Keep them on the stage registry
 # in the openshift5 namespace until that payload is published to production.
