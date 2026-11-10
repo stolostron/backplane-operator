@@ -26,7 +26,7 @@ metadata:
     features.operators.openshift.io/token-auth-azure: "false"
     features.operators.openshift.io/token-auth-gcp: "false"
     operators.openshift.io/must-gather-image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/backplane-must-gather-rhel9:latest
-    olm.skipRange: '>=2.10.0 <2.17.4'
+    olm.skipRange: '>=2.10.0 <2.17.5'
     certified: 'true'
     description: Foundational components for central management of multiple OpenShift Container Platform and Kubernetes clusters
     support: Red Hat
@@ -37,7 +37,7 @@ metadata:
     olm.properties: '[{"type": "olm.maxOpenShiftVersion", "value": "5.0"}]'
     operatorframework.io/initialization-resource: '{"apiVersion":"multicluster.openshift.io/v1", "kind":"MultiClusterEngine","metadata":{"name":"engine"},"spec": {}}'
     repository: https://github.com/open-cluster-management/backplane-operator
-  name: multicluster-engine.v2.17.4
+  name: multicluster-engine.v2.17.5
   namespace: placeholder
   labels:
     operatorframework.io/arch.amd64: supported
@@ -3535,7 +3535,7 @@ spec:
                 - name: OPERATOR_PACKAGE
                   value: multicluster-engine
                 - name: OPERATOR_VERSION
-                  value: "2.17.4"
+                  value: "2.17.5"
                 image: quay.io/stolostron/backplane-operator:latest
                 imagePullPolicy: IfNotPresent
                 livenessProbe:
@@ -3726,4 +3726,4 @@ spec:
     image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/postgresql-15:latest
   - name: postgresql_16
     image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/postgresql-16:latest
-  version: 2.17.4
+  version: 2.17.5
