@@ -22,7 +22,7 @@ COPY pkg/ pkg/
 ARG LDFLAGS
 
 # Build
-RUN CGO_ENABLED=1 go build -mod=readonly -ldflags "${LDFLAGS}" -o backplane-operator main.go
+RUN CGO_ENABLED=1 GOEXPERIMENT=strictfipsruntime go build -mod=readonly -ldflags "${LDFLAGS}" -o backplane-operator main.go
 
 FROM registry.redhat.io/ubi9/ubi-minimal-pqc:latest
 
