@@ -20,17 +20,20 @@ trains:
     ocp: "5.0"
 
   - version: "2.17"
-    ocp: "4.19"
+    ocp: "4.22"
 
   - version: "2.11"
-    ocp: "4.17"
+    ocp: "4.21"
 
   - version: "2.10"
-    ocp: "4.16"
+    ocp: "4.20"
 
   - version: "2.9"
-    ocp: "4.15"
+    ocp: "4.19"
 
   - version: "2.8"
-    ocp: "4.14"
+    ocp: "4.18"
     # mention: "@someone-else"  # Optional: override default mention for this train
+
+  - version: "2.6"
+    ocp: "4.16"
