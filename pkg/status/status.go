@@ -188,11 +188,15 @@ type StatusReporter interface {
 	// GetNamespace returns the namespace the tracked component lives in, or
 	// an empty string for cluster-scoped resources.
 	GetNamespace() string
-	// GetKind returns the Kubernetes resource kind (e.g. "Deployment",
-	// "ManagedClusterAddOn") of the tracked component.
+	// GetKind returns the kind label of the tracked component. This may be
+	// an actual Kubernetes resource kind (e.g. "Deployment",
+	// "ManagedClusterAddOn") or a synthetic label such as "Component" or
+	// "local-cluster" for reporters not backed by a single resource type.
 	GetKind() string
-	// Status queries the cluster via the provided client and returns a
-	// ComponentCondition describing the current health of the tracked resource.
+	// Status returns a ComponentCondition describing the current state of
+	// the tracked component. Most implementations query the cluster via the
+	// provided client, but some (e.g. StaticStatus) return a pre-computed
+	// condition without making any API calls.
 	Status(client.Client) bpv1.ComponentCondition
 }
 

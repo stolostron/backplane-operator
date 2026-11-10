@@ -61,6 +61,10 @@ func EnabledStatus(namespacedName types.NamespacedName) status.StatusReporter {
 // resource in resourceList has been removed from the cluster. Each resource is
 // identified by its name, namespace, and GVK from the original unstructured
 // objects. The component itself is identified by namespacedName.
+//
+// Callers must include every resource they want checked in resourceList; any
+// resource not in the list is not verified. An empty list causes the reporter
+// to report success without checking any resources.
 func DisabledStatus(namespacedName types.NamespacedName, resourceList []*unstructured.Unstructured) status.StatusReporter {
 	removals := []*unstructured.Unstructured{}
 	for _, u := range resourceList {

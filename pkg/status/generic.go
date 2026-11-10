@@ -48,6 +48,10 @@ func (s StaticStatus) Status(k8sClient client.Client) bpv1.ComponentCondition {
 // resourceList has been removed from the cluster. The returned reporter
 // identifies itself by namespacedName and uses explanation as the condition
 // message when all resources are confirmed absent.
+//
+// Callers must include every resource they want checked in resourceList; any
+// resource not in the list is not verified. An empty list causes the reporter
+// to report success without checking any resources.
 func NewDisabledStatus(namespacedName types.NamespacedName, explanation string, resourceList []*unstructured.Unstructured) StatusReporter {
 	removals := []*unstructured.Unstructured{}
 	for _, u := range resourceList {

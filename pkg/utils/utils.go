@@ -369,8 +369,11 @@ func SetDeployOnOCP(v bool) {
 	GlobalDeployOnOCP = v
 }
 
-// DeployOnOCP reports whether the operator is running on OpenShift Container
-// Platform, as determined by DetectOpenShift or SetDeployOnOCP.
+// DeployOnOCP returns the package-level GlobalDeployOnOCP flag, which defaults
+// to true. Callers must run DetectOpenShift successfully or call SetDeployOnOCP
+// explicitly before relying on the return value as an accurate platform signal;
+// without either call the default true is returned regardless of the actual
+// platform.
 func DeployOnOCP() bool {
 	return GlobalDeployOnOCP
 }
@@ -437,11 +440,14 @@ func GetServingCertCABundle() (string, error) {
 }
 
 // DumpServingCertSecret fetches the "multicluster-engine-operator-webhook" Secret
-// from the namespace configured in GlobalServingCertGetter, validates that it
-// contains non-empty tls.crt and tls.key entries with valid PEM headers, and
+// from the namespace configured in GlobalServingCertGetter, checks that it
+// contains non-empty tls.crt and tls.key entries with expected PEM header
+// substrings (e.g. "BEGIN CERTIFICATE", "PRIVATE KEY") via bytes.Contains, and
 // writes each key's data to /tmp/k8s-webhook-server/serving-certs/, skipping
-// files whose contents are unchanged. It returns an error if the Secret is
-// missing, incomplete, contains invalid PEM data, or if any file write fails.
+// files whose contents are unchanged. The PEM checks are substring matches only;
+// the function does not perform full PEM parsing or certificate expiry
+// validation. It returns an error if the Secret is missing, incomplete, the
+// expected substrings are absent, or if any file write fails.
 func DumpServingCertSecret() error {
 	certKeySecret, err := GlobalServingCertGetter.kubeClient.CoreV1().Secrets(GlobalServingCertGetter.namespace).
 		Get(context.Background(), "multicluster-engine-operator-webhook", metav1.GetOptions{})
