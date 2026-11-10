@@ -14,3 +14,15 @@ external-images:
 - name: assisted-service-el8
   search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-service-el8:latest"
   replace: "registry.redhat.io/multicluster-engine/assisted-service-8-rhel8@sha256:4f94b0e0ddc3e945688ae66fbdb65d61f2bc3df6dc5db139bfd5272d64785dd5"
+- name: assisted-image-service-rhel8
+  search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-image-service-rhel8:latest"
+  replace: "registry.redhat.io/multicluster-engine/assisted-image-service-rhel8@sha256:2dd7f78c027e34d73e35b47e72802d45fddaa669110b4ecfd796bb4646b5dbd1"
+- name: assisted-installer-rhel8
+  search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-installer-rhel8:latest"
+  replace: "registry.redhat.io/multicluster-engine/assisted-installer-rhel8@sha256:b4d0b73985d4024a832d21848e2d0f603b2c9c9e9b33a629761daa18a3ff81a7"
+- name: assisted-installer-agent-rhel8
+  search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-installer-agent-rhel8:latest"
+  replace: "registry.redhat.io/multicluster-engine/assisted-installer-agent-rhel8@sha256:a213b32c343d269882aa62a260140d32e6df6d76b46df06615b9299b60930759"
+- name: assisted-installer-controller-rhel8
+  search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/assisted-installer-controller-rhel8:latest"
+  replace: "registry.redhat.io/multicluster-engine/assisted-installer-controller-rhel8@sha256:db21b2f0d0dd2454bc38812479a0ba39c54f954925c47ea82c78f604b878d585"
