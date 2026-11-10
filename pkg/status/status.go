@@ -80,11 +80,12 @@ func (sm *StatusTracker) ReportStatus(mce bpv1.MultiClusterEngine) bpv1.MultiClu
 	}
 
 	return bpv1.MultiClusterEngineStatus{
-		Components:     components,
-		Conditions:     conditions,
-		Phase:          phase,
-		DesiredVersion: version.Version,
-		CurrentVersion: currentVersion,
+		ObservedGeneration: mce.Generation,
+		Components:         components,
+		Conditions:         conditions,
+		Phase:              phase,
+		DesiredVersion:     version.Version,
+		CurrentVersion:     currentVersion,
 	}
 }
 
