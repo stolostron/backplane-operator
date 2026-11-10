@@ -184,6 +184,12 @@ func parseProbeConfigFromAnnotations(mce *v1.MultiClusterEngine) *ProbeConfig {
 	return &config
 }
 
+// MarshalJSON implements json.Marshaler for Toleration. It wraps string field
+// values that parse as integers, floats, or booleans in single quotes (e.g.,
+// '123') so that Helm's template engine treats them as strings rather than
+// converting them to numeric or boolean YAML types. The Operator and Effect
+// typed fields receive the same quoting treatment. The TolerationSeconds field
+// is marshaled as-is.
 func (u *Toleration) MarshalJSON() ([]byte, error) {
 	v := reflect.ValueOf(u)
 	values := make([]string, reflect.Indirect(v).NumField())
@@ -244,6 +250,9 @@ func (u *Toleration) MarshalJSON() ([]byte, error) {
 	})
 }
 
+// ToValues converts the receiver into Helm chartutil.Values by JSON-marshaling
+// the struct and parsing the result with chartutil.ReadValues. It returns nil
+// values and an error if either the marshaling or the parsing step fails.
 func (val *Values) ToValues() (chartutil.Values, error) {
 	inrec, err := json.Marshal(val)
 	if err != nil {
@@ -256,6 +265,13 @@ func (val *Values) ToValues() (chartutil.Values, error) {
 	return vals, nil
 }
 
+// RenderCRDs walks crdDir for YAML files and unmarshals each into an
+// unstructured.Unstructured. Files whose immediate parent directory matches any
+// entry in skipDirs are excluded. If backplaneConfig is non-nil and a CRD
+// contains a conversion webhook with a service-based clientConfig, the service
+// namespace is set to backplaneConfig.Spec.TargetNamespace. The DIRECTORY_OVERRIDE
+// environment variable, when set, is prepended to crdDir. It returns the parsed
+// CRDs and a slice of any errors encountered during reading or unmarshaling.
 func RenderCRDs(crdDir string, backplaneConfig *v1.MultiClusterEngine, skipDirs []string) (
 	[]*unstructured.Unstructured, []error) {
 	var crds []*unstructured.Unstructured
@@ -325,6 +341,12 @@ func RenderCRDs(crdDir string, backplaneConfig *v1.MultiClusterEngine, skipDirs 
 	return crds, errs
 }
 
+// RenderCharts renders every Helm chart subdirectory found in chartDir and
+// returns the combined unstructured Kubernetes resources. Each chart is rendered
+// using backplaneConfig for values, images for image overrides, and
+// templateOverrides for additional template values. The DIRECTORY_OVERRIDE
+// environment variable, when set, is prepended to chartDir. If any chart fails
+// to render, the function returns nil and the errors from that chart.
 func RenderCharts(chartDir string, backplaneConfig *v1.MultiClusterEngine, images map[string]string,
 	templateOverrides map[string]string) ([]*unstructured.Unstructured, []error) {
 
@@ -356,6 +378,11 @@ func RenderCharts(chartDir string, backplaneConfig *v1.MultiClusterEngine, image
 	return templates, nil
 }
 
+// RenderChart renders the single Helm chart at chartPath and returns the
+// resulting unstructured Kubernetes resources. It uses backplaneConfig for
+// values, images for image overrides, and templates for additional template
+// values. The DIRECTORY_OVERRIDE environment variable, when set, is prepended
+// to chartPath. If rendering fails, the function returns nil and the errors.
 func RenderChart(chartPath string, backplaneConfig *v1.MultiClusterEngine, images map[string]string,
 	templates map[string]string) ([]*unstructured.Unstructured, []error) {
 

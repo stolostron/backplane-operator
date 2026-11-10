@@ -54,10 +54,19 @@ func (sm *StatusTracker) RemoveComponent(sr StatusReporter) {
 	}
 }
 
+// AddCondition inserts or replaces a MultiClusterEngineCondition in the
+// tracker's condition list. If a condition with the same type already exists
+// it is updated in place; otherwise c is appended.
 func (sm *StatusTracker) AddCondition(c bpv1.MultiClusterEngineCondition) {
 	sm.Conditions = setCondition(sm.Conditions, c)
 }
 
+// ReportStatus queries every tracked component for its current condition,
+// derives the overall availability condition, computes the phase (Available,
+// Progressing, Error, Paused, or Uninstalling) from mce's state, and returns
+// a complete MultiClusterEngineStatus. The CurrentVersion is set to the build
+// version only when the phase is Available; otherwise the existing value from
+// mce.Status is preserved.
 func (sm *StatusTracker) ReportStatus(mce bpv1.MultiClusterEngine) bpv1.MultiClusterEngineStatus {
 	components := sm.reportComponents()
 
@@ -174,9 +183,16 @@ func allComponentsReady(components []bpv1.ComponentCondition) bool {
 
 // StatusReporter is a resource that can report back a status
 type StatusReporter interface {
+	// GetName returns the identifier of the component this reporter tracks.
 	GetName() string
+	// GetNamespace returns the namespace the tracked component lives in, or
+	// an empty string for cluster-scoped resources.
 	GetNamespace() string
+	// GetKind returns the Kubernetes resource kind (e.g. "Deployment",
+	// "ManagedClusterAddOn") of the tracked component.
 	GetKind() string
+	// Status queries the cluster via the provided client and returns a
+	// ComponentCondition describing the current health of the tracked resource.
 	Status(client.Client) bpv1.ComponentCondition
 }
 

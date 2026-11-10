@@ -26,14 +26,20 @@ type DeploymentStatus struct {
 	types.NamespacedName
 }
 
+// GetName returns the name of the tracked Deployment, satisfying the
+// StatusReporter interface.
 func (ds DeploymentStatus) GetName() string {
 	return ds.Name
 }
 
+// GetNamespace returns the namespace of the tracked Deployment, satisfying the
+// StatusReporter interface.
 func (ds DeploymentStatus) GetNamespace() string {
 	return ds.Namespace
 }
 
+// GetKind returns "Deployment" as the resource kind, satisfying the
+// StatusReporter interface.
 func (ds DeploymentStatus) GetKind() string {
 	return "Deployment"
 }

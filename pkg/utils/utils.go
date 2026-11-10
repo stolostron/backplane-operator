@@ -139,6 +139,9 @@ func ProxyEnvVarsAreSet() bool {
 	return false
 }
 
+// DefaultReplicaCount returns the default number of pod replicas for
+// deployments managed by mce. It returns 1 when mce.Spec.AvailabilityConfig
+// is HABasic and 2 for all other configurations (including HAHigh).
 func DefaultReplicaCount(mce *backplanev1.MultiClusterEngine) int {
 	if mce.Spec.AvailabilityConfig == backplanev1.HABasic {
 		return 1
@@ -164,6 +167,10 @@ func GetImagePullPolicy(m *backplanev1.MultiClusterEngine) corev1.PullPolicy {
 	return m.Spec.Overrides.ImagePullPolicy
 }
 
+// IsUpgrading reports whether m is currently upgrading to a new version. It
+// returns true when DesiredVersion differs from CurrentVersion and
+// CurrentVersion is non-empty (a fresh install with no CurrentVersion is not
+// considered an upgrade).
 func IsUpgrading(m *backplanev1.MultiClusterEngine) bool {
 	if m.Status.DesiredVersion != m.Status.CurrentVersion && m.Status.CurrentVersion != "" {
 		return true
@@ -171,6 +178,12 @@ func IsUpgrading(m *backplanev1.MultiClusterEngine) bool {
 	return false
 }
 
+// IsEUSUpgrading reports whether m is performing an EUS (Extended Update
+// Support) upgrade that spans exactly two minor versions. It splits both
+// CurrentVersion and DesiredVersion on "." and compares the second segment
+// (minor version) as integers. It returns false when CurrentVersion is empty,
+// either version has fewer than two dot-separated segments, or the minor
+// segments cannot be parsed as integers.
 func IsEUSUpgrading(m *backplanev1.MultiClusterEngine) bool {
 	if m.Status.CurrentVersion == "" {
 		return false
@@ -196,6 +209,9 @@ func IsEUSUpgrading(m *backplanev1.MultiClusterEngine) bool {
 	return desiredY-currentY == 2
 }
 
+// GetTestImages returns a hard-coded list of image override key names used in
+// tests to verify that the operator's image override mechanism handles every
+// expected image reference.
 func GetTestImages() []string {
 	return []string{
 		"APISERVER_NETWORK_PROXY", "ASSISTED_IMAGE_SERVICE", "ASSISTED_INSTALLER", "ASSISTED_INSTALLER_AGENT",
@@ -225,6 +241,9 @@ func GetTestImages() []string {
 	}
 }
 
+// IsUnitTest reports whether the UNIT_TEST environment variable is set to the
+// exact string "true". It returns false if the variable is unset, empty, or set
+// to any other value.
 func IsUnitTest() bool {
 	if unitTest, found := os.LookupEnv(UnitTestEnvVar); found {
 		if unitTest == "true" {
@@ -234,6 +253,9 @@ func IsUnitTest() bool {
 	return false
 }
 
+// GetMCHNamespace returns the value of the "installer.namespace" label from m,
+// which identifies the namespace of the managing MultiClusterHub. It returns an
+// empty string if the label is not present.
 func GetMCHNamespace(m *backplanev1.MultiClusterEngine) string {
 	val, ok := m.Labels["installer.namespace"]
 	if ok {
@@ -242,6 +264,10 @@ func GetMCHNamespace(m *backplanev1.MultiClusterEngine) string {
 	return ""
 }
 
+// DefaultTolerations returns two tolerations that allow scheduling on
+// infrastructure nodes (key node-role.kubernetes.io/infra, effect NoSchedule,
+// operator Exists) and dedicated nodes (key dedicated, effect NoSchedule,
+// operator Exists).
 func DefaultTolerations() []corev1.Toleration {
 	return []corev1.Toleration{
 		{
@@ -257,6 +283,8 @@ func DefaultTolerations() []corev1.Toleration {
 	}
 }
 
+// Contains reports whether s contains str, using a linear scan with string
+// equality. It returns false if s is nil or empty.
 func Contains(s []string, str string) bool {
 	for _, v := range s {
 		if v == str {
@@ -267,6 +295,10 @@ func Contains(s []string, str string) bool {
 	return false
 }
 
+// Remove removes the first occurrence of str from s and returns the resulting
+// slice. If str is not found, s is returned unchanged. The returned slice
+// shares the backing array of s, so the removal shifts trailing elements and
+// may overwrite values visible through the original slice.
 func Remove(s []string, str string) []string {
 	for i, v := range s {
 		if v == str {
@@ -276,6 +308,9 @@ func Remove(s []string, str string) []string {
 	return s
 }
 
+// OperatorNamespace returns the namespace where the backplane operator is
+// deployed by reading the POD_NAMESPACE environment variable. It panics if the
+// variable is not set.
 func OperatorNamespace() string {
 	deploymentNamespace, ok := os.LookupEnv("POD_NAMESPACE")
 	if !ok {
@@ -328,14 +363,22 @@ func GetHubType(mce *backplanev1.MultiClusterEngine) string {
 	}
 }
 
+// SetDeployOnOCP sets the package-level GlobalDeployOnOCP flag to v, controlling
+// whether the operator enables OpenShift-specific behavior.
 func SetDeployOnOCP(v bool) {
 	GlobalDeployOnOCP = v
 }
 
+// DeployOnOCP reports whether the operator is running on OpenShift Container
+// Platform, as determined by DetectOpenShift or SetDeployOnOCP.
 func DeployOnOCP() bool {
 	return GlobalDeployOnOCP
 }
 
+// DetectOpenShift probes the cluster for the openshift-config namespace to
+// determine whether this is an OpenShift environment. If the namespace exists,
+// GlobalDeployOnOCP is set to true; if it is not found, GlobalDeployOnOCP is set
+// to false. Any other API error is returned without changing the flag.
 func DetectOpenShift(cl client.Client) error {
 	checkNs := &corev1.Namespace{}
 	err := cl.Get(context.TODO(), types.NamespacedName{Name: "openshift-config"}, checkNs)
@@ -359,6 +402,10 @@ type ServingCertGetter struct {
 
 var GlobalServingCertGetter *ServingCertGetter
 
+// NewGlobalServingCertCABundleGetter initializes the package-level
+// GlobalServingCertGetter with the given kubeClient, caBundleConfigMapName, and
+// namespace. Subsequent calls to GetServingCertCABundle and DumpServingCertSecret
+// use these values to locate the CA bundle ConfigMap and TLS secret.
 func NewGlobalServingCertCABundleGetter(kubeClient kubernetes.Interface,
 	caBundleConfigMapName, namespace string) {
 	GlobalServingCertGetter = &ServingCertGetter{
@@ -368,6 +415,10 @@ func NewGlobalServingCertCABundleGetter(kubeClient kubernetes.Interface,
 	}
 }
 
+// GetServingCertCABundle retrieves the "ca-bundle.crt" key from the ConfigMap
+// configured in GlobalServingCertGetter. It returns an error if the global
+// getter has not been initialized, if the ConfigMap cannot be fetched, or if the
+// key is missing or empty.
 func GetServingCertCABundle() (string, error) {
 	if GlobalServingCertGetter == nil {
 		return "", fmt.Errorf("GlobalServingCertCABundleGetter is nil")
@@ -385,6 +436,12 @@ func GetServingCertCABundle() (string, error) {
 	// return base64.StdEncoding.EncodeToString([]byte(caBundle)), nil
 }
 
+// DumpServingCertSecret fetches the "multicluster-engine-operator-webhook" Secret
+// from the namespace configured in GlobalServingCertGetter, validates that it
+// contains non-empty tls.crt and tls.key entries with valid PEM headers, and
+// writes each key's data to /tmp/k8s-webhook-server/serving-certs/, skipping
+// files whose contents are unchanged. It returns an error if the Secret is
+// missing, incomplete, contains invalid PEM data, or if any file write fails.
 func DumpServingCertSecret() error {
 	certKeySecret, err := GlobalServingCertGetter.kubeClient.CoreV1().Secrets(GlobalServingCertGetter.namespace).
 		Get(context.Background(), "multicluster-engine-operator-webhook", metav1.GetOptions{})

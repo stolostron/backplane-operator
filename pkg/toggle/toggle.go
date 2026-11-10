@@ -48,12 +48,19 @@ const (
 	ServerFoundationChartDir           = "pkg/templates/charts/toggle/server-foundation"
 )
 
+// EnabledStatus returns a DeploymentStatus StatusReporter that monitors the
+// Deployment identified by namespacedName to determine whether the enabled
+// component is available.
 func EnabledStatus(namespacedName types.NamespacedName) status.StatusReporter {
 	return status.DeploymentStatus{
 		NamespacedName: namespacedName,
 	}
 }
 
+// DisabledStatus returns a ToggledOffStatus StatusReporter that verifies every
+// resource in resourceList has been removed from the cluster. Each resource is
+// identified by its name, namespace, and GVK from the original unstructured
+// objects. The component itself is identified by namespacedName.
 func DisabledStatus(namespacedName types.NamespacedName, resourceList []*unstructured.Unstructured) status.StatusReporter {
 	removals := []*unstructured.Unstructured{}
 	for _, u := range resourceList {
@@ -75,14 +82,20 @@ type ToggledOffStatus struct {
 	resources []*unstructured.Unstructured
 }
 
+// GetName returns the name of the toggled-off component, satisfying the
+// StatusReporter interface.
 func (ts ToggledOffStatus) GetName() string {
 	return ts.Name
 }
 
+// GetNamespace returns the namespace of the toggled-off component, satisfying
+// the StatusReporter interface.
 func (ts ToggledOffStatus) GetNamespace() string {
 	return ts.Namespace
 }
 
+// GetKind returns the fixed string "Component" as the kind for a toggled-off
+// component, satisfying the StatusReporter interface.
 func (ts ToggledOffStatus) GetKind() string {
 	return "Component"
 }

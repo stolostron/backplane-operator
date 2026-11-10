@@ -66,6 +66,11 @@ func AddonManagerImage(overrides map[string]string) string {
 	return overrides[AddonManagerImageKey]
 }
 
+// ClusterManager builds an unstructured ClusterManager resource named
+// "cluster-manager" from m and the image overrides map. It sets the
+// registration, work, placement, and addon-manager images from overrides, copies
+// node selector and tolerations from m.Spec (falling back to DefaultTolerations
+// if none are specified), and applies backplane config labels.
 func ClusterManager(m *v1.MultiClusterEngine, overrides map[string]string) *unstructured.Unstructured {
 	log := log.Log.WithName("reconcile")
 
@@ -134,6 +139,11 @@ func CanInstallAddons(ctx context.Context, client client.Client) bool {
 	return err == nil
 }
 
+// GetAddons walks the addon templates directory (overridable via the
+// DIRECTORY_OVERRIDE environment variable), reads each YAML file through an
+// os.OpenRoot handle to prevent symlink escapes, and returns the parsed
+// unstructured objects. It returns an error if the directory cannot be opened
+// or any file fails to read or unmarshal.
 func GetAddons() ([]*unstructured.Unstructured, error) {
 	var addons []*unstructured.Unstructured
 
