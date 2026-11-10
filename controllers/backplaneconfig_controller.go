@@ -1847,6 +1847,9 @@ func (r *MultiClusterEngineReconciler) applyComponentDeploymentOverrides(mce *ba
 	return ctrl.Result{}, nil
 }
 
+// ApplyControllerReference sets backplaneConfig as the controller owner of
+// template using the reconciler's scheme. It returns an error and logs the
+// resource kind and name if the reference cannot be set.
 func (r *MultiClusterEngineReconciler) ApplyControllerReference(backplaneConfig *backplanev1.MultiClusterEngine,
 	template *unstructured.Unstructured) error {
 	if err := ctrl.SetControllerReference(backplaneConfig, template, r.Scheme); err != nil {
@@ -2854,6 +2857,11 @@ func (r *MultiClusterEngineReconciler) getClusterIngressDomain(ctx context.Conte
 	return clusterIngress.Spec.Domain, nil
 }
 
+// CheckDeprecatedFieldUsage inspects the annotations on m for deprecated keys
+// (image overrides CM, image repo, kubeconfig, MCE pause, and ignore OCP
+// version) and logs a warning the first time each is seen. Subsequent calls
+// with the same key are silent because the warning is recorded in
+// r.DeprecatedFields, which is lazily initialized on first call.
 func (r *MultiClusterEngineReconciler) CheckDeprecatedFieldUsage(m *backplanev1.MultiClusterEngine) {
 	a := m.GetAnnotations()
 	df := []struct {
@@ -2879,6 +2887,11 @@ func (r *MultiClusterEngineReconciler) CheckDeprecatedFieldUsage(m *backplanev1.
 	}
 }
 
+// EnsureCRD creates crd in the cluster via c, or updates it if it already
+// exists. On update it preserves any existing caBundle in the conversion
+// webhook's clientConfig (e.g. injected by cert-manager on vanilla K8s) and
+// copies the existing resourceVersion into crd before writing. If the existing
+// CRD carries the MCE-ignore annotation, the update is skipped entirely.
 func EnsureCRD(ctx context.Context, c client.Client, crd *unstructured.Unstructured) error {
 	existingCRD := &unstructured.Unstructured{}
 	existingCRD.SetGroupVersionKind(crd.GroupVersionKind())
@@ -2920,6 +2933,10 @@ func EnsureCRD(ctx context.Context, c client.Client, crd *unstructured.Unstructu
 	return nil
 }
 
+// GetDeprecatedResources returns a list of formerly-managed Kubernetes objects
+// (Services, ClusterRoles, ClusterRoleBindings) that should be garbage-collected
+// on upgrade. The returned objects carry only the metadata needed for deletion;
+// namespace-scoped entries use m.Spec.TargetNamespace.
 func (r *MultiClusterEngineReconciler) GetDeprecatedResources(m *backplanev1.MultiClusterEngine) []client.Object {
 	return []client.Object{
 		&corev1.Service{

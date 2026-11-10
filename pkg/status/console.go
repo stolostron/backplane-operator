@@ -18,14 +18,20 @@ type ConsoleUnavailableStatus struct {
 	types.NamespacedName
 }
 
+// GetName returns the name of the console Deployment whose availability is
+// tracked, satisfying the StatusReporter interface.
 func (cs ConsoleUnavailableStatus) GetName() string {
 	return cs.Name
 }
 
+// GetNamespace returns the namespace of the console Deployment, satisfying the
+// StatusReporter interface.
 func (cs ConsoleUnavailableStatus) GetNamespace() string {
 	return cs.Namespace
 }
 
+// GetKind returns "Deployment" as the resource kind for the console status,
+// satisfying the StatusReporter interface.
 func (cms ConsoleUnavailableStatus) GetKind() string {
 	return "Deployment"
 }

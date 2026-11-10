@@ -44,6 +44,14 @@ func (s StaticStatus) Status(k8sClient client.Client) bpv1.ComponentCondition {
 	return cc
 }
 
+// NewDisabledStatus creates a StatusReporter that verifies every resource in
+// resourceList has been removed from the cluster. The returned reporter
+// identifies itself by namespacedName and uses explanation as the condition
+// message when all resources are confirmed absent.
+//
+// Callers must include every resource they want checked in resourceList; any
+// resource not in the list is not verified. An empty list causes the reporter
+// to report success without checking any resources.
 func NewDisabledStatus(namespacedName types.NamespacedName, explanation string, resourceList []*unstructured.Unstructured) StatusReporter {
 	removals := []*unstructured.Unstructured{}
 	for _, u := range resourceList {
@@ -141,6 +149,11 @@ func (s DisabledStatus) Status(k8sClient client.Client) bpv1.ComponentCondition 
 	}
 }
 
+// NewPresentStatus creates a StatusReporter that verifies a single resource
+// identified by namespacedName and gvk exists in the cluster. The returned
+// reporter queries the API server on each Status call and reports the resource
+// as available when found, or as failed when not found or when the GVK is not
+// registered.
 func NewPresentStatus(namespacedName types.NamespacedName, gvk schema.GroupVersionKind) StatusReporter {
 	return PresentStatus{
 		NamespacedName: namespacedName,
@@ -156,14 +169,22 @@ type PresentStatus struct {
 	gvk schema.GroupVersionKind
 }
 
+// GetName returns the name of the resource whose presence is being tracked,
+// satisfying the StatusReporter interface.
 func (s PresentStatus) GetName() string {
 	return s.Name
 }
 
+// GetNamespace returns the namespace of the resource whose presence is being
+// tracked, satisfying the StatusReporter interface. It returns an empty string
+// for cluster-scoped resources.
 func (s PresentStatus) GetNamespace() string {
 	return s.Namespace
 }
 
+// GetKind returns the Kubernetes kind of the resource whose presence is being
+// tracked, as specified in the GroupVersionKind passed to NewPresentStatus. It
+// satisfies the StatusReporter interface.
 func (s PresentStatus) GetKind() string {
 	return s.gvk.Kind
 }

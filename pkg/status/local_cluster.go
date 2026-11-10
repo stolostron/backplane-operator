@@ -34,18 +34,31 @@ type LocalClusterStatus struct {
 	Enabled bool
 }
 
+// GetName returns the name of the local cluster ManagedCluster resource,
+// satisfying the StatusReporter interface.
 func (s LocalClusterStatus) GetName() string {
 	return s.Name
 }
 
+// GetNamespace returns the namespace of the local cluster ManagedCluster
+// resource, satisfying the StatusReporter interface.
 func (s LocalClusterStatus) GetNamespace() string {
 	return s.Namespace
 }
 
+// GetKind returns the constant "local-cluster" as the kind string,
+// satisfying the StatusReporter interface.
 func (s LocalClusterStatus) GetKind() string {
 	return lcsKind
 }
 
+// Status queries the cluster via c for the local ManagedCluster resource and
+// returns a ComponentCondition reflecting its health. When Enabled is true the
+// ManagedCluster must be accepted, joined, and available to report as ready;
+// if it is being deleted the condition reports it as unavailable with a
+// detaching message. When Enabled is false the condition is available only if
+// the ManagedCluster resource has been fully removed. An unknown condition is
+// returned if the ManagedCluster cannot be fetched.
 func (s LocalClusterStatus) Status(c client.Client) bpv1.ComponentCondition {
 	mc, err := s.getManagedCluster(c)
 	if err != nil {
