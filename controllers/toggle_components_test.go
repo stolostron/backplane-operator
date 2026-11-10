@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"reflect"
+	"strings"
 	"testing"
 
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
@@ -1038,6 +1039,142 @@ func Test_ensureNoFleetNavigation(t *testing.T) {
 		}
 		if result != (ctrl.Result{}) {
 			t.Fatalf("ensureNoFleetNavigation() returned non-zero result: %v", result)
+		}
+	})
+}
+
+func Test_handleRenderErrors(t *testing.T) {
+	scheme := runtime.NewScheme()
+	corev1.AddToScheme(scheme)
+	backplanev1.AddToScheme(scheme)
+
+	cl := fake.NewClientBuilder().WithScheme(scheme).Build()
+	statusManager := &status.StatusTracker{Client: cl}
+
+	r := &MultiClusterEngineReconciler{
+		Client:        cl,
+		Scheme:        scheme,
+		StatusManager: statusManager,
+	}
+
+	mce := &backplanev1.MultiClusterEngine{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test-mce",
+		},
+		Spec: backplanev1.MultiClusterEngineSpec{
+			TargetNamespace: "test-ns",
+		},
+	}
+
+	t.Run("returns error and empty result on render failure", func(t *testing.T) {
+		renderErrs := []error{
+			errors.New("template parse error"),
+			errors.New("values missing"),
+		}
+
+		result, err := r.handleRenderErrors(renderErrs, "test-component", mce)
+
+		if err == nil {
+			t.Fatal("expected non-nil error from handleRenderErrors, got nil")
+		}
+
+		if result != (ctrl.Result{}) {
+			t.Errorf("expected empty Result (for backoff), got %+v", result)
+		}
+
+		if !strings.Contains(err.Error(), "failed to render chart") {
+			t.Errorf("expected error to contain 'failed to render chart', got: %s", err.Error())
+		}
+
+		if !strings.Contains(err.Error(), "test-component") {
+			t.Errorf("expected error to contain component name 'test-component', got: %s", err.Error())
+		}
+
+		// Verify a ComponentFailure condition was set
+		found := status.ConditionPresentWithSubstring(
+			statusManager.Conditions,
+			string(backplanev1.MultiClusterEngineComponentFailure),
+		)
+		if !found {
+			t.Fatal("expected ComponentFailure condition to be set, but not found")
+		}
+	})
+
+	t.Run("condition has ResourceRenderReason", func(t *testing.T) {
+		for _, c := range statusManager.Conditions {
+			if strings.Contains(string(c.Type), string(backplanev1.MultiClusterEngineComponentFailure)) {
+				if c.Reason != status.ResourceRenderReason {
+					t.Errorf("expected condition reason %q, got %q",
+						status.ResourceRenderReason, c.Reason)
+				}
+				if c.Status != metav1.ConditionTrue {
+					t.Errorf("expected condition status True, got %s", c.Status)
+				}
+				return
+			}
+		}
+		t.Fatal("ComponentFailure condition not found")
+	})
+}
+
+func Test_ensureComponent_RenderError(t *testing.T) {
+	// Verify that ensure* functions with a non-existent chart path return
+	// an error (via handleRenderErrors) instead of silently requeuing.
+	scheme := runtime.NewScheme()
+	corev1.AddToScheme(scheme)
+	backplanev1.AddToScheme(scheme)
+	addonv1alpha1.AddToScheme(scheme)
+
+	ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "test-ns"}}
+	cl := fake.NewClientBuilder().WithScheme(scheme).WithObjects(ns).Build()
+	statusManager := &status.StatusTracker{Client: cl}
+
+	r := &MultiClusterEngineReconciler{
+		Client:        cl,
+		Scheme:        scheme,
+		StatusManager: statusManager,
+		CacheSpec: CacheSpec{
+			ImageOverrides:    map[string]string{},
+			TemplateOverrides: map[string]string{},
+		},
+	}
+
+	mce := &backplanev1.MultiClusterEngine{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test-mce",
+		},
+		Spec: backplanev1.MultiClusterEngineSpec{
+			TargetNamespace: "test-ns",
+		},
+	}
+
+	// Override chart path to a non-existent directory to trigger render errors
+	os.Setenv("DIRECTORY_OVERRIDE", "/nonexistent-path")
+	defer os.Unsetenv("DIRECTORY_OVERRIDE")
+
+	t.Run("ensureDiscovery returns error on render failure", func(t *testing.T) {
+		result, err := r.ensureDiscovery(context.TODO(), mce)
+		if err == nil {
+			t.Fatal("expected non-nil error from ensureDiscovery when chart render fails, got nil")
+		}
+		if result != (ctrl.Result{}) {
+			t.Errorf("expected empty Result (for backoff), got %+v", result)
+		}
+		if !strings.Contains(err.Error(), "failed to render chart") {
+			t.Errorf("expected error to contain 'failed to render chart', got: %s", err.Error())
+		}
+	})
+
+	t.Run("ensureNoDiscovery returns error on render failure", func(t *testing.T) {
+		result, err := r.ensureNoDiscovery(context.TODO(), mce)
+		if err == nil {
+			t.Fatal("expected non-nil error from ensureNoDiscovery when chart render fails, got nil")
+		}
+		if result != (ctrl.Result{}) {
+			t.Errorf("expected empty Result (for backoff), got %+v", result)
+		}
+		if !strings.Contains(err.Error(), "failed to render chart") {
+			t.Errorf("expected error to contain 'failed to render chart', got: %s", err.Error())
 		}
 	})
 }

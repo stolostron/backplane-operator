@@ -877,10 +877,20 @@ func (r *MultiClusterEngineReconciler) DeployAlwaysSubcomponents(ctx context.Con
 		r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+		renderErr := fmt.Errorf("failed to render always-on subcomponent charts: %w", errors.Join(errs...))
+		log.Error(renderErr, "Template render failed", "component", "always-subcomponents")
+
+		condType := fmt.Sprintf("%v: %v", backplanev1.MultiClusterEngineComponentFailure, "always-subcomponents")
+		r.StatusManager.AddCondition(
+			status.NewCondition(
+				backplanev1.MultiClusterEngineConditionType(condType),
+				metav1.ConditionTrue,
+				status.ResourceRenderReason,
+				renderErr.Error(),
+			),
+		)
+
+		return ctrl.Result{}, renderErr
 	}
 
 	// Applies all templates
