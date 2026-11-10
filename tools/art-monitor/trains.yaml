@@ -36,4 +36,4 @@ trains:
     # mention: "@someone-else"  # Optional: override default mention for this train
 
   - version: "2.6"
-    ocp: "4.12"
+    ocp: "4.16"
