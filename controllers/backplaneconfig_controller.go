@@ -280,6 +280,9 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}
 
 	var result ctrl.Result
+	// componentResult holds a requeue requested by component reconciliation so
+	// completion is not reported while component work is still pending.
+	var componentResult ctrl.Result
 
 	result, err = r.setDefaults(ctx, backplaneConfig)
 	if result != (ctrl.Result{}) {
@@ -513,10 +516,16 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		r.StatusManager.AddCondition(cond)
 		return result, err
 	}
+	if result != (ctrl.Result{}) {
+		componentResult = result
+	}
 
 	result, err = r.ensureToggleableComponents(ctx, backplaneConfig)
 	if err != nil {
 		return result, err
+	}
+	if result != (ctrl.Result{}) {
+		componentResult = result
 	}
 
 	/*
@@ -556,6 +565,15 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 	if upgrade {
 		return ctrl.Result{Requeue: true}, nil
 	}
+
+	// Do not report completion or advance the observed generation while a
+	// component has requested a requeue.
+	if componentResult != (ctrl.Result{}) {
+		return componentResult, nil
+	}
+
+	// The pass completed successfully, so the status reflects the latest spec.
+	backplaneConfig.Status.ObservedGeneration = backplaneConfig.Generation
 
 	r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing, metav1.ConditionTrue,
 		status.DeploySuccessReason, "All components deployed"))

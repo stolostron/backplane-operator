@@ -79,8 +79,11 @@ func (sm *StatusTracker) ReportStatus(mce bpv1.MultiClusterEngine) bpv1.MultiClu
 		currentVersion = version.Version
 	}
 
+	// Preserve the previously observed generation. Reconcile advances it only
+	// after a pass completes successfully, so an incomplete pass cannot report
+	// a current status.
 	return bpv1.MultiClusterEngineStatus{
-		ObservedGeneration: mce.Generation,
+		ObservedGeneration: mce.Status.ObservedGeneration,
 		Components:         components,
 		Conditions:         conditions,
 		Phase:              phase,
