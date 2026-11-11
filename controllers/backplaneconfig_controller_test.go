@@ -2512,7 +2512,7 @@ func Test_ensureToggleableComponents_withExternallyManagedComponents(t *testing.
 							`"cluster-permission","server-foundation","cluster-proxy-addon",` +
 							`"cluster-api","cluster-api-provider-aws",` +
 							`"cluster-api-provider-azure-preview",` +
-							`"cluster-api-provider-metal3-preview",` +
+							`"cluster-api-provider-metal3",` +
 							`"cluster-api-provider-openshift-assisted","local-cluster"]`,
 					},
 				},
