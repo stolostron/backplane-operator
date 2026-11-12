@@ -231,7 +231,7 @@ var _ = BeforeSuite(func() {
 		Client:          k8sManager.GetClient(),
 		Scheme:          k8sManager.GetScheme(),
 		StatusManager:   &status.StatusTracker{Client: k8sManager.GetClient()},
-		Recorder:        record.NewFakeRecorder(100),
+		Recorder:        &record.FakeRecorder{}, // nil Events channel discards events instead of blocking
 		UpgradeableCond: upgradeableCondition,
 	}
 

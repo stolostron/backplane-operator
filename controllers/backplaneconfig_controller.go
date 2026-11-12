@@ -561,6 +561,9 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 	if err != nil {
 		return result, err
 	}
+	if result != (ctrl.Result{}) {
+		componentResult = result
+	}
 
 	if upgrade {
 		return ctrl.Result{Requeue: true}, nil
