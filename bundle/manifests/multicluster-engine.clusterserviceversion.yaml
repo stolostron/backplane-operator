@@ -29,7 +29,7 @@ metadata:
     features.operators.openshift.io/token-auth-azure: "false"
     features.operators.openshift.io/token-auth-gcp: "false"
     olm.properties: '[{"type": "olm.maxOpenShiftVersion", "value": "5.1"}]'
-    olm.skipRange: '>=2.17.0-0 <5.0.0'
+    olm.skipRange: '>=2.17.0-0 <5.0.1'
     operatorframework.io/initialization-resource: '{"apiVersion":"multicluster.openshift.io/v1",
       "kind":"MultiClusterEngine","metadata":{"name":"engine"},"spec": {}}'
     operatorframework.io/suggested-namespace: multicluster-engine
@@ -41,7 +41,7 @@ metadata:
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
     repository: https://github.com/open-cluster-management/backplane-operator
     support: Red Hat
-  name: multicluster-engine.v5.0.0
+  name: multicluster-engine.v5.0.1
   namespace: placeholder
   labels:
     operatorframework.io/arch.amd64: supported
@@ -3591,7 +3591,7 @@ spec:
                 - name: OPERAND_IMAGE_POSTGRESQL_16
                   value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/postgresql-16:latest
                 - name: OPERATOR_VERSION
-                  value: "5.0.0"
+                  value: "5.0.1"
                 - name: OPERATOR_PACKAGE
                   value: multicluster-engine
                 image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/backplane-operator:latest
@@ -3787,4 +3787,4 @@ spec:
     image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/postgresql-15:latest
   - name: postgresql_16
     image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/postgresql-16:latest
-  version: 5.0.0
+  version: 5.0.1

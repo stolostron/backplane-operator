@@ -2,8 +2,8 @@
 updates:
 - file: "manifests/multicluster-engine.clusterserviceversion.yaml"
   update_list:
-  - search: "5.0.0"
-    replace: "5.0.0"
+  - search: "5.0.1"
+    replace: "5.0.1"
 external-images:
 # The ose-cluster-api and ose-baremetal images are OCP 5.0 payload images,
 # pinned to the latest 5.0 stream digests. They are not published to
