@@ -1103,6 +1103,14 @@ func Test_handleRenderErrors(t *testing.T) {
 	})
 
 	t.Run("condition has ResourceRenderReason", func(t *testing.T) {
+		// Invoke handleRenderErrors here so this subtest does not depend on
+		// state left behind by the previous subtest.
+		if _, err := r.handleRenderErrors(
+			[]error{errors.New("template parse error")}, "test-component", mce,
+		); err == nil {
+			t.Fatal("expected non-nil error from handleRenderErrors, got nil")
+		}
+
 		for _, c := range statusManager.Conditions {
 			if strings.Contains(string(c.Type), string(backplanev1.MultiClusterEngineComponentFailure)) {
 				if c.Reason != status.ResourceRenderReason {
