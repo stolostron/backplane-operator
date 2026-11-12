@@ -4,12 +4,14 @@ import (
 	"context"
 	"errors"
 	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
 
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 	"github.com/stolostron/backplane-operator/pkg/foundation"
+	renderer "github.com/stolostron/backplane-operator/pkg/rendering"
 	"github.com/stolostron/backplane-operator/pkg/status"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -1177,4 +1179,73 @@ func Test_ensureComponent_RenderError(t *testing.T) {
 			t.Errorf("expected error to contain 'failed to render chart', got: %s", err.Error())
 		}
 	})
+}
+
+func Test_DeployAlwaysSubcomponents_RenderError(t *testing.T) {
+	// Verify that a failure to render the always-on charts is surfaced as an
+	// error and a ComponentFailure condition instead of silently requeuing.
+	scheme := runtime.NewScheme()
+	corev1.AddToScheme(scheme)
+	backplanev1.AddToScheme(scheme)
+
+	ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "test-ns"}}
+	cl := fake.NewClientBuilder().WithScheme(scheme).WithObjects(ns).Build()
+	statusManager := &status.StatusTracker{Client: cl}
+
+	r := &MultiClusterEngineReconciler{
+		Client:        cl,
+		Scheme:        scheme,
+		StatusManager: statusManager,
+		CacheSpec: CacheSpec{
+			ImageOverrides:    map[string]string{},
+			TemplateOverrides: map[string]string{},
+		},
+	}
+
+	mce := &backplanev1.MultiClusterEngine{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test-mce",
+		},
+		Spec: backplanev1.MultiClusterEngineSpec{
+			TargetNamespace: "test-ns",
+		},
+	}
+
+	// Point the always-on chart directory at a directory containing an invalid
+	// chart so that chart rendering fails.
+	tmpDir := t.TempDir()
+	alwaysDir := filepath.Join(tmpDir, renderer.AlwaysChartsDir)
+	if err := os.MkdirAll(filepath.Join(alwaysDir, "invalid-chart"), 0o755); err != nil {
+		t.Fatalf("failed to create temporary chart directory: %v", err)
+	}
+	os.Setenv("DIRECTORY_OVERRIDE", tmpDir)
+	defer os.Unsetenv("DIRECTORY_OVERRIDE")
+
+	result, err := r.DeployAlwaysSubcomponents(context.TODO(), mce)
+	if err == nil {
+		t.Fatal("expected non-nil error from DeployAlwaysSubcomponents when chart render fails, got nil")
+	}
+	if result != (ctrl.Result{}) {
+		t.Errorf("expected empty Result (for backoff), got %+v", result)
+	}
+	if !strings.Contains(err.Error(), "failed to render always-on subcomponent charts") {
+		t.Errorf("expected error to contain 'failed to render always-on subcomponent charts', got: %s", err.Error())
+	}
+
+	var found bool
+	for _, c := range statusManager.Conditions {
+		if strings.Contains(string(c.Type), string(backplanev1.MultiClusterEngineComponentFailure)) &&
+			strings.Contains(string(c.Type), "always-subcomponents") {
+			found = true
+			if c.Reason != status.ResourceRenderReason {
+				t.Errorf("expected condition reason %q, got %q", status.ResourceRenderReason, c.Reason)
+			}
+			if c.Status != metav1.ConditionTrue {
+				t.Errorf("expected condition status True, got %s", c.Status)
+			}
+		}
+	}
+	if !found {
+		t.Fatal("expected ComponentFailure: always-subcomponents condition to be set, but not found")
+	}
 }

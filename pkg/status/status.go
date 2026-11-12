@@ -128,14 +128,16 @@ func (sm *StatusTracker) reportPhase(mce bpv1.MultiClusterEngine, components []b
 		return bpv1.MultiClusterEnginePhaseUninstalling
 	}
 
-	// If status isn't tracking anything show error phase
-	if len(components) == 0 {
-		return bpv1.MultiClusterEnginePhaseProgressing
-	}
-
-	// If status contains failure status return error
+	// If status contains failure status return error. This must be checked before the
+	// zero-component case so that a render failure on an always-on chart is reported
+	// during initial install, when no components are tracked yet.
 	if ok := ConditionPresentWithSubstring(conditions, string(bpv1.MultiClusterEngineComponentFailure)); ok {
 		return bpv1.MultiClusterEnginePhaseError
+	}
+
+	// If status isn't tracking anything show progressing phase
+	if len(components) == 0 {
+		return bpv1.MultiClusterEnginePhaseProgressing
 	}
 
 	// If a component isn't ready show progressing phase
