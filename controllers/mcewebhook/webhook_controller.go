@@ -39,6 +39,12 @@ type Reconciler struct {
 	log       logr.Logger
 }
 
+// Reconcile ensures the MCE ValidatingWebhookConfiguration matches the expected
+// webhook definitions. On non-OCP clusters it also injects the serving-cert CA
+// bundle into the webhook's clientConfig. If the existing webhooks differ from
+// the desired state, Reconcile applies a server-side patch to update them. It
+// requeues after 10 minutes to detect CA bundle rotation, or after 5 seconds if
+// the webhook configuration is not yet present.
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (retRes ctrl.Result, retErr error) {
 	r.log = log.Log.WithName(ControllerName)
 	r.log.V(2).Info("Reconciling webhook controller")
@@ -88,6 +94,9 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (retRes ct
 	return ctrl.Result{Requeue: true, RequeueAfter: time.Minute * 10}, nil
 }
 
+// SetupWithManager registers the webhook reconciler with mgr, watching for
+// create, update, and delete events on ValidatingWebhookConfiguration resources
+// named MCEValidatingWebhookName. Other webhook configurations are ignored.
 func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).Named(ControllerName).
 		Watches(&admissionregistration.ValidatingWebhookConfiguration{},

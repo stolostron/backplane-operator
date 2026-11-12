@@ -146,6 +146,9 @@ func ValidatingWebhook(namespace string) *admissionregistration.ValidatingWebhoo
 	}
 }
 
+// SetupWebhookWithManager registers the MultiClusterEngine validating and
+// defaulting webhooks with mgr and stores the manager's client in the
+// package-level Client variable for use by webhook handlers.
 func (r *MultiClusterEngine) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	Client = mgr.GetClient()
 	return builder.WebhookManagedBy(mgr, r).

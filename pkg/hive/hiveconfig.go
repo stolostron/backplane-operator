@@ -12,6 +12,8 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
+// HiveConfig returns an unstructured HiveConfig resource named "hive" with an
+// empty spec and backplane config labels derived from bpc.GetName().
 func HiveConfig(bpc *v1.MultiClusterEngine) *unstructured.Unstructured {
 
 	cm := &unstructured.Unstructured{
