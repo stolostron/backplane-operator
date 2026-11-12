@@ -234,6 +234,8 @@ func HasAnnotation(instance *backplanev1.MultiClusterEngine, annotationKey strin
 	return exists
 }
 
+// GetEdgeManagerEnabled returns the value of the AnnotationEdgeManagerEnabled
+// annotation on instance. If the annotation is not present, it returns "false".
 func GetEdgeManagerEnabled(instance *backplanev1.MultiClusterEngine) string {
 	if HasAnnotation(instance, AnnotationEdgeManagerEnabled) {
 		return instance.GetAnnotations()[AnnotationEdgeManagerEnabled]

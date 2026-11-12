@@ -11,6 +11,10 @@ import (
 	// addonv1alpha1 "open-cluster-management.io/api/addon/v1alpha1"
 )
 
+// RenderHypershiftAddon returns an unstructured ManagedClusterAddOn named
+// "hypershift-addon" in the namespace mce.Spec.LocalClusterName, configured to
+// install into the "open-cluster-management-agent-addon" namespace. Backplane
+// config labels are applied from mce.GetName(). The error return is always nil.
 func RenderHypershiftAddon(mce *v1.MultiClusterEngine) (*unstructured.Unstructured, error) {
 	addon := &unstructured.Unstructured{
 		Object: map[string]interface{}{

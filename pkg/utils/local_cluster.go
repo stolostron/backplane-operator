@@ -16,6 +16,10 @@ const (
 	AnnotationTolerations  = "open-cluster-management/tolerations"
 )
 
+// NewManagedCluster returns an unstructured ManagedCluster (cluster.open-cluster-management.io/v1)
+// with the given name, configured as a local hub cluster. The resource has
+// local-cluster, cloud, vendor, and velero backup-exclusion labels set, and
+// spec.hubAcceptsClient is true.
 func NewManagedCluster(name string) *unstructured.Unstructured {
 	managedCluster := &unstructured.Unstructured{
 		Object: map[string]interface{}{
@@ -38,6 +42,8 @@ func NewManagedCluster(name string) *unstructured.Unstructured {
 	return managedCluster
 }
 
+// NewLocalNamespace returns a corev1.Namespace with the given name and no
+// labels or annotations, intended for use as the local cluster's namespace.
 func NewLocalNamespace(name string) *corev1.Namespace {
 	return &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{

@@ -105,14 +105,20 @@ type ManagedClusterAddOnStatus struct {
 	types.NamespacedName
 }
 
+// GetName returns the name of the tracked ManagedClusterAddOn, satisfying the
+// StatusReporter interface.
 func (s ManagedClusterAddOnStatus) GetName() string {
 	return s.Name
 }
 
+// GetNamespace returns the namespace of the tracked ManagedClusterAddOn,
+// satisfying the StatusReporter interface.
 func (s ManagedClusterAddOnStatus) GetNamespace() string {
 	return s.Namespace
 }
 
+// GetKind returns "ManagedClusterAddOn" as the resource kind, satisfying the
+// StatusReporter interface.
 func (s ManagedClusterAddOnStatus) GetKind() string {
 	return "ManagedClusterAddOn"
 }
