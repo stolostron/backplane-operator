@@ -149,6 +149,13 @@ type Overrides struct {
 
 // MultiClusterEngineStatus defines the observed state of MultiClusterEngine
 type MultiClusterEngineStatus struct {
+	// ObservedGeneration is the most recent generation observed by the controller.
+	// It corresponds to the MultiClusterEngine's generation, which is updated on
+	// mutation by the API Server. When this equals metadata.generation, the status
+	// reflects the latest desired spec.
+	// +optional
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
+
 	// Latest observed overall state
 	Phase PhaseType `json:"phase,omitempty"`
 

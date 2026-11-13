@@ -49,6 +49,7 @@ import (
 	"github.com/stolostron/backplane-operator/pkg/utils"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/tools/record"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -230,6 +231,7 @@ var _ = BeforeSuite(func() {
 		Client:          k8sManager.GetClient(),
 		Scheme:          k8sManager.GetScheme(),
 		StatusManager:   &status.StatusTracker{Client: k8sManager.GetClient()},
+		Recorder:        &record.FakeRecorder{}, // nil Events channel discards events instead of blocking
 		UpgradeableCond: upgradeableCondition,
 	}
 

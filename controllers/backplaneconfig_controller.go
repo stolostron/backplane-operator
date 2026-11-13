@@ -50,6 +50,7 @@ import (
 	"github.com/stolostron/backplane-operator/pkg/toggle"
 	"github.com/stolostron/backplane-operator/pkg/utils"
 	"github.com/stolostron/backplane-operator/pkg/version"
+	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/retry"
 	addonv1alpha1 "open-cluster-management.io/api/addon/v1alpha1"
 	clustermanager "open-cluster-management.io/api/operator/v1"
@@ -93,6 +94,7 @@ type MultiClusterEngineReconciler struct {
 	Images           map[string]string
 	StatusManager    *status.StatusTracker
 	Log              logr.Logger
+	Recorder         record.EventRecorder
 	UpgradeableCond  utils.Condition
 	DeprecatedFields map[string]bool
 	OLMVersion       string
@@ -278,6 +280,9 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}
 
 	var result ctrl.Result
+	// componentResult holds a requeue requested by component reconciliation so
+	// completion is not reported while component work is still pending.
+	var componentResult ctrl.Result
 
 	result, err = r.setDefaults(ctx, backplaneConfig)
 	if result != (ctrl.Result{}) {
@@ -511,10 +516,16 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		r.StatusManager.AddCondition(cond)
 		return result, err
 	}
+	if result != (ctrl.Result{}) {
+		componentResult = result
+	}
 
 	result, err = r.ensureToggleableComponents(ctx, backplaneConfig)
 	if err != nil {
 		return result, err
+	}
+	if result != (ctrl.Result{}) {
+		componentResult = result
 	}
 
 	/*
@@ -550,14 +561,28 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 	if err != nil {
 		return result, err
 	}
+	if result != (ctrl.Result{}) {
+		componentResult = result
+	}
 
 	if upgrade {
 		return ctrl.Result{Requeue: true}, nil
 	}
 
+	// Do not report completion or advance the observed generation while a
+	// component has requested a requeue.
+	if componentResult != (ctrl.Result{}) {
+		return componentResult, nil
+	}
+
+	// The pass completed successfully, so the status reflects the latest spec.
+	backplaneConfig.Status.ObservedGeneration = backplaneConfig.Generation
+
 	r.StatusManager.AddCondition(status.NewCondition(backplanev1.MultiClusterEngineProgressing, metav1.ConditionTrue,
 		status.DeploySuccessReason, "All components deployed"))
 
+	r.Recorder.Event(backplaneConfig, corev1.EventTypeNormal, "ReconcileComplete",
+		"All components reconciled successfully")
 	r.Log.Info("Reconcile completed. Requeuing after " + utils.ShortRefreshInterval.String())
 	return ctrl.Result{RequeueAfter: utils.ShortRefreshInterval}, nil
 }
@@ -1480,6 +1505,8 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 		errorMessages := []string{}
 		for k, v := range errs {
 			errorMessages = append(errorMessages, fmt.Sprintf("error ensuring %s: %s", k, v.Error()))
+			r.Recorder.Eventf(backplaneConfig, corev1.EventTypeWarning, "ComponentFailure",
+				"Failed to reconcile component %s: %v", k, v)
 		}
 		combinedError := fmt.Sprintf(": %s", strings.Join(errorMessages, "; "))
 
