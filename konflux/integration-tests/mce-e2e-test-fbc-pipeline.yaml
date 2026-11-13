@@ -71,11 +71,6 @@ spec:
           value: $(tasks.parse-metadata.results.component-container-image)
         - name: ocp_version
           value: $(params.ocp_version)
-      results:
-        - name: matches
-          description: "'true' if the FBC fragment matches the target OCP version"
-        - name: fbc_fragment
-          description: The FBC fragment image reference (passed through)
       taskSpec:
         params:
           - name: fbc_fragment
@@ -100,6 +95,11 @@ spec:
                 jq -r '.Labels["com.redhat.fbc.openshift.version"] // empty')
 
               echo "FBC OCP Version label: ${fbc_ocp_version}"
+
+              if [ -z "$fbc_ocp_version" ]; then
+                echo "ERROR: FBC fragment image has no 'com.redhat.openshift.versions' label"
+                exit 1
+              fi
 
               # Strip 'v' prefix for comparison if present
               ocp_bare="${OCP_VERSION#v}"
@@ -197,8 +197,7 @@ spec:
               current_secret=$(oc get secret/pull-secret -n openshift-config \
                 -o jsonpath='{.data.\.dockerconfigjson}' | base64 -d)
 
-              merged_secret=$(echo "${current_secret}" | \
-                jq -s '.[0].auths * .[1].auths | {auths: .}' \
+              merged_secret=$(jq -s '.[0].auths * .[1].auths | {auths: .}' \
                   <(echo "${current_secret}") <(echo "${STAGE_REGISTRY_CREDS}"))
 
               oc set data secret/pull-secret -n openshift-config \
@@ -457,9 +456,6 @@ spec:
         - input: $(tasks.resolve-ocp-version.results.matches)
           operator: in
           values: ["true"]
-      results:
-        - name: TEST_OUTPUT
-          description: Test results in HACBS format
       taskSpec:
         results:
           - name: TEST_OUTPUT
@@ -543,7 +539,7 @@ spec:
                 RESULT="SUCCESS"
               fi
 
-              echo -n "{\"result\":\"${RESULT}\",\"successes\":$((TESTS - FAILURES)),\"failures\":${FAILURES},\"warnings\":0}" \
+              echo -n "{\"result\":\"${RESULT}\",\"timestamp\":\"$(date +%s)\",\"successes\":$((TESTS - FAILURES)),\"failures\":${FAILURES},\"warnings\":0}" \
                 > "$(results.TEST_OUTPUT.path)"
 
               if [[ ${FAILURES} -gt 0 ]]; then
@@ -635,7 +631,7 @@ spec:
 # Create one ITS per release × OCP version combination.
 # =============================================================================
 
-# --- MCE 5.0 on OCP 4.17 ---
+# --- MCE 5.0 on OCP 5.0 ---
 apiVersion: appstudio.redhat.com/v1beta2
 kind: IntegrationTestScenario
 metadata:
