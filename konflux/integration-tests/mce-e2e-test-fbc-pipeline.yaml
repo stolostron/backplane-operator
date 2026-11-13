@@ -1,0 +1,794 @@
+# MCE Standalone Integration Test Scenario Pipeline
+# Adapted from stolostron/acm-mce-operator-catalogs promote-catalog-builds.yaml
+# and the opentelemetry-operator-e2e-test-fbc-pipeline.yaml pattern.
+#
+# This pipeline validates that MCE can be installed independently (without ACM)
+# from an ART FBC fragment image built by Konflux.
+#
+# The pipeline is release-agnostic: pass mce_channel and ocp_version as params.
+# One pipeline definition serves all releases — only the ITS CRs vary.
+#
+# Suggested path: backplane-operator/konflux/integration-tests/mce-e2e-test-fbc-pipeline.yaml
+# Keep this file on `main` — one ITS CR per release × OCP version references it.
+
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: mce-e2e-test-fbc
+spec:
+  description: |
+    End-to-end installation test of MCE (standalone, without ACM) from an ART
+    FBC build. Provisions an ephemeral cluster, installs the MCE operator from
+    the FBC fragment in the Konflux SNAPSHOT, creates a MultiClusterEngine CR,
+    and verifies it reaches Available.
+    Skips when the FBC fragment's OCP version label does not match `ocp_version`.
+  params:
+    - name: SNAPSHOT
+      description: Konflux snapshot JSON containing the built component images
+      type: string
+    - name: ocp_version
+      description: >-
+        OCP version to match against the FBC fragment label, without v prefix, e.g. "5.0".
+        The pipeline exits cleanly when the label does not match.
+      type: string
+    - name: mce_channel
+      description: >-
+        MCE subscription channel. For 5.0+, matches the ACM channel (e.g. "stable-5.0"). For 2.17, matches ACM (both "release-2.17"). For pre-2.17, use N-5 relative to ACM (e.g. ACM 2.13 → MCE "stable-2.8").
+        Must match the channel in the ART FBC fragment.
+      type: string
+      default: "stable-5.0"
+  results:
+    - name: HACBS_TEST_OUTPUT
+      description: Test output for Konflux
+      value: $(tasks.smoke-tests.results.TEST_OUTPUT)
+
+  tasks:
+    # =========================================================================
+    # Step 1: Parse the Konflux snapshot to extract the FBC fragment image
+    # =========================================================================
+    - name: parse-metadata
+      taskRef:
+        resolver: git
+        params:
+          - name: url
+            value: https://github.com/konflux-ci/integration-examples
+          - name: revision
+            value: main
+          - name: pathInRepo
+            value: tasks/test_metadata.yaml
+      params:
+        - name: SNAPSHOT
+          value: $(params.SNAPSHOT)
+
+    # =========================================================================
+    # Step 2: Resolve OCP version from the FBC fragment image labels
+    # =========================================================================
+    - name: resolve-ocp-version
+      runAfter:
+        - parse-metadata
+      params:
+        - name: fbc_fragment
+          value: $(tasks.parse-metadata.results.component-container-image)
+        - name: ocp_version
+          value: $(params.ocp_version)
+      taskSpec:
+        params:
+          - name: fbc_fragment
+          - name: ocp_version
+        results:
+          - name: matches
+          - name: fbc_fragment
+        steps:
+          - name: resolve
+            image: quay.io/konflux-ci/konflux-test:latest
+            script: |
+              #!/usr/bin/env bash
+              set -euo pipefail
+
+              FBC_FRAGMENT="$(params.fbc_fragment)"
+              OCP_VERSION="$(params.ocp_version)"
+
+              echo "FBC Fragment: ${FBC_FRAGMENT}"
+              echo "Target OCP Version: ${OCP_VERSION}"
+
+              fbc_ocp_version=$(skopeo inspect --no-tags "docker://${FBC_FRAGMENT}" | \
+                jq -r '.Labels["com.redhat.fbc.openshift.version"] // empty')
+
+              echo "FBC OCP Version label: ${fbc_ocp_version}"
+
+              if [ -z "$fbc_ocp_version" ]; then
+                echo "ERROR: FBC fragment image has no 'com.redhat.fbc.openshift.version' label"
+                exit 1
+              fi
+
+              # Strip 'v' prefix for comparison if present
+              ocp_bare="${OCP_VERSION#v}"
+              fbc_bare="${fbc_ocp_version#v}"
+
+              if [[ "${fbc_bare}" == "${ocp_bare}" ]]; then
+                echo "OCP version matches — proceeding with tests"
+                echo -n "true" > "$(results.matches.path)"
+              else
+                echo "OCP version does not match (got '${fbc_ocp_version}', expected '${OCP_VERSION}') — skipping"
+                echo -n "false" > "$(results.matches.path)"
+              fi
+
+              echo -n "${FBC_FRAGMENT}" > "$(results.fbc_fragment.path)"
+
+    # =========================================================================
+    # Step 3: Provision an ephemeral cluster
+    # =========================================================================
+    - name: provision-cluster
+      runAfter:
+        - resolve-ocp-version
+      when:
+        - input: $(tasks.resolve-ocp-version.results.matches)
+          operator: in
+          values: ["true"]
+      taskRef:
+        resolver: git
+        params:
+          - name: url
+            value: https://github.com/openshift/konflux-tasks
+          - name: revision
+            value: main
+          - name: pathInRepo
+            value: tasks/provision-ephemeral-cluster/0.1/provision-ephemeral-cluster.yaml
+      params:
+        - name: ownerName
+          value: $(context.pipelineRun.name)
+        - name: ownerUid
+          value: $(context.pipelineRun.uid)
+        - name: workflow
+          value: hypershift-hostedcluster-workflow
+        - name: clusterProfile
+          value: aws-konflux-prod
+        - name: releases
+          value: >-
+            {"latest":{"release":{"channel":"stable","version":"$(params.ocp_version)","architecture":"multi"}}}
+        - name: timeout
+          value: "45m"
+
+    # =========================================================================
+    # Step 4: Setup cluster — image mirrors + stage registry credentials
+    # =========================================================================
+    - name: setup-cluster
+      runAfter:
+        - provision-cluster
+      when:
+        - input: $(tasks.resolve-ocp-version.results.matches)
+          operator: in
+          values: ["true"]
+      taskSpec:
+        volumes:
+          - name: cluster-credentials
+            secret:
+              secretName: $(tasks.provision-cluster.results.secretRef)
+        steps:
+          - name: setup
+            image: quay.io/konflux-ci/konflux-test:latest
+            volumeMounts:
+              - name: cluster-credentials
+                mountPath: /credentials
+            env:
+              - name: KUBECONFIG
+                value: /credentials/kubeconfig
+              - name: STAGE_REGISTRY_CREDS
+                valueFrom:
+                  secretKeyRef:
+                    name: stage-registry-creds
+                    key: .dockerconfigjson
+            script: |
+              #!/usr/bin/env bash
+              set -euo pipefail
+
+              echo "=== Setting up image content source policies ==="
+
+              cat <<'EOF' | oc apply -f -
+              apiVersion: operator.openshift.io/v1alpha1
+              kind: ImageContentSourcePolicy
+              metadata:
+                name: mce-stage-mirrors
+              spec:
+                repositoryDigestMirrors:
+                  - source: registry.redhat.io/multicluster-engine
+                    mirrors:
+                      - registry.stage.redhat.io/multicluster-engine
+              EOF
+
+              echo "=== Merging stage registry credentials into global pull secret ==="
+
+              current_secret=$(oc get secret/pull-secret -n openshift-config \
+                -o jsonpath='{.data.\.dockerconfigjson}' | base64 -d)
+
+              merged_secret=$(jq -s '.[0].auths * .[1].auths | {auths: .}' \
+                  <(echo "${current_secret}") <(echo "${STAGE_REGISTRY_CREDS}"))
+
+              oc set data secret/pull-secret -n openshift-config \
+                --from-literal=.dockerconfigjson="${merged_secret}"
+
+              echo "=== Waiting for cluster to stabilize ==="
+              sleep 60
+
+              echo "Setup complete."
+
+    # =========================================================================
+    # Step 5: Deploy the FBC fragment as a CatalogSource
+    # =========================================================================
+    - name: deploy-catalog
+      runAfter:
+        - setup-cluster
+      when:
+        - input: $(tasks.resolve-ocp-version.results.matches)
+          operator: in
+          values: ["true"]
+      taskSpec:
+        volumes:
+          - name: cluster-credentials
+            secret:
+              secretName: $(tasks.provision-cluster.results.secretRef)
+        steps:
+          - name: deploy
+            image: quay.io/konflux-ci/konflux-test:latest
+            volumeMounts:
+              - name: cluster-credentials
+                mountPath: /credentials
+            env:
+              - name: KUBECONFIG
+                value: /credentials/kubeconfig
+              - name: FBC_FRAGMENT
+                value: $(tasks.resolve-ocp-version.results.fbc_fragment)
+            script: |
+              #!/usr/bin/env bash
+              set -euo pipefail
+
+              CATALOG_NAME="mce-art-catalog"
+
+              echo "=== Detecting OLM version ==="
+              # Mirror MCH's detectOLMVersion logic: v1 if clusterextensions CRD present and
+              # OPERATOR_CONDITION_NAME unset (i.e. not running inside an OLM v0 bundle).
+              if [[ -z "${OPERATOR_CONDITION_NAME:-}" ]] && \
+                 oc get crd clusterextensions.olm.operatorframework.io >/dev/null 2>&1; then
+                OLM_VERSION="v1"
+              else
+                OLM_VERSION="v0"
+              fi
+              echo "OLM version: ${OLM_VERSION}"
+              echo "FBC image: ${FBC_FRAGMENT}"
+
+              if [[ "${OLM_VERSION}" == "v1" ]]; then
+                echo "=== Deploying ClusterCatalog from FBC fragment (OLM v1) ==="
+                cat <<EOF | oc apply -f -
+              apiVersion: olm.operatorframework.io/v1
+              kind: ClusterCatalog
+              metadata:
+                name: ${CATALOG_NAME}
+              spec:
+                priority: 100
+                source:
+                  type: Image
+                  image:
+                    ref: ${FBC_FRAGMENT}
+                    pollIntervalMinutes: 10
+              EOF
+
+                echo "Waiting for ClusterCatalog '${CATALOG_NAME}' to be Serving..."
+                timeout=300
+                interval=10
+                elapsed=0
+                while [[ ${elapsed} -lt ${timeout} ]]; do
+                  serving=$(oc get clustercatalog "${CATALOG_NAME}" \
+                    -o jsonpath='{.status.conditions[?(@.type=="Serving")].status}' 2>/dev/null || echo "")
+                  if [[ "${serving}" == "True" ]]; then
+                    echo "ClusterCatalog is Serving"
+                    break
+                  fi
+                  echo "  Serving=${serving:-Unknown} (${elapsed}s/${timeout}s)"
+                  sleep "${interval}"
+                  elapsed=$((elapsed + interval))
+                done
+                if [[ ${elapsed} -ge ${timeout} ]]; then
+                  echo "ERROR: ClusterCatalog did not become Serving within ${timeout}s"
+                  oc get clustercatalog "${CATALOG_NAME}" -o yaml
+                  exit 1
+                fi
+              else
+                echo "=== Deploying CatalogSource from FBC fragment (OLM v0) ==="
+                cat <<EOF | oc apply -f -
+              apiVersion: operators.coreos.com/v1alpha1
+              kind: CatalogSource
+              metadata:
+                name: ${CATALOG_NAME}
+                namespace: openshift-marketplace
+              spec:
+                sourceType: grpc
+                image: ${FBC_FRAGMENT}
+                displayName: MCE ART Catalog
+                publisher: ART
+                updateStrategy:
+                  registryPoll:
+                    interval: 10m
+              EOF
+
+                echo "Waiting for CatalogSource '${CATALOG_NAME}' to become READY..."
+                timeout=300
+                interval=10
+                elapsed=0
+                while [[ ${elapsed} -lt ${timeout} ]]; do
+                  state=$(oc get catalogsource "${CATALOG_NAME}" -n openshift-marketplace \
+                    -o jsonpath='{.status.connectionState.lastObservedState}' 2>/dev/null || echo "")
+                  if [[ "${state}" == "READY" ]]; then
+                    echo "CatalogSource is READY"
+                    break
+                  fi
+                  echo "  state: ${state:-pending} (${elapsed}s/${timeout}s)"
+                  sleep "${interval}"
+                  elapsed=$((elapsed + interval))
+                done
+                if [[ ${elapsed} -ge ${timeout} ]]; then
+                  echo "ERROR: CatalogSource did not become READY within ${timeout}s"
+                  oc get catalogsource "${CATALOG_NAME}" -n openshift-marketplace -o yaml
+                  exit 1
+                fi
+
+                echo "Waiting for PackageManifest 'multicluster-engine'..."
+                timeout=120
+                elapsed=0
+                while [[ ${elapsed} -lt ${timeout} ]]; do
+                  if oc get packagemanifest multicluster-engine 2>/dev/null | grep -q "${CATALOG_NAME}"; then
+                    echo "PackageManifest is available"
+                    break
+                  fi
+                  sleep 10
+                  elapsed=$((elapsed + 10))
+                done
+                if [[ ${elapsed} -ge ${timeout} ]]; then
+                  echo "WARNING: PackageManifest not found after ${timeout}s — proceeding anyway"
+                fi
+              fi
+
+              echo "Catalog deployment complete."
+
+    # =========================================================================
+    # Step 6: Install MCE standalone
+    # =========================================================================
+    - name: install-mce
+      runAfter:
+        - deploy-catalog
+      when:
+        - input: $(tasks.resolve-ocp-version.results.matches)
+          operator: in
+          values: ["true"]
+      params:
+        - name: mce_channel
+          value: $(params.mce_channel)
+      taskSpec:
+        params:
+          - name: mce_channel
+        volumes:
+          - name: cluster-credentials
+            secret:
+              secretName: $(tasks.provision-cluster.results.secretRef)
+        steps:
+          - name: install
+            image: quay.io/konflux-ci/konflux-test:latest
+            volumeMounts:
+              - name: cluster-credentials
+                mountPath: /credentials
+            env:
+              - name: KUBECONFIG
+                value: /credentials/kubeconfig
+              - name: MCE_CHANNEL
+                value: $(params.mce_channel)
+            script: |
+              #!/usr/bin/env bash
+              set -euo pipefail
+
+              # --- Configuration ---
+              MCE_NAMESPACE="multicluster-engine"
+              MCE_PACKAGE="multicluster-engine"
+              CATALOG_NAME="mce-art-catalog"
+
+              # ---------------------------------------------------------------
+              # [1/4] Create namespace and OperatorGroup
+              # ---------------------------------------------------------------
+              echo "[1/4] Preparing namespace '${MCE_NAMESPACE}'..."
+
+              oc create namespace "${MCE_NAMESPACE}" --dry-run=client -o yaml | oc apply -f -
+
+              cat <<EOF | oc apply -f -
+              apiVersion: operators.coreos.com/v1
+              kind: OperatorGroup
+              metadata:
+                name: mce-operator-group
+                namespace: ${MCE_NAMESPACE}
+              spec:
+                targetNamespaces:
+                  - ${MCE_NAMESPACE}
+              EOF
+
+              # ---------------------------------------------------------------
+              # [2/4] Create Subscription for MCE
+              # ---------------------------------------------------------------
+              echo "[2/4] Creating Subscription for '${MCE_PACKAGE}' on channel '${MCE_CHANNEL}'..."
+
+              cat <<EOF | oc apply -f -
+              apiVersion: operators.coreos.com/v1alpha1
+              kind: Subscription
+              metadata:
+                name: multicluster-engine
+                namespace: ${MCE_NAMESPACE}
+              spec:
+                channel: ${MCE_CHANNEL}
+                installPlanApproval: Automatic
+                name: ${MCE_PACKAGE}
+                source: ${CATALOG_NAME}
+                sourceNamespace: openshift-marketplace
+              EOF
+
+              # ---------------------------------------------------------------
+              # [3/4] Wait for MCE operator CSV to reach Succeeded
+              # ---------------------------------------------------------------
+              echo "[3/4] Waiting for MCE operator CSV to reach 'Succeeded'..."
+              timeout=600
+              interval=15
+              elapsed=0
+              while [[ ${elapsed} -lt ${timeout} ]]; do
+                csv_name=$(oc get csv -n "${MCE_NAMESPACE}" -o json 2>/dev/null | \
+                  jq -r ".items[] | select(.spec.displayName | test(\"multicluster engine\"; \"i\")) | .metadata.name" 2>/dev/null | head -1 || echo "")
+                if [[ -n "${csv_name}" ]]; then
+                  phase=$(oc get csv "${csv_name}" -n "${MCE_NAMESPACE}" \
+                    -o jsonpath='{.status.phase}' 2>/dev/null || echo "")
+                  if [[ "${phase}" == "Succeeded" ]]; then
+                    echo "  CSV '${csv_name}' phase: Succeeded ✓"
+                    break
+                  fi
+                  echo "  CSV '${csv_name}' phase: ${phase} (${elapsed}s/${timeout}s)"
+                else
+                  echo "  No CSV found yet (${elapsed}s/${timeout}s)"
+                fi
+                sleep "${interval}"
+                elapsed=$((elapsed + interval))
+              done
+              if [[ ${elapsed} -ge ${timeout} ]]; then
+                echo "ERROR: MCE operator CSV did not reach Succeeded within ${timeout}s"
+                oc get csv -n "${MCE_NAMESPACE}" -o yaml
+                oc get sub -n "${MCE_NAMESPACE}" -o yaml
+                oc get installplan -n "${MCE_NAMESPACE}" -o yaml
+                exit 1
+              fi
+
+              # ---------------------------------------------------------------
+              # [4/4] Create MultiClusterEngine CR and wait for Available
+              # ---------------------------------------------------------------
+              echo "[4/4] Creating MultiClusterEngine CR..."
+
+              cat <<EOF | oc apply -f -
+              apiVersion: multicluster.openshift.io/v1
+              kind: MultiClusterEngine
+              metadata:
+                name: multiclusterengine
+              spec:
+                targetNamespace: ${MCE_NAMESPACE}
+              EOF
+
+              echo "Waiting for MultiClusterEngine to become Available..."
+              timeout=900
+              interval=30
+              elapsed=0
+              while [[ ${elapsed} -lt ${timeout} ]]; do
+                phase=$(oc get multiclusterengine multiclusterengine \
+                  -o jsonpath='{.status.phase}' 2>/dev/null || echo "")
+                if [[ "${phase}" == "Available" ]]; then
+                  echo "  MultiClusterEngine phase: Available ✓"
+                  break
+                fi
+                echo "  MultiClusterEngine phase: ${phase:-NotFound} (${elapsed}s/${timeout}s)"
+                sleep "${interval}"
+                elapsed=$((elapsed + interval))
+              done
+              if [[ ${elapsed} -ge ${timeout} ]]; then
+                echo "ERROR: MultiClusterEngine did not become Available within ${timeout}s"
+                oc get multiclusterengine multiclusterengine -o yaml
+                oc get pods -n "${MCE_NAMESPACE}" --sort-by=.status.startTime
+                exit 1
+              fi
+
+              echo ""
+              echo "=== MCE installation from FBC fragment complete ==="
+              oc get multiclusterengine multiclusterengine
+
+    # =========================================================================
+    # Step 7: Smoke tests — verify MCE is healthy
+    # =========================================================================
+    - name: smoke-tests
+      runAfter:
+        - install-mce
+      when:
+        - input: $(tasks.resolve-ocp-version.results.matches)
+          operator: in
+          values: ["true"]
+      taskSpec:
+        results:
+          - name: TEST_OUTPUT
+        volumes:
+          - name: cluster-credentials
+            secret:
+              secretName: $(tasks.provision-cluster.results.secretRef)
+        steps:
+          - name: run-tests
+            image: quay.io/konflux-ci/konflux-test:latest
+            volumeMounts:
+              - name: cluster-credentials
+                mountPath: /credentials
+            env:
+              - name: KUBECONFIG
+                value: /credentials/kubeconfig
+            script: |
+              #!/usr/bin/env bash
+              set -euo pipefail
+
+              MCE_NAMESPACE="multicluster-engine"
+              FAILURES=0
+              TESTS=0
+
+              echo "=== MCE Smoke Tests ==="
+
+              # Test 1: MultiClusterEngine is Available
+              TESTS=$((TESTS + 1))
+              phase=$(oc get multiclusterengine multiclusterengine \
+                -o jsonpath='{.status.phase}' 2>/dev/null || echo "")
+              if [[ "${phase}" == "Available" ]]; then
+                echo "PASS: MultiClusterEngine is Available"
+              else
+                echo "FAIL: MultiClusterEngine phase is '${phase}' (expected Available)"
+                FAILURES=$((FAILURES + 1))
+              fi
+
+              # Test 2: MCE operator deployment is available
+              TESTS=$((TESTS + 1))
+              available=$(oc get deployment multicluster-engine-operator -n "${MCE_NAMESPACE}" \
+                -o jsonpath='{.status.availableReplicas}' 2>/dev/null || echo "0")
+              if [[ "${available}" -gt 0 ]]; then
+                echo "PASS: multicluster-engine-operator has ${available} available replicas"
+              else
+                echo "FAIL: multicluster-engine-operator has no available replicas"
+                FAILURES=$((FAILURES + 1))
+              fi
+
+              # Test 3: cluster-manager deployment is available
+              TESTS=$((TESTS + 1))
+              available=$(oc get deployment cluster-manager -n "${MCE_NAMESPACE}" \
+                -o jsonpath='{.status.availableReplicas}' 2>/dev/null || echo "0")
+              if [[ "${available}" -gt 0 ]]; then
+                echo "PASS: cluster-manager has ${available} available replicas"
+              else
+                echo "FAIL: cluster-manager has no available replicas"
+                FAILURES=$((FAILURES + 1))
+              fi
+
+              # Test 4: No unhealthy pods in MCE namespace
+              # Uses containerStatuses to catch CrashLoopBackOff (phase stays Running)
+              TESTS=$((TESTS + 1))
+              bad_pods=$(oc get pods -n "${MCE_NAMESPACE}" -o json 2>/dev/null | \
+                jq -r '.items[] | select(
+                    .status.phase == "Failed" or
+                    ([.status.containerStatuses[]? |
+                       .state.waiting.reason? // "" |
+                       select(test("^(CrashLoopBackOff|ImagePullBackOff|ErrImagePull|CreateContainerConfigError|CreateContainerError|InvalidImageName)$"))
+                    ] | length) > 0
+                  ) | .metadata.name' 2>/dev/null || true)
+              bad_count=0
+              if [[ -n "${bad_pods}" ]]; then
+                bad_count=$(printf '%s\n' "${bad_pods}" | wc -l | tr -d ' ')
+              fi
+              if [[ ${bad_count} -eq 0 ]]; then
+                echo "PASS: All pods in ${MCE_NAMESPACE} are healthy"
+              else
+                echo "FAIL: ${bad_count} unhealthy pod(s) in ${MCE_NAMESPACE}: ${bad_pods}"
+                oc get pods -n "${MCE_NAMESPACE}"
+                FAILURES=$((FAILURES + 1))
+              fi
+
+              # --- Summary ---
+              echo ""
+              echo "=== Results: ${TESTS} tests, $((TESTS - FAILURES)) passed, ${FAILURES} failed ==="
+
+              if [[ ${FAILURES} -gt 0 ]]; then
+                RESULT="FAILURE"
+              else
+                RESULT="SUCCESS"
+              fi
+
+              echo -n "{\"result\":\"${RESULT}\",\"timestamp\":\"$(date +%s)\",\"successes\":$((TESTS - FAILURES)),\"failures\":${FAILURES},\"warnings\":0}" \
+                > "$(results.TEST_OUTPUT.path)"
+
+    # =========================================================================
+    # Step 7: Fail the pipeline if smoke tests recorded failures
+    # Separated so that smoke-tests always writes TEST_OUTPUT (Tekton drops
+    # results from failed tasks, which would leave HACBS_TEST_OUTPUT empty).
+    # =========================================================================
+    - name: fail-on-smoke-test-failures
+      runAfter:
+        - smoke-tests
+      when:
+        - input: $(tasks.resolve-ocp-version.results.matches)
+          operator: in
+          values: ["true"]
+      taskSpec:
+        params:
+          - name: TEST_OUTPUT
+            type: string
+        steps:
+          - name: check
+            image: quay.io/konflux-ci/konflux-test:latest
+            env:
+              - name: TEST_OUTPUT
+                value: $(params.TEST_OUTPUT)
+            script: |
+              #!/usr/bin/env bash
+              set -euo pipefail
+              failures=$(jq -r '.failures // 0' <<< "${TEST_OUTPUT}")
+              if [[ "${failures}" -gt 0 ]]; then
+                echo "Smoke tests reported ${failures} failure(s) — failing pipeline."
+                exit 1
+              fi
+              echo "Smoke tests passed."
+      params:
+        - name: TEST_OUTPUT
+          value: $(tasks.smoke-tests.results.TEST_OUTPUT)
+
+  # ===========================================================================
+  # Finally: must-gather on failure + deprovision cluster
+  # ===========================================================================
+  finally:
+    # Tekton does not support runAfter in finally tasks on this cluster version.
+    # Must-gather and deprovision are combined into one task with two sequential
+    # steps so diagnostics always complete before the cluster is torn down.
+    - name: cleanup
+      when:
+        - input: $(tasks.resolve-ocp-version.results.matches)
+          operator: in
+          values: ["true"]
+      taskSpec:
+        params:
+          - name: claimName
+            type: string
+          - name: claimNamespace
+            type: string
+          - name: pipelineStatus
+            type: string
+        volumes:
+          - name: cluster-credentials
+            secret:
+              secretName: $(tasks.provision-cluster.results.secretRef)
+        steps:
+          - name: must-gather
+            image: quay.io/konflux-ci/konflux-test:latest
+            volumeMounts:
+              - name: cluster-credentials
+                mountPath: /credentials
+            env:
+              - name: KUBECONFIG
+                value: /credentials/kubeconfig
+              - name: PIPELINE_STATUS
+                value: $(params.pipelineStatus)
+            script: |
+              #!/usr/bin/env bash
+              set +e
+
+              if [[ "${PIPELINE_STATUS}" != "Failed" ]]; then
+                echo "Pipeline succeeded — skipping must-gather."
+                exit 0
+              fi
+
+              echo "=== Collecting must-gather diagnostics ==="
+
+              echo "--- MultiClusterEngine status ---"
+              oc get multiclusterengine -o yaml 2>/dev/null || true
+
+              echo "--- CSVs ---"
+              oc get csv -A 2>/dev/null || true
+
+              echo "--- Pods in multicluster-engine ---"
+              oc get pods -n multicluster-engine --sort-by=.status.startTime 2>/dev/null || true
+
+              echo "--- Failed/CrashLooping pod logs ---"
+              for pod in $(oc get pods -n multicluster-engine \
+                --field-selector=status.phase!=Running,status.phase!=Succeeded \
+                -o name 2>/dev/null); do
+                echo "--- Logs: ${pod} ---"
+                oc logs "${pod}" -n multicluster-engine --tail=50 2>/dev/null || true
+              done
+
+              echo "--- CatalogSource status ---"
+              oc get catalogsource -n openshift-marketplace -o yaml 2>/dev/null || true
+
+              echo "--- Subscriptions ---"
+              oc get sub -A -o yaml 2>/dev/null || true
+
+              echo "=== Must-gather complete ==="
+
+          - name: deprovision
+            image: quay.io/konflux-ci/konflux-test:v1.4.52@sha256:aa2c97da9bb73a4e8d1c6b41950f8d902b74461be0e042debe89277fdc4ebe49
+            env:
+              - name: CLAIM_NAME
+                value: $(params.claimName)
+              - name: NAMESPACE
+                value: $(params.claimNamespace)
+              - name: CLUSTER_DEPROVISIONING_TIMEOUT
+                value: 2h
+            script: |
+              #!/usr/bin/env bash
+              set -eo pipefail
+
+              DEPROVISION_SUCCESS=0
+              on_exit() {
+                if [[ "$DEPROVISION_SUCCESS" -eq 0 ]]; then
+                  echo "Dumping TestPlatformCluster claim for debugging:"
+                  oc -n "$NAMESPACE" get testplatformclusters.ci.openshift.org "$CLAIM_NAME" -o yaml || true
+                fi
+              }
+              trap on_exit EXIT
+
+              echo "Deprovisioning cluster: $CLAIM_NAME (namespace: $NAMESPACE)"
+              oc -n "$NAMESPACE" patch testplatformclusters.ci.openshift.org "$CLAIM_NAME" \
+                --type=json \
+                --patch='[{"op":"add","path":"/spec/tearDownCluster","value":true}]'
+
+              echo "Waiting for deprovisioning (timeout: $CLUSTER_DEPROVISIONING_TIMEOUT)..."
+              oc -n "$NAMESPACE" wait testplatformclusters.ci.openshift.org "$CLAIM_NAME" \
+                --for=condition=ProwJobCompleted=true \
+                --timeout="$CLUSTER_DEPROVISIONING_TIMEOUT"
+
+              ec=$(oc -n "$NAMESPACE" get testplatformclusters.ci.openshift.org "$CLAIM_NAME" -o json 2>&1)
+              ok=$(jq -r 'any((.status.conditions // [])[]; .type=="ProwJobCompleted" and .reason=="ProwJobCompleted")' <<< "$ec")
+              if [[ "$ok" == "true" ]]; then
+                DEPROVISION_SUCCESS=1
+                echo "Cluster deprovisioned successfully."
+              else
+                echo "Error: deprovisioning did not complete cleanly."
+                echo "$ec"
+                exit 1
+              fi
+      params:
+        - name: claimName
+          value: $(tasks.provision-cluster.results.testPlatformClusterClaimName)
+        - name: claimNamespace
+          value: $(tasks.provision-cluster.results.testPlatformClusterClaimNamespace)
+        - name: pipelineStatus
+          value: $(tasks.status)
+
+---
+# =============================================================================
+# IntegrationTestScenario CRs — Examples
+#
+# Apply these in the Konflux tenant namespace (crt-redhat-acm-tenant).
+# Create one ITS per release × OCP version combination.
+# =============================================================================
+
+# --- MCE 5.0 on OCP 5.0 ---
+apiVersion: appstudio.redhat.com/v1beta2
+kind: IntegrationTestScenario
+metadata:
+  name: mce-e2e-fbc-50-ocp50
+  namespace: crt-redhat-acm-tenant
+spec:
+  application: release-mce-50
+  resolverRef:
+    resolver: git
+    params:
+      - name: url
+        value: https://github.com/stolostron/backplane-operator
+      - name: revision
+        value: main
+      - name: pathInRepo
+        value: konflux/integration-tests/mce-e2e-test-fbc-pipeline.yaml
+  params:
+    - name: ocp_version
+      value: "5.0"
+    - name: mce_channel
+      value: "stable-5.0"
+  contexts:
+    - description: Test MCE standalone FBC install on OCP 5.0
+      name: application
