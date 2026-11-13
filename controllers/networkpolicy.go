@@ -23,7 +23,7 @@ import (
 //   - backplaneconfig.name = "<mce.Name>" (e.g. "multiclusterengine")
 //
 // Annotations (applied by rendering):
-//   - installer.open-cluster-management.io/release-version = "5.0.0"
+//   - installer.open-cluster-management.io/release-version = "5.0.1"
 //
 // The backplaneconfig.name label is sufficient to identify MCE-created NetworkPolicies
 // for deletion when disabled.
