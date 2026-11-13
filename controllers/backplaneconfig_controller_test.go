@@ -20,6 +20,7 @@ package controllers
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"reflect"
@@ -54,6 +55,7 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -2494,104 +2496,96 @@ func Test_getExternallyManagedCRDSkipDirectories(t *testing.T) {
 }
 
 func Test_ensureToggleableComponents_withExternallyManagedComponents(t *testing.T) {
-	tests := []struct {
-		name string
-		mce  *backplanev1.MultiClusterEngine
-		want error
-	}{
-		{
-			name: "all components externally managed should skip reconciliation",
-			mce: &backplanev1.MultiClusterEngine{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-mce",
-					Annotations: map[string]string{
-						utils.AnnotationExternallyManaged: `[` +
-							`"managedserviceaccount","image-based-install-operator",` +
-							`"hypershift","console-mce","discovery","fleet-navigation",` +
-							`"hive","assisted-service","cluster-lifecycle","cluster-manager",` +
-							`"cluster-permission","server-foundation","cluster-proxy-addon",` +
-							`"cluster-api","cluster-api-provider-aws",` +
-							`"cluster-api-provider-azure-preview",` +
-							`"cluster-api-provider-metal3-preview",` +
-							`"cluster-api-provider-openshift-assisted","local-cluster"]`,
-					},
-				},
-				Spec: backplanev1.MultiClusterEngineSpec{
-					LocalClusterName: "local-cluster",
-					TargetNamespace:  "test-ns",
-					NetworkPolicies:  &backplanev1.NetworkPoliciesConfig{Enabled: true},
-					Overrides: &backplanev1.Overrides{
-						Components: []backplanev1.ComponentConfig{
-							{Name: backplanev1.ManagedServiceAccount, Enabled: true},
-							{Name: backplanev1.ImageBasedInstallOperator, Enabled: true},
-							{Name: backplanev1.HyperShift, Enabled: true},
-							{Name: backplanev1.ConsoleMCE, Enabled: true},
-							{Name: backplanev1.Discovery, Enabled: true},
-							{Name: backplanev1.FleetNavigation, Enabled: true},
-							{Name: backplanev1.Hive, Enabled: true},
-							{Name: backplanev1.AssistedService, Enabled: true},
-							{Name: backplanev1.ClusterLifecycle, Enabled: true},
-							{Name: backplanev1.ClusterManager, Enabled: true},
-							{Name: backplanev1.ClusterPermission, Enabled: true},
-							{Name: backplanev1.ServerFoundation, Enabled: true},
-							{Name: backplanev1.ClusterProxyAddon, Enabled: true},
-							{Name: backplanev1.ClusterAPI, Enabled: true},
-							{Name: backplanev1.ClusterAPIProviderAWS, Enabled: true},
-							{Name: backplanev1.ClusterAPIProviderAzurePreview, Enabled: true},
-							{Name: backplanev1.ClusterAPIProviderMetal, Enabled: true},
-							{Name: backplanev1.ClusterAPIProviderOA, Enabled: true},
-							{Name: backplanev1.LocalCluster, Enabled: true},
-						},
-					},
-				},
+	components := []backplanev1.ComponentConfig{
+		{Name: backplanev1.ManagedServiceAccount, Enabled: true},
+		{Name: backplanev1.ImageBasedInstallOperator, Enabled: true},
+		{Name: backplanev1.HyperShift, Enabled: true},
+		{Name: backplanev1.ConsoleMCE, Enabled: true},
+		{Name: backplanev1.Discovery, Enabled: true},
+		{Name: backplanev1.FleetNavigation, Enabled: true},
+		{Name: backplanev1.Hive, Enabled: true},
+		{Name: backplanev1.AssistedService, Enabled: true},
+		{Name: backplanev1.ClusterLifecycle, Enabled: true},
+		{Name: backplanev1.ClusterManager, Enabled: true},
+		{Name: backplanev1.ClusterPermission, Enabled: true},
+		{Name: backplanev1.ServerFoundation, Enabled: true},
+		{Name: backplanev1.ClusterProxyAddon, Enabled: true},
+		{Name: backplanev1.ClusterAPI, Enabled: true},
+		{Name: backplanev1.ClusterAPIProviderAWS, Enabled: true},
+		{Name: backplanev1.ClusterAPIProviderAzurePreview, Enabled: true},
+		{Name: backplanev1.ClusterAPIProviderKubeVirt, Enabled: true},
+		{Name: backplanev1.ClusterAPIProviderMetal, Enabled: true},
+		{Name: backplanev1.ClusterAPIProviderOA, Enabled: true},
+		{Name: backplanev1.LocalCluster, Enabled: true},
+	}
+
+	componentNames := make([]string, 0, len(components))
+	for _, component := range components {
+		componentNames = append(componentNames, component.Name)
+	}
+	annotation, err := json.Marshal(componentNames)
+	if err != nil {
+		t.Fatalf("failed to encode externally managed components: %v", err)
+	}
+
+	mce := &backplanev1.MultiClusterEngine{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test-mce",
+			Annotations: map[string]string{
+				utils.AnnotationExternallyManaged: string(annotation),
 			},
-			want: nil,
+		},
+		Spec: backplanev1.MultiClusterEngineSpec{
+			LocalClusterName: "local-cluster",
+			TargetNamespace:  "test-ns",
+			NetworkPolicies:  &backplanev1.NetworkPoliciesConfig{Enabled: true},
+			Overrides:        &backplanev1.Overrides{Components: components},
 		},
 	}
 
 	registerScheme()
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// Set environment for OCP deployment
-			// os.Setenv("UNIT_TEST", "true")
-			// os.Setenv("ACM_HUB_OCP_VERSION", "4.12.0")
-			// defer os.Unsetenv("UNIT_TEST")
-			// defer os.Unsetenv("ACM_HUB_OCP_VERSION")
+	testClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).Build()
+	reconciler := &MultiClusterEngineReconciler{
+		Client:        testClient,
+		Scheme:        scheme.Scheme,
+		StatusManager: &status.StatusTracker{Client: testClient},
+	}
 
-			// Create ClusterVersion resource that CheckConsole expects
-			cv := &configv1.ClusterVersion{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "version",
-				},
-				Spec: configv1.ClusterVersionSpec{
-					Channel:   "stable-4.12",
-					ClusterID: "test-cluster-id",
-				},
-				Status: configv1.ClusterVersionStatus{
-					Capabilities: configv1.ClusterVersionCapabilitiesStatus{
-						EnabledCapabilities: []configv1.ClusterVersionCapability{"Console"},
-					},
-					History: []configv1.UpdateHistory{
-						{Version: "4.12.0"},
-					},
-				},
-			}
-			if err := recon.Client.Get(context.TODO(), types.NamespacedName{Name: cv.GetName()}, cv); err != nil {
-				if errors.IsNotFound(err) {
-					if err := recon.Client.Create(context.TODO(), cv); err != nil {
-						t.Fatalf("failed to create ClusterVersion: %v", err)
-					}
-				} else {
-					t.Fatalf("failed to get ClusterVersion: %v", err)
-				}
-			}
-			defer recon.Client.Delete(context.TODO(), cv)
+	clusterVersion := &configv1.ClusterVersion{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "version",
+		},
+		Spec: configv1.ClusterVersionSpec{
+			Channel:   "stable-4.12",
+			ClusterID: "test-cluster-id",
+		},
+		Status: configv1.ClusterVersionStatus{
+			Capabilities: configv1.ClusterVersionCapabilitiesStatus{
+				EnabledCapabilities: []configv1.ClusterVersionCapability{"Console"},
+			},
+			History: []configv1.UpdateHistory{
+				{Version: "4.12.0"},
+			},
+		},
+	}
+	if err := testClient.Create(context.TODO(), clusterVersion); err != nil {
+		t.Fatalf("failed to create ClusterVersion: %v", err)
+	}
 
-			_, err := recon.ensureToggleableComponents(context.TODO(), tt.mce)
-			if err != tt.want {
-				t.Errorf("ensureToggleableComponents() error = %v, want %v", err, tt.want)
-			}
-		})
+	if _, err := reconciler.ensureToggleableComponents(context.TODO(), mce); err != nil {
+		t.Fatalf("ensureToggleableComponents() error = %v, want nil", err)
+	}
+
+	for _, component := range components {
+		internalComponent := &backplanev1.InternalEngineComponent{}
+		err := testClient.Get(context.TODO(), types.NamespacedName{
+			Name:      component.Name,
+			Namespace: mce.Spec.TargetNamespace,
+		}, internalComponent)
+		if !errors.IsNotFound(err) {
+			t.Errorf("externally managed component %s created an InternalEngineComponent: %v",
+				component.Name, err)
+		}
 	}
 }
 
@@ -2685,6 +2679,7 @@ func Test_getDisabledComponentCRDSkipDirectories(t *testing.T) {
 							{Name: backplanev1.ClusterAPI, Enabled: true},
 							{Name: backplanev1.ClusterAPIProviderAWS, Enabled: true},
 							{Name: backplanev1.ClusterAPIProviderAzurePreview, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderKubeVirt, Enabled: true},
 							{Name: backplanev1.ClusterAPIProviderMetal, Enabled: true},
 							{Name: backplanev1.ClusterAPIProviderOA, Enabled: true},
 						},
@@ -2705,6 +2700,7 @@ func Test_getDisabledComponentCRDSkipDirectories(t *testing.T) {
 							{Name: backplanev1.ClusterAPI, Enabled: false},
 							{Name: backplanev1.ClusterAPIProviderAWS, Enabled: true},
 							{Name: backplanev1.ClusterAPIProviderAzurePreview, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderKubeVirt, Enabled: true},
 							{Name: backplanev1.ClusterAPIProviderMetal, Enabled: true},
 							{Name: backplanev1.ClusterAPIProviderOA, Enabled: true},
 						},
@@ -2723,6 +2719,7 @@ func Test_getDisabledComponentCRDSkipDirectories(t *testing.T) {
 					Overrides: &backplanev1.Overrides{
 						Components: []backplanev1.ComponentConfig{
 							{Name: backplanev1.ClusterAPI, Enabled: false},
+							{Name: backplanev1.ClusterAPIProviderKubeVirt, Enabled: false},
 							{Name: backplanev1.ClusterAPIProviderMetal, Enabled: false},
 							{Name: backplanev1.ClusterAPIProviderAWS, Enabled: true},
 							{Name: backplanev1.ClusterAPIProviderAzurePreview, Enabled: true},
@@ -2734,6 +2731,7 @@ func Test_getDisabledComponentCRDSkipDirectories(t *testing.T) {
 			want: []string{
 				backplanev1.ClusterAPICRDDir,
 				backplanev1.ClusterAPIK8SCRDDir,
+				backplanev1.ClusterAPIProviderKubeVirtCRDDir,
 				backplanev1.ClusterAPIProviderMetalCRDDir,
 				backplanev1.ClusterAPIProviderMetalK8SCRDDir,
 			},
@@ -2752,6 +2750,7 @@ func Test_getDisabledComponentCRDSkipDirectories(t *testing.T) {
 						Components: []backplanev1.ComponentConfig{
 							{Name: backplanev1.ClusterAPIProviderAWS, Enabled: true},
 							{Name: backplanev1.ClusterAPIProviderAzurePreview, Enabled: true},
+							{Name: backplanev1.ClusterAPIProviderKubeVirt, Enabled: true},
 							{Name: backplanev1.ClusterAPIProviderMetal, Enabled: true},
 							{Name: backplanev1.ClusterAPIProviderOA, Enabled: true},
 						},
@@ -2772,6 +2771,7 @@ func Test_getDisabledComponentCRDSkipDirectories(t *testing.T) {
 							{Name: backplanev1.ClusterAPI, Enabled: true},
 							{Name: backplanev1.ClusterAPIProviderAWS, Enabled: true},
 							{Name: backplanev1.ClusterAPIProviderAzurePreview, Enabled: false},
+							{Name: backplanev1.ClusterAPIProviderKubeVirt, Enabled: true},
 							{Name: backplanev1.ClusterAPIProviderMetal, Enabled: true},
 							{Name: backplanev1.ClusterAPIProviderOA, Enabled: true},
 						},
@@ -3331,5 +3331,282 @@ func Test_setDefaults_PrunesRemovedComponents(t *testing.T) {
 	if mce.ComponentPresent(backplanev1.MaestroPreview) {
 		t.Errorf("expected removed component %q to be pruned from spec, but it is still present",
 			backplanev1.MaestroPreview)
+	}
+}
+
+func Test_setDefaults_EnforcesClusterAPIExclusivity(t *testing.T) {
+	registerScheme()
+
+	previousDeployOnOCP := utils.DeployOnOCP()
+	utils.SetDeployOnOCP(false)
+	defer utils.SetDeployOnOCP(previousDeployOnOCP)
+
+	newClusterAPIMCE := func(name string, createdAt time.Time) *backplanev1.MultiClusterEngine {
+		return &backplanev1.MultiClusterEngine{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:              name,
+				CreationTimestamp: metav1.NewTime(createdAt),
+				Annotations: map[string]string{
+					"deploymentmode": string(backplanev1.ModeHosted),
+				},
+			},
+			Spec: backplanev1.MultiClusterEngineSpec{
+				TargetNamespace: name,
+				NetworkPolicies: &backplanev1.NetworkPoliciesConfig{Enabled: true},
+				Overrides: &backplanev1.Overrides{Components: []backplanev1.ComponentConfig{
+					{Name: backplanev1.ClusterAPI, Enabled: true},
+				}},
+			},
+		}
+	}
+
+	owner := newClusterAPIMCE("cluster-api-owner", time.Now().Add(-time.Hour))
+	conflict := newClusterAPIMCE("cluster-api-conflict", time.Now())
+
+	fakeClient := fake.NewClientBuilder().
+		WithScheme(scheme.Scheme).
+		WithObjects(owner, conflict).
+		Build()
+	reconciler := &MultiClusterEngineReconciler{
+		Client:        fakeClient,
+		Scheme:        scheme.Scheme,
+		StatusManager: &status.StatusTracker{Client: fakeClient},
+	}
+
+	if _, err := reconciler.setDefaults(context.TODO(), conflict); err != nil {
+		t.Fatalf("setDefaults() conflict error = %v", err)
+	}
+	if conflict.Enabled(backplanev1.ClusterAPI) {
+		t.Fatal("later MultiClusterEngine retained Cluster API during a conflict")
+	}
+
+	updatedConflict := &backplanev1.MultiClusterEngine{}
+	if err := fakeClient.Get(
+		context.TODO(),
+		types.NamespacedName{Name: conflict.Name},
+		updatedConflict,
+	); err != nil {
+		t.Fatalf("failed to get updated conflict: %v", err)
+	}
+	if updatedConflict.Enabled(backplanev1.ClusterAPI) {
+		t.Fatal("later MultiClusterEngine Cluster API disablement was not persisted")
+	}
+
+	if _, err := reconciler.setDefaults(context.TODO(), owner); err != nil {
+		t.Fatalf("setDefaults() owner error = %v", err)
+	}
+	if !owner.Enabled(backplanev1.ClusterAPI) {
+		t.Fatal("earliest MultiClusterEngine lost Cluster API ownership")
+	}
+}
+
+func Test_setDefaults_EnforcesClusterAPIExclusivityDisablesDependentProviders(t *testing.T) {
+	registerScheme()
+
+	previousDeployOnOCP := utils.DeployOnOCP()
+	utils.SetDeployOnOCP(false)
+	defer utils.SetDeployOnOCP(previousDeployOnOCP)
+
+	owner := &backplanev1.MultiClusterEngine{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              "cluster-api-owner",
+			CreationTimestamp: metav1.NewTime(time.Now().Add(-time.Hour)),
+			Annotations: map[string]string{
+				"deploymentmode": string(backplanev1.ModeHosted),
+			},
+		},
+		Spec: backplanev1.MultiClusterEngineSpec{
+			TargetNamespace: "cluster-api-owner",
+			NetworkPolicies: &backplanev1.NetworkPoliciesConfig{Enabled: true},
+			Overrides: &backplanev1.Overrides{Components: []backplanev1.ComponentConfig{
+				{Name: backplanev1.ClusterAPI, Enabled: true},
+			}},
+		},
+	}
+	conflict := &backplanev1.MultiClusterEngine{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              "standalone-cluster-api-conflict",
+			CreationTimestamp: metav1.NewTime(time.Now()),
+		},
+		Spec: backplanev1.MultiClusterEngineSpec{
+			TargetNamespace: "standalone-cluster-api-conflict",
+			NetworkPolicies: &backplanev1.NetworkPoliciesConfig{Enabled: true},
+		},
+	}
+
+	fakeClient := fake.NewClientBuilder().
+		WithScheme(scheme.Scheme).
+		WithObjects(owner, conflict).
+		Build()
+	reconciler := &MultiClusterEngineReconciler{
+		Client:        fakeClient,
+		Scheme:        scheme.Scheme,
+		StatusManager: &status.StatusTracker{Client: fakeClient},
+	}
+
+	if _, err := reconciler.setDefaults(context.TODO(), conflict); err != nil {
+		t.Fatalf("setDefaults() conflict error = %v", err)
+	}
+	if conflict.Enabled(backplanev1.ClusterAPI) ||
+		conflict.Enabled(backplanev1.ClusterAPIProviderOA) ||
+		conflict.Enabled(backplanev1.ClusterAPIProviderKubeVirt) {
+		t.Fatal("losing MultiClusterEngine retained Cluster API or a dependent provider")
+	}
+}
+
+func TestEnsureUnstructuredResourceReturnsCRDLabelUpdateError(t *testing.T) {
+	testScheme := runtime.NewScheme()
+	if err := apixv1.AddToScheme(testScheme); err != nil {
+		t.Fatalf("failed to initialize test scheme: %v", err)
+	}
+
+	existingCRD := &apixv1.CustomResourceDefinition{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: apixv1.SchemeGroupVersion.String(),
+			Kind:       "CustomResourceDefinition",
+		},
+		ObjectMeta: metav1.ObjectMeta{Name: "test-crd"},
+		Spec: apixv1.CustomResourceDefinitionSpec{
+			Group: "example.com",
+			Names: apixv1.CustomResourceDefinitionNames{
+				Kind:     "Test",
+				ListKind: "TestList",
+				Plural:   "tests",
+				Singular: "test",
+			},
+			Scope: apixv1.ClusterScoped,
+			Versions: []apixv1.CustomResourceDefinitionVersion{{
+				Name:    "v1",
+				Served:  true,
+				Storage: true,
+			}},
+		},
+	}
+	desiredMap, err := runtime.DefaultUnstructuredConverter.ToUnstructured(existingCRD)
+	if err != nil {
+		t.Fatalf("failed to convert desired CRD: %v", err)
+	}
+	desired := &unstructured.Unstructured{Object: desiredMap}
+	desired.SetLabels(map[string]string{"cluster.x-k8s.io/provider": "kubevirt"})
+
+	updateError := fmt.Errorf("CRD label update failed")
+	fakeClient := fake.NewClientBuilder().
+		WithScheme(testScheme).
+		WithObjects(existingCRD).
+		WithInterceptorFuncs(interceptor.Funcs{
+			Update: func(context.Context, client.WithWatch, client.Object, ...client.UpdateOption) error {
+				return updateError
+			},
+		}).
+		Build()
+	reconciler := &MultiClusterEngineReconciler{
+		Client: fakeClient,
+		Scheme: testScheme,
+		Log:    logr.Discard(),
+	}
+
+	_, err = reconciler.ensureUnstructuredResource(context.TODO(), &backplanev1.MultiClusterEngine{}, desired)
+	if err != updateError {
+		t.Fatalf("ensureUnstructuredResource() error = %v, want %v", err, updateError)
+	}
+}
+
+func TestEnsureCRDPreservesExternallyOwnedMetadata(t *testing.T) {
+	testScheme := runtime.NewScheme()
+	if err := apixv1.AddToScheme(testScheme); err != nil {
+		t.Fatalf("failed to initialize test scheme: %v", err)
+	}
+
+	newCRD := func(labels map[string]string, annotations map[string]string) *apixv1.CustomResourceDefinition {
+		return &apixv1.CustomResourceDefinition{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: apixv1.SchemeGroupVersion.String(),
+				Kind:       "CustomResourceDefinition",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        "kubevirtmachines.infrastructure.cluster.x-k8s.io",
+				Labels:      labels,
+				Annotations: annotations,
+			},
+			Spec: apixv1.CustomResourceDefinitionSpec{
+				Group: "infrastructure.cluster.x-k8s.io",
+				Names: apixv1.CustomResourceDefinitionNames{
+					Kind:     "KubevirtMachine",
+					ListKind: "KubevirtMachineList",
+					Plural:   "kubevirtmachines",
+					Singular: "kubevirtmachine",
+				},
+				Scope: apixv1.NamespaceScoped,
+				Versions: []apixv1.CustomResourceDefinitionVersion{{
+					Name:    "v1alpha1",
+					Served:  true,
+					Storage: true,
+					Schema: &apixv1.CustomResourceValidation{
+						OpenAPIV3Schema: &apixv1.JSONSchemaProps{Type: "object"},
+					},
+				}},
+			},
+		}
+	}
+
+	existingCRD := newCRD(
+		map[string]string{
+			"cluster.x-k8s.io/v1beta1":                   "v1alpha1",
+			"hypershift.openshift.io/externally-managed": "true",
+		},
+		map[string]string{
+			"hypershift.openshift.io/owner": "control-plane-operator",
+		},
+	)
+	desiredCRD := newCRD(
+		map[string]string{
+			"cluster.x-k8s.io/provider": "kubevirt",
+			"cluster.x-k8s.io/v1beta1":  "v1alpha1",
+			"cluster.x-k8s.io/v1beta2":  "v1alpha1",
+		},
+		map[string]string{
+			"controller-gen.kubebuilder.io/version": "test",
+		},
+	)
+
+	fakeClient := fake.NewClientBuilder().
+		WithScheme(testScheme).
+		WithObjects(existingCRD).
+		Build()
+	desiredMap, err := runtime.DefaultUnstructuredConverter.ToUnstructured(desiredCRD)
+	if err != nil {
+		t.Fatalf("failed to convert desired CRD: %v", err)
+	}
+	desired := &unstructured.Unstructured{Object: desiredMap}
+
+	if err := EnsureCRD(context.TODO(), fakeClient, desired); err != nil {
+		t.Fatalf("EnsureCRD() error = %v", err)
+	}
+
+	updatedCRD := &apixv1.CustomResourceDefinition{}
+	if err := fakeClient.Get(
+		context.TODO(),
+		types.NamespacedName{Name: existingCRD.Name},
+		updatedCRD,
+	); err != nil {
+		t.Fatalf("failed to get updated CRD: %v", err)
+	}
+
+	expectedLabels := map[string]string{
+		"cluster.x-k8s.io/provider":                  "kubevirt",
+		"cluster.x-k8s.io/v1beta1":                   "v1alpha1",
+		"cluster.x-k8s.io/v1beta2":                   "v1alpha1",
+		"hypershift.openshift.io/externally-managed": "true",
+	}
+	if !reflect.DeepEqual(updatedCRD.Labels, expectedLabels) {
+		t.Errorf("updated labels = %v, want %v", updatedCRD.Labels, expectedLabels)
+	}
+	for key, value := range existingCRD.Annotations {
+		if updatedCRD.Annotations[key] != value {
+			t.Errorf("annotation %q = %q, want %q", key, updatedCRD.Annotations[key], value)
+		}
+	}
+	if updatedCRD.Annotations["controller-gen.kubebuilder.io/version"] != "test" {
+		t.Errorf("desired controller-gen annotation was not retained: %v", updatedCRD.Annotations)
 	}
 }

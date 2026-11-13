@@ -1,5 +1,9 @@
 ## Available Overrides / Development Tools
 
+### Provider Proxy Egress
+
+See [Proxy Egress](proxy-egress.md ) for details about how provider NetworkPolicies handle proxy addresses.
+
 ### Override Image Values
 
 See [Overriding Images](override-images.md ) for details about modifying images at runtime

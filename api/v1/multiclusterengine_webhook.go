@@ -23,10 +23,15 @@ import (
 	"fmt"
 	"os"
 
+	configv1 "github.com/openshift/api/config/v1"
+	"github.com/stolostron/backplane-operator/pkg/version"
 	admissionregistration "k8s.io/api/admissionregistration/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -61,12 +66,11 @@ var (
 	backplaneconfiglog = logf.Log.WithName("backplaneconfig-resource")
 	Client             cl.Client
 
-	ErrInvalidComponent     = errors.New("invalid component config")
-	ErrInvalidNamespace     = errors.New("invalid TargetNamespace")
-	ErrInvalidDeployMode    = errors.New("invalid DeploymentMode")
-	ErrInvalidAvailability  = errors.New("invalid AvailabilityConfig")
-	ErrInvalidInfraNS       = errors.New("invalid InfrastructureCustomNamespace")
-	ErrComponentExclusivity = errors.New("component exclusivity violation")
+	ErrInvalidComponent    = errors.New("invalid component config")
+	ErrInvalidNamespace    = errors.New("invalid TargetNamespace")
+	ErrInvalidDeployMode   = errors.New("invalid DeploymentMode")
+	ErrInvalidAvailability = errors.New("invalid AvailabilityConfig")
+	ErrInvalidInfraNS      = errors.New("invalid InfrastructureCustomNamespace")
 
 	blockDeletionResources = []BlockDeletionResource{
 		{
@@ -192,8 +196,13 @@ func (r *MultiClusterEngine) ValidateCreate(ctx context.Context, obj *MultiClust
 		}
 	}
 
-	// Validate component exclusivity (HyperShift vs Cluster API)
-	if err := obj.validateComponentExclusivity(); err != nil {
+	if err := obj.validateComponentDependencies(); err != nil {
+		return nil, err
+	}
+	if err := validateCAPKWebhookCompatibility(ctx, nil, obj); err != nil {
+		return nil, err
+	}
+	if err := validateClusterAPIExclusivity(ctx, nil, obj); err != nil {
 		return nil, err
 	}
 
@@ -278,8 +287,16 @@ func (r *MultiClusterEngine) ValidateUpdate(ctx context.Context, oldObj, newObj 
 		}
 	}
 
-	// Validate component exclusivity (HyperShift vs Cluster API)
-	if err := newObj.validateComponentExclusivity(); err != nil {
+	if err := newObj.validateComponentDependencies(); err != nil {
+		if shouldRejectComponentDependencies(oldObj, newObj) {
+			return nil, err
+		}
+		warnings = append(warnings, err.Error())
+	}
+	if err := validateCAPKWebhookCompatibility(ctx, oldObj, newObj); err != nil {
+		return nil, err
+	}
+	if err := validateClusterAPIExclusivity(ctx, oldObj, newObj); err != nil {
 		return nil, err
 	}
 
@@ -424,58 +441,151 @@ func contains(s []string, v string) bool {
 	return false
 }
 
-// validateComponentExclusivity ensures HyperShift and Cluster API components are mutually exclusive
-// Note: If additional exclusivity rules are needed in the future, consider refactoring to a
-// rules-based approach to handle multiple independent exclusivity constraints.
-func (r *MultiClusterEngine) validateComponentExclusivity() error {
-	// Define HyperShift component set
-	hypershiftComponents := []string{
-		HyperShift,
-		HyperShiftPreview,
-		HypershiftLocalHosting,
+func (r *MultiClusterEngine) validateComponentDependencies() error {
+	if IsInHostedMode(r) && providerRequested(
+		r,
+		ClusterAPIProviderKubeVirt,
+		ClusterAPIProviderKubeVirtPreview,
+	) {
+		return fmt.Errorf("%w: cluster-api-provider-kubevirt cannot be enabled in hosted mode",
+			ErrInvalidComponent)
 	}
-
-	// Define Cluster API component set
-	clusterAPIComponents := []string{
-		ClusterAPI,
-		ClusterAPIPreview,
-		ClusterAPIProviderAWS,
-		ClusterAPIProviderAWSPreview,
-		// ClusterAPIProviderAzure, Uncomment until stable release is available
-		ClusterAPIProviderAzurePreview,
-		ClusterAPIProviderMetal,
-		ClusterAPIProviderMetalPreview,
+	if IsInHostedMode(r) && providerRequested(
+		r,
 		ClusterAPIProviderOA,
 		ClusterAPIProviderOAPreview,
+	) {
+		return fmt.Errorf("%w: cluster-api-provider-openshift-assisted cannot be enabled in hosted mode",
+			ErrInvalidComponent)
 	}
 
-	hypershiftEnabled := false
-	clusterAPIEnabled := false
-
-	// Check if any HyperShift component is enabled
-	for _, comp := range hypershiftComponents {
-		if r.Enabled(comp) {
-			hypershiftEnabled = true
-			break
+	if r.Enabled(ClusterAPIProviderOA) {
+		if !r.EffectiveDependencyEnabled(ClusterAPI) {
+			return fmt.Errorf("%w: cluster-api-provider-openshift-assisted requires cluster-api to be enabled",
+				ErrInvalidComponent)
+		}
+		if !r.EffectiveDependencyEnabled(AssistedService) {
+			return fmt.Errorf("%w: cluster-api-provider-openshift-assisted requires assisted-service to be enabled",
+				ErrInvalidComponent)
 		}
 	}
 
-	// Check if any Cluster API component is enabled
-	for _, comp := range clusterAPIComponents {
-		if r.Enabled(comp) {
-			clusterAPIEnabled = true
-			break
-		}
-	}
-
-	// Reject if both are enabled
-	if hypershiftEnabled && clusterAPIEnabled {
-		return fmt.Errorf("%w: HyperShift components (hypershift, hypershift-local-hosting) "+
-			"and Cluster API components (cluster-api, cluster-api-provider-aws, "+
-			"cluster-api-provider-azure-preview, cluster-api-provider-metal3, cluster-api-provider-openshift-assisted) "+
-			"cannot be enabled simultaneously. Please enable only one set of components",
-			ErrComponentExclusivity)
+	if r.Enabled(ClusterAPIProviderKubeVirt) && !r.EffectiveDependencyEnabled(ClusterAPI) {
+		return fmt.Errorf("%w: cluster-api-provider-kubevirt requires cluster-api to be enabled",
+			ErrInvalidComponent)
 	}
 
 	return nil
+}
+
+func providerRequested(mce *MultiClusterEngine, stable, preview string) bool {
+	return mce.Enabled(stable) ||
+		mce.ComponentPresent(preview) && mce.Enabled(preview)
+}
+
+// shouldRejectComponentDependencies preserves updates for resources that
+// already contain invalid component dependencies while still rejecting new or
+// changed invalid dependency configurations.
+func shouldRejectComponentDependencies(oldObj, newObj *MultiClusterEngine) bool {
+	if oldObj.validateComponentDependencies() == nil {
+		return true
+	}
+	return componentDependencyStateChanged(oldObj, newObj)
+}
+
+func componentDependencyStateChanged(oldObj, newObj *MultiClusterEngine) bool {
+	for _, provider := range []string{ClusterAPIProviderOA, ClusterAPIProviderKubeVirt} {
+		if oldObj.Enabled(provider) != newObj.Enabled(provider) {
+			return true
+		}
+	}
+
+	for _, dependency := range []string{ClusterAPI, AssistedService} {
+		if oldObj.EffectiveDependencyEnabled(dependency) != newObj.EffectiveDependencyEnabled(dependency) {
+			return true
+		}
+	}
+	return false
+}
+
+func validateCAPKWebhookCompatibility(ctx context.Context, oldObj, newObj *MultiClusterEngine) error {
+	if !capkRequested(newObj) {
+		return nil
+	}
+	if oldObj != nil && capkRequested(oldObj) {
+		return nil
+	}
+
+	ocpVersion, err := clusterOCPVersion(ctx)
+	if err != nil {
+		return err
+	}
+	if ocpVersion == "" {
+		return nil
+	}
+
+	supported, err := version.AtLeast(ocpVersion, version.WebhookMatchConditions)
+	if err != nil {
+		return err
+	}
+	if !supported {
+		return fmt.Errorf("%w: cluster-api-provider-kubevirt requires OpenShift %s or later",
+			ErrInvalidComponent, version.WebhookMatchConditions)
+	}
+	return nil
+}
+
+func capkRequested(mce *MultiClusterEngine) bool {
+	return mce.Enabled(ClusterAPIProviderKubeVirt) ||
+		mce.ComponentPresent(ClusterAPIProviderKubeVirtPreview) &&
+			mce.Enabled(ClusterAPIProviderKubeVirtPreview)
+}
+
+func clusterOCPVersion(ctx context.Context) (string, error) {
+	if ocpVersion := os.Getenv("ACM_HUB_OCP_VERSION"); ocpVersion != "" {
+		return ocpVersion, nil
+	}
+	if Client == nil {
+		return "", nil
+	}
+
+	clusterVersion := &configv1.ClusterVersion{}
+	if err := Client.Get(ctx, types.NamespacedName{Name: "version"}, clusterVersion); err != nil {
+		if k8serrors.IsNotFound(err) || apimeta.IsNoMatchError(err) {
+			return "", nil
+		}
+		return "", err
+	}
+	if len(clusterVersion.Status.History) == 0 {
+		return "", fmt.Errorf("OpenShift clusterversion has no history")
+	}
+	return clusterVersion.Status.History[0].Version, nil
+}
+
+func validateClusterAPIExclusivity(ctx context.Context, oldObj, newObj *MultiClusterEngine) error {
+	if !clusterAPIRequested(newObj) {
+		return nil
+	}
+	if oldObj != nil && clusterAPIRequested(oldObj) {
+		return nil
+	}
+
+	mceList := &MultiClusterEngineList{}
+	if err := Client.List(ctx, mceList); err != nil {
+		return fmt.Errorf("unable to list BackplaneConfigs: %w", err)
+	}
+	for _, mce := range mceList.Items {
+		if oldObj != nil && (mce.UID == oldObj.UID || (mce.UID == "" && mce.Name == oldObj.Name)) {
+			continue
+		}
+		if clusterAPIRequested(&mce) {
+			return fmt.Errorf("%w: only one MultiClusterEngine may enable cluster-api",
+				ErrInvalidComponent)
+		}
+	}
+	return nil
+}
+
+func clusterAPIRequested(mce *MultiClusterEngine) bool {
+	return mce.RequestsClusterAPI()
 }

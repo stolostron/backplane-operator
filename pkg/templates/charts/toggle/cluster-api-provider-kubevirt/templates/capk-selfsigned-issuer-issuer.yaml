@@ -1,0 +1,9 @@
+{{- if not .Values.global.deployOnOCP }}
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: capk-selfsigned-issuer
+  namespace: '{{ default "multicluster-engine" .Values.global.namespace }}'
+spec:
+  selfSigned: {}
+{{- end }}

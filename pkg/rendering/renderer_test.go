@@ -5,6 +5,7 @@ package renderer
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"reflect"
@@ -13,9 +14,11 @@ import (
 
 	backplane "github.com/stolostron/backplane-operator/api/v1"
 	"github.com/stolostron/backplane-operator/pkg/utils"
+	admissionv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -282,6 +285,94 @@ func TestRender(t *testing.T) {
 	os.Unsetenv("POD_NAMESPACE")
 	os.Unsetenv("ACM_HUB_OCP_VERSION")
 
+}
+
+func TestClusterAPIProviderKubevirtCoexistence(t *testing.T) {
+	t.Setenv("DIRECTORY_OVERRIDE", "../../")
+	t.Setenv("POD_NAMESPACE", "default")
+	t.Setenv("ACM_HUB_OCP_VERSION", "4.18.0")
+
+	images := map[string]string{}
+	for _, imageName := range utils.GetTestImages() {
+		images[imageName] = "quay.io/test/test:latest"
+	}
+
+	config := &backplane.MultiClusterEngine{
+		ObjectMeta: metav1.ObjectMeta{Name: "test"},
+		Spec:       backplane.MultiClusterEngineSpec{TargetNamespace: "multicluster-engine"},
+	}
+
+	objects, errs := RenderChart(
+		"pkg/templates/charts/toggle/cluster-api-provider-kubevirt",
+		config,
+		images,
+		map[string]string{},
+	)
+	if len(errs) > 0 {
+		for _, err := range errs {
+			t.Log(err)
+		}
+		t.Fatal("failed to render cluster-api-provider-kubevirt chart")
+	}
+
+	foundDeployment := false
+	foundWebhookConfiguration := false
+	for _, object := range objects {
+		switch object.GetKind() {
+		case "Deployment":
+			if object.GetName() != "capk-controller-manager" {
+				continue
+			}
+			foundDeployment = true
+			deployment := &appsv1.Deployment{}
+			if err := runtime.DefaultUnstructuredConverter.FromUnstructured(object.Object, deployment); err != nil {
+				t.Fatal(err)
+			}
+			for _, container := range deployment.Spec.Template.Spec.Containers {
+				hasExcludedAnnotations := false
+				for _, arg := range container.Args {
+					if arg == "--watch-filter=multicluster-engine" {
+						t.Fatal("CAPK deployment must not use a watch filter; HyperShift objects are excluded in-controller")
+					}
+					if arg == "--exclude-annotations=hypershift.openshift.io/nodePool,hypershift.openshift.io/cluster" {
+						hasExcludedAnnotations = true
+					}
+				}
+				if !hasExcludedAnnotations {
+					t.Fatal("CAPK deployment must exclude HyperShift-owned objects by annotation")
+				}
+			}
+		case "ValidatingWebhookConfiguration":
+			if object.GetName() != "capk-validating-webhook-configuration" {
+				continue
+			}
+			foundWebhookConfiguration = true
+			webhookConfiguration := &admissionv1.ValidatingWebhookConfiguration{}
+			if err := runtime.DefaultUnstructuredConverter.FromUnstructured(object.Object, webhookConfiguration); err != nil {
+				t.Fatal(err)
+			}
+			renderedWebhooks, ok := object.Object["webhooks"].([]interface{})
+			if !ok {
+				t.Fatalf("CAPK validating webhook configuration has invalid webhooks: %T", object.Object["webhooks"])
+			}
+			for index, renderedWebhook := range renderedWebhooks {
+				webhook := webhookConfiguration.Webhooks[index]
+				value, exists := renderedWebhook.(map[string]interface{})["objectSelector"]
+				if !exists || value != nil {
+					t.Fatalf("CAPK webhook %s must explicitly remove objectSelector with a null field", webhook.Name)
+				}
+				if webhook.ObjectSelector != nil {
+					t.Fatalf("CAPK webhook %s must not use an object selector", webhook.Name)
+				}
+			}
+		}
+	}
+	if !foundDeployment {
+		t.Fatal("CAPK deployment was not rendered")
+	}
+	if !foundWebhookConfiguration {
+		t.Fatal("CAPK validating webhook configuration was not rendered")
+	}
 }
 
 func TestClusterProxyManagedProxyConfigurationArgs(t *testing.T) {
@@ -832,7 +923,728 @@ func TestNetworkPoliciesValueInjection(t *testing.T) {
 	})
 }
 
+func TestHypershiftHCPProxyDisabled(t *testing.T) {
+	t.Setenv("DIRECTORY_OVERRIDE", "../../")
+	t.Setenv("POD_NAMESPACE", "default")
+	t.Setenv("ACM_HUB_OCP_VERSION", "4.12.0")
+
+	testImages := map[string]string{}
+	for _, image := range utils.GetTestImages() {
+		testImages[image] = "quay.io/test/test:Test"
+	}
+	mce := &backplane.MultiClusterEngine{
+		ObjectMeta: metav1.ObjectMeta{Name: "test-mce"},
+		Spec:       backplane.MultiClusterEngineSpec{TargetNamespace: "default"},
+	}
+
+	templates, errs := RenderChart("pkg/templates/charts/toggle/hypershift", mce, testImages, map[string]string{})
+	if len(errs) > 0 {
+		t.Fatalf("RenderChart failed: %v", errs)
+	}
+
+	for _, template := range templates {
+		switch template.GetKind() {
+		case "APIService":
+			if template.GetName() == "v1alpha1.hcp.ocm.io" {
+				t.Error("HCP proxy APIService must not render while the shipped addon image lacks the proxy")
+			}
+		case "Service":
+			if template.GetName() == "hypershift-addon-hcp-proxy" {
+				t.Error("HCP proxy Service must not render while the shipped addon image lacks the proxy")
+			}
+		case "ClusterRole", "ClusterRoleBinding":
+			if strings.Contains(template.GetName(), "hypershift-addon-hcp-proxy") {
+				t.Errorf("HCP proxy %s must not render while the shipped addon image lacks the proxy", template.GetKind())
+			}
+		case "Deployment":
+			if template.GetName() != "hypershift-addon-manager" {
+				continue
+			}
+			deployment := &appsv1.Deployment{}
+			if err := runtime.DefaultUnstructuredConverter.FromUnstructured(template.Object, deployment); err != nil {
+				t.Fatal(err)
+			}
+			for _, container := range deployment.Spec.Template.Spec.Containers {
+				for _, port := range container.Ports {
+					if port.ContainerPort == 9443 {
+						t.Error("HCP proxy port must not render while the shipped addon image lacks the proxy")
+					}
+				}
+				for _, mount := range container.VolumeMounts {
+					if mount.Name == "hcp-proxy-tls" {
+						t.Error("HCP proxy TLS mount must not render while the shipped addon image lacks the proxy")
+					}
+				}
+			}
+			for _, volume := range deployment.Spec.Template.Spec.Volumes {
+				if volume.Name == "hcp-proxy-tls" {
+					t.Error("HCP proxy TLS volume must not render while the shipped addon image lacks the proxy")
+				}
+			}
+		}
+	}
+}
+
+func TestRendererLeavesHCPProxyToChartDefaults(t *testing.T) {
+	values := &Values{}
+	injectValuesOverrides(values, &backplane.MultiClusterEngine{}, map[string]string{}, map[string]string{})
+
+	renderedValues, err := values.ToValues()
+	if err != nil {
+		t.Fatalf("ToValues() error = %v", err)
+	}
+	if _, exists := renderedValues.AsMap()["hcpProxyEnabled"]; exists {
+		t.Fatal("renderer must not override the chart's hcpProxyEnabled default")
+	}
+}
+
+func TestCAPOAProxyEgressNetworkPolicies(t *testing.T) {
+	t.Setenv("DIRECTORY_OVERRIDE", "../../")
+	t.Setenv("POD_NAMESPACE", "default")
+	t.Setenv("ACM_HUB_OCP_VERSION", "4.18.0")
+	t.Setenv("HTTP_PROXY", "http://192.0.2.10:3128")
+	t.Setenv("HTTPS_PROXY", "http://192.0.2.10:3128")
+	t.Setenv("NO_PROXY", "*")
+
+	values := &Values{}
+	injectValuesOverrides(values, &backplane.MultiClusterEngine{}, map[string]string{}, map[string]string{})
+	if len(values.HubConfig.ProxyEgress) != 1 {
+		t.Fatalf("proxy egress rule count = %d, want 1", len(values.HubConfig.ProxyEgress))
+	}
+	if values.HubConfig.ProxyEgress[0].Port != 3128 {
+		t.Fatalf("proxy egress port = %d, want 3128", values.HubConfig.ProxyEgress[0].Port)
+	}
+
+	images := map[string]string{}
+	for _, imageName := range utils.GetTestImages() {
+		images[imageName] = "quay.io/test/test:latest"
+	}
+	for _, chartPath := range []string{
+		"pkg/templates/charts/toggle/cluster-api-provider-openshift-assisted",
+		"pkg/templates/charts/toggle/cluster-api-provider-openshift-assisted-k8s",
+	} {
+		tolerationSeconds := int64(0)
+		templates, errs := RenderChart(
+			chartPath,
+			&backplane.MultiClusterEngine{Spec: backplane.MultiClusterEngineSpec{
+				TargetNamespace: "multicluster-engine",
+				ImagePullSecret: "*",
+				Tolerations: []corev1.Toleration{{
+					Key:               "capoa-test",
+					Operator:          corev1.TolerationOpEqual,
+					Value:             "123",
+					Effect:            corev1.TaintEffectNoSchedule,
+					TolerationSeconds: &tolerationSeconds,
+				}},
+			}},
+			images,
+			map[string]string{},
+		)
+		if len(errs) > 0 {
+			t.Fatalf("RenderChart(%s) errors = %v", chartPath, errs)
+		}
+
+		for _, policyName := range []string{"capoa-bootstrap-controller-manager", "capoa-controlplane-controller-manager"} {
+			foundProxyEgress := false
+			for _, template := range templates {
+				if template.GetKind() != "NetworkPolicy" || template.GetName() != policyName {
+					continue
+				}
+				networkPolicy := &networkingv1.NetworkPolicy{}
+				if err := runtime.DefaultUnstructuredConverter.FromUnstructured(template.Object, networkPolicy); err != nil {
+					t.Fatal(err)
+				}
+				if hasEgressPortAndCIDR(networkPolicy, 3128, "192.0.2.10/32") {
+					foundProxyEgress = true
+				}
+				assertLegacyEgressAnnotation(t, template)
+				assertLegacyDNSBaselineUsesPreUpgradePort(t, template)
+			}
+			if !foundProxyEgress {
+				t.Fatalf("%s %s NetworkPolicy does not allow the configured proxy endpoint", chartPath, policyName)
+			}
+		}
+		for _, deploymentName := range []string{"capoa-bootstrap-controller-manager", "capoa-controlplane-controller-manager"} {
+			foundDeployment := false
+			for _, template := range templates {
+				if template.GetKind() != "Deployment" || template.GetName() != deploymentName {
+					continue
+				}
+				foundDeployment = true
+				deployment := &appsv1.Deployment{}
+				if err := runtime.DefaultUnstructuredConverter.FromUnstructured(template.Object, deployment); err != nil {
+					t.Fatal(err)
+				}
+				for _, container := range deployment.Spec.Template.Spec.Containers {
+					for _, envVar := range container.Env {
+						if envVar.Name == "NO_PROXY" && envVar.Value != "*" {
+							t.Fatalf("%s NO_PROXY value = %q, want %q", deploymentName, envVar.Value, "*")
+						}
+					}
+				}
+				foundToleration := false
+				for _, toleration := range deployment.Spec.Template.Spec.Tolerations {
+					if toleration.Key != "capoa-test" {
+						continue
+					}
+					foundToleration = true
+					if toleration.TolerationSeconds == nil || *toleration.TolerationSeconds != 0 {
+						t.Fatalf("%s tolerationSeconds = %v, want 0", deploymentName, toleration.TolerationSeconds)
+					}
+				}
+				if !foundToleration {
+					t.Fatalf("%s deployment does not contain the configured toleration", deploymentName)
+				}
+				if len(deployment.Spec.Template.Spec.ImagePullSecrets) != 1 ||
+					deployment.Spec.Template.Spec.ImagePullSecrets[0].Name != "*" {
+					t.Fatalf("%s image pull secret was not rendered as a string", deploymentName)
+				}
+			}
+			if !foundDeployment {
+				t.Fatalf("%s %s deployment was not rendered", chartPath, deploymentName)
+			}
+		}
+	}
+}
+
+func TestClusterAPIProviderKubevirtRendersQuotedProxyValuesAndCertificate(t *testing.T) {
+	t.Setenv("DIRECTORY_OVERRIDE", "../../")
+	t.Setenv("POD_NAMESPACE", "default")
+	t.Setenv("ACM_HUB_OCP_VERSION", "4.18.0")
+	t.Setenv("HTTP_PROXY", "http://192.0.2.10:3128")
+	t.Setenv("HTTPS_PROXY", "http://192.0.2.10:3128")
+	t.Setenv("NO_PROXY", "*")
+	utils.SetDeployOnOCP(false)
+	t.Cleanup(func() { utils.SetDeployOnOCP(true) })
+	tolerationSeconds := int64(0)
+
+	images := map[string]string{}
+	for _, imageName := range utils.GetTestImages() {
+		images[imageName] = "quay.io/test/test:latest"
+	}
+	templates, errs := RenderChart(
+		"pkg/templates/charts/toggle/cluster-api-provider-kubevirt",
+		&backplane.MultiClusterEngine{
+			Spec: backplane.MultiClusterEngineSpec{
+				TargetNamespace: "multicluster-engine",
+				ImagePullSecret: "*",
+				Tolerations: []corev1.Toleration{{
+					Key:               "capk-test",
+					Operator:          corev1.TolerationOpEqual,
+					Value:             "123",
+					Effect:            corev1.TaintEffectNoSchedule,
+					TolerationSeconds: &tolerationSeconds,
+				}},
+			},
+		},
+		images,
+		map[string]string{},
+	)
+	if len(errs) > 0 {
+		t.Fatalf("RenderChart() errors = %v", errs)
+	}
+
+	foundDeployment := false
+	foundCertificate := false
+	for _, template := range templates {
+		switch template.GetKind() {
+		case "Deployment":
+			if template.GetName() != "capk-controller-manager" {
+				continue
+			}
+			foundDeployment = true
+			deployment := &appsv1.Deployment{}
+			if err := runtime.DefaultUnstructuredConverter.FromUnstructured(template.Object, deployment); err != nil {
+				t.Fatal(err)
+			}
+			for _, container := range deployment.Spec.Template.Spec.Containers {
+				values := map[string]string{}
+				for _, envVar := range container.Env {
+					values[envVar.Name] = envVar.Value
+				}
+				if values["HTTP_PROXY"] != "http://192.0.2.10:3128" ||
+					values["HTTPS_PROXY"] != "http://192.0.2.10:3128" || values["NO_PROXY"] != "*" {
+					t.Fatalf("CAPK proxy values were not rendered verbatim: %v", values)
+				}
+			}
+			foundToleration := false
+			for _, toleration := range deployment.Spec.Template.Spec.Tolerations {
+				if toleration.Key == "capk-test" {
+					foundToleration = true
+					if toleration.Value != "123" {
+						t.Fatalf("CAPK toleration value = %q, want %q", toleration.Value, "123")
+					}
+					if toleration.TolerationSeconds == nil || *toleration.TolerationSeconds != 0 {
+						t.Fatalf("CAPK tolerationSeconds = %v, want 0", toleration.TolerationSeconds)
+					}
+				}
+			}
+			if !foundToleration {
+				t.Fatal("CAPK deployment does not contain the configured toleration")
+			}
+			if len(deployment.Spec.Template.Spec.ImagePullSecrets) != 1 ||
+				deployment.Spec.Template.Spec.ImagePullSecrets[0].Name != "*" {
+				t.Fatal("CAPK image pull secret was not rendered as a string")
+			}
+		case "Certificate":
+			if template.GetName() != "capk-cert" {
+				continue
+			}
+			foundCertificate = true
+			spec, ok := template.Object["spec"].(map[string]interface{})
+			if !ok {
+				t.Fatalf("CAPK Certificate spec has invalid type: %T", template.Object["spec"])
+			}
+			if _, exists := spec["commonName"]; exists {
+				t.Fatal("CAPK Certificate must not set commonName")
+			}
+			subject, ok := spec["subject"].(map[string]interface{})
+			if !ok {
+				t.Fatalf("CAPK Certificate subject has invalid type: %T", spec["subject"])
+			}
+			organizations, ok := subject["organizations"].([]interface{})
+			if !ok || len(organizations) == 0 {
+				t.Fatalf("CAPK Certificate subject organizations have invalid value: %v", subject["organizations"])
+			}
+			dnsNames, ok := spec["dnsNames"].([]interface{})
+			if !ok {
+				t.Fatalf("CAPK Certificate dnsNames have invalid type: %T", spec["dnsNames"])
+			}
+			foundDNSName := false
+			for _, dnsName := range dnsNames {
+				if dnsName == "capk-webhook-service.multicluster-engine.svc" {
+					foundDNSName = true
+				}
+			}
+			if !foundDNSName {
+				t.Fatal("CAPK Certificate does not contain the webhook service DNS name")
+			}
+		case "NetworkPolicy":
+			if template.GetName() == "capk-controller-manager" {
+				assertLegacyEgressAnnotation(t, template)
+			}
+		}
+	}
+	if !foundDeployment || !foundCertificate {
+		t.Fatal("CAPK deployment or certificate was not rendered")
+	}
+}
+
+func TestCAPOAChartsRenderWithoutProxyEgress(t *testing.T) {
+	t.Setenv("DIRECTORY_OVERRIDE", "../../")
+	t.Setenv("POD_NAMESPACE", "default")
+	t.Setenv("ACM_HUB_OCP_VERSION", "4.18.0")
+	t.Setenv("HTTP_PROXY", "")
+	t.Setenv("HTTPS_PROXY", "")
+	t.Setenv("NO_PROXY", "")
+
+	values := &Values{}
+	injectValuesOverrides(values, &backplane.MultiClusterEngine{}, map[string]string{}, map[string]string{})
+	renderedValues, err := values.ToValues()
+	if err != nil {
+		t.Fatalf("ToValues() error = %v", err)
+	}
+	hubConfig, ok := renderedValues.AsMap()["hubconfig"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("hubconfig values have invalid type: %T", renderedValues.AsMap()["hubconfig"])
+	}
+	proxyEgress, ok := hubConfig["proxyEgress"].([]interface{})
+	if !ok {
+		t.Fatalf("proxyEgress value has invalid type: %T", hubConfig["proxyEgress"])
+	}
+	if len(proxyEgress) != 0 {
+		t.Fatalf("proxy egress rule count = %d, want 0", len(proxyEgress))
+	}
+
+	images := map[string]string{}
+	for _, imageName := range utils.GetTestImages() {
+		images[imageName] = "quay.io/test/test:latest"
+	}
+	for _, chartPath := range []string{
+		"pkg/templates/charts/toggle/cluster-api-provider-openshift-assisted",
+		"pkg/templates/charts/toggle/cluster-api-provider-openshift-assisted-k8s",
+	} {
+		_, errs := RenderChart(
+			chartPath,
+			&backplane.MultiClusterEngine{Spec: backplane.MultiClusterEngineSpec{TargetNamespace: "multicluster-engine"}},
+			images,
+			map[string]string{},
+		)
+		if len(errs) > 0 {
+			t.Fatalf("RenderChart(%s) errors = %v", chartPath, errs)
+		}
+	}
+}
+
+func TestProxyEgressNormalizesIPv4MappedAddresses(t *testing.T) {
+	rule, ok := parseProxyEgressRule("http://[::ffff:192.0.2.10]:3128")
+	if !ok {
+		t.Fatal("parseProxyEgressRule() failed to parse an IPv4-mapped address")
+	}
+	if len(rule.CIDRs) != 1 || rule.CIDRs[0] != "192.0.2.10/32" {
+		t.Fatalf("proxy CIDRs = %v, want [192.0.2.10/32]", rule.CIDRs)
+	}
+}
+
+func TestProxyEgressHostnameFallback(t *testing.T) {
+	rule, ok := parseProxyEgressRule("http://proxy.example.com:3128")
+	if !ok {
+		t.Fatal("parseProxyEgressRule() failed to parse a hostname proxy address")
+	}
+	if rule.Port != 3128 {
+		t.Fatalf("proxy port = %d, want 3128", rule.Port)
+	}
+	wantCIDRs := []string{"0.0.0.0/0", "::/0"}
+	if len(rule.CIDRs) != len(wantCIDRs) || rule.CIDRs[0] != wantCIDRs[0] || rule.CIDRs[1] != wantCIDRs[1] {
+		t.Fatalf("proxy CIDRs = %v, want %v", rule.CIDRs, wantCIDRs)
+	}
+}
+
+func TestClusterAPIProviderKubevirtWebhookVersionCompatibility(t *testing.T) {
+	tests := []struct {
+		name                string
+		ocpVersion          string
+		deployOnOCP         bool
+		wantFailurePolicy   string
+		wantMatchConditions bool
+	}{
+		{name: "OpenShift 4.15 uses fail-closed matchConditions", ocpVersion: "4.15.0", deployOnOCP: true, wantFailurePolicy: "Fail", wantMatchConditions: true},
+		{name: "OpenShift 4.12 omits unsupported matchConditions", ocpVersion: "4.12.0", deployOnOCP: true, wantFailurePolicy: "Ignore", wantMatchConditions: false},
+		{name: "non-OCP deployments omit matchConditions", ocpVersion: "4.18.0", deployOnOCP: false, wantFailurePolicy: "Ignore", wantMatchConditions: false},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			originalDeployOnOCP := utils.DeployOnOCP()
+			defer utils.SetDeployOnOCP(originalDeployOnOCP)
+			utils.SetDeployOnOCP(test.deployOnOCP)
+			t.Setenv("DIRECTORY_OVERRIDE", "../../")
+			t.Setenv("POD_NAMESPACE", "default")
+			t.Setenv("ACM_HUB_OCP_VERSION", test.ocpVersion)
+
+			images := map[string]string{}
+			for _, imageName := range utils.GetTestImages() {
+				images[imageName] = "quay.io/test/test:latest"
+			}
+			templates, errs := RenderChart(
+				"pkg/templates/charts/toggle/cluster-api-provider-kubevirt",
+				&backplane.MultiClusterEngine{Spec: backplane.MultiClusterEngineSpec{
+					TargetNamespace: "multicluster-engine",
+				}},
+				images,
+				map[string]string{},
+			)
+			if len(errs) > 0 {
+				t.Fatalf("RenderChart() errors = %v", errs)
+			}
+
+			foundWebhookConfiguration := false
+			for _, template := range templates {
+				if template.GetKind() != "ValidatingWebhookConfiguration" ||
+					template.GetName() != "capk-validating-webhook-configuration" {
+					continue
+				}
+				foundWebhookConfiguration = true
+				webhookConfiguration := &admissionv1.ValidatingWebhookConfiguration{}
+				if err := runtime.DefaultUnstructuredConverter.FromUnstructured(template.Object, webhookConfiguration); err != nil {
+					t.Fatal(err)
+				}
+				if len(webhookConfiguration.Webhooks) != 3 {
+					t.Fatalf("CAPK webhook count = %d, want 3", len(webhookConfiguration.Webhooks))
+				}
+				for _, webhook := range webhookConfiguration.Webhooks {
+					if webhook.FailurePolicy == nil || string(*webhook.FailurePolicy) != test.wantFailurePolicy {
+						t.Fatalf("CAPK webhook %s failurePolicy = %v, want %s",
+							webhook.Name, webhook.FailurePolicy, test.wantFailurePolicy)
+					}
+					if hasMatchConditions := len(webhook.MatchConditions) != 0; hasMatchConditions != test.wantMatchConditions {
+						t.Fatalf("CAPK webhook %s matchConditions = %v, want present=%t",
+							webhook.Name, webhook.MatchConditions, test.wantMatchConditions)
+					}
+				}
+			}
+			if !foundWebhookConfiguration {
+				t.Fatal("CAPK ValidatingWebhookConfiguration was not rendered")
+			}
+		})
+	}
+}
+
+func TestClusterAPIProviderKubevirtClusterTemplateCRDAllowsEmptyMetadata(t *testing.T) {
+	crds, errs := RenderCRDs("../../pkg/templates/crds", nil, []string{})
+	if len(errs) > 0 {
+		t.Fatalf("RenderCRDs() errors = %v", errs)
+	}
+
+	foundCRD := false
+	for _, crd := range crds {
+		if crd.GetName() != "kubevirtclustertemplates.infrastructure.cluster.x-k8s.io" {
+			continue
+		}
+		foundCRD = true
+		versions, _, err := unstructured.NestedSlice(crd.Object, "spec", "versions")
+		if err != nil {
+			t.Fatal(err)
+		}
+		foundMetadataSchema := false
+		for _, versionValue := range versions {
+			version, ok := versionValue.(map[string]interface{})
+			if !ok {
+				t.Fatalf("CRD version has invalid type: %T", versionValue)
+			}
+			metadata, found, err := unstructured.NestedMap(
+				version,
+				"schema", "openAPIV3Schema", "properties", "spec", "properties", "template", "properties", "metadata",
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if found {
+				foundMetadataSchema = true
+				if _, exists := metadata["minProperties"]; exists {
+					t.Fatal("KubevirtClusterTemplate metadata schema must accept an empty object")
+				}
+			}
+		}
+		if !foundMetadataSchema {
+			t.Fatal("KubevirtClusterTemplate metadata schema was not found")
+		}
+	}
+	if !foundCRD {
+		t.Fatal("KubevirtClusterTemplate CRD was not rendered")
+	}
+}
+
+func TestClusterAPIProviderKubevirtNetworkPolicyWebhooksAndRBAC(t *testing.T) {
+	t.Setenv("DIRECTORY_OVERRIDE", "../../")
+	t.Setenv("POD_NAMESPACE", "default")
+	t.Setenv("ACM_HUB_OCP_VERSION", "4.18.0")
+	t.Setenv("HTTP_PROXY", "http://192.0.2.10:3128")
+	t.Setenv("HTTPS_PROXY", "http://192.0.2.10:3128")
+	t.Setenv("NO_PROXY", "localhost")
+
+	images := map[string]string{}
+	for _, imageName := range utils.GetTestImages() {
+		images[imageName] = "quay.io/test/test:latest"
+	}
+	templates, errs := RenderChart(
+		"pkg/templates/charts/toggle/cluster-api-provider-kubevirt",
+		&backplane.MultiClusterEngine{Spec: backplane.MultiClusterEngineSpec{TargetNamespace: "multicluster-engine"}},
+		images,
+		map[string]string{},
+	)
+	if len(errs) > 0 {
+		t.Fatalf("RenderChart() errors = %v", errs)
+	}
+
+	foundNetworkPolicy := false
+	foundWebhookConfiguration := false
+	foundAdminRole := false
+	foundEditRole := false
+	for _, template := range templates {
+		switch template.GetKind() {
+		case "NetworkPolicy":
+			if template.GetName() != "capk-controller-manager" {
+				continue
+			}
+			foundNetworkPolicy = true
+			networkPolicy := &networkingv1.NetworkPolicy{}
+			if err := runtime.DefaultUnstructuredConverter.FromUnstructured(template.Object, networkPolicy); err != nil {
+				t.Fatal(err)
+			}
+			if !hasEgressPortAndCIDR(networkPolicy, 22, "0.0.0.0/0") || !hasEgressPortAndCIDR(networkPolicy, 22, "::/0") {
+				t.Fatal("CAPK NetworkPolicy does not allow SSH to IPv4 and IPv6 guest networks")
+			}
+			if !hasEgressPortAndCIDR(networkPolicy, 3128, "192.0.2.10/32") {
+				t.Fatal("CAPK NetworkPolicy does not allow the configured proxy endpoint")
+			}
+		case "ValidatingWebhookConfiguration":
+			if template.GetName() != "capk-validating-webhook-configuration" {
+				continue
+			}
+			foundWebhookConfiguration = true
+			webhookConfiguration := &admissionv1.ValidatingWebhookConfiguration{}
+			if err := runtime.DefaultUnstructuredConverter.FromUnstructured(template.Object, webhookConfiguration); err != nil {
+				t.Fatal(err)
+			}
+			if len(webhookConfiguration.Webhooks) != 3 {
+				t.Fatalf("CAPK webhook count = %d, want 3", len(webhookConfiguration.Webhooks))
+			}
+			for _, webhook := range webhookConfiguration.Webhooks {
+				if len(webhook.MatchConditions) != 1 {
+					t.Fatalf("CAPK webhook %s has %d match conditions, want 1", webhook.Name, len(webhook.MatchConditions))
+				}
+				condition := webhook.MatchConditions[0]
+				if condition.Name != "exclude-hypershift-owned" || !strings.Contains(condition.Expression, "hypershift.openshift.io/nodePool") || !strings.Contains(condition.Expression, "hypershift.openshift.io/cluster") {
+					t.Fatalf("CAPK webhook %s does not exclude HyperShift-owned objects", webhook.Name)
+				}
+			}
+		case "ClusterRole":
+			if template.GetName() != "capk-admin-aggregate" && template.GetName() != "capk-edit-aggregate" {
+				continue
+			}
+			if template.GetName() == "capk-admin-aggregate" {
+				foundAdminRole = true
+			} else {
+				foundEditRole = true
+			}
+			clusterRole := &rbacv1.ClusterRole{}
+			if err := runtime.DefaultUnstructuredConverter.FromUnstructured(template.Object, clusterRole); err != nil {
+				t.Fatal(err)
+			}
+			for _, rule := range clusterRole.Rules {
+				if utils.Contains(rule.Resources, "kubevirtmachines") {
+					t.Fatalf("%s grants aggregate access to KubevirtMachine resources", template.GetName())
+				}
+				if !utils.Contains(rule.Resources, "kubevirtclusters") {
+					continue
+				}
+				verbs := map[string]bool{}
+				for _, verb := range rule.Verbs {
+					verbs[verb] = true
+				}
+				if len(verbs) != 3 || !verbs["get"] || !verbs["list"] || !verbs["watch"] {
+					t.Fatalf("%s grants invalid KubevirtCluster verbs: %v", template.GetName(), rule.Verbs)
+				}
+			}
+		}
+	}
+	if !foundNetworkPolicy || !foundWebhookConfiguration || !foundAdminRole || !foundEditRole {
+		t.Fatal("CAPK NetworkPolicy, webhook configuration, or aggregate roles were not rendered")
+	}
+}
+
+func hasEgressPortAndCIDR(policy *networkingv1.NetworkPolicy, port int32, cidr string) bool {
+	for _, egressRule := range policy.Spec.Egress {
+		hasPort := false
+		for _, networkPort := range egressRule.Ports {
+			if networkPort.Protocol != nil && *networkPort.Protocol == corev1.ProtocolTCP && networkPort.Port.IntValue() == int(port) {
+				hasPort = true
+			}
+		}
+		hasCIDR := false
+		for _, peer := range egressRule.To {
+			if peer.IPBlock != nil && peer.IPBlock.CIDR == cidr {
+				hasCIDR = true
+			}
+		}
+		if hasPort && hasCIDR {
+			return true
+		}
+	}
+	return false
+}
+
+func assertLegacyEgressAnnotation(t *testing.T, template *unstructured.Unstructured) {
+	t.Helper()
+	value, exists := template.GetAnnotations()["installer.open-cluster-management.io/legacy-managed-egress-rules"]
+	if !exists {
+		t.Fatalf("%s is missing its legacy managed egress annotation", template.GetName())
+	}
+	legacyRules := []networkingv1.NetworkPolicyEgressRule{}
+	if err := json.Unmarshal([]byte(value), &legacyRules); err != nil {
+		t.Fatalf("%s has an invalid legacy managed egress annotation: %v", template.GetName(), err)
+	}
+	if len(legacyRules) == 0 {
+		t.Fatalf("%s has an empty legacy managed egress annotation", template.GetName())
+	}
+}
+
+func assertLegacyDNSBaselineUsesPreUpgradePort(t *testing.T, template *unstructured.Unstructured) {
+	t.Helper()
+	if err := validateLegacyDNSBaselineUsesPreUpgradePort(template); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func validateLegacyDNSBaselineUsesPreUpgradePort(template *unstructured.Unstructured) error {
+	value := template.GetAnnotations()["installer.open-cluster-management.io/legacy-managed-egress-rules"]
+	legacyRules := []networkingv1.NetworkPolicyEgressRule{}
+	if err := json.Unmarshal([]byte(value), &legacyRules); err != nil {
+		return fmt.Errorf("%s has an invalid legacy managed egress annotation: %w", template.GetName(), err)
+	}
+	foundPreUpgradePort := false
+	for _, rule := range legacyRules {
+		for _, networkPort := range rule.Ports {
+			if networkPort.Port.IntValue() == 53 {
+				return fmt.Errorf("%s legacy managed egress baseline must not include port 53", template.GetName())
+			}
+			if networkPort.Port.IntValue() == 5353 {
+				foundPreUpgradePort = true
+			}
+		}
+	}
+	if !foundPreUpgradePort {
+		return fmt.Errorf("%s legacy managed egress baseline does not include the pre-upgrade DNS port 5353", template.GetName())
+	}
+	return nil
+}
+
+func TestAssertLegacyDNSBaselineUsesPreUpgradePort(t *testing.T) {
+	newTemplate := func(rules string) *unstructured.Unstructured {
+		return &unstructured.Unstructured{Object: map[string]interface{}{
+			"metadata": map[string]interface{}{
+				"name": "test-network-policy",
+				"annotations": map[string]interface{}{
+					"installer.open-cluster-management.io/legacy-managed-egress-rules": rules,
+				},
+			},
+		}}
+	}
+
+	if err := validateLegacyDNSBaselineUsesPreUpgradePort(
+		newTemplate(`[{"ports":[{"port":5353,"protocol":"UDP"}]}]`),
+	); err != nil {
+		t.Fatalf("valid baseline rejected: %v", err)
+	}
+
+	err := validateLegacyDNSBaselineUsesPreUpgradePort(
+		newTemplate(`[{"ports":[{"port":5353,"protocol":"UDP"}]},{"ports":[{"port":53,"protocol":"UDP"}]}]`),
+	)
+	if err == nil || !strings.Contains(err.Error(), "must not include port 53") {
+		t.Fatalf("later port 53 error = %v, want must not include port 53", err)
+	}
+}
+
+func TestHypershiftAddonAgentPBDRBAC(t *testing.T) {
+	t.Setenv("DIRECTORY_OVERRIDE", "../../")
+	t.Setenv("POD_NAMESPACE", "default")
+	t.Setenv("ACM_HUB_OCP_VERSION", "4.12.0")
+
+	testImages := map[string]string{}
+	for _, image := range utils.GetTestImages() {
+		testImages[image] = "quay.io/test/test:Test"
+	}
+	mce := &backplane.MultiClusterEngine{
+		ObjectMeta: metav1.ObjectMeta{Name: "test-mce"},
+		Spec:       backplane.MultiClusterEngineSpec{TargetNamespace: "default"},
+	}
+
+	templates, errs := RenderChart("pkg/templates/charts/toggle/hypershift", mce, testImages, map[string]string{})
+	if len(errs) > 0 {
+		t.Fatalf("RenderChart failed: %v", errs)
+	}
+
+	roleFound := false
+	bindingFound := false
+	for _, template := range templates {
+		if template.GetName() != "open-cluster-management:hypershift:hypershift-addon-agent-pdb" {
+			continue
+		}
+		switch template.GetKind() {
+		case "ClusterRole":
+			roleFound = true
+		case "ClusterRoleBinding":
+			bindingFound = true
+		}
+	}
+	if !roleFound || !bindingFound {
+		t.Fatalf("expected addon-agent PDB RBAC, roleFound=%t bindingFound=%t", roleFound, bindingFound)
+	}
+}
+
 func TestClusterLifecycleStateMetricsNetworkPolicies(t *testing.T) {
+
 	t.Setenv("DIRECTORY_OVERRIDE", "../../")
 	t.Setenv("POD_NAMESPACE", "default")
 	t.Setenv("ACM_HUB_OCP_VERSION", "4.12.0")

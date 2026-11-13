@@ -28,6 +28,7 @@ const (
 	ClusterAPIProviderAWSChartDir      = "pkg/templates/charts/toggle/cluster-api-provider-aws"
 	ClusterAPIProviderAzureChartDir    = "pkg/templates/charts/toggle/cluster-api-provider-azure"
 	ClusterAPIProviderAzureK8SChartDir = "pkg/templates/charts/toggle/cluster-api-provider-azure-k8s"
+	ClusterAPIProviderKubeVirtChartDir = "pkg/templates/charts/toggle/cluster-api-provider-kubevirt"
 	ClusterAPIProviderMetalChartDir    = "pkg/templates/charts/toggle/cluster-api-provider-metal3"
 	ClusterAPIProviderMetalK8SChartDir = "pkg/templates/charts/toggle/cluster-api-provider-metal3-k8s"
 	ClusterAPIProviderOAChartDir       = "pkg/templates/charts/toggle/cluster-api-provider-openshift-assisted"
