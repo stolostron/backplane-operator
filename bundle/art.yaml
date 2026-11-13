@@ -15,4 +15,4 @@ external-images:
   replace: "registry.redhat.io/openshift4/ose-baremetal-cluster-api-controllers-rhel9:v4.21"
 - name: postgresql-13
   search: "image-registry.openshift-image-registry.svc:5000/multicluster-engine/postgresql-13:latest"
-  replace: "registry.redhat.io/rhel9/postgresql-13:9.7-1778634764"
+  replace: "registry.redhat.io/rhel9/postgresql-13:1-1794521982"
