@@ -356,6 +356,7 @@ func main() {
 		Scheme:          mgr.GetScheme(),
 		UncachedClient:  uncachedClient,
 		StatusManager:   &status.StatusTracker{Client: mgr.GetClient()},
+		Recorder:        mgr.GetEventRecorderFor("multiclusterengine-controller"),
 		UpgradeableCond: upgradeableCondition,
 		OLMVersion:      olmVersion,
 	}).SetupWithManager(mgr); err != nil {

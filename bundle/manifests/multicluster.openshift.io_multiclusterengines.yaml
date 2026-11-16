@@ -305,6 +305,14 @@ spec:
                 description: DesiredVersion is the version the operator is reconciling
                   towards
                 type: string
+              observedGeneration:
+                description: |-
+                  ObservedGeneration is the most recent generation observed by the controller.
+                  It corresponds to the MultiClusterEngine's generation, which is updated on
+                  mutation by the API Server. When this equals metadata.generation, the status
+                  reflects the latest desired spec.
+                format: int64
+                type: integer
               phase:
                 description: Latest observed overall state
                 type: string
