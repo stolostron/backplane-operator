@@ -44,6 +44,8 @@ const (
 	ComponentsUpdatingReason = "UpdatingComponentResource"
 	// ExternalManagementReason is added when components are marked as externally managed
 	ExternalManagementReason = "ExternalManagement"
+	// ResourceRenderReason is added when a component's chart fails to render
+	ResourceRenderReason = "FailedRenderingResource"
 )
 
 // NewCondition creates a new condition.

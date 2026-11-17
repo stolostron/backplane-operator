@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"encoding/json"
+	stderrors "errors"
 	"fmt"
 	"os"
 
@@ -34,6 +35,27 @@ import (
 	"github.com/pkg/errors"
 )
 
+// handleRenderErrors logs render errors, sets a ComponentFailure status condition on the MCE,
+// and returns a non-nil error to trigger controller-runtime exponential backoff.
+func (r *MultiClusterEngineReconciler) handleRenderErrors(
+	errs []error, component string, mce *backplanev1.MultiClusterEngine,
+) (ctrl.Result, error) {
+	renderErr := fmt.Errorf("failed to render chart for %s: %w", component, stderrors.Join(errs...))
+	log.Error(renderErr, "Template render failed", "component", component)
+
+	condType := fmt.Sprintf("%v: %v", backplanev1.MultiClusterEngineComponentFailure, component)
+	r.StatusManager.AddCondition(
+		status.NewCondition(
+			backplanev1.MultiClusterEngineConditionType(condType),
+			metav1.ConditionTrue,
+			status.ResourceRenderReason,
+			renderErr.Error(),
+		),
+	)
+
+	return ctrl.Result{}, renderErr
+}
+
 var clusterManagementAddOnGVK = schema.GroupVersionKind{
 	Group:   "addon.open-cluster-management.io",
 	Version: "v1alpha1",
@@ -58,10 +80,7 @@ func (r *MultiClusterEngineReconciler) ensureConsoleMCE(ctx context.Context, mce
 		r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+		return r.handleRenderErrors(errs, string(backplanev1.ConsoleMCE), mce)
 	}
 
 	// Apply deployment config overrides
@@ -132,10 +151,7 @@ func (r *MultiClusterEngineReconciler) ensureNoConsoleMCE(ctx context.Context, m
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+		return r.handleRenderErrors(errs, string(backplanev1.ConsoleMCE), mce)
 	}
 
 	// Deletes all templates
@@ -177,10 +193,7 @@ func (r *MultiClusterEngineReconciler) ensureManagedServiceAccount(ctx context.C
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+		return r.handleRenderErrors(errs, string(backplanev1.ManagedServiceAccount), mce)
 	}
 
 	// Apply deployment config overrides
@@ -226,10 +239,7 @@ func (r *MultiClusterEngineReconciler) ensureNoManagedServiceAccount(ctx context
 	chartPath := r.fetchChartOrCRDPath(backplanev1.ManagedServiceAccount)
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+		return r.handleRenderErrors(errs, string(backplanev1.ManagedServiceAccount), mce)
 	}
 
 	r.StatusManager.AddComponent(toggle.DisabledStatus(types.NamespacedName{Name: "managedservice",
@@ -272,10 +282,7 @@ func (r *MultiClusterEngineReconciler) ensureFleetNavigation(ctx context.Context
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+		return r.handleRenderErrors(errs, string(backplanev1.FleetNavigation), mce)
 	}
 
 	missingCRDErrorOccured := false
@@ -311,10 +318,7 @@ func (r *MultiClusterEngineReconciler) ensureNoFleetNavigation(ctx context.Conte
 	chartPath := r.fetchChartOrCRDPath(backplanev1.FleetNavigation)
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+		return r.handleRenderErrors(errs, string(backplanev1.FleetNavigation), mce)
 	}
 
 	r.StatusManager.AddComponent(toggle.DisabledStatus(types.NamespacedName{Name: backplanev1.FleetNavigation,
@@ -417,10 +421,7 @@ func (r *MultiClusterEngineReconciler) ensureDiscovery(ctx context.Context, mce 
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+		return r.handleRenderErrors(errs, string(backplanev1.Discovery), mce)
 	}
 
 	// Apply deployment config overrides
@@ -460,10 +461,7 @@ func (r *MultiClusterEngineReconciler) ensureNoDiscovery(ctx context.Context,
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+		return r.handleRenderErrors(errs, string(backplanev1.Discovery), mce)
 	}
 
 	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
@@ -502,10 +500,7 @@ func (r *MultiClusterEngineReconciler) ensureClusterAPI(ctx context.Context, mce
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+		return r.handleRenderErrors(errs, string(backplanev1.ClusterAPI), mce)
 	}
 
 	// Apply deployment config overrides
@@ -545,10 +540,7 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterAPI(ctx context.Context,
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+		return r.handleRenderErrors(errs, string(backplanev1.ClusterAPI), mce)
 	}
 
 	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
@@ -588,10 +580,7 @@ func (r *MultiClusterEngineReconciler) ensureClusterAPIProviderAWS(ctx context.C
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+		return r.handleRenderErrors(errs, string(backplanev1.ClusterAPIProviderAWS), mce)
 	}
 
 	// Apply deployment config overrides
@@ -631,10 +620,7 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterAPIProviderAWS(ctx context
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+		return r.handleRenderErrors(errs, string(backplanev1.ClusterAPIProviderAWS), mce)
 	}
 
 	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
@@ -678,10 +664,7 @@ func (r *MultiClusterEngineReconciler) ensureClusterAPIProviderAzure(ctx context
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+		return r.handleRenderErrors(errs, string(backplanev1.ClusterAPIProviderAzurePreview), mce)
 	}
 
 	// Apply deployment config overrides
@@ -729,10 +712,7 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterAPIProviderAzure(ctx conte
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+		return r.handleRenderErrors(errs, string(backplanev1.ClusterAPIProviderAzurePreview), mce)
 	}
 
 	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
@@ -772,10 +752,7 @@ func (r *MultiClusterEngineReconciler) ensureClusterAPIProviderMetal(ctx context
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+		return r.handleRenderErrors(errs, string(backplanev1.ClusterAPIProviderMetal), mce)
 	}
 
 	// Apply deployment config overrides
@@ -815,10 +792,7 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterAPIProviderMetal(ctx conte
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+		return r.handleRenderErrors(errs, string(backplanev1.ClusterAPIProviderMetal), mce)
 	}
 
 	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
@@ -860,10 +834,7 @@ func (r *MultiClusterEngineReconciler) ensureClusterAPIProviderOA(ctx context.Co
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+		return r.handleRenderErrors(errs, string(backplanev1.ClusterAPIProviderOA), mce)
 	}
 
 	// Apply deployment config overrides
@@ -908,10 +879,7 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterAPIProviderOA(ctx context.
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+		return r.handleRenderErrors(errs, string(backplanev1.ClusterAPIProviderOA), mce)
 	}
 
 	// Deletes all templates
@@ -947,10 +915,7 @@ func (r *MultiClusterEngineReconciler) ensureHive(ctx context.Context, mce *back
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+		return r.handleRenderErrors(errs, string(backplanev1.Hive), mce)
 	}
 
 	// Apply deployment config overrides
@@ -992,10 +957,7 @@ func (r *MultiClusterEngineReconciler) ensureNoHive(ctx context.Context, mce *ba
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+		return r.handleRenderErrors(errs, string(backplanev1.Hive), mce)
 	}
 
 	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
@@ -1053,10 +1015,7 @@ func (r *MultiClusterEngineReconciler) ensureAssistedService(ctx context.Context
 		r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides, targetNamespace)
 
 	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+		return r.handleRenderErrors(errs, string(backplanev1.AssistedService), mce)
 	}
 
 	// Apply deployment config overrides
@@ -1102,10 +1061,7 @@ func (r *MultiClusterEngineReconciler) ensureNoAssistedService(ctx context.Conte
 		r.CacheSpec.TemplateOverrides, targetNamespace)
 
 	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+		return r.handleRenderErrors(errs, string(backplanev1.AssistedService), mce)
 	}
 
 	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
@@ -1157,10 +1113,7 @@ func (r *MultiClusterEngineReconciler) ensureServerFoundation(ctx context.Contex
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+		return r.handleRenderErrors(errs, string(backplanev1.ServerFoundation), mce)
 	}
 
 	// Apply deployment config overrides
@@ -1199,10 +1152,7 @@ func (r *MultiClusterEngineReconciler) ensureNoServerFoundation(ctx context.Cont
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+		return r.handleRenderErrors(errs, string(backplanev1.ServerFoundation), mce)
 	}
 
 	namespacedName := types.NamespacedName{Name: "ocm-controller", Namespace: mce.Spec.TargetNamespace}
@@ -1256,10 +1206,7 @@ func (r *MultiClusterEngineReconciler) ensureImageBasedInstallOperator(ctx conte
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+		return r.handleRenderErrors(errs, string(backplanev1.ImageBasedInstallOperator), mce)
 	}
 
 	// Apply deployment config overrides
@@ -1302,10 +1249,7 @@ func (r *MultiClusterEngineReconciler) ensureNoImageBasedInstallOperator(ctx con
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+		return r.handleRenderErrors(errs, string(backplanev1.ImageBasedInstallOperator), mce)
 	}
 
 	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
@@ -1359,10 +1303,7 @@ func (r *MultiClusterEngineReconciler) ensureClusterLifecycle(ctx context.Contex
 		r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+		return r.handleRenderErrors(errs, string(backplanev1.ClusterLifecycle), mce)
 	}
 
 	// Apply deployment config overrides
@@ -1401,10 +1342,7 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterLifecycle(ctx context.Cont
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+		return r.handleRenderErrors(errs, string(backplanev1.ClusterLifecycle), mce)
 	}
 
 	if utils.DeployOnOCP() {
@@ -1458,10 +1396,7 @@ func (r *MultiClusterEngineReconciler) ensureClusterManager(ctx context.Context,
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+		return r.handleRenderErrors(errs, string(backplanev1.ClusterManager), mce)
 	}
 
 	// Apply deployment config overrides
@@ -1706,10 +1641,7 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterManager(ctx context.Contex
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+		return r.handleRenderErrors(errs, string(backplanev1.ClusterManager), mce)
 	}
 
 	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
@@ -1780,10 +1712,7 @@ func (r *MultiClusterEngineReconciler) ensureClusterPermission(ctx context.Conte
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+		return r.handleRenderErrors(errs, string(backplanev1.ClusterPermission), mce)
 	}
 
 	// Apply deployment config overrides
@@ -1824,10 +1753,7 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterPermission(ctx context.Con
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+		return r.handleRenderErrors(errs, string(backplanev1.ClusterPermission), mce)
 	}
 
 	r.StatusManager.RemoveComponent(toggle.EnabledStatus(namespacedName))
@@ -1871,10 +1797,7 @@ func (r *MultiClusterEngineReconciler) ensureHyperShift(ctx context.Context, mce
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+		return r.handleRenderErrors(errs, string(backplanev1.HyperShift), mce)
 	}
 
 	// Apply deployment config overrides
@@ -1965,10 +1888,7 @@ func (r *MultiClusterEngineReconciler) ensureNoHyperShift(ctx context.Context,
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+		return r.handleRenderErrors(errs, string(backplanev1.HyperShift), mce)
 	}
 
 	// Deletes all templates
@@ -2143,10 +2063,7 @@ func (r *MultiClusterEngineReconciler) ensureClusterProxyAddon(ctx context.Conte
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+		return r.handleRenderErrors(errs, string(backplanev1.ClusterProxyAddon), mce)
 	}
 
 	// Apply deployment config overrides
@@ -2199,10 +2116,7 @@ func (r *MultiClusterEngineReconciler) ensureNoClusterProxyAddon(ctx context.Con
 	templates, errs := renderer.RenderChart(chartPath, mce, r.CacheSpec.ImageOverrides, r.CacheSpec.TemplateOverrides)
 
 	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Info(err.Error())
-		}
-		return ctrl.Result{RequeueAfter: requeuePeriod}, nil
+		return r.handleRenderErrors(errs, string(backplanev1.ClusterProxyAddon), mce)
 	}
 
 	// Deletes all templates

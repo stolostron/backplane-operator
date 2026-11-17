@@ -3,6 +3,7 @@ package status
 
 import (
 	"testing"
+	"time"
 
 	bpv1 "github.com/stolostron/backplane-operator/api/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -134,10 +135,11 @@ func Test_AddCondition(t *testing.T) {
 
 func TestStatusTracker_ReportStatus(t *testing.T) {
 	tests := []struct {
-		name       string
-		Components []StatusReporter
-		Conditions []bpv1.MultiClusterEngineCondition
-		want       bpv1.MultiClusterEngineStatus
+		name              string
+		Components        []StatusReporter
+		Conditions        []bpv1.MultiClusterEngineCondition
+		DeletionTimestamp *metav1.Time
+		want              bpv1.MultiClusterEngineStatus
 	}{
 		{
 			name: "Single running deployment",
@@ -203,13 +205,117 @@ func TestStatusTracker_ReportStatus(t *testing.T) {
 				Phase:          bpv1.MultiClusterEnginePhaseProgressing,
 			},
 		},
+		{
+			name:       "Render failure before any components are tracked",
+			Components: nil,
+			Conditions: []bpv1.MultiClusterEngineCondition{
+				NewCondition(
+					bpv1.MultiClusterEngineConditionType(
+						string(bpv1.MultiClusterEngineComponentFailure)+": always-subcomponents"),
+					metav1.ConditionTrue,
+					ResourceRenderReason,
+					"failed to render always-on subcomponent charts",
+				),
+			},
+			want: bpv1.MultiClusterEngineStatus{
+				CurrentVersion: "",
+				DesiredVersion: "9.9.9",
+				Phase:          bpv1.MultiClusterEnginePhaseError,
+			},
+		},
+		{
+			name: "Component failure with tracked components",
+			Components: []StatusReporter{
+				MockStatus{
+					NamespacedName: types.NamespacedName{Name: "mock-name", Namespace: "mock-ns"},
+					statusFunc: func() bpv1.ComponentCondition {
+						return bpv1.ComponentCondition{
+							Name:      "mock-name",
+							Kind:      "Deployment",
+							Type:      "Available",
+							Status:    metav1.ConditionStatus("true"),
+							Reason:    "Running",
+							Message:   "Mock is running",
+							Available: true,
+						}
+					},
+				},
+			},
+			Conditions: []bpv1.MultiClusterEngineCondition{
+				NewCondition(
+					bpv1.MultiClusterEngineConditionType(
+						string(bpv1.MultiClusterEngineComponentFailure)+": hive"),
+					metav1.ConditionTrue,
+					ApplyFailedReason,
+					"failed to apply hive",
+				),
+			},
+			want: bpv1.MultiClusterEngineStatus{
+				CurrentVersion: "",
+				DesiredVersion: "9.9.9",
+				Phase:          bpv1.MultiClusterEnginePhaseError,
+			},
+		},
+		{
+			name:       "Paused condition overrides render failure",
+			Components: nil,
+			Conditions: []bpv1.MultiClusterEngineCondition{
+				NewCondition(
+					bpv1.MultiClusterEngineConditionType("Paused"),
+					metav1.ConditionTrue,
+					PausedReason,
+					"paused",
+				),
+				NewCondition(
+					bpv1.MultiClusterEngineConditionType(
+						string(bpv1.MultiClusterEngineComponentFailure)+": always-subcomponents"),
+					metav1.ConditionTrue,
+					ResourceRenderReason,
+					"failed to render always-on subcomponent charts",
+				),
+			},
+			want: bpv1.MultiClusterEngineStatus{
+				CurrentVersion: "",
+				DesiredVersion: "9.9.9",
+				Phase:          bpv1.MultiClusterEnginePhasePaused,
+			},
+		},
+		{
+			name:       "Progressing condition false reports error",
+			Components: nil,
+			Conditions: []bpv1.MultiClusterEngineCondition{
+				NewCondition(
+					bpv1.MultiClusterEngineProgressing,
+					metav1.ConditionFalse,
+					"StoppedProgressing",
+					"not progressing",
+				),
+			},
+			want: bpv1.MultiClusterEngineStatus{
+				CurrentVersion: "",
+				DesiredVersion: "9.9.9",
+				Phase:          bpv1.MultiClusterEnginePhaseError,
+			},
+		},
+		{
+			name:              "Deleting MCE reports uninstalling",
+			Components:        nil,
+			Conditions:        nil,
+			DeletionTimestamp: &metav1.Time{Time: time.Now()},
+			want: bpv1.MultiClusterEngineStatus{
+				CurrentVersion: "",
+				DesiredVersion: "9.9.9",
+				Phase:          bpv1.MultiClusterEnginePhaseUninstalling,
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tracker := StatusTracker{Client: fake.NewClientBuilder().Build()}
 			backplane := bpv1.MultiClusterEngine{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "test",
+					Name:              "test",
+					DeletionTimestamp: tt.DeletionTimestamp,
 				},
 				Spec: bpv1.MultiClusterEngineSpec{
 					TargetNamespace: "mock-ns",
@@ -217,6 +323,9 @@ func TestStatusTracker_ReportStatus(t *testing.T) {
 			}
 			for _, c := range tt.Components {
 				tracker.AddComponent(c)
+			}
+			for _, c := range tt.Conditions {
+				tracker.AddCondition(c)
 			}
 
 			got := tracker.ReportStatus(backplane)

@@ -4,11 +4,14 @@ import (
 	"context"
 	"errors"
 	"os"
+	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 	"github.com/stolostron/backplane-operator/pkg/foundation"
+	renderer "github.com/stolostron/backplane-operator/pkg/rendering"
 	"github.com/stolostron/backplane-operator/pkg/status"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -1040,4 +1043,387 @@ func Test_ensureNoFleetNavigation(t *testing.T) {
 			t.Fatalf("ensureNoFleetNavigation() returned non-zero result: %v", result)
 		}
 	})
+}
+
+func Test_handleRenderErrors(t *testing.T) {
+	scheme := runtime.NewScheme()
+	corev1.AddToScheme(scheme)
+	backplanev1.AddToScheme(scheme)
+
+	cl := fake.NewClientBuilder().WithScheme(scheme).Build()
+	statusManager := &status.StatusTracker{Client: cl}
+
+	r := &MultiClusterEngineReconciler{
+		Client:        cl,
+		Scheme:        scheme,
+		StatusManager: statusManager,
+	}
+
+	mce := &backplanev1.MultiClusterEngine{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test-mce",
+		},
+		Spec: backplanev1.MultiClusterEngineSpec{
+			TargetNamespace: "test-ns",
+		},
+	}
+
+	t.Run("returns error and empty result on render failure", func(t *testing.T) {
+		renderErrs := []error{
+			errors.New("template parse error"),
+			errors.New("values missing"),
+		}
+
+		result, err := r.handleRenderErrors(renderErrs, "test-component", mce)
+
+		if err == nil {
+			t.Fatal("expected non-nil error from handleRenderErrors, got nil")
+		}
+
+		if result != (ctrl.Result{}) {
+			t.Errorf("expected empty Result (for backoff), got %+v", result)
+		}
+
+		if !strings.Contains(err.Error(), "failed to render chart") {
+			t.Errorf("expected error to contain 'failed to render chart', got: %s", err.Error())
+		}
+
+		if !strings.Contains(err.Error(), "test-component") {
+			t.Errorf("expected error to contain component name 'test-component', got: %s", err.Error())
+		}
+
+		// Verify a ComponentFailure condition was set
+		found := status.ConditionPresentWithSubstring(
+			statusManager.Conditions,
+			string(backplanev1.MultiClusterEngineComponentFailure),
+		)
+		if !found {
+			t.Fatal("expected ComponentFailure condition to be set, but not found")
+		}
+	})
+
+	t.Run("condition has ResourceRenderReason", func(t *testing.T) {
+		// Invoke handleRenderErrors here so this subtest does not depend on
+		// state left behind by the previous subtest.
+		if _, err := r.handleRenderErrors(
+			[]error{errors.New("template parse error")}, "test-component", mce,
+		); err == nil {
+			t.Fatal("expected non-nil error from handleRenderErrors, got nil")
+		}
+
+		for _, c := range statusManager.Conditions {
+			if strings.Contains(string(c.Type), string(backplanev1.MultiClusterEngineComponentFailure)) {
+				if c.Reason != status.ResourceRenderReason {
+					t.Errorf("expected condition reason %q, got %q",
+						status.ResourceRenderReason, c.Reason)
+				}
+				if c.Status != metav1.ConditionTrue {
+					t.Errorf("expected condition status True, got %s", c.Status)
+				}
+				return
+			}
+		}
+		t.Fatal("ComponentFailure condition not found")
+	})
+}
+
+func Test_ensureComponent_RenderError(t *testing.T) {
+	// Verify that ensure* functions with a non-existent chart path return
+	// an error (via handleRenderErrors) instead of silently requeuing.
+	scheme := runtime.NewScheme()
+	corev1.AddToScheme(scheme)
+	backplanev1.AddToScheme(scheme)
+	addonv1alpha1.AddToScheme(scheme)
+
+	ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "test-ns"}}
+	cl := fake.NewClientBuilder().WithScheme(scheme).WithObjects(ns).Build()
+	statusManager := &status.StatusTracker{Client: cl}
+
+	r := &MultiClusterEngineReconciler{
+		Client:        cl,
+		Scheme:        scheme,
+		StatusManager: statusManager,
+		CacheSpec: CacheSpec{
+			ImageOverrides:    map[string]string{},
+			TemplateOverrides: map[string]string{},
+		},
+	}
+
+	mce := &backplanev1.MultiClusterEngine{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test-mce",
+		},
+		Spec: backplanev1.MultiClusterEngineSpec{
+			TargetNamespace: "test-ns",
+		},
+	}
+
+	// Override chart path to a non-existent directory to trigger render errors
+	os.Setenv("DIRECTORY_OVERRIDE", "/nonexistent-path")
+	defer os.Unsetenv("DIRECTORY_OVERRIDE")
+
+	t.Run("ensureDiscovery returns error on render failure", func(t *testing.T) {
+		result, err := r.ensureDiscovery(context.TODO(), mce)
+		if err == nil {
+			t.Fatal("expected non-nil error from ensureDiscovery when chart render fails, got nil")
+		}
+		if result != (ctrl.Result{}) {
+			t.Errorf("expected empty Result (for backoff), got %+v", result)
+		}
+		if !strings.Contains(err.Error(), "failed to render chart") {
+			t.Errorf("expected error to contain 'failed to render chart', got: %s", err.Error())
+		}
+	})
+
+	t.Run("ensureNoDiscovery returns error on render failure", func(t *testing.T) {
+		result, err := r.ensureNoDiscovery(context.TODO(), mce)
+		if err == nil {
+			t.Fatal("expected non-nil error from ensureNoDiscovery when chart render fails, got nil")
+		}
+		if result != (ctrl.Result{}) {
+			t.Errorf("expected empty Result (for backoff), got %+v", result)
+		}
+		if !strings.Contains(err.Error(), "failed to render chart") {
+			t.Errorf("expected error to contain 'failed to render chart', got: %s", err.Error())
+		}
+	})
+}
+
+func Test_ensureRenderError_AllComponents(t *testing.T) {
+	// Every ensure/ensureNo function that renders a chart must surface render
+	// failures through handleRenderErrors instead of silently requeuing.
+	os.Setenv("DIRECTORY_OVERRIDE", "/nonexistent-path")
+	defer os.Unsetenv("DIRECTORY_OVERRIDE")
+	os.Setenv("UNIT_TEST", "true")
+	defer os.Unsetenv("UNIT_TEST")
+
+	tests := []struct {
+		name   string
+		ensure func(*MultiClusterEngineReconciler, context.Context, *backplanev1.MultiClusterEngine) (ctrl.Result, error)
+	}{
+		{"ensureConsoleMCE", func(r *MultiClusterEngineReconciler, ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+			return r.ensureConsoleMCE(ctx, mce)
+		}},
+		{"ensureNoConsoleMCE", func(r *MultiClusterEngineReconciler, ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+			return r.ensureNoConsoleMCE(ctx, mce, true)
+		}},
+		{"ensureManagedServiceAccount", func(r *MultiClusterEngineReconciler, ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+			return r.ensureManagedServiceAccount(ctx, mce)
+		}},
+		{"ensureNoManagedServiceAccount", func(r *MultiClusterEngineReconciler, ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+			return r.ensureNoManagedServiceAccount(ctx, mce)
+		}},
+		{"ensureFleetNavigation", func(r *MultiClusterEngineReconciler, ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+			return r.ensureFleetNavigation(ctx, mce)
+		}},
+		{"ensureNoFleetNavigation", func(r *MultiClusterEngineReconciler, ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+			return r.ensureNoFleetNavigation(ctx, mce)
+		}},
+		{"ensureDiscovery", func(r *MultiClusterEngineReconciler, ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+			return r.ensureDiscovery(ctx, mce)
+		}},
+		{"ensureNoDiscovery", func(r *MultiClusterEngineReconciler, ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+			return r.ensureNoDiscovery(ctx, mce)
+		}},
+		{"ensureClusterAPI", func(r *MultiClusterEngineReconciler, ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+			return r.ensureClusterAPI(ctx, mce)
+		}},
+		{"ensureNoClusterAPI", func(r *MultiClusterEngineReconciler, ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+			return r.ensureNoClusterAPI(ctx, mce)
+		}},
+		{"ensureClusterAPIProviderAWS", func(r *MultiClusterEngineReconciler, ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+			return r.ensureClusterAPIProviderAWS(ctx, mce)
+		}},
+		{"ensureNoClusterAPIProviderAWS", func(r *MultiClusterEngineReconciler, ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+			return r.ensureNoClusterAPIProviderAWS(ctx, mce)
+		}},
+		{"ensureClusterAPIProviderAzure", func(r *MultiClusterEngineReconciler, ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+			return r.ensureClusterAPIProviderAzure(ctx, mce)
+		}},
+		{"ensureNoClusterAPIProviderAzure", func(r *MultiClusterEngineReconciler, ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+			return r.ensureNoClusterAPIProviderAzure(ctx, mce)
+		}},
+		{"ensureClusterAPIProviderMetal", func(r *MultiClusterEngineReconciler, ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+			return r.ensureClusterAPIProviderMetal(ctx, mce)
+		}},
+		{"ensureNoClusterAPIProviderMetal", func(r *MultiClusterEngineReconciler, ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+			return r.ensureNoClusterAPIProviderMetal(ctx, mce)
+		}},
+		{"ensureClusterAPIProviderOA", func(r *MultiClusterEngineReconciler, ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+			return r.ensureClusterAPIProviderOA(ctx, mce)
+		}},
+		{"ensureNoClusterAPIProviderOA", func(r *MultiClusterEngineReconciler, ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+			return r.ensureNoClusterAPIProviderOA(ctx, mce)
+		}},
+		{"ensureHive", func(r *MultiClusterEngineReconciler, ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+			return r.ensureHive(ctx, mce)
+		}},
+		{"ensureNoHive", func(r *MultiClusterEngineReconciler, ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+			return r.ensureNoHive(ctx, mce)
+		}},
+		{"ensureAssistedService", func(r *MultiClusterEngineReconciler, ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+			return r.ensureAssistedService(ctx, mce)
+		}},
+		{"ensureNoAssistedService", func(r *MultiClusterEngineReconciler, ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+			return r.ensureNoAssistedService(ctx, mce)
+		}},
+		{"ensureServerFoundation", func(r *MultiClusterEngineReconciler, ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+			return r.ensureServerFoundation(ctx, mce)
+		}},
+		{"ensureNoServerFoundation", func(r *MultiClusterEngineReconciler, ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+			return r.ensureNoServerFoundation(ctx, mce)
+		}},
+		{"ensureImageBasedInstallOperator", func(r *MultiClusterEngineReconciler, ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+			return r.ensureImageBasedInstallOperator(ctx, mce)
+		}},
+		{"ensureNoImageBasedInstallOperator", func(r *MultiClusterEngineReconciler, ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+			return r.ensureNoImageBasedInstallOperator(ctx, mce)
+		}},
+		{"ensureClusterLifecycle", func(r *MultiClusterEngineReconciler, ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+			return r.ensureClusterLifecycle(ctx, mce)
+		}},
+		{"ensureNoClusterLifecycle", func(r *MultiClusterEngineReconciler, ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+			return r.ensureNoClusterLifecycle(ctx, mce)
+		}},
+		{"ensureClusterManager", func(r *MultiClusterEngineReconciler, ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+			return r.ensureClusterManager(ctx, mce)
+		}},
+		{"ensureNoClusterManager", func(r *MultiClusterEngineReconciler, ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+			return r.ensureNoClusterManager(ctx, mce)
+		}},
+		{"ensureClusterPermission", func(r *MultiClusterEngineReconciler, ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+			return r.ensureClusterPermission(ctx, mce)
+		}},
+		{"ensureNoClusterPermission", func(r *MultiClusterEngineReconciler, ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+			return r.ensureNoClusterPermission(ctx, mce)
+		}},
+		{"ensureHyperShift", func(r *MultiClusterEngineReconciler, ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+			return r.ensureHyperShift(ctx, mce)
+		}},
+		{"ensureNoHyperShift", func(r *MultiClusterEngineReconciler, ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+			return r.ensureNoHyperShift(ctx, mce)
+		}},
+		{"ensureClusterProxyAddon", func(r *MultiClusterEngineReconciler, ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+			return r.ensureClusterProxyAddon(ctx, mce)
+		}},
+		{"ensureNoClusterProxyAddon", func(r *MultiClusterEngineReconciler, ctx context.Context, mce *backplanev1.MultiClusterEngine) (ctrl.Result, error) {
+			return r.ensureNoClusterProxyAddon(ctx, mce)
+		}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			scheme := runtime.NewScheme()
+			corev1.AddToScheme(scheme)
+			backplanev1.AddToScheme(scheme)
+			addonv1alpha1.AddToScheme(scheme)
+
+			ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "test-ns"}}
+			cl := fake.NewClientBuilder().WithScheme(scheme).WithObjects(ns).Build()
+			statusManager := &status.StatusTracker{Client: cl}
+
+			r := &MultiClusterEngineReconciler{
+				Client:        cl,
+				Scheme:        scheme,
+				StatusManager: statusManager,
+				CacheSpec: CacheSpec{
+					ImageOverrides:    map[string]string{},
+					TemplateOverrides: map[string]string{},
+				},
+			}
+
+			mce := &backplanev1.MultiClusterEngine{
+				ObjectMeta: metav1.ObjectMeta{Name: "test-mce"},
+				Spec: backplanev1.MultiClusterEngineSpec{
+					TargetNamespace:  "test-ns",
+					LocalClusterName: "local-cluster",
+				},
+			}
+
+			result, err := tt.ensure(r, context.TODO(), mce)
+			if err == nil {
+				t.Fatalf("%s: expected error on render failure, got nil", tt.name)
+			}
+			if result != (ctrl.Result{}) {
+				t.Errorf("%s: expected empty Result (for backoff), got %+v", tt.name, result)
+			}
+			if !strings.Contains(err.Error(), "failed to render chart") {
+				t.Errorf("%s: expected error to contain 'failed to render chart', got: %s", tt.name, err.Error())
+			}
+			if !status.ConditionPresentWithSubstring(
+				statusManager.Conditions, string(backplanev1.MultiClusterEngineComponentFailure),
+			) {
+				t.Errorf("%s: expected ComponentFailure condition to be set, but not found", tt.name)
+			}
+		})
+	}
+}
+
+func Test_DeployAlwaysSubcomponents_RenderError(t *testing.T) {
+	// Verify that a failure to render the always-on charts is surfaced as an
+	// error and a ComponentFailure condition instead of silently requeuing.
+	scheme := runtime.NewScheme()
+	corev1.AddToScheme(scheme)
+	backplanev1.AddToScheme(scheme)
+
+	ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "test-ns"}}
+	cl := fake.NewClientBuilder().WithScheme(scheme).WithObjects(ns).Build()
+	statusManager := &status.StatusTracker{Client: cl}
+
+	r := &MultiClusterEngineReconciler{
+		Client:        cl,
+		Scheme:        scheme,
+		StatusManager: statusManager,
+		CacheSpec: CacheSpec{
+			ImageOverrides:    map[string]string{},
+			TemplateOverrides: map[string]string{},
+		},
+	}
+
+	mce := &backplanev1.MultiClusterEngine{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test-mce",
+		},
+		Spec: backplanev1.MultiClusterEngineSpec{
+			TargetNamespace: "test-ns",
+		},
+	}
+
+	// Point the always-on chart directory at a directory containing an invalid
+	// chart so that chart rendering fails.
+	tmpDir := t.TempDir()
+	alwaysDir := filepath.Join(tmpDir, renderer.AlwaysChartsDir)
+	if err := os.MkdirAll(filepath.Join(alwaysDir, "invalid-chart"), 0o755); err != nil {
+		t.Fatalf("failed to create temporary chart directory: %v", err)
+	}
+	os.Setenv("DIRECTORY_OVERRIDE", tmpDir)
+	defer os.Unsetenv("DIRECTORY_OVERRIDE")
+
+	result, err := r.DeployAlwaysSubcomponents(context.TODO(), mce)
+	if err == nil {
+		t.Fatal("expected non-nil error from DeployAlwaysSubcomponents when chart render fails, got nil")
+	}
+	if result != (ctrl.Result{}) {
+		t.Errorf("expected empty Result (for backoff), got %+v", result)
+	}
+	if !strings.Contains(err.Error(), "failed to render always-on subcomponent charts") {
+		t.Errorf("expected error to contain 'failed to render always-on subcomponent charts', got: %s", err.Error())
+	}
+
+	var found bool
+	for _, c := range statusManager.Conditions {
+		if strings.Contains(string(c.Type), string(backplanev1.MultiClusterEngineComponentFailure)) &&
+			strings.Contains(string(c.Type), "always-subcomponents") {
+			found = true
+			if c.Reason != status.ResourceRenderReason {
+				t.Errorf("expected condition reason %q, got %q", status.ResourceRenderReason, c.Reason)
+			}
+			if c.Status != metav1.ConditionTrue {
+				t.Errorf("expected condition status True, got %s", c.Status)
+			}
+		}
+	}
+	if !found {
+		t.Fatal("expected ComponentFailure: always-subcomponents condition to be set, but not found")
+	}
 }
