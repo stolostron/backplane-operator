@@ -27,9 +27,9 @@ metadata:
     features.operators.openshift.io/token-auth-azure: 'false'
     features.operators.openshift.io/token-auth-gcp: 'false'
     olm.properties: '[{"type": "olm.maxOpenShiftVersion", "value": "4.22"}]'
-    olm.skipRange: '>=2.10.0 <2.11.4'
+    olm.skipRange: '>=2.10.0 <2.11.9'
     operators.openshift.io/must-gather-image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/backplane-must-gather-rhel9:latest
-  name: multicluster-engine.v2.11.4
+  name: multicluster-engine.v2.11.9
   namespace: placeholder
   labels:
     operatorframework.io/arch.amd64: supported
@@ -3525,7 +3525,7 @@ spec:
                 - name: OPERAND_IMAGE_POSTGRESQL_13
                   value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/postgresql-13:latest
                 - name: OPERATOR_VERSION
-                  value: "2.11.4"
+                  value: "2.11.9"
                 - name: OPERATOR_PACKAGE
                   value: multicluster-engine
                 image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/backplane-operator:latest
@@ -3608,8 +3608,8 @@ spec:
         serviceAccountName: multicluster-engine-operator
     strategy: deployment
   displayName: multicluster engine for Kubernetes
-  replaces: multicluster-engine.v2.11.3
-  version: 2.11.4
+  replaces: multicluster-engine.v2.11.5
+  version: 2.11.9
   provider:
     name: Red Hat
   maintainers:
