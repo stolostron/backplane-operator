@@ -2,8 +2,8 @@
 updates:
 - file: "manifests/multicluster-engine.clusterserviceversion.yaml"
   update_list:
-  - search: "2.11.4"
-    replace: "2.11.5"
+  - search: "2.11.9"
+    replace: "2.11.9"
 external-images:
 # Assisted images are now built by ART on mce-2.11; omitting them lets
 # doozer substitute ART-built images instead of stale digest placeholders.
