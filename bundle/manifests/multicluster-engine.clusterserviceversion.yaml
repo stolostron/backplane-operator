@@ -27,9 +27,9 @@ metadata:
     features.operators.openshift.io/token-auth-azure: 'false'
     features.operators.openshift.io/token-auth-gcp: 'false'
     olm.properties: '[{"type": "olm.maxOpenShiftVersion", "value": "4.21"}]'
-    olm.skipRange: '>=2.8.0 <2.10.8'
+    olm.skipRange: '>=2.8.0 <2.10.9'
     operators.openshift.io/must-gather-image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/backplane-must-gather-rhel9:latest
-  name: multicluster-engine.v2.10.8
+  name: multicluster-engine.v2.10.9
   namespace: placeholder
   labels:
     operatorframework.io/arch.amd64: supported
@@ -1924,7 +1924,7 @@ spec:
                 - name: OPERAND_IMAGE_POSTGRESQL_12
                   value: image-registry.openshift-image-registry.svc:5000/multicluster-engine/postgresql-12:latest
                 - name: OPERATOR_VERSION
-                  value: "2.10.8"
+                  value: "2.10.9"
                 - name: OPERATOR_PACKAGE
                   value: multicluster-engine
                 image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/backplane-operator:latest
@@ -2027,7 +2027,7 @@ spec:
   maturity: stable
   provider:
     name: Red Hat
-  version: 2.10.8
+  version: 2.10.9
   relatedImages:
   - name: addon_manager
     image: image-registry.openshift-image-registry.svc:5000/multicluster-engine/addon-manager-rhel9:latest
