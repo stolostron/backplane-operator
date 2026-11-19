@@ -249,6 +249,7 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		} else {
 			// Publish Prometheus metrics after a successful status update.
 			mcemetrics.SetMCEPhase(backplaneConfig.Name, backplaneConfig.Status.Phase)
+			mcemetrics.SetMCEComponentMetrics(backplaneConfig.Name, backplaneConfig.Status.Components)
 		}
 	}()
 

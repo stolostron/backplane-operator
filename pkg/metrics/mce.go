@@ -9,17 +9,22 @@
 package metrics
 
 import (
+	"maps"
 	"sync"
 
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 
 	"github.com/prometheus/client_golang/prometheus"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlmetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
 )
 
 const (
 	// PhaseMetricName is the name of the MultiClusterEngine phase gauge.
 	PhaseMetricName = "mce_phase"
+
+	// ComponentConditionMetricName is the name of the per-component health gauge.
+	ComponentConditionMetricName = "mce_component_conditions"
 )
 
 // allMCEPhases lists every phase a MultiClusterEngine can report. Publishing a
@@ -46,6 +51,26 @@ var mcePhase = prometheus.NewGaugeVec(
 	[]string{"name", "phase"},
 )
 
+// mceComponentConditions is the mce_component_conditions gauge. Each component
+// in the MultiClusterEngine status contributes one series, labelled with the raw
+// Kubernetes kind so it can be joined against kube-state-metrics.
+var mceComponentConditions = prometheus.NewGaugeVec(
+	prometheus.GaugeOpts{
+		Name: ComponentConditionMetricName,
+		Help: "Condition of each MultiClusterEngine component. 1 = the condition status is True, 0 = False or Unknown.",
+	},
+	[]string{"name", "component", "kind", "condition"},
+)
+
+// componentConditionSeries identifies a single mce_component_conditions series
+// for an MCE. Tracking the label set lets a series be deleted when its component is
+// disabled, paused, or removed.
+type componentConditionSeries struct {
+	component string
+	kind      string
+	condition string
+}
+
 // mceMetricsMu serializes updates to every MultiClusterEngine metric family and to the
 // tracking maps below, so a published series always matches the tracked state.
 var mceMetricsMu sync.Mutex
@@ -58,8 +83,13 @@ var unknownPhases = map[string]string{}
 // SetMCEPhase can report whether the gauge actually changed.
 var publishedPhases = map[string]string{}
 
+// publishedComponentConditions tracks the condition series published for each MCE
+// so series belonging to components that are no longer reported can be removed.
+var publishedComponentConditions = map[string]map[componentConditionSeries]float64{}
+
 func init() {
 	ctrlmetrics.Registry.MustRegister(mcePhase)
+	ctrlmetrics.Registry.MustRegister(mceComponentConditions)
 }
 
 // SetMCEPhase publishes the phase of the given MultiClusterEngine, reporting 1 for
@@ -101,6 +131,54 @@ func SetMCEPhase(name string, phase backplanev1.PhaseType) bool {
 	return changed
 }
 
+// SetMCEComponentMetrics publishes the health of every component reported in the
+// MultiClusterEngine status. Components is a slice of ComponentCondition, each
+// carrying its own Name, Kind, Type (condition type), and Status.
+//
+// Health series for components that are no longer reported are removed, so a
+// disabled, paused, or removed component leaves no stale series behind. It reports
+// whether any published series changed, so callers can log transitions instead of
+// every update.
+func SetMCEComponentMetrics(name string, components []backplanev1.ComponentCondition) bool {
+	mceMetricsMu.Lock()
+	defer mceMetricsMu.Unlock()
+
+	desiredConditions := make(map[componentConditionSeries]float64, len(components))
+	for _, component := range components {
+		series := componentConditionSeries{
+			component: component.Name,
+			kind:      component.Kind,
+			condition: component.Type,
+		}
+		// Guard against an empty condition label.
+		if series.condition == "" {
+			series.condition = "Available"
+		}
+		desiredConditions[series] = conditionStatusValue(component.Status)
+	}
+
+	changed := false
+	previousConditions := publishedComponentConditions[name]
+	for series := range previousConditions {
+		if _, ok := desiredConditions[series]; !ok {
+			mceComponentConditions.DeleteLabelValues(name, series.component, series.kind, series.condition)
+		}
+	}
+	for series, value := range desiredConditions {
+		mceComponentConditions.WithLabelValues(name, series.component, series.kind, series.condition).Set(value)
+	}
+	if !maps.Equal(previousConditions, desiredConditions) {
+		changed = true
+	}
+	if len(desiredConditions) == 0 {
+		delete(publishedComponentConditions, name)
+	} else {
+		publishedComponentConditions[name] = desiredConditions
+	}
+
+	return changed
+}
+
 // DeleteMCEMetrics removes every metric series belonging to the given
 // MultiClusterEngine so that a deleted MCE does not leave stale series behind.
 // All MultiClusterEngine-scoped metrics must be cleaned up here so callers only
@@ -111,16 +189,25 @@ func DeleteMCEMetrics(name string) bool {
 	defer mceMetricsMu.Unlock()
 
 	_, phaseExisted := publishedPhases[name]
-	existed := phaseExisted
+	_, conditionsExisted := publishedComponentConditions[name]
+	existed := phaseExisted || conditionsExisted
 
 	delete(unknownPhases, name)
 	delete(publishedPhases, name)
+	delete(publishedComponentConditions, name)
 
 	partialLabels := prometheus.Labels{
 		"name": name,
 	}
 	mcePhase.DeletePartialMatch(partialLabels)
+	mceComponentConditions.DeletePartialMatch(partialLabels)
 	return existed
+}
+
+// conditionStatusValue maps a condition status to the gauge value. Only True
+// reports healthy; False and Unknown both report 0.
+func conditionStatusValue(status metav1.ConditionStatus) float64 {
+	return boolToFloat(status == metav1.ConditionTrue)
 }
 
 func boolToFloat(value bool) float64 {

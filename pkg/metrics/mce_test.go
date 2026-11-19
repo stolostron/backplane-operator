@@ -8,6 +8,7 @@ import (
 
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlmetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
 )
 
@@ -86,9 +87,11 @@ func resetMCETracking() {
 	// Clear tracking maps.
 	unknownPhases = map[string]string{}
 	publishedPhases = map[string]string{}
+	publishedComponentConditions = map[string]map[componentConditionSeries]float64{}
 
 	// Reset gauge vecs so series from prior tests don't leak.
 	mcePhase.Reset()
+	mceComponentConditions.Reset()
 }
 
 // --- SetMCEPhase tests ---
@@ -251,7 +254,247 @@ func TestSetMCEPhase_MultipleMCEs(t *testing.T) {
 	}
 }
 
+// --- SetMCEComponentMetrics tests ---
+
+func TestSetMCEComponentMetrics_InitialPublish(t *testing.T) {
+	resetMCETracking()
+
+	components := []backplanev1.ComponentCondition{
+		{
+			Name:   "cluster-manager",
+			Kind:   "Deployment",
+			Type:   "Available",
+			Status: metav1.ConditionTrue,
+		},
+		{
+			Name:   "hive-operator",
+			Kind:   "Deployment",
+			Type:   "Available",
+			Status: metav1.ConditionFalse,
+		},
+	}
+
+	changed := SetMCEComponentMetrics("test-mce", components)
+	if !changed {
+		t.Error("expected changed=true on initial publish")
+	}
+
+	val, found := gatherGaugeValue(t, ComponentConditionMetricName, map[string]string{
+		"name": "test-mce", "component": "cluster-manager", "kind": "Deployment", "condition": "Available",
+	})
+	if !found {
+		t.Fatal("expected cluster-manager series to exist")
+	}
+	if val != 1 {
+		t.Errorf("expected cluster-manager=1, got %v", val)
+	}
+
+	val, found = gatherGaugeValue(t, ComponentConditionMetricName, map[string]string{
+		"name": "test-mce", "component": "hive-operator", "kind": "Deployment", "condition": "Available",
+	})
+	if !found {
+		t.Fatal("expected hive-operator series to exist")
+	}
+	if val != 0 {
+		t.Errorf("expected hive-operator=0, got %v", val)
+	}
+}
+
+func TestSetMCEComponentMetrics_SameValuesNoChange(t *testing.T) {
+	resetMCETracking()
+
+	components := []backplanev1.ComponentCondition{
+		{
+			Name:   "cluster-manager",
+			Kind:   "Deployment",
+			Type:   "Available",
+			Status: metav1.ConditionTrue,
+		},
+	}
+
+	SetMCEComponentMetrics("test-mce", components)
+	changed := SetMCEComponentMetrics("test-mce", components)
+	if changed {
+		t.Error("expected changed=false when re-publishing same values")
+	}
+}
+
+func TestSetMCEComponentMetrics_StatusChange(t *testing.T) {
+	resetMCETracking()
+
+	components1 := []backplanev1.ComponentCondition{
+		{Name: "cluster-manager", Kind: "Deployment", Type: "Available", Status: metav1.ConditionTrue},
+	}
+	SetMCEComponentMetrics("test-mce", components1)
+
+	components2 := []backplanev1.ComponentCondition{
+		{Name: "cluster-manager", Kind: "Deployment", Type: "Available", Status: metav1.ConditionFalse},
+	}
+	changed := SetMCEComponentMetrics("test-mce", components2)
+	if !changed {
+		t.Error("expected changed=true when status changed")
+	}
+
+	val, found := gatherGaugeValue(t, ComponentConditionMetricName, map[string]string{
+		"name": "test-mce", "component": "cluster-manager", "kind": "Deployment", "condition": "Available",
+	})
+	if !found {
+		t.Fatal("expected series to exist")
+	}
+	if val != 0 {
+		t.Errorf("expected 0 after status change to False, got %v", val)
+	}
+}
+
+func TestSetMCEComponentMetrics_StaleCleanup(t *testing.T) {
+	resetMCETracking()
+
+	components1 := []backplanev1.ComponentCondition{
+		{Name: "comp-a", Kind: "Deployment", Type: "Available", Status: metav1.ConditionTrue},
+		{Name: "comp-b", Kind: "Deployment", Type: "Available", Status: metav1.ConditionTrue},
+	}
+	SetMCEComponentMetrics("test-mce", components1)
+
+	// Remove comp-b.
+	components2 := []backplanev1.ComponentCondition{
+		{Name: "comp-a", Kind: "Deployment", Type: "Available", Status: metav1.ConditionTrue},
+	}
+	changed := SetMCEComponentMetrics("test-mce", components2)
+	if !changed {
+		t.Error("expected changed=true when component removed")
+	}
+
+	// comp-b series should be gone.
+	_, found := gatherGaugeValue(t, ComponentConditionMetricName, map[string]string{
+		"name": "test-mce", "component": "comp-b", "kind": "Deployment", "condition": "Available",
+	})
+	if found {
+		t.Error("expected comp-b series to be deleted")
+	}
+
+	// comp-a should still be 1.
+	val, found := gatherGaugeValue(t, ComponentConditionMetricName, map[string]string{
+		"name": "test-mce", "component": "comp-a", "kind": "Deployment", "condition": "Available",
+	})
+	if !found || val != 1 {
+		t.Errorf("expected comp-a=1, got %v (found=%v)", val, found)
+	}
+}
+
+func TestSetMCEComponentMetrics_EmptySlice(t *testing.T) {
+	resetMCETracking()
+
+	components := []backplanev1.ComponentCondition{
+		{Name: "comp-a", Kind: "Deployment", Type: "Available", Status: metav1.ConditionTrue},
+	}
+	SetMCEComponentMetrics("test-mce", components)
+
+	changed := SetMCEComponentMetrics("test-mce", []backplanev1.ComponentCondition{})
+	if !changed {
+		t.Error("expected changed=true when clearing all components")
+	}
+
+	count := countSeriesForMetric(t, ComponentConditionMetricName, map[string]string{"name": "test-mce"})
+	if count != 0 {
+		t.Errorf("expected 0 component series after empty publish, got %d", count)
+	}
+}
+
+func TestSetMCEComponentMetrics_NilSlice(t *testing.T) {
+	resetMCETracking()
+
+	components := []backplanev1.ComponentCondition{
+		{Name: "comp-a", Kind: "Deployment", Type: "Available", Status: metav1.ConditionTrue},
+	}
+	SetMCEComponentMetrics("test-mce", components)
+
+	changed := SetMCEComponentMetrics("test-mce", nil)
+	if !changed {
+		t.Error("expected changed=true when publishing nil components")
+	}
+
+	count := countSeriesForMetric(t, ComponentConditionMetricName, map[string]string{"name": "test-mce"})
+	if count != 0 {
+		t.Errorf("expected 0 component series after nil publish, got %d", count)
+	}
+}
+
+func TestSetMCEComponentMetrics_EmptyConditionType(t *testing.T) {
+	resetMCETracking()
+
+	components := []backplanev1.ComponentCondition{
+		{Name: "comp-a", Kind: "Deployment", Type: "", Status: metav1.ConditionTrue},
+	}
+	changed := SetMCEComponentMetrics("test-mce", components)
+	if !changed {
+		t.Error("expected changed=true")
+	}
+
+	// Empty condition type should default to "Available".
+	val, found := gatherGaugeValue(t, ComponentConditionMetricName, map[string]string{
+		"name": "test-mce", "component": "comp-a", "kind": "Deployment", "condition": "Available",
+	})
+	if !found {
+		t.Fatal("expected series with default condition 'Available' to exist")
+	}
+	if val != 1 {
+		t.Errorf("expected 1, got %v", val)
+	}
+}
+
+func TestSetMCEComponentMetrics_UnknownStatus(t *testing.T) {
+	resetMCETracking()
+
+	components := []backplanev1.ComponentCondition{
+		{Name: "comp-a", Kind: "Deployment", Type: "Available", Status: metav1.ConditionUnknown},
+	}
+	SetMCEComponentMetrics("test-mce", components)
+
+	val, found := gatherGaugeValue(t, ComponentConditionMetricName, map[string]string{
+		"name": "test-mce", "component": "comp-a", "kind": "Deployment", "condition": "Available",
+	})
+	if !found {
+		t.Fatal("expected series to exist")
+	}
+	if val != 0 {
+		t.Errorf("expected Unknown to report 0, got %v", val)
+	}
+}
+
+func TestConditionStatusValue(t *testing.T) {
+	if conditionStatusValue(metav1.ConditionTrue) != 1 {
+		t.Error("expected True=1")
+	}
+	if conditionStatusValue(metav1.ConditionFalse) != 0 {
+		t.Error("expected False=0")
+	}
+	if conditionStatusValue(metav1.ConditionUnknown) != 0 {
+		t.Error("expected Unknown=0")
+	}
+}
+
 // --- DeleteMCEMetrics tests ---
+
+func TestDeleteMCEMetrics_ClearsAll(t *testing.T) {
+	resetMCETracking()
+
+	SetMCEPhase("test-mce", backplanev1.MultiClusterEnginePhaseAvailable)
+	SetMCEComponentMetrics("test-mce", []backplanev1.ComponentCondition{
+		{Name: "comp-a", Kind: "Deployment", Type: "Available", Status: metav1.ConditionTrue},
+	})
+
+	existed := DeleteMCEMetrics("test-mce")
+	if !existed {
+		t.Error("expected existed=true")
+	}
+
+	for _, metric := range []string{PhaseMetricName, ComponentConditionMetricName} {
+		count := countSeriesForMetric(t, metric, map[string]string{"name": "test-mce"})
+		if count != 0 {
+			t.Errorf("expected 0 series for %s after delete, got %d", metric, count)
+		}
+	}
+}
 
 func TestDeleteMCEMetrics_ClearsPhases(t *testing.T) {
 	resetMCETracking()
