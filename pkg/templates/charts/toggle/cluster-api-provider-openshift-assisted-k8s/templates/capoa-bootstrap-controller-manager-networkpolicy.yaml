@@ -1,0 +1,145 @@
+{{- if .Values.global.networkPolicies.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  annotations:
+    installer.open-cluster-management.io/legacy-managed-egress-rules: >-
+      [
+        {
+          "ports": [
+            {
+              "port": 5353,
+              "protocol": "UDP"
+            },
+            {
+              "port": 5353,
+              "protocol": "TCP"
+            }
+          ]
+        },
+        {
+          "ports": [
+            {
+              "port": 6443,
+              "protocol": "TCP"
+            }
+          ],
+          "to": [
+            {
+              "ipBlock": {
+                "cidr": "0.0.0.0/0"
+              }
+            },
+            {
+              "ipBlock": {
+                "cidr": "::/0"
+              }
+            }
+          ]
+        },
+        {
+          "ports": [
+            {
+              "port": 8090,
+              "protocol": "TCP"
+            }
+          ],
+          "to": [
+            {
+              "ipBlock": {
+                "cidr": "0.0.0.0/0"
+              }
+            },
+            {
+              "ipBlock": {
+                "cidr": "::/0"
+              }
+            }
+          ]
+        },
+        {
+          "ports": [
+            {
+              "port": 443,
+              "protocol": "TCP"
+            }
+          ],
+          "to": [
+            {
+              "ipBlock": {
+                "cidr": "0.0.0.0/0"
+              }
+            },
+            {
+              "ipBlock": {
+                "cidr": "::/0"
+              }
+            }
+          ]
+        }
+      ]
+  labels:
+    control-plane: capoa-bootstrap-controller-manager
+  name: capoa-bootstrap-controller-manager
+  namespace: '{{ default "multicluster-engine" .Values.global.namespace }}'
+spec:
+  egress:
+  - ports:
+    - port: 53
+      protocol: UDP
+    - port: 53
+      protocol: TCP
+    - port: 5353
+      protocol: UDP
+    - port: 5353
+      protocol: TCP
+  {{- range .Values.hubconfig.proxyEgress }}
+  - ports:
+    - port: {{ .port }}
+      protocol: TCP
+    to:
+    {{- range .cidrs }}
+    - ipBlock:
+        cidr: {{ . }}
+    {{- end }}
+  {{- end }}
+  - ports:
+    - port: 6443
+      protocol: TCP
+    to:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+    - ipBlock:
+        cidr: ::/0
+  - ports:
+    - port: 8090
+      protocol: TCP
+    to:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+    - ipBlock:
+        cidr: ::/0
+  - ports:
+    - port: 443
+      protocol: TCP
+    to:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+    - ipBlock:
+        cidr: ::/0
+  ingress:
+  - from:
+    - podSelector: {}
+    ports:
+    - port: 8080
+      protocol: TCP
+  - ports:
+    - port: 9443
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      control-plane: capoa-bootstrap-controller-manager
+  policyTypes:
+  - Ingress
+  - Egress
+{{- end }}

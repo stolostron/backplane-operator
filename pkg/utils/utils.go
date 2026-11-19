@@ -17,6 +17,7 @@ import (
 
 	configv1 "github.com/openshift/api/config/v1"
 	backplanev1 "github.com/stolostron/backplane-operator/api/v1"
+	"github.com/stolostron/backplane-operator/pkg/version"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -62,15 +63,16 @@ var onComponents = []string{
 	backplanev1.HypershiftLocalHosting,
 	backplanev1.HyperShift,
 	backplanev1.ManagedServiceAccount,
+	backplanev1.ClusterAPI,
+	backplanev1.ClusterAPIProviderKubeVirt,
+	backplanev1.ClusterAPIProviderOA,
 	// backplanev1.ConsoleMCE, // determined by OCP version
 }
 
 var offComponents = []string{
-	backplanev1.ClusterAPI,
 	backplanev1.ClusterAPIProviderAWS,
 	backplanev1.ClusterAPIProviderAzurePreview,
 	backplanev1.ClusterAPIProviderMetal,
-	backplanev1.ClusterAPIProviderOA,
 	backplanev1.ImageBasedInstallOperator,
 }
 
@@ -91,7 +93,11 @@ func SetDefaultComponents(m *backplanev1.MultiClusterEngine) bool {
 	updated := false
 	for _, c := range components {
 		if !m.ComponentPresent(c) {
-			m.Enable(c)
+			if shouldEnableDefaultComponent(m, c) {
+				m.Enable(c)
+			} else {
+				m.Disable(c)
+			}
 			updated = true
 		}
 	}
@@ -102,6 +108,67 @@ func SetDefaultComponents(m *backplanev1.MultiClusterEngine) bool {
 		}
 	}
 	return updated
+}
+
+// shouldEnableDefaultComponent reports whether a component absent from the
+// resource specification can safely be enabled by default.
+func shouldEnableDefaultComponent(m *backplanev1.MultiClusterEngine, component string) bool {
+	switch component {
+	case backplanev1.ClusterAPI:
+		if m.ComponentPresent(backplanev1.ClusterAPIPreview) {
+			return m.Enabled(backplanev1.ClusterAPIPreview) &&
+				ShouldEnablePreviewStable(m, backplanev1.ClusterAPI)
+		}
+		return ShouldEnablePreviewStable(m, backplanev1.ClusterAPI)
+	case backplanev1.ClusterAPIProviderKubeVirt:
+		if m.ComponentPresent(backplanev1.ClusterAPIProviderKubeVirtPreview) {
+			return m.Enabled(backplanev1.ClusterAPIProviderKubeVirtPreview) &&
+				ShouldEnablePreviewStable(m, backplanev1.ClusterAPIProviderKubeVirt)
+		}
+		return ShouldEnablePreviewStable(m, backplanev1.ClusterAPIProviderKubeVirt)
+	case backplanev1.ClusterAPIProviderOA:
+		if m.ComponentPresent(backplanev1.ClusterAPIProviderOAPreview) &&
+			!m.Enabled(backplanev1.ClusterAPIProviderOAPreview) {
+			return false
+		}
+		return ShouldEnablePreviewStable(m, backplanev1.ClusterAPIProviderOA)
+	default:
+		return true
+	}
+}
+
+func clusterSupportsCAPKWebhookMatchConditions() bool {
+	if !DeployOnOCP() {
+		return true
+	}
+
+	ocpVersion := os.Getenv("ACM_HUB_OCP_VERSION")
+	if ocpVersion == "" {
+		return false
+	}
+
+	supported, err := version.AtLeast(ocpVersion, version.WebhookMatchConditions)
+	return err == nil && supported
+}
+
+// ShouldEnablePreviewStable reports whether a preview component may transfer
+// its enabled preference to the stable component after deployment constraints
+// have been applied.
+func ShouldEnablePreviewStable(m *backplanev1.MultiClusterEngine, stable string) bool {
+	switch stable {
+	case backplanev1.ClusterAPI:
+		return !backplanev1.IsInHostedMode(m)
+	case backplanev1.ClusterAPIProviderKubeVirt:
+		return !backplanev1.IsInHostedMode(m) &&
+			clusterSupportsCAPKWebhookMatchConditions() &&
+			m.EffectiveDependencyEnabled(backplanev1.ClusterAPI)
+	case backplanev1.ClusterAPIProviderOA:
+		return !backplanev1.IsInHostedMode(m) &&
+			m.EffectiveDependencyEnabled(backplanev1.ClusterAPI) &&
+			m.EffectiveDependencyEnabled(backplanev1.AssistedService)
+	default:
+		return true
+	}
 }
 
 // AddBackplaneConfigLabels adds BackplaneConfig Labels ...
@@ -550,6 +617,8 @@ func ComponentCRDDirectories(component string) []string {
 		return []string{backplanev1.AssistedServiceCRDDir}
 	case backplanev1.ClusterAPIProviderAWS, backplanev1.ClusterAPIProviderAWSPreview:
 		return []string{backplanev1.ClusterAPIProviderAWSCRDDir}
+	case backplanev1.ClusterAPIProviderKubeVirt, backplanev1.ClusterAPIProviderKubeVirtPreview:
+		return []string{backplanev1.ClusterAPIProviderKubeVirtCRDDir}
 	case backplanev1.ClusterLifecycle:
 		return []string{backplanev1.ClusterLifecycleCRDDir}
 	case backplanev1.ClusterManager:
