@@ -88,10 +88,14 @@ func resetMCETracking() {
 	unknownPhases = map[string]string{}
 	publishedPhases = map[string]string{}
 	publishedComponentConditions = map[string]map[componentConditionSeries]float64{}
+	publishedReady = map[string]float64{}
+	publishedConditions = map[string]map[string]float64{}
 
 	// Reset gauge vecs so series from prior tests don't leak.
 	mcePhase.Reset()
 	mceComponentConditions.Reset()
+	mceReady.Reset()
+	mceCondition.Reset()
 }
 
 // --- SetMCEPhase tests ---
@@ -473,6 +477,254 @@ func TestConditionStatusValue(t *testing.T) {
 	}
 }
 
+// --- SetMCEReadyAndConditions tests ---
+
+func TestSetMCEReadyAndConditions_Ready(t *testing.T) {
+	resetMCETracking()
+
+	conditions := []backplanev1.MultiClusterEngineCondition{
+		{Type: backplanev1.MultiClusterEngineAvailable, Status: metav1.ConditionTrue},
+		{Type: backplanev1.MultiClusterEngineProgressing, Status: metav1.ConditionFalse},
+	}
+
+	changed := SetMCEReadyAndConditions("test-mce", backplanev1.MultiClusterEnginePhaseAvailable, conditions)
+	if !changed {
+		t.Error("expected changed=true on initial publish")
+	}
+
+	val, found := gatherGaugeValue(t, ReadyMetricName, map[string]string{"name": "test-mce"})
+	if !found {
+		t.Fatal("expected ready series to exist")
+	}
+	if val != 1 {
+		t.Errorf("expected ready=1, got %v", val)
+	}
+
+	val, found = gatherGaugeValue(t, ConditionMetricName, map[string]string{
+		"name": "test-mce", "condition": "Available",
+	})
+	if !found {
+		t.Fatal("expected Available condition series to exist")
+	}
+	if val != 1 {
+		t.Errorf("expected Available=1, got %v", val)
+	}
+
+	val, found = gatherGaugeValue(t, ConditionMetricName, map[string]string{
+		"name": "test-mce", "condition": "Progressing",
+	})
+	if !found {
+		t.Fatal("expected Progressing condition series to exist")
+	}
+	if val != 0 {
+		t.Errorf("expected Progressing=0, got %v", val)
+	}
+}
+
+func TestSetMCEReadyAndConditions_NotReady_WrongPhase(t *testing.T) {
+	resetMCETracking()
+
+	conditions := []backplanev1.MultiClusterEngineCondition{
+		{Type: backplanev1.MultiClusterEngineAvailable, Status: metav1.ConditionTrue},
+	}
+
+	SetMCEReadyAndConditions("test-mce", backplanev1.MultiClusterEnginePhaseProgressing, conditions)
+
+	val, found := gatherGaugeValue(t, ReadyMetricName, map[string]string{"name": "test-mce"})
+	if !found {
+		t.Fatal("expected ready series to exist")
+	}
+	if val != 0 {
+		t.Errorf("expected ready=0 (wrong phase), got %v", val)
+	}
+}
+
+func TestSetMCEReadyAndConditions_NotReady_ConditionFalse(t *testing.T) {
+	resetMCETracking()
+
+	conditions := []backplanev1.MultiClusterEngineCondition{
+		{Type: backplanev1.MultiClusterEngineAvailable, Status: metav1.ConditionFalse},
+	}
+
+	SetMCEReadyAndConditions("test-mce", backplanev1.MultiClusterEnginePhaseAvailable, conditions)
+
+	val, found := gatherGaugeValue(t, ReadyMetricName, map[string]string{"name": "test-mce"})
+	if !found {
+		t.Fatal("expected ready series to exist")
+	}
+	if val != 0 {
+		t.Errorf("expected ready=0 (Available condition False), got %v", val)
+	}
+}
+
+func TestSetMCEReadyAndConditions_NotReady_NoAvailableCondition(t *testing.T) {
+	resetMCETracking()
+
+	conditions := []backplanev1.MultiClusterEngineCondition{
+		{Type: backplanev1.MultiClusterEngineProgressing, Status: metav1.ConditionTrue},
+	}
+
+	SetMCEReadyAndConditions("test-mce", backplanev1.MultiClusterEnginePhaseAvailable, conditions)
+
+	val, found := gatherGaugeValue(t, ReadyMetricName, map[string]string{"name": "test-mce"})
+	if !found {
+		t.Fatal("expected ready series to exist")
+	}
+	if val != 0 {
+		t.Errorf("expected ready=0 (no Available condition), got %v", val)
+	}
+}
+
+func TestSetMCEReadyAndConditions_SameValuesNoChange(t *testing.T) {
+	resetMCETracking()
+
+	conditions := []backplanev1.MultiClusterEngineCondition{
+		{Type: backplanev1.MultiClusterEngineAvailable, Status: metav1.ConditionTrue},
+	}
+
+	SetMCEReadyAndConditions("test-mce", backplanev1.MultiClusterEnginePhaseAvailable, conditions)
+	changed := SetMCEReadyAndConditions("test-mce", backplanev1.MultiClusterEnginePhaseAvailable, conditions)
+	if changed {
+		t.Error("expected changed=false when re-publishing same values")
+	}
+}
+
+func TestSetMCEReadyAndConditions_Transition(t *testing.T) {
+	resetMCETracking()
+
+	conditions1 := []backplanev1.MultiClusterEngineCondition{
+		{Type: backplanev1.MultiClusterEngineAvailable, Status: metav1.ConditionTrue},
+	}
+	SetMCEReadyAndConditions("test-mce", backplanev1.MultiClusterEnginePhaseAvailable, conditions1)
+
+	conditions2 := []backplanev1.MultiClusterEngineCondition{
+		{Type: backplanev1.MultiClusterEngineAvailable, Status: metav1.ConditionFalse},
+		{Type: backplanev1.MultiClusterEngineProgressing, Status: metav1.ConditionTrue},
+	}
+	changed := SetMCEReadyAndConditions("test-mce", backplanev1.MultiClusterEnginePhaseProgressing, conditions2)
+	if !changed {
+		t.Error("expected changed=true on transition")
+	}
+
+	val, found := gatherGaugeValue(t, ReadyMetricName, map[string]string{"name": "test-mce"})
+	if !found {
+		t.Fatal("expected ready series to exist")
+	}
+	if val != 0 {
+		t.Errorf("expected ready=0 after transition, got %v", val)
+	}
+}
+
+func TestSetMCEReadyAndConditions_EmptyConditions(t *testing.T) {
+	resetMCETracking()
+
+	changed := SetMCEReadyAndConditions("test-mce", backplanev1.MultiClusterEnginePhaseAvailable, nil)
+	if !changed {
+		t.Error("expected changed=true on initial publish with empty conditions")
+	}
+
+	val, found := gatherGaugeValue(t, ReadyMetricName, map[string]string{"name": "test-mce"})
+	if !found {
+		t.Fatal("expected ready series to exist")
+	}
+	if val != 0 {
+		t.Errorf("expected ready=0 with no conditions, got %v", val)
+	}
+
+	for _, ct := range allMCEConditionTypes {
+		val, found := gatherGaugeValue(t, ConditionMetricName, map[string]string{
+			"name": "test-mce", "condition": string(ct),
+		})
+		if !found {
+			t.Errorf("expected condition series %s to exist even with nil conditions", ct)
+			continue
+		}
+		if val != 0 {
+			t.Errorf("expected condition %s=0 with no conditions, got %v", ct, val)
+		}
+	}
+}
+
+func TestSetMCEReadyAndConditions_AllConditionTypes(t *testing.T) {
+	resetMCETracking()
+
+	conditions := []backplanev1.MultiClusterEngineCondition{
+		{Type: backplanev1.MultiClusterEngineAvailable, Status: metav1.ConditionTrue},
+		{Type: backplanev1.MultiClusterEngineProgressing, Status: metav1.ConditionFalse},
+		{Type: backplanev1.MultiClusterEngineComponentFailure, Status: metav1.ConditionFalse},
+		{Type: backplanev1.MultiClusterEngineFailure, Status: metav1.ConditionFalse},
+		{Type: backplanev1.MultiClusterEngineComponentsExternallyManaged, Status: metav1.ConditionTrue},
+	}
+
+	SetMCEReadyAndConditions("test-mce", backplanev1.MultiClusterEnginePhaseAvailable, conditions)
+
+	expectedValues := map[string]float64{
+		"Available":                   1,
+		"Progressing":                 0,
+		"ComponentFailure":            0,
+		"Failure":                     0,
+		"ComponentsExternallyManaged": 1,
+	}
+
+	for condType, expected := range expectedValues {
+		val, found := gatherGaugeValue(t, ConditionMetricName, map[string]string{
+			"name": "test-mce", "condition": condType,
+		})
+		if !found {
+			t.Errorf("expected condition series %s to exist", condType)
+			continue
+		}
+		if val != expected {
+			t.Errorf("condition %s: expected %v, got %v", condType, expected, val)
+		}
+	}
+}
+
+func TestSetMCEReadyAndConditions_UnknownConditionType(t *testing.T) {
+	resetMCETracking()
+
+	conditions := []backplanev1.MultiClusterEngineCondition{
+		{Type: backplanev1.MultiClusterEngineConditionType("CustomCondition"), Status: metav1.ConditionTrue},
+	}
+
+	changed := SetMCEReadyAndConditions("test-mce", backplanev1.MultiClusterEnginePhaseAvailable, conditions)
+	if !changed {
+		t.Error("expected changed=true")
+	}
+
+	val, found := gatherGaugeValue(t, ConditionMetricName, map[string]string{
+		"name": "test-mce", "condition": "CustomCondition",
+	})
+	if !found {
+		t.Fatal("expected CustomCondition series to exist")
+	}
+	if val != 1 {
+		t.Errorf("expected CustomCondition=1, got %v", val)
+	}
+}
+
+func TestSetMCEReadyAndConditions_StaleConditionCleanup(t *testing.T) {
+	resetMCETracking()
+
+	conditions1 := []backplanev1.MultiClusterEngineCondition{
+		{Type: backplanev1.MultiClusterEngineAvailable, Status: metav1.ConditionTrue},
+		{Type: backplanev1.MultiClusterEngineConditionType("OldCondition"), Status: metav1.ConditionTrue},
+	}
+	SetMCEReadyAndConditions("test-mce", backplanev1.MultiClusterEnginePhaseAvailable, conditions1)
+
+	conditions2 := []backplanev1.MultiClusterEngineCondition{
+		{Type: backplanev1.MultiClusterEngineAvailable, Status: metav1.ConditionTrue},
+	}
+	SetMCEReadyAndConditions("test-mce", backplanev1.MultiClusterEnginePhaseAvailable, conditions2)
+
+	_, found := gatherGaugeValue(t, ConditionMetricName, map[string]string{
+		"name": "test-mce", "condition": "OldCondition",
+	})
+	if found {
+		t.Error("expected OldCondition series to be deleted")
+	}
+}
+
 // --- DeleteMCEMetrics tests ---
 
 func TestDeleteMCEMetrics_ClearsAll(t *testing.T) {
@@ -482,13 +734,16 @@ func TestDeleteMCEMetrics_ClearsAll(t *testing.T) {
 	SetMCEComponentMetrics("test-mce", []backplanev1.ComponentCondition{
 		{Name: "comp-a", Kind: "Deployment", Type: "Available", Status: metav1.ConditionTrue},
 	})
+	SetMCEReadyAndConditions("test-mce", backplanev1.MultiClusterEnginePhaseAvailable, []backplanev1.MultiClusterEngineCondition{
+		{Type: backplanev1.MultiClusterEngineAvailable, Status: metav1.ConditionTrue},
+	})
 
 	existed := DeleteMCEMetrics("test-mce")
 	if !existed {
 		t.Error("expected existed=true")
 	}
 
-	for _, metric := range []string{PhaseMetricName, ComponentConditionMetricName} {
+	for _, metric := range []string{PhaseMetricName, ComponentConditionMetricName, ReadyMetricName, ConditionMetricName} {
 		count := countSeriesForMetric(t, metric, map[string]string{"name": "test-mce"})
 		if count != 0 {
 			t.Errorf("expected 0 series for %s after delete, got %d", metric, count)
@@ -569,5 +824,62 @@ func TestBoolToFloat(t *testing.T) {
 	}
 	if boolToFloat(false) != 0 {
 		t.Error("expected boolToFloat(false)=0")
+	}
+}
+
+// --- Integration-like tests ---
+
+func TestFullLifecycle(t *testing.T) {
+	resetMCETracking()
+
+	name := "lifecycle-mce"
+
+	// 1. Initial creation: Progressing phase.
+	SetMCEPhase(name, backplanev1.MultiClusterEnginePhaseProgressing)
+	SetMCEComponentMetrics(name, []backplanev1.ComponentCondition{
+		{Name: "cluster-manager", Kind: "Deployment", Type: "Available", Status: metav1.ConditionFalse},
+	})
+	SetMCEReadyAndConditions(name, backplanev1.MultiClusterEnginePhaseProgressing, []backplanev1.MultiClusterEngineCondition{
+		{Type: backplanev1.MultiClusterEngineProgressing, Status: metav1.ConditionTrue},
+		{Type: backplanev1.MultiClusterEngineAvailable, Status: metav1.ConditionFalse},
+	})
+
+	val, _ := gatherGaugeValue(t, ReadyMetricName, map[string]string{"name": name})
+	if val != 0 {
+		t.Errorf("expected ready=0 during progressing, got %v", val)
+	}
+
+	// 2. Transition to Available.
+	SetMCEPhase(name, backplanev1.MultiClusterEnginePhaseAvailable)
+	SetMCEComponentMetrics(name, []backplanev1.ComponentCondition{
+		{Name: "cluster-manager", Kind: "Deployment", Type: "Available", Status: metav1.ConditionTrue},
+		{Name: "hive-operator", Kind: "Deployment", Type: "Available", Status: metav1.ConditionTrue},
+	})
+	SetMCEReadyAndConditions(name, backplanev1.MultiClusterEnginePhaseAvailable, []backplanev1.MultiClusterEngineCondition{
+		{Type: backplanev1.MultiClusterEngineAvailable, Status: metav1.ConditionTrue},
+		{Type: backplanev1.MultiClusterEngineProgressing, Status: metav1.ConditionFalse},
+	})
+
+	val, _ = gatherGaugeValue(t, ReadyMetricName, map[string]string{"name": name})
+	if val != 1 {
+		t.Errorf("expected ready=1 when available, got %v", val)
+	}
+
+	count := countSeriesForMetric(t, ComponentConditionMetricName, map[string]string{"name": name})
+	if count != 2 {
+		t.Errorf("expected 2 component series, got %d", count)
+	}
+
+	// 3. Deletion.
+	existed := DeleteMCEMetrics(name)
+	if !existed {
+		t.Error("expected existed=true")
+	}
+
+	for _, metric := range []string{PhaseMetricName, ComponentConditionMetricName, ReadyMetricName, ConditionMetricName} {
+		c := countSeriesForMetric(t, metric, map[string]string{"name": name})
+		if c != 0 {
+			t.Errorf("expected 0 series for %s after delete, got %d", metric, c)
+		}
 	}
 }

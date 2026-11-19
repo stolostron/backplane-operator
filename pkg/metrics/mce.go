@@ -25,6 +25,12 @@ const (
 
 	// ComponentConditionMetricName is the name of the per-component health gauge.
 	ComponentConditionMetricName = "mce_component_conditions"
+
+	// ReadyMetricName is the name of the overall-ready gauge.
+	ReadyMetricName = "mce_ready"
+
+	// ConditionMetricName is the name of the per-condition gauge.
+	ConditionMetricName = "mce_condition"
 )
 
 // allMCEPhases lists every phase a MultiClusterEngine can report. Publishing a
@@ -51,6 +57,17 @@ var mcePhase = prometheus.NewGaugeVec(
 	[]string{"name", "phase"},
 )
 
+// allMCEConditionTypes lists every condition type a MultiClusterEngine can
+// report. Publishing a series for each type lets consumers alert on a specific
+// condition without first testing for series presence.
+var allMCEConditionTypes = []backplanev1.MultiClusterEngineConditionType{
+	backplanev1.MultiClusterEngineAvailable,
+	backplanev1.MultiClusterEngineProgressing,
+	backplanev1.MultiClusterEngineComponentFailure,
+	backplanev1.MultiClusterEngineFailure,
+	backplanev1.MultiClusterEngineComponentsExternallyManaged,
+}
+
 // mceComponentConditions is the mce_component_conditions gauge. Each component
 // in the MultiClusterEngine status contributes one series, labelled with the raw
 // Kubernetes kind so it can be joined against kube-state-metrics.
@@ -71,6 +88,26 @@ type componentConditionSeries struct {
 	condition string
 }
 
+// mceReady is the mce_ready gauge. 1 when Phase == Available AND
+// Available condition == True; 0 otherwise.
+var mceReady = prometheus.NewGaugeVec(
+	prometheus.GaugeOpts{
+		Name: ReadyMetricName,
+		Help: "Whether the MultiClusterEngine is fully ready. 1 = Phase is Available and Available condition is True.",
+	},
+	[]string{"name"},
+)
+
+// mceCondition is the mce_condition gauge. Each condition type in the
+// MultiClusterEngine status contributes one series. 1 = True, 0 = False/Unknown.
+var mceCondition = prometheus.NewGaugeVec(
+	prometheus.GaugeOpts{
+		Name: ConditionMetricName,
+		Help: "Condition of the MultiClusterEngine. 1 = condition status is True, 0 = False or Unknown.",
+	},
+	[]string{"name", "condition"},
+)
+
 // mceMetricsMu serializes updates to every MultiClusterEngine metric family and to the
 // tracking maps below, so a published series always matches the tracked state.
 var mceMetricsMu sync.Mutex
@@ -87,9 +124,18 @@ var publishedPhases = map[string]string{}
 // so series belonging to components that are no longer reported can be removed.
 var publishedComponentConditions = map[string]map[componentConditionSeries]float64{}
 
+// publishedReady tracks the last published ready value for each MCE (by name).
+var publishedReady = map[string]float64{}
+
+// publishedConditions tracks the last published condition values for each MCE
+// (by name) so stale series can be removed.
+var publishedConditions = map[string]map[string]float64{}
+
 func init() {
 	ctrlmetrics.Registry.MustRegister(mcePhase)
 	ctrlmetrics.Registry.MustRegister(mceComponentConditions)
+	ctrlmetrics.Registry.MustRegister(mceReady)
+	ctrlmetrics.Registry.MustRegister(mceCondition)
 }
 
 // SetMCEPhase publishes the phase of the given MultiClusterEngine, reporting 1 for
@@ -179,6 +225,76 @@ func SetMCEComponentMetrics(name string, components []backplanev1.ComponentCondi
 	return changed
 }
 
+// SetMCEReadyAndConditions publishes the overall-ready gauge and per-condition
+// gauges for the given MultiClusterEngine.
+//
+// Ready is 1 when Phase == Available AND the Available condition is True; 0
+// otherwise. Each condition type gets its own series: 1 = True, 0 = False/Unknown.
+//
+// It reports whether any published series changed, so callers can log transitions.
+func SetMCEReadyAndConditions(name string, phase backplanev1.PhaseType, conditions []backplanev1.MultiClusterEngineCondition) bool {
+	mceMetricsMu.Lock()
+	defer mceMetricsMu.Unlock()
+
+	changed := false
+
+	// --- ready gauge ---
+	// MCE is ready when Phase == Available AND the Available condition is True.
+	availableCondTrue := false
+	for _, c := range conditions {
+		if c.Type == backplanev1.MultiClusterEngineAvailable && c.Status == metav1.ConditionTrue {
+			availableCondTrue = true
+			break
+		}
+	}
+	readyVal := boolToFloat(phase == backplanev1.MultiClusterEnginePhaseAvailable && availableCondTrue)
+
+	prevReady, prevReadyExists := publishedReady[name]
+	if !prevReadyExists || prevReady != readyVal {
+		changed = true
+	}
+	mceReady.WithLabelValues(name).Set(readyVal)
+	publishedReady[name] = readyVal
+
+	// --- per-condition gauges ---
+	// Build the desired condition map from the status conditions.
+	desiredConds := make(map[string]float64, len(allMCEConditionTypes))
+
+	// Initialize all known condition types to 0.
+	for _, ct := range allMCEConditionTypes {
+		desiredConds[string(ct)] = 0
+	}
+
+	// Set values from actual conditions.
+	for _, c := range conditions {
+		desiredConds[string(c.Type)] = conditionStatusValue(c.Status)
+	}
+
+	// Clean up stale condition series.
+	previousConds := publishedConditions[name]
+	for condType := range previousConds {
+		if _, ok := desiredConds[condType]; !ok {
+			mceCondition.DeleteLabelValues(name, condType)
+		}
+	}
+
+	// Publish desired conditions.
+	for condType, value := range desiredConds {
+		mceCondition.WithLabelValues(name, condType).Set(value)
+	}
+
+	if !maps.Equal(previousConds, desiredConds) {
+		changed = true
+	}
+	if len(desiredConds) == 0 {
+		delete(publishedConditions, name)
+	} else {
+		publishedConditions[name] = desiredConds
+	}
+
+	return changed
+}
+
 // DeleteMCEMetrics removes every metric series belonging to the given
 // MultiClusterEngine so that a deleted MCE does not leave stale series behind.
 // All MultiClusterEngine-scoped metrics must be cleaned up here so callers only
@@ -190,17 +306,23 @@ func DeleteMCEMetrics(name string) bool {
 
 	_, phaseExisted := publishedPhases[name]
 	_, conditionsExisted := publishedComponentConditions[name]
-	existed := phaseExisted || conditionsExisted
+	_, readyExisted := publishedReady[name]
+	_, condsExisted := publishedConditions[name]
+	existed := phaseExisted || conditionsExisted || readyExisted || condsExisted
 
 	delete(unknownPhases, name)
 	delete(publishedPhases, name)
 	delete(publishedComponentConditions, name)
+	delete(publishedReady, name)
+	delete(publishedConditions, name)
 
 	partialLabels := prometheus.Labels{
 		"name": name,
 	}
 	mcePhase.DeletePartialMatch(partialLabels)
 	mceComponentConditions.DeletePartialMatch(partialLabels)
+	mceReady.DeletePartialMatch(partialLabels)
+	mceCondition.DeletePartialMatch(partialLabels)
 	return existed
 }
 

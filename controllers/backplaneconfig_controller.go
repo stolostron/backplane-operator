@@ -195,7 +195,10 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 		r.Log.Info("Failed to fetch backplaneConfig")
 		return ctrl.Result{}, err
 	} else if err != nil && apierrors.IsNotFound(err) {
-		// BackplaneConfig deleted or not found
+		// BackplaneConfig deleted or not found.
+		// Clean up any published Prometheus metrics for this MCE instance
+		// (covers the case where a finalizer was removed before deletion).
+		mcemetrics.DeleteMCEMetrics(req.Name)
 		// Return and don't requeue
 		return ctrl.Result{}, nil
 	}
@@ -246,10 +249,12 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 			} else {
 				retErr = err
 			}
-		} else {
-			// Publish Prometheus metrics after a successful status update.
+		} else if backplaneConfig.GetDeletionTimestamp() == nil {
+			// Publish Prometheus metrics after a successful status update,
+			// but skip when the MCE is being deleted (DeleteMCEMetrics runs below).
 			mcemetrics.SetMCEPhase(backplaneConfig.Name, backplaneConfig.Status.Phase)
 			mcemetrics.SetMCEComponentMetrics(backplaneConfig.Name, backplaneConfig.Status.Components)
+			mcemetrics.SetMCEReadyAndConditions(backplaneConfig.Name, backplaneConfig.Status.Phase, backplaneConfig.Status.Conditions)
 		}
 	}()
 
