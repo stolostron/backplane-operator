@@ -4,6 +4,7 @@ package controllers
 
 import (
 	"context"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -27,6 +28,20 @@ var _ = Describe("NetworkPolicy Controller", Ordered, func() {
 		mce *backplanev1.MultiClusterEngine
 		np  *networkingv1.NetworkPolicy
 	)
+
+	// waitForCachedNetworkPolicies waits until the controller's cache observes exactly
+	// count NetworkPolicies in the target namespace. The reconciler reads from the
+	// manager cache, which lags behind direct writes made through k8sClient, so tests
+	// must let the cache catch up before invoking ensureNetworkPolicies.
+	waitForCachedNetworkPolicies := func(ctx context.Context, count int) {
+		Eventually(func() int {
+			npList := &networkingv1.NetworkPolicyList{}
+			if err := reconciler.Client.List(ctx, npList, client.InNamespace(targetNS)); err != nil {
+				return -1
+			}
+			return len(npList.Items)
+		}, 10*time.Second, 100*time.Millisecond).Should(Equal(count))
+	}
 
 	BeforeAll(func() {
 		ns := &corev1.Namespace{
@@ -76,6 +91,10 @@ var _ = Describe("NetworkPolicy Controller", Ordered, func() {
 		for i := range npList.Items {
 			_ = k8sClient.Delete(ctx, &npList.Items[i])
 		}
+
+		// Wait for the controller cache to observe the deletions so subsequent specs
+		// do not race against stale entries.
+		waitForCachedNetworkPolicies(ctx, 0)
 	})
 
 	Context("when NetworkPolicies are disabled", func() {
@@ -93,6 +112,9 @@ var _ = Describe("NetworkPolicy Controller", Ordered, func() {
 					Namespace: targetNS,
 				}, createdNP)
 			}).Should(Succeed())
+
+			// Ensure the controller cache has observed the create
+			waitForCachedNetworkPolicies(ctx, 1)
 
 			// Disable NetworkPolicies
 			mce.Spec.NetworkPolicies.Enabled = false
@@ -121,6 +143,9 @@ var _ = Describe("NetworkPolicy Controller", Ordered, func() {
 
 			Expect(k8sClient.Create(ctx, np)).To(Succeed())
 			Expect(k8sClient.Create(ctx, np2)).To(Succeed())
+
+			// Ensure the controller cache has observed both creates
+			waitForCachedNetworkPolicies(ctx, 2)
 
 			// Disable NetworkPolicies
 			mce.Spec.NetworkPolicies.Enabled = false
@@ -155,6 +180,9 @@ var _ = Describe("NetworkPolicy Controller", Ordered, func() {
 
 			Expect(k8sClient.Create(ctx, np)).To(Succeed())
 			Expect(k8sClient.Create(ctx, otherNP)).To(Succeed())
+
+			// Ensure the controller cache has observed both creates
+			waitForCachedNetworkPolicies(ctx, 2)
 
 			// Disable NetworkPolicies for this MCE
 			mce.Spec.NetworkPolicies.Enabled = false
@@ -198,6 +226,9 @@ var _ = Describe("NetworkPolicy Controller", Ordered, func() {
 
 			// Create NetworkPolicy
 			Expect(k8sClient.Create(ctx, np)).To(Succeed())
+
+			// Ensure the controller cache has observed the create
+			waitForCachedNetworkPolicies(ctx, 1)
 
 			// Keep NetworkPolicies enabled
 			mce.Spec.NetworkPolicies.Enabled = true
