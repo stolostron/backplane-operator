@@ -18,6 +18,7 @@ rules:
     resourceNames:
       - openshift-service-ca.crt
       - service-ca.crt
+      - service-ca
       - service-ca-root-ca
       - service-ca-bundle
     verbs: ["get"]
