@@ -15,6 +15,11 @@ rules:
   # ACM-51997: trust cluster-proxy TLS — openshift-service-ca.crt (operator NS) or openshift-config-managed fallback.
   - apiGroups: [""]
     resources: ["configmaps"]
+    resourceNames:
+      - openshift-service-ca.crt
+      - service-ca.crt
+      - service-ca-root-ca
+      - service-ca-bundle
     verbs: ["get"]
   - apiGroups: [""]
     resources: ["users", "groups", "serviceaccounts"]
