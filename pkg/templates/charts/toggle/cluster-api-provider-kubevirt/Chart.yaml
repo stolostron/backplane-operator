@@ -1,0 +1,6 @@
+apiVersion: v2
+appVersion: '5.1'
+description: Cluster API provider for KubeVirt
+name: cluster-api-provider-kubevirt
+type: application
+version: '5.1'
