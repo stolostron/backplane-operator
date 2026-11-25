@@ -506,12 +506,7 @@ func (r *MultiClusterEngineReconciler) Reconcile(ctx context.Context, req ctrl.R
 
 	// Apply ALL CRDs with retry logic
 	for i := range crds {
-		retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-			crd := crds[i]
-			e := EnsureCRD(context.TODO(), r.Client, crd)
-			return e
-		})
-
+		retryErr := ensureCRDWithRetry(ctx, r.Client, crds[i])
 		if retryErr != nil {
 			r.Log.Error(retryErr, "Failed to apply CRD", "CRD", crds[i].GetName())
 			return result, retryErr
@@ -1063,6 +1058,7 @@ func (r *MultiClusterEngineReconciler) fetchChartOrCRDPath(component string) str
 		backplanev1.ClusterAPI:                     clusterAPIChartLoc,
 		backplanev1.ClusterAPIProviderAWS:          toggle.ClusterAPIProviderAWSChartDir,
 		backplanev1.ClusterAPIProviderAzurePreview: clusterAPIAzureChartLoc,
+		backplanev1.ClusterAPIProviderKubeVirt:     toggle.ClusterAPIProviderKubeVirtChartDir,
 		backplanev1.ClusterAPIProviderMetal:        clusterAPIMetalChartLoc,
 		backplanev1.ClusterAPIProviderOA:           clusterAPIOAChartLoc,
 		backplanev1.ClusterLifecycle:               toggle.ClusterLifecycleChartDir,
@@ -1483,6 +1479,29 @@ func (r *MultiClusterEngineReconciler) ensureToggleableComponents(ctx context.Co
 			backplanev1.ClusterAPIProviderMetal)
 	}
 
+	if !r.isComponentExternallyManaged(backplaneConfig, backplanev1.ClusterAPIProviderKubeVirt) {
+		if backplaneConfig.Enabled(backplanev1.ClusterAPIProviderKubeVirt) {
+			result, err = r.ensureClusterAPIProviderKubeVirt(ctx, backplaneConfig)
+			if result != (ctrl.Result{}) {
+				requeue = true
+			}
+			if err != nil {
+				errs[backplanev1.ClusterAPIProviderKubeVirt] = err
+			}
+		} else {
+			result, err = r.ensureNoClusterAPIProviderKubeVirt(ctx, backplaneConfig)
+			if result != (ctrl.Result{}) {
+				requeue = true
+			}
+			if err != nil {
+				errs[backplanev1.ClusterAPIProviderKubeVirt] = err
+			}
+		}
+	} else {
+		log.Info(messages.SkippingExternallyManaged, "component",
+			backplanev1.ClusterAPIProviderKubeVirt)
+	}
+
 	if !r.isComponentExternallyManaged(backplaneConfig, backplanev1.ClusterAPIProviderOA) {
 		if backplaneConfig.Enabled(backplanev1.ClusterAPIProviderOA) {
 			result, err = r.ensureClusterAPIProviderOA(ctx, backplaneConfig)
@@ -1657,6 +1676,7 @@ func (r *MultiClusterEngineReconciler) getDisabledComponentCRDSkipDirectories(mc
 		backplanev1.ClusterAPI,
 		backplanev1.ClusterAPIProviderAWS,
 		backplanev1.ClusterAPIProviderAzurePreview,
+		backplanev1.ClusterAPIProviderKubeVirt,
 		backplanev1.ClusterAPIProviderMetal,
 		backplanev1.ClusterAPIProviderOA,
 	}
@@ -2244,6 +2264,7 @@ func (r *MultiClusterEngineReconciler) ensureNoAllInternalEngineComponents(ctx c
 		backplanev1.ClusterAPI,
 		backplanev1.ClusterAPIProviderAWS,
 		backplanev1.ClusterAPIProviderAzurePreview,
+		backplanev1.ClusterAPIProviderKubeVirt,
 		backplanev1.ClusterAPIProviderMetal,
 		backplanev1.ClusterAPIProviderOA,
 		backplanev1.ClusterLifecycle,
@@ -2547,6 +2568,31 @@ func (r *MultiClusterEngineReconciler) ensureUnstructuredResource(ctx context.Co
 		return ctrl.Result{}, err
 	}
 
+	// For CRDs, ensure labels from the template are applied to existing resources.
+	// The CAPI conversion webhook requires contract version labels on provider CRDs,
+	// and other controllers may strip them during reconciliation.
+	if u.GetKind() == "CustomResourceDefinition" {
+		desiredLabels := u.GetLabels()
+		existingLabels := found.GetLabels()
+		needsUpdate := false
+		if existingLabels == nil {
+			existingLabels = make(map[string]string)
+		}
+		for k, v := range desiredLabels {
+			if existingLabels[k] != v {
+				existingLabels[k] = v
+				needsUpdate = true
+			}
+		}
+		if needsUpdate {
+			found.SetLabels(existingLabels)
+			if err := r.Client.Update(ctx, found); err != nil {
+				r.Log.Error(err, "Failed to update CRD labels", "Name", u.GetName())
+				return ctrl.Result{}, err
+			}
+		}
+	}
+
 	return ctrl.Result{}, nil
 }
 
@@ -2599,7 +2645,23 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 		updateNecessary = true
 	}
 
+	if utils.DeployOnOCP() {
+		currentClusterVersion, err := r.getClusterVersion(ctx)
+		if err != nil {
+			return ctrl.Result{}, pkgerrors.Wrapf(err, "failed to detect clusterversion")
+		}
+		os.Setenv("ACM_HUB_OCP_VERSION", currentClusterVersion)
+	}
+
 	if utils.SetDefaultComponents(m) {
+		updateNecessary = true
+	}
+
+	clusterAPIDisabled, err := r.enforceClusterAPIExclusivity(ctx, m)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	if clusterAPIDisabled {
 		updateNecessary = true
 	}
 
@@ -2614,11 +2676,13 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 	for _, preview := range backplanev1.PreviewComponents {
 		if m.Enabled(preview) {
 			if stable, exists := backplanev1.PreviewToStable[preview]; exists {
-				log.Info("Stable component version enabled due to preview being enabled",
-					"preview", preview,
-					"stable", stable,
-				)
-				m.Enable(stable)
+				if utils.ShouldEnablePreviewStable(m, stable) {
+					log.Info("Stable component version enabled due to preview being enabled",
+						"preview", preview,
+						"stable", stable,
+					)
+					m.Enable(stable)
+				}
 			}
 		}
 
@@ -2655,15 +2719,7 @@ func (r *MultiClusterEngineReconciler) setDefaults(ctx context.Context, m *backp
 			return ctrl.Result{}, pkgerrors.Wrapf(err, "failed to set ACM_HUB_CONSOLE_URL")
 		}
 
-		// If OCP 4.10+ then set then enable the MCE console. Else ensure it is disabled
-		currentClusterVersion, err := r.getClusterVersion(ctx)
-		if err != nil {
-			return ctrl.Result{}, pkgerrors.Wrapf(err, "failed to detect clusterversion")
-		}
-
-		// Set OCP version as env var, so that charts can render this value
-		os.Setenv("ACM_HUB_OCP_VERSION", currentClusterVersion)
-
+		currentClusterVersion := os.Getenv("ACM_HUB_OCP_VERSION")
 		currentVersion, err := semver.NewVersion(currentClusterVersion)
 		if err != nil {
 			log.Error(err, fmt.Sprintf("Failed to convert currentClusterVersion %s to semver compatible value for comparison", currentClusterVersion))
@@ -2781,6 +2837,64 @@ func (r *MultiClusterEngineReconciler) EnsureDeprecatedResourceCleanup(ctx conte
 	}
 
 	return ctrl.Result{}, nil
+}
+
+func (r *MultiClusterEngineReconciler) enforceClusterAPIExclusivity(
+	ctx context.Context,
+	m *backplanev1.MultiClusterEngine,
+) (bool, error) {
+	if !m.RequestsClusterAPI() {
+		return false, nil
+	}
+
+	mceList := &backplanev1.MultiClusterEngineList{}
+	if err := r.Client.List(ctx, mceList); err != nil {
+		return false, fmt.Errorf("unable to list MultiClusterEngines: %w", err)
+	}
+
+	owner := m.DeepCopy()
+	for i := range mceList.Items {
+		candidate := &mceList.Items[i]
+		if candidate.Name == m.Name && candidate.Namespace == m.Namespace {
+			continue
+		}
+		if !candidate.RequestsClusterAPI() {
+			continue
+		}
+		if clusterAPIOwnerPrecedes(candidate, owner) {
+			owner = candidate.DeepCopy()
+		}
+	}
+
+	if owner.Name == m.Name && owner.Namespace == m.Namespace {
+		return false, nil
+	}
+
+	log.Info(
+		"Disabling Cluster API because another MultiClusterEngine owns it",
+		"owner", owner.Name,
+	)
+	for _, component := range []string{
+		backplanev1.ClusterAPI,
+		backplanev1.ClusterAPIPreview,
+		backplanev1.ClusterAPIProviderOA,
+		backplanev1.ClusterAPIProviderOAPreview,
+		backplanev1.ClusterAPIProviderKubeVirt,
+		backplanev1.ClusterAPIProviderKubeVirtPreview,
+	} {
+		m.Disable(component)
+	}
+	return true, nil
+}
+
+func clusterAPIOwnerPrecedes(candidate, owner *backplanev1.MultiClusterEngine) bool {
+	if !candidate.CreationTimestamp.Equal(&owner.CreationTimestamp) {
+		return candidate.CreationTimestamp.Before(&owner.CreationTimestamp)
+	}
+	if candidate.Namespace != owner.Namespace {
+		return candidate.Namespace < owner.Namespace
+	}
+	return candidate.Name < owner.Name
 }
 
 func (r *MultiClusterEngineReconciler) validateNamespace(ctx context.Context, m *backplanev1.MultiClusterEngine) (
@@ -2937,6 +3051,12 @@ func (r *MultiClusterEngineReconciler) CheckDeprecatedFieldUsage(m *backplanev1.
 	}
 }
 
+func ensureCRDWithRetry(ctx context.Context, c client.Client, crd *unstructured.Unstructured) error {
+	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		return EnsureCRD(ctx, c, crd.DeepCopy())
+	})
+}
+
 // EnsureCRD creates crd in the cluster via c, or updates it if it already
 // exists. On update it preserves any existing caBundle in the conversion
 // webhook's clientConfig (e.g. injected by cert-manager on vanilla K8s) and
@@ -2961,6 +3081,8 @@ func EnsureCRD(ctx context.Context, c client.Client, crd *unstructured.Unstructu
 			return nil
 		}
 
+		preserveCRDMetadata(existingCRD, crd)
+
 		// Preserve caBundle from existing CRD if it exists (injected by cert-manager in vanilla K8s)
 		existingCABundle, found, err := unstructured.NestedString(existingCRD.Object, "spec", "conversion", "webhook", "clientConfig", "caBundle")
 		if err == nil && found && existingCABundle != "" {
@@ -2981,6 +3103,32 @@ func EnsureCRD(ctx context.Context, c client.Client, crd *unstructured.Unstructu
 	}
 
 	return nil
+}
+
+// preserveCRDMetadata copies labels and annotations from an existing CRD into
+// the desired CRD when the desired resource does not define those keys.
+func preserveCRDMetadata(existingCRD, desiredCRD *unstructured.Unstructured) {
+	desiredLabels := desiredCRD.GetLabels()
+	if desiredLabels == nil {
+		desiredLabels = map[string]string{}
+	}
+	for key, value := range existingCRD.GetLabels() {
+		if _, found := desiredLabels[key]; !found {
+			desiredLabels[key] = value
+		}
+	}
+	desiredCRD.SetLabels(desiredLabels)
+
+	desiredAnnotations := desiredCRD.GetAnnotations()
+	if desiredAnnotations == nil {
+		desiredAnnotations = map[string]string{}
+	}
+	for key, value := range existingCRD.GetAnnotations() {
+		if _, found := desiredAnnotations[key]; !found {
+			desiredAnnotations[key] = value
+		}
+	}
+	desiredCRD.SetAnnotations(desiredAnnotations)
 }
 
 // GetDeprecatedResources returns a list of formerly-managed Kubernetes objects

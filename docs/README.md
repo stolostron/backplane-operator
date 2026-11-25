@@ -1,8 +1,19 @@
 ## Available Overrides / Development Tools
 
+### Provider Proxy Egress
+
+See [Proxy Egress](proxy-egress.md ) for details about how provider NetworkPolicies handle proxy addresses.
+
 ### Override Image Values
 
 See [Overriding Images](override-images.md ) for details about modifying images at runtime
+
+### CAPK Operand Image
+
+The CAPK deployment requires an operand image that supports the
+`--exclude-annotations` flag. The product release must provide the
+`cluster_api_provider_kubevirt` related image from a CAPK build containing that
+capability; a floating image from an earlier CAPK release is not sufficient.
 
 ### Disable MCE Operator
 

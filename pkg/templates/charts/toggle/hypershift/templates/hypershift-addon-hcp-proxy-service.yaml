@@ -1,3 +1,4 @@
+{{- if .Values.hcpProxyEnabled }}
 kind: Service
 apiVersion: v1
 metadata:
@@ -13,3 +14,4 @@ spec:
       targetPort: 9443
   selector:
     app: hypershift-addon-manager
+{{- end }}

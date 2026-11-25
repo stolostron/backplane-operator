@@ -20,6 +20,10 @@ var Version string
 // Can be overridden by setting the env variable DISABLE_OCP_MIN_VERSION
 var MinimumOCPVersion string = "4.10.0"
 
+// WebhookMatchConditions is the first OpenShift version whose API server
+// enables ValidatingWebhook matchConditions by default.
+const WebhookMatchConditions = "4.15.0"
+
 func init() {
 	if value, exists := os.LookupEnv("OPERATOR_VERSION"); exists {
 		Version = value
@@ -73,4 +77,18 @@ func ValidOCPVersion(ocpVersion string) error {
 		return fmt.Errorf("OCP version %s did not meet minimum version requirement of %s", ocpVersion, MinimumOCPVersion)
 	}
 	return nil
+}
+
+// AtLeast reports whether version satisfies minimum. Prerelease versions are
+// accepted so development and RC builds behave like their base release.
+func AtLeast(version, minimum string) (bool, error) {
+	parsedVersion, err := semver.NewVersion(version)
+	if err != nil {
+		return false, err
+	}
+	constraint, err := semver.NewConstraint(fmt.Sprintf(">= %s-0", minimum))
+	if err != nil {
+		return false, err
+	}
+	return constraint.Check(parsedVersion), nil
 }

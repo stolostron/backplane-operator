@@ -1,14 +1,24 @@
+---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  annotations:
-    controller-gen.kubebuilder.io/version: v0.17.2
-    service.beta.openshift.io/inject-cabundle: "true"
   labels:
     cluster.x-k8s.io/v1beta1: v1alpha2
     cluster.x-k8s.io/v1beta2: v1alpha3
+  annotations:
+    service.beta.openshift.io/inject-cabundle: "true"
+    controller-gen.kubebuilder.io/version: v0.17.2
   name: openshiftassistedcontrolplanes.controlplane.cluster.x-k8s.io
 spec:
+  group: controlplane.cluster.x-k8s.io
+  names:
+    kind: OpenshiftAssistedControlPlane
+    listKind: OpenshiftAssistedControlPlaneList
+    plural: openshiftassistedcontrolplanes
+    shortNames:
+    - oacp
+    - oacps
+    singular: openshiftassistedcontrolplane
   conversion:
     strategy: Webhook
     webhook:
@@ -20,15 +30,6 @@ spec:
       conversionReviewVersions:
       - v1
       - v1beta1
-  group: controlplane.cluster.x-k8s.io
-  names:
-    kind: OpenshiftAssistedControlPlane
-    listKind: OpenshiftAssistedControlPlaneList
-    plural: openshiftassistedcontrolplanes
-    shortNames:
-    - oacp
-    - oacps
-    singular: openshiftassistedcontrolplane
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
@@ -831,6 +832,18 @@ spec:
                           Defaults to None for baremetal platform workload clusters or vCurrent otherwise.
                         type: string
                     type: object
+                  cloudControllerManager:
+                    description: |-
+                      CloudControllerManager configures the cloud controller manager for the cluster.
+                      When enabled, the controller deploys the platform-appropriate CCM on the
+                      workload cluster (e.g. kubevirt-cloud-controller-manager for KubeVirt).
+                    properties:
+                      enabled:
+                        description: |-
+                          Enabled controls whether the platform-appropriate cloud controller manager
+                          is deployed on the workload cluster. Defaults to false.
+                        type: boolean
+                    type: object
                   clusterName:
                     description: |-
                       ClusterName is the friendly name of the cluster. It is used for subdomains,
@@ -838,6 +851,26 @@ spec:
                       cluster is useful.
                       If not defined ClusterName will be set as the CAPI ClusterName
                     type: string
+                  csiDriver:
+                    description: |-
+                      CSIDriver configures the platform-specific CSI driver for the cluster.
+                      When enabled, the controller deploys the appropriate CSI driver stack on
+                      the workload cluster (e.g. kubevirt-csi-driver for KubeVirt).
+                    properties:
+                      enabled:
+                        description: |-
+                          Enabled controls whether the platform-appropriate CSI driver is deployed
+                          on the workload cluster. Defaults to false.
+                        type: boolean
+                      infraStorageClass:
+                        description: |-
+                          InfraStorageClass is the StorageClass on the infra cluster used to back
+                          workload cluster PersistentVolumeClaims. Required when Enabled is true.
+                        type: string
+                    type: object
+                    x-kubernetes-validations:
+                    - message: infraStorageClass is required when CSI driver is enabled
+                      rule: '!has(self.enabled) || !self.enabled || (has(self.infraStorageClass) && self.infraStorageClass != '''')'
                   diskEncryption:
                     description: DiskEncryption is the configuration to enable/disable
                       disk encryption for cluster nodes.
@@ -872,6 +905,25 @@ spec:
                     description: |-
                       ImageRegistryRef is a reference to a configmap containing both the additional
                       image registries and their corresponding certificate bundles to be used in the spoke cluster
+                    properties:
+                      name:
+                        default: ""
+                        description: |-
+                          Name of the referent.
+                          This field is effectively required, but due to backwards compatibility is
+                          allowed to be empty. Instances of this type with an empty value here are
+                          almost certainly wrong.
+                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                        type: string
+                    type: object
+                    x-kubernetes-map-type: atomic
+                  infraClusterRef:
+                    description: |-
+                      InfraClusterRef references a Secret containing the kubeconfig for the
+                      infrastructure cluster where workload VMs and supporting resources
+                      (Services, Routes, DNS proxy, golden PVC) are created.
+                      If not set, the controller assumes the management cluster IS the infra
+                      cluster (local-infra topology).
                     properties:
                       name:
                         default: ""
@@ -934,6 +986,37 @@ spec:
                   mastersSchedulable:
                     description: Set to true to allow control plane nodes to be schedulable
                     type: boolean
+                  network:
+                    description: |-
+                      Network configures the workload cluster's network parameters.
+                      When set, the controller generates the appropriate Network operator manifest
+                      and injects it via ManifestsConfigMapRefs during installation.
+                    properties:
+                      ovnKubernetes:
+                        description: OVNKubernetes configures OVN-Kubernetes specific
+                          network parameters.
+                        properties:
+                          genevePort:
+                            description: |-
+                              GenevePort is the UDP port for Geneve tunnel traffic in the workload cluster.
+                              Must differ from the infra cluster's Geneve port (default 6081) to avoid conflicts.
+                              Typical value: 9880.
+                            format: int32
+                            maximum: 65535
+                            minimum: 1
+                            type: integer
+                          mtu:
+                            description: |-
+                              MTU is the maximum transmission unit for the workload cluster's pod network.
+                              For KubeVirt environments with bridge networking, this should be lower than
+                              the infra cluster's pod MTU to account for double Geneve encapsulation.
+                              Typical value: 1300 (safe for Azure/AWS/bare-metal with 1500 physical MTU).
+                            format: int32
+                            maximum: 9000
+                            minimum: 576
+                            type: integer
+                        type: object
+                    type: object
                   networkType:
                     description: |-
                       NetworkType is the Container Network Interface (CNI) plug-in to install.
@@ -1116,6 +1199,15 @@ spec:
                     description: CpuArchitecture specifies the target CPU architecture.
                       Default is x86_64
                     type: string
+                  installerArgs:
+                    description: |-
+                      InstallerArgs is the additional installer arguments to be passed to the host at install time.
+                      They are appended to the arguments derived from KernelArguments, and are restricted to the
+                      flags assisted-service allows.
+                    items:
+                      type: string
+                    type: array
+                    x-kubernetes-list-type: atomic
                   kernelArguments:
                     description: |-
                       KernelArguments is the additional kernel arguments to be passed during boot time of the discovery image.
@@ -1285,6 +1377,20 @@ spec:
               replicas:
                 format: int32
                 type: integer
+              upgradePolicy:
+                default: Managed
+                description: |-
+                  UpgradePolicy controls how the controller handles workload cluster upgrades.
+                  - Managed (default): the controller actively reverts any externally-initiated
+                    upgrades (e.g., admin running oc adm upgrade on the workload cluster). Only upgrades
+                    driven by updating spec.distributionVersion are allowed.
+                  - Unrestricted: the controller does not block external upgrades. If the workload
+                    cluster is upgraded independently, a VersionDriftDetected condition is surfaced
+                    but no corrective action is taken.
+                enum:
+                - Managed
+                - Unrestricted
+                type: string
             required:
             - distributionVersion
             - machineTemplate
