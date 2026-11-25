@@ -117,6 +117,15 @@ type Toleration struct {
 	TolerationSeconds *int64                    `json:"TolerationSeconds" protobuf:"varint,5,opt,name=tolerationSeconds"`
 }
 
+func isYAMLBooleanWord(value string) bool {
+	switch strings.ToLower(value) {
+	case "yes", "no", "on", "off":
+		return true
+	default:
+		return false
+	}
+}
+
 type ProxyEgressRule struct {
 	Port  int      `json:"port,omitempty"`
 	CIDRs []string `json:"cidrs,omitempty"`
@@ -214,6 +223,8 @@ func (u *Toleration) MarshalJSON() ([]byte, error) {
 				} else if _, err := strconv.ParseFloat(str, 64); err == nil {
 					values[i] = fmt.Sprintf("'%s'", str)
 				} else if _, err := strconv.ParseBool(str); err == nil {
+					values[i] = fmt.Sprintf("'%s'", str)
+				} else if isYAMLBooleanWord(str) {
 					values[i] = fmt.Sprintf("'%s'", str)
 				} else {
 					values[i] = str

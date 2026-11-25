@@ -1414,6 +1414,28 @@ func TestClusterAPIProviderKubevirtNetworkPolicyAndWebhooks(t *testing.T) {
 	}
 }
 
+func TestTolerationMarshalJSONQuotesYAMLBooleanWords(t *testing.T) {
+	for _, word := range []string{"yes", "Yes", "no", "NO", "on", "On", "off", "OFF"} {
+		t.Run(word, func(t *testing.T) {
+			toleration := Toleration{Key: word, Value: word}
+			data, err := json.Marshal(&toleration)
+			if err != nil {
+				t.Fatalf("json.Marshal() error = %v", err)
+			}
+
+			var decoded Toleration
+			if err := json.Unmarshal(data, &decoded); err != nil {
+				t.Fatalf("json.Unmarshal() error = %v", err)
+			}
+
+			quoted := fmt.Sprintf("'%s'", word)
+			if decoded.Key != quoted || decoded.Value != quoted {
+				t.Fatalf("Toleration fields = (%q, %q), want (%q, %q)", decoded.Key, decoded.Value, quoted, quoted)
+			}
+		})
+	}
+}
+
 func hasEgressPortAndCIDR(policy *networkingv1.NetworkPolicy, port int32, cidr string) bool {
 	for _, egressRule := range policy.Spec.Egress {
 		hasPort := false
