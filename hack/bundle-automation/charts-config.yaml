@@ -97,6 +97,19 @@ components:
           - "HUB_KUBECONFIG"
           - "INSTALL_NAMESPACE"
 
+      - name: "cluster-api-provider-kubevirt"
+        chart-path: "charts/cluster-api-provider-kubevirt"
+        always-or-toggle: "toggle"
+        imageMappings:
+          cluster-api-provider-kubevirt-rhel9: "cluster_api_provider_kubevirt"
+        inclusions:
+          - "pullSecretOverride"
+        skipRBACOverrides: true
+        updateChartVersion: true # the chart version will be retrieved from trimmed branch name, e.g. backplane-2.6 -> 2.6
+        escape-template-variables:
+          - "CLUSTER_NAME"
+          - "HUB_KUBECONFIG"
+          - "INSTALL_NAMESPACE"
 
   - repo_name: "cluster-api-installer-k8s"
     github_ref: "https://github.com/stolostron/cluster-api-installer.git"
