@@ -8,6 +8,7 @@ package main
 //+kubebuilder:rbac:groups="",resources=configmaps,verbs=create;get;list;watch
 //+kubebuilder:rbac:groups="",resources=configmaps,verbs=create;update;get;delete
 //+kubebuilder:rbac:groups="",resources=configmaps,verbs=get
+//+kubebuilder:rbac:groups="",resources=configmaps,verbs=get
 //+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;create;update;patch
 //+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;patch;update;watch
 //+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;patch;update;watch
