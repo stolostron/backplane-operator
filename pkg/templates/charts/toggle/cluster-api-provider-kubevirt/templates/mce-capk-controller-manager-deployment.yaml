@@ -1,0 +1,143 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    cluster.x-k8s.io/provider: kubevirt
+    cluster.x-k8s.io/v1beta1: v1alpha1
+    cluster.x-k8s.io/v1beta2: v1alpha1
+    control-plane: controller-manager
+  name: mce-capk-controller-manager
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      cluster.x-k8s.io/provider: kubevirt
+      cluster.x-k8s.io/v1beta1: v1alpha1
+      cluster.x-k8s.io/v1beta2: v1alpha1
+      control-plane: controller-manager
+  template:
+    metadata:
+      labels:
+        cluster.x-k8s.io/provider: kubevirt
+        cluster.x-k8s.io/v1beta1: v1alpha1
+        cluster.x-k8s.io/v1beta2: v1alpha1
+        control-plane: controller-manager
+        ocm-antiaffinity-selector: mce-capk-controller-manager
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - mce-capk-controller-manager
+              topologyKey: topology.kubernetes.io/zone
+            weight: 70
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: ocm-antiaffinity-selector
+                  operator: In
+                  values:
+                  - mce-capk-controller-manager
+              topologyKey: kubernetes.io/hostname
+            weight: 35
+      containers:
+      - args:
+        - --leader-elect
+        - --feature-gates=MachinePool=false
+        - --exclude-annotations=hypershift.openshift.io/nodePool,hypershift.openshift.io/cluster
+        command:
+        - /manager
+        env:
+{{- if .Values.global.pullSecret }}
+        - name: AGENT_IMAGE_PULL_SECRET
+          value: {{ .Values.global.pullSecret | quote }}
+{{- end }}
+{{- if .Values.hubconfig.proxyConfigs }}
+        - name: HTTP_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.HTTP_PROXY | quote }}
+        - name: HTTPS_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.HTTPS_PROXY | quote }}
+        - name: NO_PROXY
+          value: {{ .Values.hubconfig.proxyConfigs.NO_PROXY | quote }}
+{{- else }}
+        - name: NO_PROXY
+          value: 127.0.0.1,localhost
+{{- end }}
+        image: '{{ .Values.global.imageOverrides.cluster_api_provider_kubevirt }}'
+        imagePullPolicy: '{{ .Values.global.pullPolicy }}'
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: healthz
+        name: manager
+        ports:
+        - containerPort: 9440
+          name: healthz
+          protocol: TCP
+        - containerPort: 9443
+          name: webhook-server
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: healthz
+        resources:
+          limits:
+            cpu: 500m
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 128Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+        volumeMounts:
+        - mountPath: /tmp/k8s-webhook-server/serving-certs
+          name: cert
+          readOnly: true
+      hostIPC: false
+      hostNetwork: false
+      hostPID: false
+{{- if .Values.global.pullSecret }}
+      imagePullSecrets:
+      - name: {{ .Values.global.pullSecret | quote }}
+{{- end }}
+{{- with .Values.hubconfig.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+{{- end }}
+      securityContext:
+        runAsNonRoot: true
+{{- if .Values.global.deployOnOCP }}
+{{- if semverCompare ">=4.11.0" .Values.hubconfig.ocpVersion }}
+        seccompProfile:
+          type: RuntimeDefault
+{{- end }}
+{{- end }}
+      serviceAccountName: mce-capk-manager
+      terminationGracePeriodSeconds: 10
+{{- with .Values.hubconfig.tolerations }}
+      tolerations:
+      {{- range . }}
+      - {{ if .Key }} key: {{ .Key }} {{- end }}
+        {{ if .Operator }} operator: {{ .Operator }} {{- end }}
+        {{ if .Value }} value: {{ .Value }} {{- end }}
+        {{ if .Effect }} effect: {{ .Effect }} {{- end }}
+        {{ if ne .TolerationSeconds nil }} tolerationSeconds: {{ .TolerationSeconds }} {{- end }}
+        {{- end }}
+{{- end }}
+      volumes:
+      - name: cert
+        secret:
+          defaultMode: 420
+          secretName: mce-capk-webhook-service-cert
